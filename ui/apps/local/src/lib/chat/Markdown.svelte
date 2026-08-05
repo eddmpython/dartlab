@@ -71,12 +71,40 @@
 		visualRef: '차트',
 		verifyRef: '검증'
 	};
-	function renderRefChips(t: string): string {
-		return t.replace(
-			/<(tableRef|valueRef|dateRef|docRef|webRef|skillRef|sessionRef|artifactRef|visualRef|verifyRef):([^<>\s"']+)>/g,
-			(_m, kind: string, id: string) =>
-				`<button type="button" class="refchip" value="${encodeURIComponent(id)}" aria-label="${REF_LABEL[kind] ?? kind} 근거 열기">${REF_LABEL[kind] ?? kind}</button>`
+	// 모델이 근거를 두 가지 형태로 쓴다. 계약 형태인 `<tableRef:id>` 와, 캡슐이 요구하는
+	// "사용한 exact ref ID 인용" 을 따라 코드스팬에 그대로 적은 원시 id 다. 후자를 그냥 두면
+	// 답변 끝에 `table:005930:IS:2025FY` 같은 긴 식별자가 여러 줄로 깔려 디버그 출력처럼 보인다.
+	// 둘 다 잡아 같은 자리에서 번호 각주로 접는다. 전체 식별자는 툴팁과 클릭에 남긴다.
+	const RAW_REF_KINDS = 'table|value|date|doc|web|execution|artifact|visual|skill|session|verify';
+
+	function chipHtml(label: string, id: string, title: string): string {
+		return (
+			`<button type="button" class="refchip" value="${encodeURIComponent(id)}"` +
+			` title="${title.replace(/"/g, '&quot;')}" aria-label="근거 ${label} 열기">${label}</button>`
 		);
+	}
+
+	function renderRefChips(t: string): string {
+		const numbers = new Map<string, number>();
+		const numberOf = (id: string): number => {
+			const seen = numbers.get(id);
+			if (seen) return seen;
+			const next = numbers.size + 1;
+			numbers.set(id, next);
+			return next;
+		};
+		return t
+			.replace(
+				/<(tableRef|valueRef|dateRef|docRef|webRef|skillRef|sessionRef|artifactRef|visualRef|verifyRef):([^<>\s"']+)>/g,
+				(_m, kind: string, id: string) => chipHtml(REF_LABEL[kind] ?? kind, id, id)
+			)
+			.replace(
+				new RegExp('`(' + RAW_REF_KINDS + '):([A-Za-z0-9._:{}\\-,]+)`', 'g'),
+				(_m, kind: string, rest: string) => {
+					const id = `${kind}:${rest}`;
+					return chipHtml(String(numberOf(id)), id, id);
+				}
+			);
 	}
 
 	function handleRefClick(event: MouseEvent): void {
