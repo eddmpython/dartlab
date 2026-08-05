@@ -480,6 +480,65 @@ def observedRangeAnchors(summary: dict[str, Any]) -> list[str]:
     return notes
 
 
+def cashFlowAnchors(summary: dict[str, Any]) -> list[str]:
+    """현금흐름이 어디까지 내려가면 설비투자를 못 덮는지 임계값으로 적는다.
+
+    실측(2026-08-06): 현금 질문 답변이 "사이클이 꺾이면 잉여현금흐름은 다시 음수가 될 수
+    있다" 에서 멈췄다. 옳은 말이지만 임계값이 없으면 지켜볼 수가 없다. 손익에는 관측 마진
+    앵커를 줬는데 현금흐름에는 같은 것이 없어서 생긴 비대칭이다.
+
+    여기서도 가정을 지어내지 않는다. 당기 설비투자와 조회 기간에 실제로 겪은 최저
+    영업현금흐름만 쓴다.
+
+    Args:
+        summary: `Company.panel` tool 결과의 summary. 현금흐름표가 아니면 빈 목록이다.
+
+    Returns:
+        list[str]: 사람이 읽는 한 줄 노트 목록.
+
+    Example:
+        `notes = cashFlowAnchors(summary)`
+    """
+    periods = [str(p) for p in (summary.get("periods") or [])]
+    timeseries = [row for row in (summary.get("timeseries") or []) if isinstance(row, dict)]
+    if len(periods) < 2 or not timeseries:
+        return []
+
+    indexed = _seriesByKey(timeseries)
+    operating = _pick(indexed, _OCF_KEYS)
+    capex = _pick(indexed, _CAPEX_KEYS)
+    if operating is None or capex is None:
+        return []
+
+    latest = periods[0]
+    spendNow = _numeric(capex.get("values"), latest)
+    flowNow = _numeric(operating.get("values"), latest)
+    if spendNow is None or flowNow is None:
+        return []
+    spendNow = abs(spendNow)
+
+    notes: list[str] = []
+    if flowNow > spendNow:
+        notes.append(
+            f"영업활동현금흐름이 당기 설비투자 {_formatAmount(spendNow).lstrip('+')} 아래로 내려가면 "
+            f"잉여현금흐름이 음수가 됩니다. 지금은 {_formatAmount(flowNow).lstrip('+')}이라 "
+            f"{_formatAmount(flowNow - spendNow)} 여유가 있습니다."
+        )
+
+    history = [(period, _numeric(operating.get("values"), period)) for period in periods]
+    history = [(period, value) for period, value in history if value is not None]
+    if len(history) >= _MIN_PERIODS_FOR_POSITION:
+        lowPeriod, lowValue = min(history, key=lambda item: item[1])
+        if lowPeriod != latest:
+            notes.append(
+                f"영업활동현금흐름이 조회 기간 최저인 {lowPeriod} 수준"
+                f"({_formatAmount(lowValue).lstrip('+')})으로 돌아가면 당기 설비투자 기준 "
+                f"잉여현금흐름은 {_formatAmount(lowValue - spendNow)}입니다. "
+                f"다른 조건이 같다고 둔 산술이며 전망이 아닙니다."
+            )
+    return notes
+
+
 def contextMarkdown(dcrBadge: dict[str, Any] | None, industryBadge: dict[str, Any] | None) -> str:
     """이미 계산돼 붙어 있는 신용 등급과 산업 위치를 답변 표면으로 끌어올린다.
 
@@ -545,7 +604,7 @@ def insightMarkdown(summary: dict[str, Any]) -> str:
     notes = positionNotes(summary)
     bridge = profitBridge(summary)
     cash = cashFlowPattern(summary)
-    anchors = observedRangeAnchors(summary)
+    anchors = observedRangeAnchors(summary) + cashFlowAnchors(summary)
     if not rows and not notes and not bridge and not cash and not anchors:
         return ""
 

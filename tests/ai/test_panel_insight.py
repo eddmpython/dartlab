@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 
 from dartlab.ai.tools.panelInsight import (
+    cashFlowAnchors,
     cashFlowPattern,
     contextMarkdown,
     derivedRows,
@@ -225,6 +226,37 @@ def testFreeCashFlowSubtractsCapexAsMagnitude() -> None:
 
     assert fcf["cells"][0].startswith("+15.0")
     assert fcf["cells"][2].startswith("-15.0"), "영업 현금이 설비투자를 못 덮으면 음수여야 한다"
+
+
+def testCashFlowAnchorGivesTheThresholdNotJustAWarning() -> None:
+    """현금흐름이 어디까지 내려가면 잉여현금흐름이 음수가 되는지 숫자로 말한다.
+
+    실측(2026-08-06): 현금 질문 답변이 "사이클이 꺾이면 다시 음수가 될 수 있다" 에서
+    멈췄다. 옳은 말이지만 임계값이 없으면 지켜볼 수가 없다. 손익에만 관측 앵커를 주고
+    현금흐름에는 안 준 비대칭이 원인이었다.
+    """
+    summary = _statement(
+        cash_flows_from_operating_activities={"2025FY": 85e12, "2024FY": 73e12, "2023FY": 44e12},
+        purchase_of_property_plant_and_equipment={"2025FY": 47e12, "2024FY": 53e12, "2023FY": 60e12},
+    )
+
+    notes = cashFlowAnchors(summary)
+
+    assert notes, "영업현금흐름과 설비투자가 다 있으면 임계값을 낼 수 있어야 한다"
+    assert any("아래로 내려가면" in note for note in notes)
+    assert any("2023FY" in note and "전망이 아닙니다" in note for note in notes)
+
+
+def testCashFlowAnchorSkipsThresholdWhenAlreadyNegative() -> None:
+    """이미 설비투자를 못 덮고 있으면 여유 문장을 만들지 않는다. 없는 여유를 말하면 안 된다."""
+    summary = _statement(
+        cash_flows_from_operating_activities={"2025FY": 40e12, "2024FY": 73e12, "2023FY": 44e12},
+        purchase_of_property_plant_and_equipment={"2025FY": 60e12, "2024FY": 53e12, "2023FY": 60e12},
+    )
+
+    notes = cashFlowAnchors(summary)
+
+    assert not any("여유가 있습니다" in note for note in notes)
 
 
 def testCashFlowSignPatternIsRead() -> None:
