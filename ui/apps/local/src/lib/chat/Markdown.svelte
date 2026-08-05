@@ -270,6 +270,19 @@
 	.md :global(tbody tr:hover) {
 		background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 60%, transparent);
 	}
+	/* 재무 답변은 기간이 여럿인 표가 잦다. 읽기 폭에 갇히면 12 기간 표가 좁게 눌려
+	   가로 스크롤부터 만난다. 화면이 넓을 때만 오른쪽으로 더 뻗게 한다. 폭이 좁은 표는
+	   max-content 라 그대로여서 왼쪽 정렬이 흐트러지지 않는다. */
+	@media (min-width: 1180px) {
+		.md :global(table) {
+			max-width: calc(100% + 8rem);
+		}
+	}
+	/* 숫자 칸은 자릿수를 맞춰 세로로 읽히게 한다. 재무 표에서 특히 중요하다. */
+	.md :global(td),
+	.md :global(th) {
+		font-variant-numeric: tabular-nums;
+	}
 	/* 본문 ref 인용 chip. <kindRef:id> 계약의 표시형 (hover 시 title 로 풀 id). */
 	.md :global(.refchip) {
 		display: inline-flex;

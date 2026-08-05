@@ -37,11 +37,25 @@
 	type EvidenceHandle = { openRef: (refId: string) => Promise<void> };
 	let evidencePanels: Record<string, EvidenceHandle | undefined> = {};
 
-	const suggestions = [
-		'삼성전자 005930, 현재 투자 논지와 가장 강한 반대논지를 같이 분석해줘',
-		'삼성전자와 SK하이닉스 중 어느 쪽이 나은지 성장·가치·리스크로 비교해줘',
-		'삼성전자 최근 5년 실적 변화가 일시적인지 구조적인지 검증해줘',
-		'코스피에서 ROE가 높고 부채가 낮은 후보를 찾고 함정까지 걸러줘'
+	// 칩은 짧은 이름표를 보이고 질문은 전체를 보낸다. 긴 문장을 그대로 칩에 넣으면 두 줄로
+	// 접히며 어절이 끊기고, 네 개가 격자로 쌓여 첫 화면이 무거워진다.
+	const suggestions: Array<{ label: string; prompt: string }> = [
+		{
+			label: '투자 논지와 반대 논지',
+			prompt: '삼성전자 005930, 현재 투자 논지와 가장 강한 반대논지를 같이 분석해줘'
+		},
+		{
+			label: '두 회사 비교',
+			prompt: '삼성전자와 SK하이닉스 중 어느 쪽이 나은지 성장·가치·리스크로 비교해줘'
+		},
+		{
+			label: '실적 변화 검증',
+			prompt: '삼성전자 최근 5년 실적 변화가 일시적인지 구조적인지 검증해줘'
+		},
+		{
+			label: '조건으로 종목 발굴',
+			prompt: '코스피에서 ROE가 높고 부채가 낮은 후보를 찾고 함정까지 걸러줘'
+		}
 	];
 
 	// 터미널 토글 목적지 · surface 가 관리하는 최근 종목(LAST_SYM_KEY), 없으면 005930.
@@ -404,10 +418,16 @@
 					<div class="welcome" data-qa="chat-welcome">
 						<img class="ava" src="{base}/avatar.png" alt="DartLab" width="56" height="56" />
 						<h1>투자 판단에 필요한 질문을 해보세요</h1>
-						<p>결론만 단정하지 않습니다. 핵심 논지와 반대 근거, 가격에 반영된 기대, 판단이 바뀌는 조건까지 같은 근거로 연결합니다.</p>
+						<!-- 첫 화면 문구는 짧게. 두 줄짜리 약속문은 읽히지 않고 화면만 무겁게 한다. -->
+						<p>공시 원문과 근거를 붙여서 답합니다.</p>
 						<div class="chips">
-							{#each suggestions as s, index (s)}
-								<button class="chip" data-qa={`chat-suggestion-${index}`} onclick={() => ask(s)}>{s}</button>
+							{#each suggestions as s, index (s.label)}
+								<button
+									class="chip"
+									data-qa={`chat-suggestion-${index}`}
+									title={s.prompt}
+									onclick={() => ask(s.prompt)}>{s.label}</button
+								>
 							{/each}
 						</div>
 					</div>
@@ -732,14 +752,19 @@
 		margin: 0 auto;
 		padding: 0 1.25rem;
 	}
+	/* 빈 화면일 때 첫 인사가 세로 가운데에 놓이게 열이 스크롤 영역을 채운다. 고정 높이로
+	   가운데 정렬하면 아래가 통째로 비어 화면이 위쪽으로 쏠린다. */
 	.stream .col {
+		display: flex;
+		flex-direction: column;
+		min-height: 100%;
 		padding-top: 1.5rem;
 		padding-bottom: 2rem;
 	}
 
 	/* 빈 상태 웰컴 */
 	.welcome {
-		min-height: 60vh;
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -770,15 +795,14 @@
 		gap: 0.5rem;
 	}
 	.chip {
-		max-width: 21rem;
-		padding: 0.6rem 0.8rem;
+		padding: 0.42rem 0.8rem;
 		border: 1px solid var(--dl-line, #2a2c33);
-		border-radius: 10px;
+		border-radius: 999px;
 		background: var(--dl-bg-raised, #16171a);
 		color: var(--dl-ink-dim, #9aa0aa);
-		font-size: 0.8rem;
-		line-height: 1.35;
-		text-align: left;
+		font-size: 0.78rem;
+		line-height: 1.4;
+		white-space: nowrap;
 		cursor: pointer;
 	}
 	.chip:hover {
@@ -821,9 +845,48 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0;
 		font-size: 0.95rem;
 		line-height: 1.72;
+	}
+	/* 간격을 하나로 고정하면 도구와 본문이 같은 무게로 읽힌다. 이웃한 두 요소의 종류로
+	   간격을 정한다. 과정끼리는 붙고, 본문 문단끼리는 벌어져야 읽는 자리가 보인다. */
+	.body > :global(* + *) {
+		margin-top: 0.5rem;
+	}
+	.body > :global(.tool + .tool),
+	.body > :global(.tool + .run),
+	.body > :global(.run + .tool),
+	.body > :global(.run + .run) {
+		margin-top: 0;
+	}
+	/* 사고와 상태 줄도 과정이다. 도구와 같은 무리로 붙인다. */
+	.body > :global(.actline + .tool),
+	.body > :global(.tool + .actline),
+	.body > :global(.actline + .run),
+	.body > :global(.run + .actline),
+	.body > :global(.actline + .actline),
+	.body > :global(.think + .tool),
+	.body > :global(.tool + .think),
+	.body > :global(.think + .run),
+	.body > :global(.run + .think),
+	.body > :global(.think + .actline),
+	.body > :global(.actline + .think) {
+		margin-top: 0.2rem;
+	}
+	/* 검증 뱃지와 근거 패널은 답변에 딸린 각주다. 본문에서 조금 떨어뜨리되 서로는 붙인다. */
+	.body > :global(.textpart + .badge) {
+		margin-top: 0.7rem;
+	}
+	.body > :global(.badge + .ev) {
+		margin-top: 0.3rem;
+	}
+	.body > :global(.textpart + .textpart) {
+		margin-top: 0.9rem;
+	}
+	.body > :global(.tool + .textpart),
+	.body > :global(.run + .textpart) {
+		margin-top: 0.75rem;
 	}
 	@keyframes pulse { 50% { opacity: .3; } }
 	/* 화면에 도는 스피너는 이 줄 하나뿐이다. 도구가 돌면 도구 카드가 대신 말하고

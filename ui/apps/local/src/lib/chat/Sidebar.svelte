@@ -131,11 +131,12 @@
 							<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
 						</button>
 						{#if menuId === c.id}
-							<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-							<div class="menu" onclick={(e) => e.stopPropagation()}>
-								<button onclick={() => { store.togglePin(c.id); menuId = null; }}>{c.pinnedAt ? '고정 해제' : '고정'}</button>
-								<button onclick={() => startRename(c)}>이름 변경</button>
-								<button class="danger" onclick={() => confirmDelete(c)}>삭제</button>
+							<!-- 컨테이너에 클릭 핸들러를 두어 전파를 막으면 키보드로 못 쓰는 요소가 된다.
+							     전파 차단은 실제 동작을 가진 버튼 각자가 한다. -->
+							<div class="menu" role="menu" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') menuId = null; }}>
+								<button role="menuitem" onclick={(e) => { e.stopPropagation(); store.togglePin(c.id); menuId = null; }}>{c.pinnedAt ? '고정 해제' : '고정'}</button>
+								<button role="menuitem" onclick={(e) => { e.stopPropagation(); startRename(c); }}>이름 변경</button>
+								<button role="menuitem" class="danger" onclick={(e) => { e.stopPropagation(); confirmDelete(c); }}>삭제</button>
 							</div>
 						{/if}
 					{/if}
@@ -299,9 +300,11 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+	/* 호버로 드러나되 자리는 항상 차지한다. display 를 전환하면 커서 아래에서 제목 폭이
+	   1.85rem 줄었다 늘었다 하며 말줄임 위치가 튄다. 트리거의 기하가 호버로 바뀌면 안 된다. */
 	.more {
 		flex-shrink: 0;
-		display: none;
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		width: 1.6rem;
@@ -312,10 +315,15 @@
 		background: none;
 		color: var(--dl-ink-mute, #6b7280);
 		cursor: pointer;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.12s ease;
 	}
 	.row:hover .more,
-	.row.active .more {
-		display: inline-flex;
+	.row.active .more,
+	.more:focus-visible {
+		opacity: 1;
+		pointer-events: auto;
 	}
 	.more:hover {
 		color: var(--dl-ink, #e7e7ea);
