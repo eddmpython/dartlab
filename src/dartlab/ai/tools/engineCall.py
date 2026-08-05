@@ -32,7 +32,7 @@ from .creditBadge import getDcrBadge
 from .filingDeepLink import attachDocRef, buildPeriodToFiling
 from .formatting import formatMoney, formatPercent
 from .industryContext import getIndustryBadge
-from .panelInsight import insightMarkdown
+from .panelInsight import contextMarkdown, insightMarkdown
 from .types import ToolResult
 
 _CANONICAL_TOP_LEVEL_CAPABILITY_REFS = _capabilityExecution.CANONICAL_TOP_LEVEL_CAPABILITY_REFS
@@ -778,6 +778,11 @@ def _buildShowData(
     industryBadge = getIndustryBadge(company)
     if industryBadge is not None:
         data["industryBadge"] = industryBadge
+    # 두 뱃지는 오래전부터 payload 에 실려 있었지만 본문에 없어 답변에 한 번도 쓰이지
+    # 않았다. 모델이 읽는 것은 markdown 이다. 수치 하나에 판단 기준이 생긴다.
+    context = contextMarkdown(badge, industryBadge)
+    if context:
+        data["markdown"] = f"{data['markdown']}\n{context}"
     return data
 
 

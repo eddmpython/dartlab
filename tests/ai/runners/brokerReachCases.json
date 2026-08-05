@@ -75,6 +75,30 @@
       "note": "시나리오 표면 도달."
     },
     {
+      "caseId": "balanceHealth",
+      "question": "삼성전자 005930 재무 건전성이 최근 3년 동안 어떻게 달라졌는지 부채와 유동성 기준으로 알려줘",
+      "expectTools": ["EngineCall"],
+      "expectApiRefPrefix": ["Company.panel"],
+      "maxToolCalls": 6,
+      "note": "재무상태표 판단 재료(부채비율·유동비율·자기자본비율)가 답변에 쓰이는지 본다."
+    },
+    {
+      "caseId": "cashQuality",
+      "question": "삼성전자 005930이 번 이익이 실제 현금으로 들어오는지, 설비투자를 감당하고 있는지 봐줘",
+      "expectTools": ["EngineCall"],
+      "expectApiRefPrefix": ["Company.panel"],
+      "maxToolCalls": 6,
+      "note": "현금흐름 판단 재료(잉여현금흐름·3분면 부호)가 답변에 쓰이는지 본다."
+    },
+    {
+      "caseId": "downsideCondition",
+      "question": "삼성전자 005930 실적이 지금 좋아 보이는데, 이 판단이 틀리려면 무엇이 일어나야 하는지 숫자로 알려줘",
+      "expectTools": ["EngineCall"],
+      "expectApiRefPrefix": ["Company.panel"],
+      "maxToolCalls": 6,
+      "note": "관측된 범위 기준 하방 앵커가 답변에 쓰이는지 본다. 캡슐이 요구하는데 계속 빠지던 항목이다."
+    },
+    {
       "caseId": "skillFirst",
       "question": "삼성전자 005930의 최근 5년 실적 변화가 일시적인지 구조적인지 검증해줘",
       "expectTools": ["ReadSkill", "EngineCall"],

@@ -8,7 +8,15 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.ai.tools.panelInsight import derivedRows, insightMarkdown, positionNotes, profitBridge
+from dartlab.ai.tools.panelInsight import (
+    cashFlowPattern,
+    contextMarkdown,
+    derivedRows,
+    insightMarkdown,
+    observedRangeAnchors,
+    positionNotes,
+    profitBridge,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -141,6 +149,169 @@ def testProfitBridgeNeedsBothSalesAndProfit() -> None:
     summary = _summary(operating_profit={"2025FY": 10e12, "2024FY": 8e12, "2023FY": 6e12})
 
     assert profitBridge(summary) == []
+
+
+def _statement(**values: dict[str, float]) -> dict[str, object]:
+    """손익 외 표에도 쓰는 일반 summary. 라벨은 재무제표 매핑의 정본 이름을 따른다."""
+    periods = ["2025FY", "2024FY", "2023FY"]
+    labels = {
+        "total_liabilities": "부채총계",
+        "total_stockholders_equity": "자본총계",
+        "total_assets": "자산총계",
+        "current_assets": "유동자산",
+        "current_liabilities": "유동부채",
+        "cash_and_cash_equivalents": "현금및현금성자산",
+        "cash_flows_from_operating_activities": "영업활동현금흐름",
+        "cash_flows_from_investing_activities": "투자활동현금흐름",
+        "cash_flows_from_financing_activities": "재무활동현금흐름",
+        "purchase_of_property_plant_and_equipment": "유형자산의취득",
+    }
+    timeseries = [
+        {
+            "snakeId": key,
+            "item": labels.get(key, key),
+            "values": series,
+            "formatted": {period: f"{series[period] / 1e12:.1f}조원" for period in series},
+        }
+        for key, series in values.items()
+    ]
+    return {"periods": periods, "timeseries": timeseries, "projection": "annual"}
+
+
+def testBalanceSheetRatiosUseTheirOwnDenominators() -> None:
+    """부채비율은 자본이, 자기자본비율은 자산이 분모다. 매출로 나누면 안 된다."""
+    summary = _statement(
+        total_liabilities={"2025FY": 50e12, "2024FY": 60e12, "2023FY": 70e12},
+        total_stockholders_equity={"2025FY": 100e12, "2024FY": 100e12, "2023FY": 100e12},
+        total_assets={"2025FY": 150e12, "2024FY": 160e12, "2023FY": 170e12},
+    )
+
+    rows = derivedRows(summary)
+    debt = next(row for row in rows if row["label"] == "부채비율")
+
+    assert debt["cells"] == ["50.0%", "60.0%", "70.0%"]
+
+
+def testFreeCashFlowSubtractsCapexAsMagnitude() -> None:
+    """설비투자 취득액은 양수로 보고되므로 절대값을 뺀다. 부호를 그대로 더하면 두 배가 된다."""
+    summary = _statement(
+        cash_flows_from_operating_activities={"2025FY": 60e12, "2024FY": 50e12, "2023FY": 40e12},
+        purchase_of_property_plant_and_equipment={"2025FY": 45e12, "2024FY": 50e12, "2023FY": 55e12},
+    )
+
+    rows = derivedRows(summary)
+    fcf = next(row for row in rows if "잉여현금흐름" in row["label"])
+
+    assert fcf["cells"][0].startswith("+15.0")
+    assert fcf["cells"][2].startswith("-15.0"), "영업 현금이 설비투자를 못 덮으면 음수여야 한다"
+
+
+def testCashFlowSignPatternIsRead() -> None:
+    """영업 양수, 투자 음수, 재무 음수는 성숙한 현금 창출 구조에서 흔한 조합이다."""
+    summary = _statement(
+        cash_flows_from_operating_activities={"2025FY": 60e12, "2024FY": 50e12, "2023FY": 40e12},
+        cash_flows_from_investing_activities={"2025FY": -40e12, "2024FY": -35e12, "2023FY": -30e12},
+        cash_flows_from_financing_activities={"2025FY": -15e12, "2024FY": -10e12, "2023FY": -5e12},
+    )
+
+    notes = cashFlowPattern(summary)
+
+    assert notes, "세 흐름이 다 있으면 부호 조합을 읽어야 한다"
+    assert any("성숙" in note for note in notes)
+
+
+def testCashFlowPatternNeedsAllThreeFlows() -> None:
+    """셋 중 하나라도 없으면 국면을 단정하지 않는다."""
+    summary = _statement(cash_flows_from_operating_activities={"2025FY": 60e12, "2024FY": 50e12, "2023FY": 40e12})
+
+    assert cashFlowPattern(summary) == []
+
+
+def testUnknownSignPatternGetsFactsWithoutVerdict() -> None:
+    """조합표에 없는 모양이면 수치만 적고 해석을 지어내지 않는다."""
+    summary = _statement(
+        cash_flows_from_operating_activities={"2025FY": 60e12, "2024FY": 1e12, "2023FY": 1e12},
+        cash_flows_from_investing_activities={"2025FY": 10e12, "2024FY": 1e12, "2023FY": 1e12},
+        cash_flows_from_financing_activities={"2025FY": 10e12, "2024FY": 1e12, "2023FY": 1e12},
+    )
+
+    notes = cashFlowPattern(summary)
+
+    assert len(notes) == 1, "사실 한 줄만 남고 해석은 붙지 않아야 한다"
+
+
+def testDownsideAnchorUsesObservedMarginNotInventedOne() -> None:
+    """판단이 바뀌는 지점을 지어낸 가정이 아니라 실제 겪은 마진으로 만든다.
+
+    답변에서 가장 자주 빠지는 것이 "이 판단이 틀리려면 무엇이 일어나야 하나" 다.
+    임의 시나리오를 만들면 근거 제품이 아니게 되므로 관측된 값만 쓴다.
+    """
+    summary = _summary(
+        sales={"2025FY": 333.6e12, "2024FY": 300.9e12, "2023FY": 258.9e12},
+        operating_profit={"2025FY": 43.6e12, "2024FY": 32.7e12, "2023FY": 6.6e12},
+    )
+
+    notes = observedRangeAnchors(summary)
+
+    assert notes, "3 개 기간이 있으면 하방 앵커를 낼 수 있어야 한다"
+    assert "2023FY" in notes[0], "실제 최저를 겪은 기간을 지목해야 한다"
+    assert "2.5%" in notes[0]
+    assert "전망이 아닙니다" in notes[0], "산술임을 명시하지 않으면 예측으로 읽힌다"
+
+
+def testDownsideAnchorIsSkippedWhenAlreadyAtTheLow() -> None:
+    """지금이 이미 기간 최저면 더 낮은 관측치가 없으므로 하방 앵커를 만들지 않는다."""
+    summary = _summary(
+        sales={"2025FY": 100e12, "2024FY": 100e12, "2023FY": 100e12},
+        operating_profit={"2025FY": 2e12, "2024FY": 11e12, "2023FY": 13e12},
+    )
+
+    notes = observedRangeAnchors(summary)
+
+    assert not any("최저" in note for note in notes)
+
+
+def testDownsideAnchorNeedsSalesAndProfit() -> None:
+    """매출이 없는 표에서는 마진을 만들 수 없으므로 시도하지 않는다."""
+    summary = _summary(operating_profit={"2025FY": 10e12, "2024FY": 8e12, "2023FY": 6e12})
+
+    assert observedRangeAnchors(summary) == []
+
+
+def testContextBlockSurfacesCreditAndIndustry() -> None:
+    """이미 계산된 신용 등급과 산업 국면을 본문으로 끌어올린다.
+
+    두 뱃지는 오래전부터 payload 에 있었지만 본문에 없어 답변에 한 번도 쓰이지 않았다.
+    수치 하나가 좋은지 나쁜지 말하려면 기준이 필요하다.
+    """
+    block = contextMarkdown(
+        {"grade": "dCR-AA", "outlook": "안정적", "pdEstimate": 0.02, "investmentGrade": True},
+        {
+            "industryName": "반도체",
+            "stageName": "전공정(FAB)",
+            "phase": "재도약",
+            "peers": [{"stockCode": "000660", "corpName": "SK하이닉스"}],
+        },
+    )
+
+    assert "dCR-AA" in block
+    assert "투자등급" in block
+    assert "재도약" in block
+    assert "SK하이닉스(000660)" in block
+
+
+def testContextBlockIsEmptyWithoutBadges() -> None:
+    """뱃지가 없으면 아무 것도 덧붙이지 않는다. 빈 제목만 남기면 소음이다."""
+    assert contextMarkdown(None, None) == ""
+    assert contextMarkdown({}, {}) == ""
+
+
+def testUnknownIndustryPhaseIsOmitted() -> None:
+    """분류에 실패한 국면을 unknown 이라고 화면에 적지 않는다."""
+    block = contextMarkdown(None, {"industryName": "반도체", "phase": "unknown"})
+
+    assert "unknown" not in block
+    assert "반도체" in block
 
 
 def testMissingValuesDoNotCrash() -> None:

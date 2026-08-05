@@ -24,12 +24,42 @@ _RATIO_ROWS: tuple[tuple[str, str], ...] = (
     ("cost_of_sales", "매출원가율"),
     ("gross_profit", "매출총이익률"),
     ("selling_and_administrative_expenses", "판관비율"),
+    # 같은 계정이 매핑에 따라 다른 이름으로 온다. 하나만 보면 표에서 조용히 빠진다.
+    ("sga_expenses", "판관비율"),
     ("operating_profit", "영업이익률"),
+    ("operating_income", "영업이익률"),
     ("net_income", "순이익률"),
+    ("net_profit", "순이익률"),
     ("profit", "순이익률"),
 )
+# 재무상태표. 분모가 매출이 아니라 항목별로 다르다.
+_BS_RATIOS: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
+    ("부채비율", ("total_liabilities",), ("total_stockholders_equity", "total_equity")),
+    ("자기자본비율", ("total_stockholders_equity", "total_equity"), ("total_assets",)),
+    ("유동비율", ("current_assets",), ("current_liabilities",)),
+    ("현금비중", ("cash_and_cash_equivalents",), ("total_assets",)),
+)
+_OCF_KEYS = ("cash_flows_from_operating_activities", "operating_cashflow")
+_ICF_KEYS = ("cash_flows_from_investing_activities", "investing_cashflow")
+_FCF_KEYS = ("cash_flows_from_financing_activities", "financing_cashflow")
+_CAPEX_KEYS = ("purchase_of_property_plant_and_equipment", "capital_expenditures")
+
 # 증감률을 보여 줄 대표 항목. 전 행을 다 보이면 표가 읽히지 않는다.
-_GROWTH_ROWS = ("sales", "revenue", "operating_profit", "net_income", "profit", "gross_profit")
+_GROWTH_ROWS = (
+    "sales",
+    "revenue",
+    "operating_profit",
+    "operating_income",
+    "net_income",
+    "net_profit",
+    "profit",
+    "gross_profit",
+    "total_assets",
+    "total_liabilities",
+    "total_stockholders_equity",
+    "cash_flows_from_operating_activities",
+    "operating_cashflow",
+)
 # 기저효과 판정 임계. 기간 최고치의 이 비율보다 낮은 시작점은 증감률을 부풀린다.
 _BASE_EFFECT_RATIO = 0.35
 _MIN_PERIODS_FOR_POSITION = 3
@@ -112,6 +142,36 @@ def derivedRows(summary: dict[str, Any]) -> list[dict[str, Any]]:
         if any(cell != "-" for cell in cells):
             seen.add(str(row.get("item")))
             out.append({"label": f"{row.get('item')} 증감률", "cells": cells})
+
+    # 재무상태표 비율. 분모가 항목마다 달라 짝을 명시한다.
+    for label, numeratorKeys, denominatorKeys in _BS_RATIOS:
+        numerator = _pick(indexed, numeratorKeys)
+        denominator = _pick(indexed, denominatorKeys)
+        if numerator is None or denominator is None:
+            continue
+        cells = []
+        for period in periods:
+            top = _numeric(numerator.get("values"), period)
+            bottom = _numeric(denominator.get("values"), period)
+            cells.append("-" if top is None or not bottom else _formatPercent(top / bottom * 100))
+        if any(cell != "-" for cell in cells):
+            out.append({"label": label, "cells": cells})
+
+    # 현금흐름표. 영업으로 번 현금이 설비투자를 덮는지가 첫 질문이다.
+    operating = _pick(indexed, _OCF_KEYS)
+    capex = _pick(indexed, _CAPEX_KEYS)
+    if operating is not None and capex is not None:
+        cells = []
+        for period in periods:
+            flow = _numeric(operating.get("values"), period)
+            spend = _numeric(capex.get("values"), period)
+            if flow is None or spend is None:
+                cells.append("-")
+            else:
+                # 취득액은 양수로 보고되므로 절대값을 뺀다.
+                cells.append(_formatAmount(flow - abs(spend)))
+        if any(cell != "-" for cell in cells):
+            out.append({"label": "잉여현금흐름 (영업 - 설비투자)", "cells": cells})
 
     # 매출 대비 비율. 손익계산서에서만 성립한다.
     if sales is not None:
@@ -265,6 +325,176 @@ def profitBridge(summary: dict[str, Any]) -> list[str]:
     ]
 
 
+# 영업·투자·재무 세 흐름의 부호 조합은 기업이 지금 어느 국면인지 말한다. 애널리스트가
+# 현금흐름표를 볼 때 가장 먼저 읽는 것이고 기계로 정확히 판별된다. 판정이 아니라
+# 통상적인 해석을 적고, 확정 서술은 하지 않는다.
+_CASH_PATTERNS: dict[tuple[str, str, str], str] = {
+    ("+", "-", "-"): "영업으로 벌어 투자하고 외부 자금을 갚는 형태입니다. 성숙한 현금 창출 구조에서 흔합니다.",
+    ("+", "-", "+"): "영업으로 벌면서 외부 자금을 더 당겨 투자하는 형태입니다. 확장 국면에서 흔합니다.",
+    ("+", "+", "-"): "영업 현금에 자산 처분을 더해 외부 자금을 갚는 형태입니다. 구조조정 국면에서 흔합니다.",
+    (
+        "-",
+        "+",
+        "+",
+    ): "영업에서 현금이 빠지는데 자산 처분과 외부 조달로 메우는 형태입니다. 지속 가능성을 따로 확인해야 합니다.",
+    (
+        "-",
+        "-",
+        "+",
+    ): "영업 현금이 마이너스인 채 외부 자금으로 투자하는 형태입니다. 초기 성장과 자금 소진이 같은 모양이라 구분이 필요합니다.",
+    ("-", "+", "-"): "영업 현금이 마이너스라 자산을 팔아 빚을 갚는 형태입니다. 압박 신호로 읽힙니다.",
+}
+
+
+def cashFlowPattern(summary: dict[str, Any]) -> list[str]:
+    """영업·투자·재무 현금흐름의 부호 조합과 그 통상적 해석을 적는다.
+
+    Args:
+        summary: `Company.panel` tool 결과의 summary. 현금흐름표가 아니면 빈 목록이다.
+
+    Returns:
+        list[str]: 사람이 읽는 한 줄 노트 목록.
+
+    Example:
+        `notes = cashFlowPattern(summary)`
+    """
+    periods = [str(p) for p in (summary.get("periods") or [])]
+    timeseries = [row for row in (summary.get("timeseries") or []) if isinstance(row, dict)]
+    if not periods or not timeseries:
+        return []
+
+    indexed = _seriesByKey(timeseries)
+    flows = [_pick(indexed, keys) for keys in (_OCF_KEYS, _ICF_KEYS, _FCF_KEYS)]
+    if any(flow is None for flow in flows):
+        return []
+
+    latest = periods[0]
+    values = [_numeric(flow.get("values"), latest) for flow in flows if flow is not None]
+    if len(values) != 3 or any(value is None for value in values):
+        return []
+
+    signs = tuple("+" if value > 0 else "-" for value in values if value is not None)
+    labels = [str(flow.get("item")) for flow in flows if flow is not None]
+    formatted = [(flow.get("formatted") or {}).get(latest, "-") for flow in flows if flow is not None]
+    notes = [f"{latest} 기준 {labels[0]} {formatted[0]}, {labels[1]} {formatted[1]}, {labels[2]} {formatted[2]}."]
+    reading = _CASH_PATTERNS.get(signs)  # type: ignore[arg-type]
+    if reading:
+        notes.append(reading)
+    return notes
+
+
+def observedRangeAnchors(summary: dict[str, Any]) -> list[str]:
+    """관측된 마진 수준을 당기 매출에 대입해 판단이 바뀌는 지점을 숫자로 만든다.
+
+    답변에서 가장 자주 빠지는 것이 "이 판단이 틀리려면 무엇이 일어나야 하나" 다. 캡슐이
+    요구하는데도 안 나오는 이유는 반사실 추론이 어렵기 때문이다. 그런데 기준을 지어내지
+    않고 **이 회사가 실제로 겪었던 마진 수준**을 쓰면 그 자리에서 산술이 된다.
+
+    가정을 지어내지 않는 것이 핵심이다. 임의의 시나리오가 아니라 조회 기간에 실제로
+    관측된 최저와 중앙값만 쓴다. 다른 조건이 같다는 전제도 문장에 명시한다.
+
+    Args:
+        summary: `Company.panel` tool 결과의 summary.
+
+    Returns:
+        list[str]: 사람이 읽는 한 줄 노트 목록. 손익계산서가 아니면 빈 목록이다.
+
+    Example:
+        `notes = observedRangeAnchors(summary)`
+    """
+    periods = [str(p) for p in (summary.get("periods") or [])]
+    timeseries = [row for row in (summary.get("timeseries") or []) if isinstance(row, dict)]
+    if len(periods) < _MIN_PERIODS_FOR_POSITION or not timeseries:
+        return []
+
+    indexed = _seriesByKey(timeseries)
+    sales = _pick(indexed, _SALES_KEYS)
+    profit = _pick(indexed, ("operating_profit", "operating_income"))
+    if sales is None or profit is None:
+        return []
+
+    latest = periods[0]
+    salesNow = _numeric(sales.get("values"), latest)
+    profitNow = _numeric(profit.get("values"), latest)
+    if not salesNow or profitNow is None:
+        return []
+
+    margins: list[tuple[str, float]] = []
+    for period in periods:
+        revenue = _numeric(sales.get("values"), period)
+        income = _numeric(profit.get("values"), period)
+        if revenue and income is not None:
+            margins.append((period, income / revenue))
+    if len(margins) < _MIN_PERIODS_FOR_POSITION:
+        return []
+
+    ordered = sorted(margins, key=lambda item: item[1])
+    lowPeriod, lowMargin = ordered[0]
+    medianPeriod, medianMargin = ordered[len(ordered) // 2]
+    marginNow = profitNow / salesNow
+    notes: list[str] = []
+    if lowMargin < marginNow:
+        notes.append(
+            f"영업이익률이 조회 기간 최저인 {lowPeriod} 수준({lowMargin * 100:.1f}%)으로 돌아가면 "
+            f"당기 매출 기준 영업이익은 {_formatAmount(salesNow * lowMargin).lstrip('+')}입니다. "
+            f"다른 조건이 같다고 둔 산술이며 전망이 아닙니다."
+        )
+    if abs(medianMargin - marginNow) > 0.005 and medianPeriod not in {lowPeriod, latest}:
+        notes.append(
+            f"기간 중앙값 마진({medianMargin * 100:.1f}%, {medianPeriod})이면 "
+            f"{_formatAmount(salesNow * medianMargin).lstrip('+')}입니다."
+        )
+    return notes
+
+
+def contextMarkdown(dcrBadge: dict[str, Any] | None, industryBadge: dict[str, Any] | None) -> str:
+    """이미 계산돼 붙어 있는 신용 등급과 산업 위치를 답변 표면으로 끌어올린다.
+
+    두 뱃지는 오래전부터 tool 결과에 실려 있었지만 payload 안에만 있어서 실제 답변에는
+    한 번도 쓰이지 않았다. 모델이 읽고 재사용하는 것은 markdown 본문이다. 계산이 이미
+    끝난 것을 옮겨 적기만 하므로 비용이 없고, 수치 하나에 판단 기준이 생긴다.
+
+    Args:
+        dcrBadge: 신용 스코어카드 요약. 없으면 건너뛴다.
+        industryBadge: 산업 분류와 국면과 동종 후보. 없으면 건너뛴다.
+
+    Returns:
+        str: 붙일 것이 없으면 빈 문자열이다.
+
+    Example:
+        `block = contextMarkdown(data.get("dcrBadge"), data.get("industryBadge"))`
+    """
+    lines: list[str] = []
+    if isinstance(dcrBadge, dict) and dcrBadge.get("grade"):
+        parts = [f"신용 {dcrBadge.get('grade')}"]
+        if dcrBadge.get("outlook"):
+            parts.append(f"전망 {dcrBadge['outlook']}")
+        pd = dcrBadge.get("pdEstimate")
+        if isinstance(pd, (int, float)):
+            parts.append(f"1년 부도확률 {float(pd):.2f}%")
+        if dcrBadge.get("investmentGrade") is not None:
+            parts.append("투자등급" if dcrBadge["investmentGrade"] else "투기등급")
+        lines.append(f"- {', '.join(parts)}.")
+    if isinstance(industryBadge, dict) and industryBadge.get("industryName"):
+        parts = [str(industryBadge["industryName"])]
+        if industryBadge.get("stageName"):
+            parts.append(str(industryBadge["stageName"]))
+        if industryBadge.get("phase") and industryBadge["phase"] != "unknown":
+            parts.append(f"국면 {industryBadge['phase']}")
+        peers = [
+            f"{peer.get('corpName')}({peer.get('stockCode')})"
+            for peer in (industryBadge.get("peers") or [])
+            if isinstance(peer, dict) and peer.get("corpName")
+        ][:3]
+        line = f"- 산업 {', '.join(parts)}."
+        if peers:
+            line += f" 같은 산업 비교 후보: {', '.join(peers)}."
+        lines.append(line)
+    if not lines:
+        return ""
+    return "## 회사 위치\n" + "\n".join(lines) + "\n"
+
+
 def insightMarkdown(summary: dict[str, Any]) -> str:
     """파생 지표 표와 위치 노트를 markdown 한 덩어리로 만든다.
 
@@ -281,7 +511,9 @@ def insightMarkdown(summary: dict[str, Any]) -> str:
     rows = derivedRows(summary)
     notes = positionNotes(summary)
     bridge = profitBridge(summary)
-    if not rows and not notes and not bridge:
+    cash = cashFlowPattern(summary)
+    anchors = observedRangeAnchors(summary)
+    if not rows and not notes and not bridge and not cash and not anchors:
         return ""
 
     lines: list[str] = []
@@ -298,8 +530,16 @@ def insightMarkdown(summary: dict[str, Any]) -> str:
         lines.append("## 이익 변동 요인 (직전 기간 대비)")
         lines.extend(f"- {note}" for note in bridge)
         lines.append("")
+    if cash:
+        lines.append("## 현금흐름 방향")
+        lines.extend(f"- {note}" for note in cash)
+        lines.append("")
     if notes:
         lines.append("## 기간 내 위치")
         lines.extend(f"- {note}" for note in notes)
+        lines.append("")
+    if anchors:
+        lines.append("## 관측된 범위 기준 산술")
+        lines.extend(f"- {note}" for note in anchors)
         lines.append("")
     return "\n".join(lines)
