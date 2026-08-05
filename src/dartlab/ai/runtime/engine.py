@@ -22,12 +22,26 @@ from .eventBuffer import EventBuffer
 from .evidenceStore import EvidenceStore
 from .mcpBootstrap import probeMcpConnection
 from .outcomeTracking import _OutcomeTracker, _publicEvidencePayload, _turnCompletedSuccessfully
+from .probeCache import (
+    PROBE_CONCURRENCY,
+    SwrCache,
+    authProbeKey,
+    backgroundRefresher,
+    mcpProbeKey,
+    versionProbeKey,
+)
 from .registry import loadRuntimeRegistry
 from .sessionManager import ManagedSession, SessionManager
 from .sessionStore import SessionStore
 
 logger = logging.getLogger(__name__)
 _DEFAULT_RUNTIME_PREFERENCE = "defaultRuntimeId"
+# 투자 계약 점검은 로컬 카탈로그 조회라 런타임 CLI 와 무관하지만 첫 호출이 0.8 초다
+# (실측 2026-08-05). 1 초 예산의 대부분을 여기서 쓰면 화면이 늦으므로 형제 probe 와
+# 같은 stale-while-revalidate 계약에 넣는다. 값은 dartlab 자체가 바뀔 때만 달라진다.
+_SEMANTIC_CACHE = SwrCache(600.0)
+_SEMANTIC_KEY = "investmentSemanticReadiness"
+_PENDING_STATES = {"unknown"}
 
 
 class RuntimeUnavailableError(RuntimeError):
@@ -45,13 +59,45 @@ def _runtimeStorePath() -> Path:
     return Path(configured) if configured else Path.home() / ".dartlab" / "agentRuntime.sqlite3"
 
 
+def _runtimeProbingStages(
+    probe: Any, auth: dict[str, Any], mcp: dict[str, Any], semanticReadiness: dict[str, Any]
+) -> dict[str, bool]:
+    """아직 측정 중이라 결론을 낼 수 없는 단계를 표시한다.
+
+    측정 전 상태를 "미설치"·"미연결" 로 적으면 화면이 거짓말을 한다. 모르는 것은
+    모른다고 적고 화면이 그 문구를 쓰게 한다. 단 "아직 재는 중" 과 "재 봤지만 판정하지
+    못했다" 는 다르다. 후자를 계속 진행 중으로 두면 화면이 영원히 폴링하므로, 실측이
+    실제로 돌고 있는 동안만 진행 중이다. 백그라운드 재시도도 진행 중에 포함한다.
+    """
+    refresher = backgroundRefresher()
+    runtimeId = probe.runtimeId
+    return {
+        "install": probe.state in _PENDING_STATES
+        and (not probe.detail or refresher.isPending(versionProbeKey(runtimeId))),
+        "auth": str(auth.get("state") or "") in _PENDING_STATES
+        and (not auth.get("undetermined") or refresher.isPending(authProbeKey(runtimeId))),
+        "grounding": bool(mcp.get("pending"))
+        or bool(mcp.get("undetermined") and refresher.isPending(mcpProbeKey(runtimeId))),
+        "contract": bool(semanticReadiness.get("pending")),
+    }
+
+
+def _runtimeUndetermined(probe: Any, auth: dict[str, Any], mcp: dict[str, Any]) -> bool:
+    """실측을 시도했으나 판정하지 못한 단계가 있는지 알린다."""
+    return bool(
+        (probe.state in _PENDING_STATES and probe.detail) or auth.get("undetermined") or mcp.get("undetermined")
+    )
+
+
 def _runtimeGroundingState(
     descriptor: Any,
     probe: Any,
     auth: dict[str, Any],
     mcp: dict[str, Any],
+    probing: dict[str, bool] | None = None,
 ) -> tuple[bool, str | None, str | None]:
     """런타임 probe를 준비 여부와 사용자 조치 문구로 정규화한다."""
+    stages = probing or {}
     groundedReady = (
         probe.state == "ready"
         and auth.get("state") in {"authenticated", "unsupported"}
@@ -64,19 +110,48 @@ def _runtimeGroundingState(
             "현재 CLI 프로토콜이 DartLab 근거 도구를 세션에 노출하지 않습니다",
             "공식 프로토콜 지원을 기다리거나 다른 런타임을 선택하세요",
         )
+    if stages.get("install"):
+        return groundedReady, "설치 여부를 확인하는 중입니다", "확인이 끝나면 다음 단계를 안내합니다"
+    if probe.state in _PENDING_STATES:
+        # 재 봤지만 판정하지 못한 경우다. 설치돼 있는데 "미설치" 라고 적으면 이미 있는 것을
+        # 다시 설치하라고 권하게 된다.
+        return groundedReady, "설치 상태를 확인하지 못했습니다", "다시 확인을 눌러 주세요"
     if probe.state != "ready":
         return groundedReady, "CLI가 설치되지 않았거나 실행할 수 없습니다", "검증된 설치 계획을 확인하세요"
+    if stages.get("auth"):
+        return groundedReady, "로그인 상태를 확인하는 중입니다", "확인이 끝나면 다음 단계를 안내합니다"
+    if auth.get("undetermined"):
+        return groundedReady, "로그인 상태를 확인하지 못했습니다", "다시 확인을 눌러 주세요"
     if auth.get("state") not in {"authenticated", "unsupported"}:
         return groundedReady, "CLI 로그인이 확인되지 않았습니다", "공식 CLI 로그인 명령을 실행한 뒤 다시 확인하세요"
+    if stages.get("grounding"):
+        return groundedReady, "DartLab 연결 상태를 확인하는 중입니다", "확인이 끝나면 다음 단계를 안내합니다"
+    if mcp.get("undetermined"):
+        return groundedReady, "DartLab 연결 상태를 확인하지 못했습니다", "다시 확인을 눌러 주세요"
     if not mcp.get("connected"):
         return groundedReady, "DartLab MCP 연결이 확인되지 않았습니다", "검증된 MCP 연결 계획을 확인하세요"
+    if stages.get("contract"):
+        return groundedReady, "투자 분석 계약을 확인하는 중입니다", "확인이 끝나면 다음 단계를 안내합니다"
     return groundedReady, None, None
 
 
 def _runtimePrimaryAction(
-    descriptor: Any, probe: Any, auth: dict[str, Any], mcp: dict[str, Any], groundedReady: bool
+    descriptor: Any,
+    probe: Any,
+    auth: dict[str, Any],
+    mcp: dict[str, Any],
+    groundedReady: bool,
+    probing: dict[str, bool] | None = None,
 ) -> str:
     """현재 상태에서 Runtime Center가 실행할 단일 기본 동작을 고른다."""
+    stages = probing or {}
+    if stages.get("install"):
+        return "probing"
+    if descriptor.embeddedGrounding and any(stages.get(key) for key in ("auth", "grounding", "contract")):
+        return "probing"
+    if _runtimeUndetermined(probe, auth, mcp):
+        # 판정하지 못한 상태에서 설치·연결을 권하면 이미 된 것을 또 하라고 말하게 된다.
+        return "recheck"
     if probe.state != "ready":
         return "install"
     if auth.get("state") != "authenticated" and descriptor.loginArgs:
@@ -96,31 +171,122 @@ def _runtimeStatusEntry(
     semanticReadiness: dict[str, Any],
 ) -> dict[str, Any]:
     """한 런타임의 기술 준비와 투자 계약 준비 상태를 공개 행으로 만든다."""
-    groundedReady, blockingReason, recommendedAction = _runtimeGroundingState(descriptor, probe, auth, mcp)
+    probing = _runtimeProbingStages(probe, auth, mcp, semanticReadiness)
+    pending = any(probing.values())
+    undetermined = _runtimeUndetermined(probe, auth, mcp)
+    groundedReady, blockingReason, recommendedAction = _runtimeGroundingState(descriptor, probe, auth, mcp, probing)
     checks = semanticReadiness.get("checks", {})
     return {
         **descriptor.toDict(),
         **probe.toDict(),
         "mcp": mcp,
         "auth": auth,
+        # 실행 파일 발견은 CLI 를 띄우지 않는 즉시 판정이라 측정 중에도 사실이다.
+        "installed": probe.executable is not None,
+        "probing": probing,
+        "pending": pending,
+        # 실측을 시도했지만 판정하지 못했다. 기다려도 바뀌지 않으니 다시 확인이 답이다.
+        "undetermined": undetermined,
         "groundedReady": groundedReady,
         "semanticToolsReady": bool(checks.get("readSkill")) and bool(checks.get("engineCall")),
         "investmentContractReady": bool(checks.get("investmentContract")) and bool(checks.get("reportModel")),
         "investmentReady": groundedReady and bool(semanticReadiness.get("ready")),
-        "canInstall": descriptor.embeddedGrounding and probe.state != "ready",
-        "canConnect": descriptor.embeddedGrounding and probe.state == "ready" and not mcp.get("connected"),
-        "canLogin": probe.state == "ready" and bool(descriptor.loginArgs) and auth.get("state") != "authenticated",
+        "canInstall": (
+            descriptor.embeddedGrounding and not probing["install"] and not undetermined and probe.state != "ready"
+        ),
+        "canConnect": (
+            descriptor.embeddedGrounding
+            and not probing["grounding"]
+            and not undetermined
+            and probe.state == "ready"
+            and not mcp.get("connected")
+        ),
+        "canLogin": (
+            probe.state == "ready"
+            and not probing["auth"]
+            and not undetermined
+            and bool(descriptor.loginArgs)
+            and auth.get("state") != "authenticated"
+        ),
         "readiness": {
             "install": "ready" if probe.state == "ready" else probe.state,
             "auth": auth.get("state"),
             "protocol": "supported" if descriptor.embeddedGrounding else "unsupported",
-            "grounding": "connected" if mcp.get("connected") else "disconnected",
+            "grounding": "probing"
+            if probing["grounding"]
+            else ("connected" if mcp.get("connected") else "disconnected"),
             "ready": groundedReady,
         },
-        "primaryAction": _runtimePrimaryAction(descriptor, probe, auth, mcp, groundedReady),
+        "primaryAction": _runtimePrimaryAction(descriptor, probe, auth, mcp, groundedReady, probing),
         "blockingReason": blockingReason,
         "recommendedAction": recommendedAction,
     }
+
+
+ProbeBundle = tuple[list[Any], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]
+
+
+def _measuredProbes(*, refresh: bool) -> ProbeBundle:
+    """버전·MCP·인증을 한 번에 펼쳐 실제로 측정하고 가장 느린 한 건까지만 기다린다.
+
+    세 단계는 서로 의존하지 않는 별개 CLI 실행인데 버전 확인이 전부 끝난 뒤에야 나머지를
+    시작했다. 그래서 대기가 단계 합이 됐다(실측 2026-08-05: 12.0초 = 버전 3.3초 + MCP
+    7.3초 + 인증 1.1초). 축을 함께 펼치면 같은 측정을 하고도 가장 느린 한 건에서 끝난다.
+    설치되지 않은 런타임의 MCP·인증 probe 는 CLI 를 띄우지 않고 즉시 판정되므로 낭비가 없다.
+
+    동시 실행 수는 ``probeCache.PROBE_CONCURRENCY`` 가 묶는다. 전부 한꺼번에 띄우면
+    Node CLI 콜드스타트가 서로 CPU 를 뺏어 멀쩡한 CLI 가 자기 상한을 넘긴다(실측
+    2026-08-05: 9 건 동시 실행에서 `cline --version` 이 5 초 상한 초과로 unavailable
+    오판). 겹치기의 목적은 대기 시간을 포개는 것이지 동시 기동 수를 늘리는 게 아니다.
+    """
+    registry = loadRuntimeRegistry()
+    if not registry:
+        return [], {}, {}
+    with ThreadPoolExecutor(max_workers=PROBE_CONCURRENCY, thread_name_prefix="dartlab-runtime-status") as pool:
+        # 가장 느린 probe(MCP)를 먼저 큐에 넣어야 짧은 probe 뒤에서 대기하지 않는다.
+        mcpJobs = {runtimeId: pool.submit(probeMcpConnection, runtimeId, refresh=refresh) for runtimeId in registry}
+        versionJobs = {
+            runtimeId: pool.submit(probeRuntime, descriptor, refresh=refresh)
+            for runtimeId, descriptor in registry.items()
+        }
+        authJobs = {
+            runtimeId: pool.submit(probeRuntimeAuth, descriptor, refresh=refresh)
+            for runtimeId, descriptor in registry.items()
+        }
+        probes = [versionJobs[runtimeId].result() for runtimeId in registry]
+        mcpResults = {runtimeId: job.result() for runtimeId, job in mcpJobs.items()}
+        authResults = {runtimeId: job.result() for runtimeId, job in authJobs.items()}
+    return probes, mcpResults, authResults
+
+
+def _scheduledProbes(registry: dict[str, Any]) -> ProbeBundle:
+    """캐시에 있는 것만 즉시 읽고 없는 것은 백그라운드 실측으로 예약한다."""
+    probes = probeAllRuntimes(blocking=False)
+    resolvable = [probe for probe in probes if probe.state in {"ready", *_PENDING_STATES}]
+    mcpResults = {probe.runtimeId: probeMcpConnection(probe.runtimeId, blocking=False) for probe in resolvable}
+    authResults = {
+        probe.runtimeId: probeRuntimeAuth(registry[probe.runtimeId], executable=probe.executable, blocking=False)
+        for probe in resolvable
+    }
+    return probes, mcpResults, authResults
+
+
+def _semanticReadiness(*, blocking: bool) -> dict[str, Any]:
+    """투자 계약 점검을 캐시에서 읽고 없으면 blocking 여부에 따라 측정하거나 예약한다."""
+    from .setupCoordinator import investmentSemanticReadiness
+
+    entry = _SEMANTIC_CACHE.peek(_SEMANTIC_KEY)
+    if entry is not None and entry.fresh:
+        return dict(entry.value)
+    if blocking:
+        return dict(_SEMANTIC_CACHE.put(_SEMANTIC_KEY, investmentSemanticReadiness()))
+    backgroundRefresher().submit(
+        _SEMANTIC_KEY,
+        lambda: _SEMANTIC_CACHE.put(_SEMANTIC_KEY, investmentSemanticReadiness()),
+    )
+    if entry is not None:
+        return dict(entry.value)
+    return {"ready": False, "checks": {}, "pending": True}
 
 
 class AgentRuntimeEngine:
@@ -157,49 +323,43 @@ class AgentRuntimeEngine:
         self._evidenceJournal: OrderedDict[tuple[str, str], dict[str, Any]] = OrderedDict()
         self._evidenceLock = RLock()
 
-    def status(self, *, refresh: bool = False) -> dict[str, Any]:
-        """Sig: status(*, refresh=False) -> dict[str, Any].
+    def status(self, *, refresh: bool = False, blocking: bool = True) -> dict[str, Any]:
+        """Sig: status(*, refresh=False, blocking=True) -> dict[str, Any].
 
-        Args: refresh는 probe 캐시 무시 여부다.
-        Returns: 설치 상태, MCP 상태, hot session 목록이다.
+        Args: refresh는 probe 재측정 여부, blocking은 측정 완료를 기다릴지 여부다.
+        Returns: 설치 상태, MCP 상태, hot session 목록, 측정 진행 표시다.
         Example: `engine.status(refresh=True)`.
+
+        ``blocking=False`` 는 화면 진입용 스냅샷이다. 이미 아는 것은 즉시 돌려주고
+        모르는 것은 ``probing`` 으로 표시한 뒤 실측을 백그라운드로 예약한다. 표시용
+        스냅샷과 실행 직전 판정은 다른 요구라, 세션 개방·기본 런타임 선택은 계속
+        측정을 기다리는 blocking 경로를 쓴다.
         """
-        from .setupCoordinator import investmentSemanticReadiness
-
-        semanticReadiness = investmentSemanticReadiness()
-        probes = probeAllRuntimes(refresh=refresh)
-
-        def _entry(probe):
-            """런타임 하나의 MCP·인증 probe 를 함께 돌려 상태 항목을 만든다."""
-            descriptor = self.registry[probe.runtimeId]
-            mcp = (
-                probeMcpConnection(probe.runtimeId, refresh=refresh) if probe.state == "ready" else {"connected": False}
-            )
-            auth = (
-                probeRuntimeAuth(descriptor, executable=probe.executable, refresh=refresh)
-                if probe.state == "ready"
-                else {"state": "missing", "authenticated": False, "checkedAt": probe.checkedAt}
-            )
-            return _runtimeStatusEntry(descriptor, probe, auth, mcp, semanticReadiness)
-
-        # 런타임별 probe 는 서로 독립인 CLI 실행이다. 순차로 돌면 런타임 수 x (MCP + 인증)
-        # 만큼 상태 조회가 길어진다(실측 2026-08-04: refresh 11.9초). 순서는 probe 순서를
-        # 유지한다. 두 probe 캐시 모두 자체 lock 을 갖고 있어 동시 접근이 안전하다.
-        if len(probes) < 2:
-            runtimes = [_entry(probe) for probe in probes]
-        else:
-            with ThreadPoolExecutor(max_workers=len(probes), thread_name_prefix="dartlab-runtime-status") as pool:
-                runtimes = list(pool.map(_entry, probes))
+        semanticReadiness = _semanticReadiness(blocking=blocking or refresh)
+        probes, mcpResults, authResults = (
+            _measuredProbes(refresh=refresh) if blocking else _scheduledProbes(self.registry)
+        )
+        runtimes = []
+        for probe in probes:
+            # 설치되지 않았다고 확정된 런타임은 하위 단계를 판정하지 않는다.
+            resolvable = probe.state in {"ready", *_PENDING_STATES}
+            mcp = mcpResults.get(probe.runtimeId, {"connected": False}) if resolvable else {"connected": False}
+            missingAuth = {"state": "missing", "authenticated": False, "checkedAt": probe.checkedAt}
+            auth = authResults.get(probe.runtimeId, missingAuth) if resolvable else missingAuth
+            runtimes.append(_runtimeStatusEntry(self.registry[probe.runtimeId], probe, auth, mcp, semanticReadiness))
         defaultRuntimeId = self.sessionStore.getPreference(_DEFAULT_RUNTIME_PREFERENCE)
         if defaultRuntimeId not in self.registry:
             defaultRuntimeId = None
         groundedIds = [str(item["runtimeId"]) for item in runtimes if item.get("groundedReady")]
         if defaultRuntimeId is None and len(groundedIds) == 1:
             defaultRuntimeId = groundedIds[0]
+        probing = any(bool(item.get("pending")) for item in runtimes)
         return {
             "runtimes": runtimes,
             "sessions": self.sessionManager.status(),
             "defaultRuntimeId": defaultRuntimeId,
+            "probing": probing,
+            "settled": not probing,
         }
 
     def setDefaultRuntime(self, runtimeId: str) -> str:

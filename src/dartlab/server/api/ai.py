@@ -56,7 +56,7 @@ def apiStatus(
     probe: bool = Query(True, description="True면 CLI와 MCP 상태를 확인"),
 ):
     """설치형 agent runtime과 데이터·채널 상태를 한 번에 반환한다."""
-    runtimeStatus = getRuntimeEngine().status(refresh=probe)
+    runtimeStatus = getRuntimeEngine().status(refresh=probe, blocking=probe)
     if runtimeId:
         runtimeStatus["runtimes"] = [item for item in runtimeStatus["runtimes"] if item["runtimeId"] == runtimeId]
     response: dict[str, Any] = {
@@ -125,7 +125,7 @@ def apiConfigure(req: ConfigureRequest):
 @router.get("/api/ai/profile")
 def apiAiProfile():
     """호환 조회에서 Runtime Center 상태와 migration 표식을 반환한다."""
-    return {"mode": "agent-runtime", "deprecated": True, **getRuntimeEngine().status(refresh=False)}
+    return {"mode": "agent-runtime", "deprecated": True, **getRuntimeEngine().status(refresh=False, blocking=False)}
 
 
 @router.put("/api/ai/profile")
@@ -258,7 +258,10 @@ async def apiAiProfileEvents(request: Request):
     async def _generate():
         lastPayload = ""
         while not await request.is_disconnected():
-            payload = json.dumps(getRuntimeEngine().status(refresh=False), ensure_ascii=False, default=str)
+            # 2 초 주기 폴링이라 측정을 기다리면 이벤트 루프 전체가 그만큼 멈춘다.
+            payload = json.dumps(
+                getRuntimeEngine().status(refresh=False, blocking=False), ensure_ascii=False, default=str
+            )
             if payload != lastPayload:
                 lastPayload = payload
                 yield {"event": "runtime_changed", "data": payload}

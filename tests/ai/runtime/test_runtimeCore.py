@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -770,3 +771,186 @@ def testRuntimeAuthProbeUsesTtlCacheLikeSiblingProbes(monkeypatch: pytest.Monkey
     # refresh 는 캐시를 무시하고 다시 확인한다
     discovery.probeRuntimeAuth(descriptor, refresh=True)
     assert len(runs) == 2
+
+
+def testProbeCacheServesLastMeasurementAfterTtlExpiryInsteadOfDroppingIt():
+    """TTL 이 지나도 마지막 실측값을 버리지 않는다.
+
+    실측 회귀(2026-08-05): 상태 조회 1 회가 12~15 초인데 TTL 이 15 초였다. 만료 즉시
+    폐기하는 캐시는 채우는 데 TTL 보다 오래 걸리면 사실상 늘 비어 있다. 사람 속도로
+    화면을 다시 열면 매번 전량 재측정을 기다렸다(15.5초 / 7.5초 / 12.8초).
+    """
+    from dartlab.ai.runtime.probeCache import SwrCache
+
+    cache = SwrCache(ttlSeconds=0.01)
+    cache.put("claude", {"connected": True})
+    fresh = cache.peek("claude")
+    assert fresh is not None and fresh.fresh is True
+
+    time.sleep(0.05)
+    stale = cache.peek("claude")
+
+    assert stale is not None, "만료가 값을 지우면 안 된다"
+    assert stale.fresh is False, "만료된 값은 stale 로 표시해야 한다"
+    assert stale.value == {"connected": True}
+    assert cache.get("claude") is None, "fresh 전용 조회는 만료를 감춰서는 안 된다"
+    assert "claude" in cache
+
+
+def testNonBlockingProbeReportsUnknownAndSchedulesMeasurementInsteadOfWaiting():
+    """표시 경로는 CLI 실행을 기다리지 않고, 모르는 것을 안다고 말하지도 않는다."""
+    from dartlab.ai.runtime import discovery
+    from dartlab.ai.runtime.probeCache import backgroundRefresher
+
+    descriptor = RuntimeDescriptor(
+        "swrfake",
+        "Fake",
+        "fake",
+        "ndjson",
+        ("swrfake-not-on-path",),
+        ("--version",),
+        (),
+        (),
+        "https://example.invalid",
+    )
+    discovery._PROBE_CACHE.clear("swrfake")
+
+    probe = discovery.probeRuntime(descriptor, blocking=False)
+
+    assert probe.state == "unknown", "측정 전에는 ready 도 missing 도 단정하지 않는다"
+    assert probe.executable is None, "PATH 발견은 CLI 를 띄우지 않는 즉시 판정이라 그대로 반영한다"
+    assert backgroundRefresher().wait(10.0), "예약한 실측이 끝나야 한다"
+    assert discovery.probeRuntime(descriptor, blocking=False).state == "missing"
+
+
+def testNonBlockingStatusAnswersWithoutRunningAnyCliAndNeverClaimsUnknownIsReady(monkeypatch):
+    """비차단 상태 조회는 CLI 를 한 번도 띄우지 않고 준비 완료를 주장하지 않는다."""
+    from dartlab.ai.runtime import discovery, mcpBootstrap
+    from dartlab.ai.runtime import engine as engineModule
+    from dartlab.ai.runtime.engine import AgentRuntimeEngine
+    from dartlab.ai.runtime.sessionManager import SessionManager
+
+    def _forbidden(*args, **kwargs):
+        raise AssertionError("비차단 경로에서 CLI 를 실행하면 안 된다")
+
+    discovery._PROBE_CACHE.clear()
+    discovery._AUTH_CACHE.clear()
+    mcpBootstrap._MCP_CACHE.clear()
+    engineModule._SEMANTIC_CACHE.clear()
+    monkeypatch.setattr(engineModule.backgroundRefresher(), "submit", lambda key, work: True)
+    monkeypatch.setattr(discovery.subprocess, "run", _forbidden)
+    monkeypatch.setattr(mcpBootstrap.subprocess, "run", _forbidden)
+
+    engine = AgentRuntimeEngine(sessionManager=SessionManager())
+    status = engine.status(blocking=False)
+
+    assert status["probing"] is True and status["settled"] is False
+    for row in status["runtimes"]:
+        assert row["state"] == "unknown"
+        assert row["groundedReady"] is False and row["investmentReady"] is False
+        assert row["canInstall"] is False, "확인도 안 하고 설치를 권하면 안 된다"
+        assert row["pending"] is True
+        assert row["probing"]["install"] is True
+
+
+def testProbeTimeoutIsUndeterminedAndNeverOverwritesAKnownGoodMeasurement(monkeypatch):
+    """상한 초과는 "동작 안 함" 이 아니라 "확인 못 함" 이고, 아는 사실을 지우지 않는다.
+
+    실측 회귀(2026-08-05): 상태 조회를 병렬로 펼치자 CPU 경쟁으로 `cline --version` 이
+    상한을 넘겼고, 멀쩡히 설치된 CLI 가 unavailable 로 화면에 떴다. 이미 설치된 것을
+    다시 설치하라고 권하는 화면은 느린 화면보다 나쁘다.
+    """
+    from dartlab.ai.runtime import discovery
+
+    descriptor = RuntimeDescriptor(
+        "timeoutfake",
+        "Fake",
+        "fake",
+        "ndjson",
+        ("fake",),
+        ("--version",),
+        (),
+        (),
+        "https://example.invalid",
+    )
+    monkeypatch.setattr(discovery, "discoverExecutable", lambda _descriptor: "/bin/fake")
+    monkeypatch.setattr(
+        discovery.subprocess,
+        "run",
+        lambda argv, **kwargs: subprocess.CompletedProcess(argv, 0, "9.9.9", ""),
+    )
+    discovery._PROBE_CACHE.clear("timeoutfake")
+
+    good = discovery.probeRuntime(descriptor, refresh=True)
+    assert good.state == "ready" and good.version == "9.9.9"
+
+    def _timeout(argv, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=argv, timeout=8)
+
+    monkeypatch.setattr(discovery.subprocess, "run", _timeout)
+    afterTimeout = discovery.probeRuntime(descriptor, refresh=True)
+
+    assert afterTimeout.state == "ready", "확인 실패가 아는 사실을 지우면 안 된다"
+    assert afterTimeout.version == "9.9.9"
+
+    # 아는 값이 아예 없을 때는 미판정으로 남기되 unavailable 이라고 단정하지 않는다.
+    discovery._PROBE_CACHE.clear("timeoutfake")
+    blind = discovery.probeRuntime(descriptor, refresh=True)
+    assert blind.state == "unknown"
+    assert blind.executable == "/bin/fake", "실행 파일을 찾은 사실은 그대로 남는다"
+    assert blind.detail and "끝나지 않았습니다" in blind.detail
+
+
+def testUndeterminedRuntimeAsksForRecheckInsteadOfRecommendingInstall():
+    """판정하지 못한 런타임에 설치를 권하지 않는다. 진행 중으로도 표시하지 않는다."""
+    from dartlab.ai.runtime.engine import _runtimeStatusEntry
+
+    descriptor = loadRuntimeRegistry()["codex"]
+    probe = RuntimeProbe("codex", "unknown", "/bin/codex", detail="버전 확인이 8초 안에 끝나지 않았습니다")
+    entry = _runtimeStatusEntry(
+        descriptor,
+        probe,
+        {"state": "unknown", "authenticated": None, "undetermined": True},
+        {"connected": False, "undetermined": True},
+        {"ready": True, "checks": {"readSkill": True, "engineCall": True}},
+    )
+
+    assert entry["installed"] is True, "실행 파일을 찾은 사실은 판정 실패와 무관하다"
+    assert entry["undetermined"] is True
+    assert entry["pending"] is False, "기다려도 안 바뀌는 상태를 진행 중으로 두면 화면이 영원히 폴링한다"
+    assert entry["primaryAction"] == "recheck"
+    assert entry["canInstall"] is False and entry["canConnect"] is False and entry["canLogin"] is False
+    assert entry["blockingReason"] == "설치 상태를 확인하지 못했습니다"
+    assert entry["groundedReady"] is False and entry["investmentReady"] is False
+
+
+def testBackgroundProbeRetriesUndeterminedInsteadOfFreezingAFailure():
+    """백그라운드 실측은 판정 실패를 결론으로 굳히기 전에 한 번 더 잰다.
+
+    실측 회귀(2026-08-06): 서버 기동과 겹친 첫 실측에서 CLI 두 개가 상한을 넘겼고,
+    첫 진입 화면이 멀쩡한 런타임에 "확인 실패" 를 띄웠다. 아무도 기다리지 않는
+    경로라 재시도 비용은 사용자에게 보이지 않는다.
+    """
+    from dartlab.ai.runtime.probeCache import retryUntilDetermined
+
+    attempts: list[int] = []
+
+    def flaky():
+        attempts.append(len(attempts))
+        return {"undetermined": len(attempts) < 2}
+
+    result = retryUntilDetermined(flaky, lambda value: not value["undetermined"], delaySeconds=0.0)
+
+    assert result == {"undetermined": False}
+    assert len(attempts) == 2, "첫 실패 뒤 한 번 더 재야 한다"
+
+    # 계속 실패해도 무한히 매달리지 않는다.
+    attempts.clear()
+    stuck = retryUntilDetermined(
+        lambda: (attempts.append(1), {"undetermined": True})[1],
+        lambda value: not value["undetermined"],
+        attempts=3,
+        delaySeconds=0.0,
+    )
+    assert stuck == {"undetermined": True}
+    assert len(attempts) == 3

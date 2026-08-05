@@ -1,18 +1,36 @@
 import type { ProductOutcomeReceipt, RuntimeProbe } from '$lib/generated/agentRuntime';
 
+/** 아직 실측하지 못해 결론을 낼 수 없는 준비 단계. 화면은 이 값을 "확인 중"으로 그린다. */
+export interface RuntimeProbingStages {
+	install: boolean;
+	auth: boolean;
+	grounding: boolean;
+	contract: boolean;
+}
+
 export interface AgentRuntimeInfo extends RuntimeProbe {
 	displayName: string;
 	driver: string;
 	protocol: string;
 	officialUrl: string;
-	mcp: { connected: boolean; mode?: string; detail?: string | null };
-	auth: { state: 'authenticated' | 'authRequired' | 'unsupported' | 'missing' | 'unavailable'; authenticated?: boolean | null };
+	mcp: { connected: boolean; mode?: string; detail?: string | null; pending?: boolean; undetermined?: boolean };
+	auth: {
+		state: 'authenticated' | 'authRequired' | 'unsupported' | 'missing' | 'unavailable' | 'unknown';
+		authenticated?: boolean | null;
+		undetermined?: boolean;
+	};
+	/** 실행 파일이 PATH 에 있는지. CLI 를 띄우지 않는 즉시 판정이라 측정 중에도 사실이다. */
+	installed: boolean;
+	probing: RuntimeProbingStages;
+	pending: boolean;
+	/** 실측을 시도했으나 판정하지 못했다. 기다려도 바뀌지 않으니 다시 확인이 답이다. */
+	undetermined: boolean;
 	groundedReady: boolean;
 	embeddedGrounding: boolean;
 	canInstall: boolean;
 	canConnect: boolean;
 	canLogin: boolean;
-	primaryAction: 'install' | 'login' | 'connect' | 'select' | 'unsupported';
+	primaryAction: 'install' | 'login' | 'connect' | 'select' | 'unsupported' | 'probing' | 'recheck';
 	readiness: {
 		install: string;
 		auth: string;
@@ -37,6 +55,9 @@ export interface RuntimePlan {
 export interface AgentRuntimeStatus {
 	runtimes: AgentRuntimeInfo[];
 	defaultRuntimeId?: string | null;
+	/** 아직 실측이 남았다는 표시. true 면 화면이 잠시 뒤 같은 조회를 다시 한다. */
+	probing?: boolean;
+	settled?: boolean;
 }
 
 export interface RuntimeSetupPlan {

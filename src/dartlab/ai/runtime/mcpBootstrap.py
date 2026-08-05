@@ -7,18 +7,20 @@ import json
 import os
 import subprocess
 import sys
-import threading
-import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .discovery import discoverExecutable
 from .drivers.base import runtimeExecutableArgv
+from .probeCache import SwrCache, backgroundRefresher, mcpProbeKey, retryUntilDetermined
 from .registry import loadRuntimeRegistry
 
 _MCP_PROBE_TTL_SECONDS = 15.0
-_MCP_CACHE: dict[str, tuple[float, dict[str, object]]] = {}
-_MCP_CACHE_LOCK = threading.Lock()
+# 형제 probe 와 같은 stale-while-revalidate 계약. TTL 은 신선도 표시일 뿐이고 만료돼도
+# 마지막 실측값을 버리지 않는다. `claude mcp get` 이 7~8초라 만료 즉시 폐기하면 화면이
+# 재방문마다 전량 재측정을 기다린다(실측 2026-08-05).
+_MCP_CACHE = SwrCache(_MCP_PROBE_TTL_SECONDS)
+_MCP_CACHE_LOCK = _MCP_CACHE.lock
 
 
 @dataclass(frozen=True)
@@ -115,44 +117,23 @@ def executeMcpConnectPlan(plan: McpConnectPlan, *, approvedDigest: str) -> subpr
         check=True,
         env={**os.environ, "PYTHONUTF8": "1"},
     )
-    with _MCP_CACHE_LOCK:
-        _MCP_CACHE.pop(plan.runtimeId, None)
+    _MCP_CACHE.clear(plan.runtimeId)
     return completed
 
 
-def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, object]:
-    """Sig: probeMcpConnection(runtimeId, *, refresh=False) -> dict[str, object].
-
-    Args: runtimeId는 확인할 런타임이고 refresh는 15초 캐시 무시 여부다.
-    Returns: connected, mode, detail을 가진 상태다.
-    Example: `probeMcpConnection("cline")`.
-    """
-    if not refresh:
-        with _MCP_CACHE_LOCK:
-            cached = _MCP_CACHE.get(runtimeId)
-            if cached and time.monotonic() - cached[0] <= _MCP_PROBE_TTL_SECONDS:
-                return dict(cached[1])
+def _measureMcpConnection(runtimeId: str) -> dict[str, object]:
+    """공식 CLI 설정을 실제로 읽어 DartLab MCP 연결 여부를 측정한다."""
     descriptor = loadRuntimeRegistry()[runtimeId]
     executable = discoverExecutable(descriptor)
     if executable is None:
-        result: dict[str, object] = {
-            "connected": False,
-            "mode": "global-cli",
-            "detail": "runtime_missing",
-        }
-        with _MCP_CACHE_LOCK:
-            _MCP_CACHE[runtimeId] = (time.monotonic(), result)
-        return dict(result)
+        return {"connected": False, "mode": "global-cli", "detail": "runtime_missing"}
     if runtimeId == "cline":
         connected = _clineMcpConfigured()
-        result = {
+        return {
             "connected": connected,
             "mode": "global-cli",
             "detail": "official_settings" if connected else "not_configured",
         }
-        with _MCP_CACHE_LOCK:
-            _MCP_CACHE[runtimeId] = (time.monotonic(), result)
-        return dict(result)
     # probe 실패가 상태 화면을 죽이지 않는다. 형제 probe(discovery.probeRuntime·
     # probeAuth)는 전부 이 계약인데 여기만 맨몸이라, `claude mcp get` 이 10 초를 넘기면
     # TimeoutExpired 가 /api/status 까지 올라가 Runtime Center 전체가 500 이 됐다
@@ -169,27 +150,59 @@ def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, ob
             shell=False,
             check=False,
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        result = {
+    except subprocess.TimeoutExpired:
+        # 상한 초과는 미연결이 아니라 미판정이다. 판정으로 적으면 기기가 바쁠 때 이미 연결된
+        # MCP 가 끊긴 것으로 화면에 뜬다(실측 2026-08-05).
+        return {
             "connected": False,
             "mode": "global-cli",
-            "detail": f"probe_unavailable: {type(exc).__name__}",
+            "detail": "probe_undetermined: timeout",
+            "undetermined": True,
         }
-        with _MCP_CACHE_LOCK:
-            _MCP_CACHE[runtimeId] = (time.monotonic(), result)
-        return dict(result)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {"connected": False, "mode": "global-cli", "detail": f"probe_unavailable: {type(exc).__name__}"}
     detail = (completed.stdout or completed.stderr).strip()
     profileMatches = all(token in detail for token in ("dartlab.mcp", "--profile", "agent"))
     if runtimeId == "claude" and completed.returncode == 0 and "Project config" in detail:
         profileMatches = _claudeProjectMcpConfigured()
-    result = {
+    return {
         "connected": completed.returncode == 0 and profileMatches,
         "mode": "global-cli",
         "detail": (detail[:1000] or None) if profileMatches else "agent_profile_missing",
     }
-    with _MCP_CACHE_LOCK:
-        _MCP_CACHE[runtimeId] = (time.monotonic(), result)
-    return dict(result)
+
+
+def probeMcpConnection(runtimeId: str, *, refresh: bool = False, blocking: bool = True) -> dict[str, object]:
+    """Sig: probeMcpConnection(runtimeId, *, refresh=False, blocking=True) -> dict[str, object].
+
+    Args: runtimeId는 확인할 런타임, refresh는 재측정 여부, blocking은 측정 대기 여부다.
+    Returns: connected, mode, detail을 가진 상태다.
+    Example: `probeMcpConnection("cline")`.
+
+    ``blocking=False`` 는 표시 경로용이다. 마지막 실측값이 있으면 만료됐어도 즉시 주고
+    갱신만 백그라운드로 보낸다. 기록이 없으면 연결됐다고 추정하지 않고 확인 중임을
+    알리는 pending 상태를 돌려준다.
+    """
+
+    def _remember() -> dict[str, object]:
+        """연결을 실제로 측정하고 판정에 성공했을 때만 기존 값을 갱신한다."""
+        measured = _measureMcpConnection(runtimeId)
+        return dict(_MCP_CACHE.put(runtimeId, measured, determined=not measured.get("undetermined")))
+
+    if refresh:
+        return _remember()
+    entry = _MCP_CACHE.peek(runtimeId)
+    if entry is not None and entry.fresh:
+        return dict(entry.value)
+    if blocking:
+        return _remember()
+    backgroundRefresher().submit(
+        mcpProbeKey(runtimeId),
+        lambda: retryUntilDetermined(_remember, lambda value: not value.get("undetermined")),
+    )
+    if entry is not None:
+        return dict(entry.value)
+    return {"connected": False, "mode": "global-cli", "detail": "probe_pending", "pending": True}
 
 
 def _claudeProjectMcpConfigured(projectRoot: Path | None = None) -> bool:

@@ -66,8 +66,13 @@ class RuntimeSetupRequest(BaseModel):
 
 @router.get("/runtimes")
 async def listRuntimes(refresh: bool = Query(False)):
-    """설치형 런타임, 버전, MCP 연결 상태를 반환한다."""
-    return await asyncio.to_thread(getRuntimeEngine().status, refresh=refresh)
+    """설치형 런타임, 버전, MCP 연결 상태를 반환한다.
+
+    기본 조회는 화면 진입 경로라 CLI 측정을 기다리지 않는다. 아는 것은 즉시 주고
+    모르는 것은 ``probing`` 으로 표시한 뒤 백그라운드로 실측한다. ``refresh=true``
+    는 사용자가 명시로 누른 재확인이므로 측정이 끝날 때까지 기다린다.
+    """
+    return await asyncio.to_thread(getRuntimeEngine().status, refresh=refresh, blocking=refresh)
 
 
 @router.get("/runtimes/{runtimeId}")

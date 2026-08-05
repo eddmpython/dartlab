@@ -59,11 +59,32 @@ async def _prewarmVizCatalog() -> None:
         logger.debug("viz catalog prewarm 실패", exc_info=exc)
 
 
+async def _prewarmRuntimeCenter() -> None:
+    """Runtime Center 가 쓸 CLI 실측을 사용자 진입 전에 시작한다.
+
+    Runtime Center 는 제품의 현관문이라 서버가 뜨면 곧 조회된다. 첫 조회 때 비로소
+    엔진을 만들고 probe 를 예약하면 그 비용을 사용자가 화면 앞에서 기다린다(실측
+    2026-08-05: 차가운 서버 첫 호출 432ms, 정착 후 15~33ms). 부팅 때 비차단 스냅샷을
+    한 번 떠 두면 같은 실측이 사용자가 앱을 여는 동안 끝난다. 기다리지 않으므로
+    서버 기동을 늦추지 않는다.
+    """
+    try:
+        from dartlab.ai.runtime import getRuntimeEngine
+
+        await asyncio.to_thread(lambda: getRuntimeEngine().status(refresh=False, blocking=False))
+    except (ImportError, OSError, RuntimeError, ValueError) as exc:
+        logger.debug("Runtime Center prewarm 실패", exc_info=exc)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """앱 수명주기 관리 -- 데이터 시각화 prewarm, 런타임과 룸 생성/정리."""
     _doPrewarm = os.environ.get("DARTLAB_PREWARM", "").strip().lower() in {"1", "true", "yes"}
     viz_prewarm_task = asyncio.create_task(_prewarmVizCatalog()) if _doPrewarm else None
+    # 제품 서버로 뜬 실행만 CLI 를 미리 두드린다. 테스트 클라이언트는 표식이 없어 건드리지 않는다.
+    runtime_prewarm_task = (
+        asyncio.create_task(_prewarmRuntimeCenter()) if os.environ.get("DARTLAB_SERVER_ENTRY") == "1" else None
+    )
 
     # 채널 모드: 협업 룸 자동 생성 + 백그라운드 정리
     from .room import roomManager
@@ -85,11 +106,12 @@ async def lifespan(_: FastAPI):
         from dartlab.ai.runtime import getRuntimeEngine
 
         getRuntimeEngine().close()
-        if viz_prewarm_task is not None and not viz_prewarm_task.done():
-            viz_prewarm_task.cancel()
-        with suppress(asyncio.CancelledError):
-            if viz_prewarm_task is not None:
-                await viz_prewarm_task
+        for task in (viz_prewarm_task, runtime_prewarm_task):
+            if task is not None and not task.done():
+                task.cancel()
+            with suppress(asyncio.CancelledError):
+                if task is not None:
+                    await task
 
 
 # dartlab logger 초기화 후 tool 진행 라인을 SSE 로 흘리기 위한 capture 설치.

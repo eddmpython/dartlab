@@ -129,4 +129,6 @@ def runServer(host: str | None = None, port: int = 8400):
 
     resolved_host = host or defaultHost()
     os.environ["DARTLAB_HOST"] = resolved_host
+    # 제품 서버로 뜬 실행이라는 표식. lifespan 이 이걸 보고 Runtime Center 실측을 미리 시작한다.
+    os.environ["DARTLAB_SERVER_ENTRY"] = "1"
     uvicorn.run("dartlab.server:app", host=resolved_host, port=port, log_level="info")
