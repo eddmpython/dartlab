@@ -153,16 +153,31 @@ def probeMcpConnection(runtimeId: str, *, refresh: bool = False) -> dict[str, ob
         with _MCP_CACHE_LOCK:
             _MCP_CACHE[runtimeId] = (time.monotonic(), result)
         return dict(result)
-    completed = subprocess.run(
-        [*runtimeExecutableArgv(descriptor, executable), "mcp", "get", "dartlab"],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=10,
-        shell=False,
-        check=False,
-    )
+    # probe 실패가 상태 화면을 죽이지 않는다. 형제 probe(discovery.probeRuntime·
+    # probeAuth)는 전부 이 계약인데 여기만 맨몸이라, `claude mcp get` 이 10 초를 넘기면
+    # TimeoutExpired 가 /api/status 까지 올라가 Runtime Center 전체가 500 이 됐다
+    # (실측 2026-08-04). CLI 콜드스타트가 느린 환경에서 재현된다. 상한도 형제 중
+    # 최댓값(8초)보다 넉넉한 20 초로 두되, 넘으면 미상 상태로 degrade 한다.
+    try:
+        completed = subprocess.run(
+            [*runtimeExecutableArgv(descriptor, executable), "mcp", "get", "dartlab"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+            shell=False,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        result = {
+            "connected": False,
+            "mode": "global-cli",
+            "detail": f"probe_unavailable: {type(exc).__name__}",
+        }
+        with _MCP_CACHE_LOCK:
+            _MCP_CACHE[runtimeId] = (time.monotonic(), result)
+        return dict(result)
     detail = (completed.stdout or completed.stderr).strip()
     profileMatches = all(token in detail for token in ("dartlab.mcp", "--profile", "agent"))
     if runtimeId == "claude" and completed.returncode == 0 and "Project config" in detail:

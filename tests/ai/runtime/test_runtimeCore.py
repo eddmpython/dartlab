@@ -695,3 +695,30 @@ def testTypeScriptContractIsGeneratedFromPythonSource():
 def testEveryRuntimeManifestIsJsonSerializable():
     encoded = json.dumps([item.toDict() for item in loadRuntimeRegistry().values()])
     assert "codexAppServer" in encoded
+
+
+def testMcpProbeTimeoutDegradesInsteadOfCrashingStatus(monkeypatch: pytest.MonkeyPatch):
+    """probe subprocess 실패가 상태 화면을 500 으로 죽이지 않는다.
+
+    실측 회귀(2026-08-04): `claude mcp get dartlab` 이 상한을 넘기자 TimeoutExpired 가
+    /api/status 까지 올라가 Runtime Center 전체가 무너졌다. 형제 probe(discovery)는
+    전부 OSError·SubprocessError 를 typed 상태로 바꾸는데 여기만 맨몸이었다.
+    """
+    import subprocess
+
+    from dartlab.ai.runtime import mcpBootstrap
+
+    def _timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=["claude", "mcp", "get", "dartlab"], timeout=20)
+
+    monkeypatch.setattr(mcpBootstrap.subprocess, "run", _timeout)
+    monkeypatch.setattr(mcpBootstrap, "discoverExecutable", lambda descriptor: "claude.exe")
+    with mcpBootstrap._MCP_CACHE_LOCK:
+        mcpBootstrap._MCP_CACHE.clear()
+
+    result = mcpBootstrap.probeMcpConnection("claude", refresh=True)
+
+    assert result["connected"] is False
+    assert "probe_unavailable" in str(result["detail"])
+    # 실패도 캐시해 매 요청마다 느린 probe 를 재시도하지 않는다
+    assert "claude" in mcpBootstrap._MCP_CACHE
