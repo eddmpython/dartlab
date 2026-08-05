@@ -16,8 +16,10 @@ backend lifecycle 은 4 phase (도입·성장·성숙·쇠퇴) 만 emit. "재도
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
+from dartlab.ai.runtime.probeCache import SwrCache, backgroundRefresher
 from dartlab.core.confidence import baseScore
 
 _REBOUND_TRIGGER = ("쇠퇴",)
@@ -115,4 +117,52 @@ def getIndustryBadge(company: Any) -> dict[str, Any] | None:
     }
 
 
-__all__ = ["getIndustryBadge"]
+# 업종 분포 계산은 횡단면 scan 을 두 번 돌아 5 초가 걸린다(실측 2026-08-06). 분포는 공시가
+# 갱신될 때만 바뀌므로 오래 들고 있어도 사실이 흐려지지 않는다. 한 번 재고 나면 같은 회사와
+# 같은 산업의 이어지는 질문은 공짜다.
+_SECTOR_CACHE = SwrCache(3600.0)
+
+
+def getSectorPosition(company: Any) -> dict[str, Any] | None:
+    """수치 하나를 판단으로 바꾸는 업종 내 위치.
+
+    "영업이익률 13.1%" 는 그 자체로 좋고 나쁨을 말하지 않는다. 같은 업종 회사들이 어디에
+    있는지를 알아야 판단이 된다. 분포와 백분위가 이미 계산되어 있었지만 답변 표면에 오지
+    않아 한 번도 쓰이지 않았다.
+
+    Args:
+        company: Company 객체. 종목코드와 산업 매핑이 필요하다.
+
+    Returns:
+        dict[str, Any] | None: 동종사 수, 분포, 백분위. 동종 3 사 미만이면 None 이다.
+
+    Example:
+        `position = getSectorPosition(company)`
+    """
+    stockCode = str(getattr(company, "stockCode", "") or "")
+    if not stockCode:
+        return None
+    cached = _SECTOR_CACHE.peek(stockCode)
+    if cached is not None:
+        return cached.value or None
+
+    # 아직 없으면 기다리지 않고 뒤에서 잰다. 실측(2026-08-06) 첫 계산이 9.5 초인데, 그것을
+    # 임계 경로에 두면 모든 첫 조회가 그만큼 늦어진다. 분석 한 턴은 같은 회사를 여러 번
+    # 조회하므로 두 번째 호출부터는 붙는다. 아는 것을 즉시 주고 느린 것은 따라오게 한다.
+    def _compute() -> dict[str, Any]:
+        from dartlab.industry.calcs.companyCalcs import calcSectorMetrics
+
+        try:
+            metrics = calcSectorMetrics(company)
+        except Exception:
+            logging.getLogger(__name__).debug("업종 위치 계산 실패", exc_info=True)
+            metrics = None
+        # 실패도 기억한다. 안 그러면 데이터 없는 회사마다 매 조회가 다시 재려 든다.
+        _SECTOR_CACHE.put(stockCode, metrics or {})
+        return metrics or {}
+
+    backgroundRefresher().submit(f"sectorPosition:{stockCode}", _compute)
+    return None
+
+
+__all__ = ["getIndustryBadge", "getSectorPosition"]

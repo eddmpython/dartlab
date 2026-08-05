@@ -557,7 +557,58 @@ def cashFlowAnchors(summary: dict[str, Any]) -> list[str]:
     return notes
 
 
-def contextMarkdown(dcrBadge: dict[str, Any] | None, industryBadge: dict[str, Any] | None) -> str:
+_SECTOR_AXES: tuple[tuple[str, str, str], ...] = (
+    ("영업이익률", "myOpmPercentile", "opmDistribution"),
+    ("ROE", "myRoePercentile", "roeDistribution"),
+    ("매출 성장률", "myCagrPercentile", "cagrDistribution"),
+)
+
+
+def sectorPositionLines(position: dict[str, Any] | None) -> list[str]:
+    """수치를 판단으로 바꾸는 업종 내 위치를 문장으로 만든다.
+
+    "영업이익률 13.1%" 는 그 자체로 좋고 나쁨을 말하지 않는다. 같은 업종 회사들이 어디에
+    있는지를 알아야 판단이 된다. 분포와 백분위는 오래전부터 계산되고 있었지만 답변 표면에
+    오지 않아 한 번도 쓰이지 않았다.
+
+    표본이 작으면 백분위가 흔들린다. 몇 개 회사로 잰 값인지 함께 적어 과신을 막는다.
+
+    Args:
+        position: `getSectorPosition` 결과. 없으면 빈 목록이다.
+
+    Returns:
+        list[str]: 사람이 읽는 한 줄 노트 목록.
+
+    Example:
+        `lines = sectorPositionLines(position)`
+    """
+    if not isinstance(position, dict) or not position.get("peerCount"):
+        return []
+    industry = str(position.get("industryName") or position.get("industryId") or "동종 업종")
+    peerCount = position.get("peerCount")
+    lines: list[str] = []
+    for label, percentileKey, distributionKey in _SECTOR_AXES:
+        percentile = position.get(percentileKey)
+        distribution = position.get(distributionKey)
+        if not isinstance(percentile, (int, float)) or not isinstance(distribution, dict):
+            continue
+        median = distribution.get("median")
+        top = distribution.get("p90")
+        sampled = distribution.get("n") or peerCount
+        parts = [f"{label} 업종 상위 {100 - float(percentile):.0f}%"]
+        if isinstance(median, (int, float)):
+            parts.append(f"중앙값 {float(median):.1f}%")
+        if isinstance(top, (int, float)):
+            parts.append(f"상위 10% 경계 {float(top):.1f}%")
+        lines.append(f"- {', '.join(parts)} ({industry} {sampled}사 기준).")
+    return lines
+
+
+def contextMarkdown(
+    dcrBadge: dict[str, Any] | None,
+    industryBadge: dict[str, Any] | None,
+    sectorPosition: dict[str, Any] | None = None,
+) -> str:
     """이미 계산돼 붙어 있는 신용 등급과 산업 위치를 답변 표면으로 끌어올린다.
 
     두 뱃지는 오래전부터 tool 결과에 실려 있었지만 payload 안에만 있어서 실제 답변에는
@@ -600,6 +651,7 @@ def contextMarkdown(dcrBadge: dict[str, Any] | None, industryBadge: dict[str, An
         if peers:
             line += f" 같은 산업 비교 후보: {', '.join(peers)}."
         lines.append(line)
+    lines.extend(sectorPositionLines(sectorPosition))
     if not lines:
         return ""
     return "## 회사 위치\n" + "\n".join(lines) + "\n"

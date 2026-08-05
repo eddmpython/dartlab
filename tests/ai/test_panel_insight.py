@@ -17,6 +17,7 @@ from dartlab.ai.tools.panelInsight import (
     observedRangeAnchors,
     positionNotes,
     profitBridge,
+    sectorPositionLines,
 )
 
 pytestmark = pytest.mark.unit
@@ -329,6 +330,40 @@ def testDownsideAnchorNeedsSalesAndProfit() -> None:
     summary = _summary(operating_profit={"2025FY": 10e12, "2024FY": 8e12, "2023FY": 6e12})
 
     assert observedRangeAnchors(summary) == []
+
+
+def testSectorPositionTurnsANumberIntoAJudgment() -> None:
+    """업종 분포와 백분위를 붙여 수치 하나에 판단 기준을 준다.
+
+    "영업이익률 13.1%" 는 그 자체로 좋고 나쁨을 말하지 않는다. 분포와 백분위는 오래전부터
+    계산되고 있었지만 답변 표면에 오지 않아 한 번도 쓰이지 않았다.
+    """
+    lines = sectorPositionLines(
+        {
+            "industryName": "반도체",
+            "peerCount": 125,
+            "myOpmPercentile": 96.0,
+            "opmDistribution": {"n": 117, "median": 4.1, "p90": 23.8},
+        }
+    )
+
+    assert lines, "분포와 백분위가 있으면 위치를 말해야 한다"
+    assert "상위 4%" in lines[0]
+    assert "중앙값 4.1%" in lines[0]
+    assert "117사" in lines[0], "몇 개 회사로 잰 값인지 밝혀야 과신을 막는다"
+
+
+def testSectorPositionIsSilentWithoutPeers() -> None:
+    """동종사가 없으면 분포를 지어내지 않는다."""
+    assert sectorPositionLines(None) == []
+    assert sectorPositionLines({"industryName": "반도체", "peerCount": 0}) == []
+
+
+def testSectorAxisWithoutDistributionIsSkipped() -> None:
+    """백분위만 있고 분포가 없으면 그 축은 건너뛴다. 기준 없는 순위는 판단이 아니다."""
+    lines = sectorPositionLines({"industryName": "반도체", "peerCount": 40, "myRoePercentile": 80.0})
+
+    assert lines == []
 
 
 def testContextBlockSurfacesCreditAndIndustry() -> None:
