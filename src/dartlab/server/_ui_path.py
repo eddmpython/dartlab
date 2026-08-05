@@ -27,18 +27,29 @@ def _repoRoot() -> Path:
 
 
 def resolveUiBuildDir() -> Path:
-    """UI 빌드 결과물(index.html, _app/) 디렉토리를 반환한다."""
-    # 1. 환경변수 — dartlab-desktop 등 외부 소비자가 명시
+    """UI 빌드 결과물(index.html, _app/) 디렉토리를 반환한다.
+
+    dev 체크아웃에서는 로컬 앱 빌드가 패키지 번들을 이긴다. 실측 장애(2026-08-04):
+    `src/dartlab/ui/build/` 는 gitignore 대상 릴리즈 산출물인데 한 번 생기면 그대로
+    남아, `npm run build` 로 갱신한 dev 빌드를 조용히 가렸다. 화면은 이틀 전 코드인데
+    빌드는 성공해서 UI 수정이 반영되지 않는 원인을 찾기 어려웠다. dev 에서는 소스가
+    정본이므로 로컬 빌드를 먼저 본다.
+    """
+    # 1. 환경변수 (dartlab-desktop 등 외부 소비자가 명시)
     if env := os.environ.get("DARTLAB_UI_DIR"):
         return Path(env)
 
-    # 2. 패키지 내부 (pip install 환경) — site-packages/dartlab/ui/build/
+    # 2. dev 체크아웃: SvelteKit 로컬 앱 빌드. 소스가 곁에 있으면 dev 로 판정한다.
+    dev_build = _repoRoot() / "ui" / "apps" / "local" / "build"
+    if dev_build.is_dir() and (_repoRoot() / "ui" / "apps" / "local" / "package.json").is_file():
+        return dev_build
+
+    # 3. 패키지 내부 (pip install): site-packages/dartlab/ui/build/
     pip_build = _PKG_ROOT / "ui" / "build"
     if pip_build.is_dir():
         return pip_build
 
-    # 3. 개발 환경 — SvelteKit 로컬 앱 (adapter-static build)
-    return _repoRoot() / "ui" / "apps" / "local" / "build"
+    return dev_build
 
 
 def resolveUiSourceDir() -> Path:

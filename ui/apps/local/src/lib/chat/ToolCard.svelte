@@ -140,25 +140,28 @@
 </div>
 
 <style>
+	/* StepTrail 안에서 한 줄로 쌓인다. 테두리 박스를 유지하면 도구 15회가 15개 박스가
+	   돼 본문을 밀어낸다(운영자 지적). 경계는 hover 와 왼쪽 가이드선으로만 준다. */
 	.tool {
-		border: 1px solid var(--dl-line, #2a2c33);
-		border-radius: 9px;
-		background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 55%, transparent);
+		border-left: 1px solid var(--dl-line, #2a2c33);
+		border-radius: 0;
+		background: none;
 		overflow: hidden;
 	}
 	.tool.err {
-		border-color: color-mix(in srgb, var(--dl-bad, #ff6b6b) 35%, var(--dl-line, #2a2c33));
+		border-left-color: color-mix(in srgb, var(--dl-bad, #ff6b6b) 55%, var(--dl-line, #2a2c33));
 	}
 	.head {
 		display: flex;
 		align-items: center;
 		gap: 0.45rem;
 		width: 100%;
-		padding: 0.4rem 0.6rem;
+		padding: 0.22rem 0.55rem;
 		border: none;
+		border-radius: 6px;
 		background: none;
-		color: var(--dl-ink-dim, #9aa0aa);
-		font-size: 0.78rem;
+		color: var(--dl-ink-mute, #6b7280);
+		font-size: 0.76rem;
 		text-align: left;
 		cursor: pointer;
 	}

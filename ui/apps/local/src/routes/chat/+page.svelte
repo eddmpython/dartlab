@@ -10,7 +10,7 @@
 	import Sidebar from '$lib/chat/Sidebar.svelte';
 	import Composer from '$lib/chat/Composer.svelte';
 	import Markdown from '$lib/chat/Markdown.svelte';
-	import ToolCard from '$lib/chat/ToolCard.svelte';
+	import StepTrail from '$lib/chat/StepTrail.svelte';
 	import Evidence from '$lib/chat/Evidence.svelte';
 	import VerificationBadge from '$lib/chat/VerificationBadge.svelte';
 	import RuntimeCenter from '$lib/chat/RuntimeCenter.svelte';
@@ -186,22 +186,13 @@
 		return EVIDENCE_LABELS[kind] ?? kind;
 	}
 
-	const VISIBLE_TOOL_CARDS = new Set([
-		'RunPython',
-		'CompileVisual',
-		'CompileFinancialDashboard',
-		'DCFValuation',
-		'SensitivityAnalysis',
-		'ScenarioCompareN',
-		'ScenarioOverlay'
-	]);
+	// 과정은 전부 보인다. 예전에는 7개 도구만 통과시켜 ReadSkill·EngineCall 같은 실제
+	// 분석 경로가 화면에서 통째로 빠졌다. StepTrail 이 접어서 보여주므로 노출해도
+	// 소음이 되지 않는다. 내부 전용 도구만 감춘다.
+	const HIDDEN_TOOL_CARDS = new Set(['RequestUserInput', 'LookAheadGuard', 'EvidenceGate']);
 
 	function showToolCard(name: string): boolean {
-		return VISIBLE_TOOL_CARDS.has(name);
-	}
-
-	function visibleToolCount(message: ChatMessage): number {
-		return message.tools.filter((tool) => showToolCard(tool.name)).length;
+		return !HIDDEN_TOOL_CARDS.has(name);
 	}
 
 	function viewSpecSummary(spec: unknown): string {
@@ -265,17 +256,17 @@
 				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></svg>
 			</button>
 			<div class="spacer"></div>
-			{#if activeRuntimeLabel}<span class="runtimeBadge">{activeRuntimeLabel} · 대화 고정 · 근거 게이트</span>{/if}
 			<a class="ghost" data-qa="terminal-link" href={`${base}/terminal/${recent}`} title="터미널로" aria-label="터미널로">
 				<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8" /></svg>
 			</a>
 			<button
-				class="ghost"
+				class="ghost runtimeGear"
+				class:linked={connected}
 				data-qa="runtime-center-open"
 				bind:this={runtimeTrigger}
 				onclick={openRuntimeCenter}
-				title="Agent Runtime Center"
-				aria-label="Agent Runtime Center"
+				title={activeRuntimeLabel ? `${activeRuntimeLabel} 연결됨` : '런타임 설정'}
+				aria-label={activeRuntimeLabel ? `${activeRuntimeLabel} 연결됨. 런타임 설정 열기` : '런타임 설정'}
 				aria-haspopup="dialog"
 				aria-expanded={runtimeOpen}
 				aria-controls="runtime-center-dialog"
@@ -337,32 +328,14 @@
 											{/if}
 										</div>
 									{/if}
-									{#if m.streaming && !m.text}
+									{#if m.streaming && !m.text && !m.tools.length}
 										<div class="runstate" role="status" aria-label="근거를 확인하는 중"><span></span></div>
 									{/if}
-									{#if m.activities.length}
-										<details class="activityLog" open={m.streaming}>
-											<summary>
-											{m.streaming ? `분석 진행 · 최근 ${m.activities.length}건` : `분석 과정 ${m.activityCount}건`}
-											</summary>
-											<div class="activityItems" aria-live={m.streaming ? 'polite' : 'off'}>
-												{#each m.activities as activity (activity.id)}
-													<div class="activityItem" class:error={activity.status === 'error'}>
-														<span class:running={activity.status === 'running'}></span>
-														<strong>{activity.passLabel ?? '실행'}</strong>
-														<p>{activity.summary}</p>
-													</div>
-												{/each}
-											</div>
-										</details>
-									{/if}
-									{#if visibleToolCount(m)}
-										<div class="workbench">
-											{#each m.tools.filter((tool) => showToolCard(tool.name)) as t (t.id)}
-												<ToolCard tool={t} />
-											{/each}
-										</div>
-									{/if}
+									<StepTrail
+										tools={m.tools.filter((tool) => showToolCard(tool.name))}
+										activities={m.activities}
+										streaming={m.streaming}
+									/>
 
 									{#if m.approvals.length}
 										<div class="approvals">
@@ -407,35 +380,6 @@
 											verifiedRefIds={m.verifiedRefIds}
 											onverified={(refId) => markEvidenceVerified(m, refId)}
 										/>
-									{/if}
-									{#if m.quality}
-										<details class="qualityPanel" class:passed={m.quality.passed}>
-											<summary>
-												<strong>{m.quality.passed ? '근거 검산 완료' : '근거 검산 상세'}</strong>
-												<span>{m.quality.contract === 'quantitative' ? '수치·기간·대상 확인' : '문서·시점 확인'}</span>
-											</summary>
-											<div class="qualityDetails">
-												<small>자동 검산 점수 {m.quality.score}점</small>
-											<div class="coverageSummary">
-												<span>답변 인용 {m.quality.citedRefIds.length}개</span>
-												<span>Skill OS 조회 {m.runtimeCoverage?.readSkillCalls ?? m.quality.readSkillCalls ?? 0}회</span>
-												{#if m.quality.requiredClaimCells}<span>근거 셀 {m.quality.coveredClaimCells}/{m.quality.requiredClaimCells}</span>{/if}
-												{#if m.quality.contractIds.length}<span title={m.quality.contractIds.join('\n')}>적용 계약 {m.quality.contractIds.length}개</span>{/if}
-											</div>
-											{#if m.quality.requiredEvidence.length}
-												<div class="requirements" aria-label="요구 근거">
-													{#each m.quality.requiredEvidence as requirement (requirement)}
-														<span>{evidenceLabel(requirement)}</span>
-													{/each}
-												</div>
-											{/if}
-											{#if m.quality.issues.length}
-												<ul class="qualityIssues">
-													{#each m.quality.issues as issue (issue)}<li>{issueLabel(issue)}</li>{/each}
-												</ul>
-											{/if}
-											</div>
-										</details>
 									{/if}
 
 									{#if m.viewSpecs.length || m.artifacts.length}
@@ -554,28 +498,31 @@
 	.spacer {
 		flex: 1;
 	}
-	.runtimeBadge {
-		display: inline-flex;
-		align-items: center;
-		border: 1px solid color-mix(in srgb, #70d6a5 35%, transparent);
-		border-radius: 999px;
-		padding: .24rem .55rem;
-		color: #8de2b9;
-		background: color-mix(in srgb, #70d6a5 8%, transparent);
-		font-size: .68rem;
-		white-space: nowrap;
-	}
+	/* 상단 크롬은 조용하다. 런타임 상태는 전문용어 칩 대신 설정 아이콘의 점 하나로
+	   말한다(운영자 지적: "근거 게이트가 뭐지"). 상세는 Runtime Center 가 소유한다. */
 	.ghost {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.75rem;
-		height: 2.75rem;
+		width: 2.25rem;
+		height: 2.25rem;
 		border: none;
-		border-radius: 7px;
+		border-radius: 8px;
 		background: none;
-		color: var(--dl-ink-dim, #9aa0aa);
+		color: var(--dl-ink-mute, #6b7280);
 		cursor: pointer;
+		transition: color .12s ease, background .12s ease;
+	}
+	.runtimeGear.linked::after {
+		content: '';
+		position: absolute;
+		right: .34rem;
+		top: .34rem;
+		width: .34rem;
+		height: .34rem;
+		border-radius: 50%;
+		background: #70d6a5;
 	}
 	.ghost:hover {
 		background: var(--dl-bg-raised, #16171a);
@@ -691,32 +638,34 @@
 	}
 
 	/* 메시지 */
+	/* 읽기 리듬은 데스크탑 챗 앱 규범을 따른다. 질문은 오른쪽 말풍선, 답변은 말풍선
+	   없이 열 전체를 쓰고 행간을 넉넉히 준다. 답변이 주인공이고 나머지는 배경이다. */
 	.turn {
 		display: flex;
-		margin: 1.25rem 0;
+		margin: 1.6rem 0;
 	}
 	.turn.user {
 		justify-content: flex-end;
 	}
 	.user .bubble {
 		max-width: 78%;
-		padding: 0.6rem 0.9rem;
-		border-radius: 1.1rem;
+		padding: 0.65rem 0.95rem;
+		border-radius: 1.15rem;
 		background: var(--dl-bg-raised, #16171a);
 		border: 1px solid var(--dl-line, #2a2c33);
-		font-size: 0.92rem;
-		line-height: 1.55;
+		font-size: 0.94rem;
+		line-height: 1.6;
 		white-space: pre-wrap;
 		word-break: break-word;
 	}
 	.turn.assistant {
-		gap: 0.7rem;
+		gap: 0.75rem;
 		align-items: flex-start;
 	}
 	.msgava {
 		flex-shrink: 0;
 		border-radius: 9px;
-		margin-top: 0.1rem;
+		margin-top: 0.15rem;
 	}
 	.body {
 		min-width: 0;
@@ -724,11 +673,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-	}
-	.workbench {
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
+		font-size: 0.95rem;
+		line-height: 1.72;
 	}
 	.analysisFrame {
 		display: grid;
@@ -751,15 +697,6 @@
 	.analysisStages { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .3rem; }
 	.analysisStages small { color: var(--dl-ink-mute, #6b7280); font-size: .64rem; }
 	.analysisStages small:not(:last-child)::after { content: '→'; margin-left: .3rem; color: var(--dl-line-strong, #3b3e46); }
-	.activityLog { border: 1px solid var(--dl-line, #2a2c33); border-radius: 9px; overflow: hidden; background: color-mix(in srgb, var(--dl-bg-raised, #16171a) 45%, transparent); }
-	.activityLog summary { min-height: 2.75rem; display: flex; align-items: center; padding: .45rem .65rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .75rem; cursor: pointer; }
-	.activityItems { display: grid; gap: .3rem; padding: .15rem .65rem .65rem; border-top: 1px solid var(--dl-line, #2a2c33); }
-	.activityItem { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: .4rem; align-items: baseline; padding-top: .4rem; color: var(--dl-ink-dim, #9aa0aa); font-size: .72rem; }
-	.activityItem > span { width: .45rem; height: .45rem; border-radius: 50%; background: #70d6a5; }
-	.activityItem > span.running { background: var(--dl-info, #6ab0ff); animation: pulse 1s ease-in-out infinite; }
-	.activityItem.error > span { background: var(--dl-bad, #ff6b6b); }
-	.activityItem strong { color: var(--dl-ink-mute, #6b7280); font-size: .65rem; }
-	.activityItem p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 	@keyframes pulse { 50% { opacity: .3; } }
 	.runstate { min-height: 1.25rem; display: flex; align-items: center; }
 	.runstate span { width: .9rem; height: .9rem; border: 2px solid var(--dl-line, #2a2c33); border-top-color: var(--dl-accent, #ff5a36); border-radius: 50%; animation: spin .8s linear infinite; }
@@ -798,18 +735,6 @@
 	}
 	.err button { min-height: 2.5rem; flex-shrink: 0; border: 1px solid currentColor; border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
 	.err button:disabled { opacity: .5; cursor: default; }
-	.qualityPanel { border: 1px solid color-mix(in srgb, var(--dl-bad, #ff6b6b) 45%, var(--dl-line, #2a2c33)); border-radius: 9px; background: color-mix(in srgb, var(--dl-bad, #ff6b6b) 6%, transparent); overflow: hidden; }
-	.qualityPanel.passed { border-color: color-mix(in srgb, #70d6a5 35%, var(--dl-line, #2a2c33)); background: color-mix(in srgb, #70d6a5 6%, transparent); }
-	.qualityPanel summary { min-height: 2.75rem; display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; padding: .55rem .75rem; cursor: pointer; }
-	.qualityPanel summary strong { color: var(--dl-ink, #e7e7ea); font-size: .76rem; }
-	.qualityPanel summary span { color: var(--dl-bad, #ff8c8c); font-size: .7rem; }
-	.qualityPanel.passed summary span { color: #70d6a5; }
-	.qualityDetails { display: grid; gap: .5rem; padding: 0 .75rem .7rem; border-top: 1px solid var(--dl-line, #2a2c33); }
-	.qualityDetails > small { padding-top: .55rem; color: var(--dl-ink-mute, #6b7280); font-size: .66rem; }
-	.coverageSummary, .requirements { display: flex; flex-wrap: wrap; gap: .35rem; }
-	.coverageSummary span, .requirements span { padding: .18rem .42rem; border-radius: 5px; background: var(--dl-bg-raised, #16171a); color: var(--dl-ink-dim, #9aa0aa); font-size: .66rem; }
-	.requirements span { border: 1px solid var(--dl-line, #2a2c33); }
-	.qualityIssues { margin: 0; padding-left: 1.1rem; color: var(--dl-bad, #ff8c8c); font-size: .72rem; line-height: 1.5; }
 	.outputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .45rem; }
 	.outputCard { min-width: 0; display: grid; gap: .25rem; padding: .7rem; border: 1px solid var(--dl-line, #2a2c33); border-radius: 9px; background: var(--dl-bg-raised, #16171a); }
 	.outputCard .outputKind { width: fit-content; padding: .1rem .35rem; border-radius: 4px; background: color-mix(in srgb, var(--dl-info, #6ab0ff) 12%, transparent); color: var(--dl-info, #6ab0ff); font-size: .64rem; }
