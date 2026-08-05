@@ -32,6 +32,7 @@ from .creditBadge import getDcrBadge
 from .filingDeepLink import attachDocRef, buildPeriodToFiling
 from .formatting import formatMoney, formatPercent
 from .industryContext import getIndustryBadge
+from .panelInsight import insightMarkdown
 from .types import ToolResult
 
 _CANONICAL_TOP_LEVEL_CAPABILITY_REFS = _capabilityExecution.CANONICAL_TOP_LEVEL_CAPABILITY_REFS
@@ -2147,6 +2148,12 @@ def _statementMarkdown(companyName: str, stockCode: str, statement: str, summary
         for row in summary["rows"]:
             lines.append(f"| {row['item']} | {row['formatted']} |")
     lines.append("")
+    # 원시 수치만 건네면 마진과 증감률과 기저효과 판별을 모델이 매번 손으로 해야 하고 그
+    # 계산을 잘하는 모델과 못하는 모델 사이에서 답변이 갈린다. 손에 있는 시계열로 바로
+    # 계산되는 것은 표에 실어 보낸다. 추가 조회가 없으므로 지연이 늘지 않는다.
+    insight = insightMarkdown(summary)
+    if insight:
+        lines.append(insight)
     lines.append("근거는 tableRef, valueRef, dateRef로 남겼습니다.")
     return "\n".join(lines)
 

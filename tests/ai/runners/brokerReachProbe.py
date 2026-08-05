@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -70,6 +71,42 @@ def _malformedArgs(name: str, payload: Any) -> str | None:
     return None
 
 
+_REF_ID = re.compile(r"\b(?:table|value|date|doc|web|execution|artifact|visual):[A-Za-z0-9._:{}\-,]+")
+_NUMBER = re.compile(r"\d[\d,.]*\s*(?:%|조원|억원|조|억|원|배|bp|배수)")
+
+# 캡슐이 이미 요구하는 것들이다. 요구와 실물의 간극이 곧 개선 지점이라 요구별로 센다.
+_QUALITY_MARKERS: dict[str, tuple[str, ...]] = {
+    "table": ("|---", "| ---"),
+    "counterEvidence": ("반대", "반증", "다만", "그러나", "리스크", "약점", "부정적"),
+    "falsifier": ("바뀌", "틀렸", "뒤집", "무효", "성립하지 않", "가정이 깨"),
+    "comparison": ("대비", "동종", "업종 평균", "경쟁", "peer", "상위", "하위", "백분위"),
+    "nextCheck": ("다음", "확인할", "지켜볼", "모니터", "추가 확인", "후속"),
+    "observationSplit": ("관측", "사실", "해석", "판단", "의미"),
+    "asOf": ("기준", "FY", "분기", "asOf", "시점"),
+    "uncertainty": ("불확실", "한계", "주의", "가정", "추정"),
+}
+
+
+def answerQualitySignals(text: str) -> dict[str, Any]:
+    """답변 본문이 분석 계약을 실제로 지켰는지 기계로 센다.
+
+    점수를 매기는 것이 목적이 아니다. 캡슐이 요구하는 항목 중 무엇이 실물에서 빠지는지
+    찾아 개선 지점을 고르는 발견 도구다.
+    """
+    body = text or ""
+    signals: dict[str, Any] = {
+        "length": len(body),
+        "refCitations": len(set(_REF_ID.findall(body))),
+        "numbers": len(_NUMBER.findall(body)),
+        "headings": body.count("\n#") + body.count("\n**"),
+    }
+    for name, markers in _QUALITY_MARKERS.items():
+        signals[name] = any(marker in body for marker in markers)
+    missing = [name for name in _QUALITY_MARKERS if not signals[name]]
+    signals["missing"] = missing
+    return signals
+
+
 def runCase(case: dict[str, Any], *, runtimeId: str, timeoutSec: float) -> dict[str, Any]:
     """케이스 하나를 실제 중개 세션으로 돌리고 관측치를 모은다."""
     from dartlab.ai.agent import runRuntimeAgent
@@ -79,7 +116,7 @@ def runCase(case: dict[str, Any], *, runtimeId: str, timeoutSec: float) -> dict[
     signatures: list[str] = []
     malformed: list[str] = []
     refIds: list[str] = []
-    answerLength = 0
+    answerParts: list[str] = []
     meta: dict[str, Any] = {}
     failure: str | None = None
 
@@ -103,7 +140,7 @@ def runCase(case: dict[str, Any], *, runtimeId: str, timeoutSec: float) -> dict[
                 if problem:
                     malformed.append(f"{name}: {problem}")
             elif kind == "chunk":
-                answerLength += len(str(data.get("text") or ""))
+                answerParts.append(str(data.get("text") or ""))
             elif kind == "done":
                 meta = dict(data.get("responseMeta") or {})
                 refIds = [str(ref.get("id") or "") for ref in (data.get("refs") or []) if isinstance(ref, dict)]
@@ -133,7 +170,8 @@ def runCase(case: dict[str, Any], *, runtimeId: str, timeoutSec: float) -> dict[
         "duplicateCalls": duplicates,
         "overCallBudget": bool(maxCalls and len(toolCalls) > maxCalls),
         "malformedArgs": malformed,
-        "answerLength": answerLength,
+        "answer": "".join(answerParts),
+        "quality": answerQualitySignals("".join(answerParts)),
         "evidenceCount": meta.get("evidenceCount"),
         "responseStatus": meta.get("responseStatus"),
         "verificationStatus": meta.get("verificationStatus"),
@@ -164,6 +202,16 @@ def summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
         "casesWithDuplicateCalls": [i["caseId"] for i in results if i["duplicateCalls"]],
         "casesWithMalformedArgs": [i["caseId"] for i in results if i["malformedArgs"]],
         "casesWithoutEvidence": [i["caseId"] for i in results if not i.get("evidenceCount")],
+        # 어떤 계약 항목이 실물에서 가장 자주 빠지는지. 개선 순위는 여기서 고른다.
+        "qualityGapCounts": {
+            marker: sum(1 for i in results if marker in (i.get("quality") or {}).get("missing", []))
+            for marker in _QUALITY_MARKERS
+        },
+        "medianAnswerLength": sorted(int((i.get("quality") or {}).get("length") or 0) for i in results)[
+            len(results) // 2
+        ]
+        if results
+        else 0,
     }
 
 
@@ -197,7 +245,9 @@ def main() -> int:
         reached = item["reachedExpectedTool"] or item["reachedExpectedApiRef"]
         print(
             f"    {item['elapsedSec']}s | 도구 {item['toolCallCount']} 회 {item['toolsCalled']}"
-            f" | 기대표면도달={reached} | 근거 {item['evidenceCount']} | {item['responseStatus']}",
+            f" | 기대표면도달={reached} | 근거 {item['evidenceCount']} | {item['responseStatus']}"
+            f"\n    답변 {item['quality']['length']}자 인용 {item['quality']['refCitations']}"
+            f" 수치 {item['quality']['numbers']} | 빠진 항목: {item['quality']['missing'] or '없음'}",
             flush=True,
         )
         if item["malformedArgs"]:
