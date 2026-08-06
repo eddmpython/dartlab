@@ -207,3 +207,58 @@ def test잘라낸열을밝힌다() -> None:
     body = frameMarkdown("scan.growth", "", payload)
 
     assert "열 15 개 중 8 개만 보였습니다" in body
+
+
+def _rateSeries() -> dict[str, Any]:
+    """기준금리처럼 며칠씩 같은 값이 이어지는 계열. 실측 946 행을 축약한 모양이다."""
+    rows: list[dict[str, Any]] = []
+    for index, value in enumerate([3.5] * 300 + [3.25] * 300 + [3.0] * 346):
+        rows.append({"date": f"d{index:04d}", "value": value})
+    return {"rowCount": len(rows), "columns": ["date", "value"], "rows": rows}
+
+
+def test계단형시계열은값이바뀐지점을보인다() -> None:
+    """앞에서 여덟 행을 자르면 아무 일도 없는 구간만 보인다.
+
+    실측(2026-08-06): 3 년 기준금리 946 행에서 본문에 보인 것은 첫 여드레이고 값이 전부
+    같았다. 모델은 변경 시점을 찾으려 기간을 쪼개 열한 번 다시 불렀다.
+    """
+    body = frameMarkdown("gather.macro", "BASE_RATE", _rateSeries())
+
+    # 세 번의 계단과 마지막 시점. 946 행이 네 줄이 되고 그 네 줄이 질문의 답이다.
+    assert "3.25" in body
+    assert "d0000" in body
+    assert "d0300" in body
+    assert "d0600" in body
+    assert "값이 바뀐 지점 4개만 보였습니다" in body
+
+
+def test계단형에서마지막시점은반드시보인다() -> None:
+    """지금 얼마인가는 거의 항상 질문의 일부다."""
+    payload = _rateSeries()
+    payload["rows"].extend({"date": f"z{index:03d}", "value": 3.0} for index in range(50))
+    payload["rowCount"] = len(payload["rows"])
+
+    body = frameMarkdown("gather.macro", "BASE_RATE", payload)
+
+    assert "z049" in body
+
+
+def test매일변하는계열은계단으로보지않는다() -> None:
+    """환율처럼 값이 늘 다른 계열에 변경점 논리를 쓰면 표가 통째로 실린다."""
+    rows = [{"date": f"d{index:04d}", "value": 1300.0 + index} for index in range(400)]
+    payload = {"rowCount": len(rows), "columns": ["date", "value"], "rows": rows}
+
+    body = frameMarkdown("gather.macro", "USDKRW", payload)
+
+    assert "전체 400행 중 8행만 보였습니다" in body
+
+
+def test짧은표는그대로둔다() -> None:
+    """자를 것이 없으면 아무 말도 하지 않는다."""
+    rows = [{"date": "d0", "value": 1.0}, {"date": "d1", "value": 1.0}]
+    payload = {"rowCount": 2, "columns": ["date", "value"], "rows": rows}
+
+    body = frameMarkdown("gather.macro", "BASE_RATE", payload)
+
+    assert "보였습니다" not in body

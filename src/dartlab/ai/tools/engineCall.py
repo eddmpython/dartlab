@@ -850,6 +850,20 @@ def _scan(plan: dict[str, Any]) -> ToolResult:
     if isinstance(result, dict):
         return _resultToRefs(f"scan.{axis}", result, target=str(target or ""))
     if not isinstance(result, pl.DataFrame) or result.height == 0:
+        if axis.lower() == "fields" and target:
+            # 필드 카탈로그는 where 조건에 쓸 값의 목록이다. 유니버스와 출력 모양을 정하는
+            # 것은 spec 의 키라서 카탈로그에 없다. 실측(2026-08-06): "코스피에서" 를 요구한
+            # 스크리닝이 여기서 빈손을 받고 market, 시장, listing 으로 세 번 더 검색한 뒤
+            # listing 과 dataHub.catalog 까지 열었다. 빈 결과만 주면 계속 카탈로그를 뒤진다.
+            return ToolResult(
+                False,
+                f"scan fields 에 {target!r} 로 걸리는 필드가 없습니다. "
+                f"필드 카탈로그는 where 조건에 쓸 값 목록이라, 유니버스나 출력 모양을 정하는 것은 "
+                f"여기 없고 screen spec 의 키가 받습니다. "
+                f"거래소는 indexName(KOSPI/KOSDAQ/KONEX), 출력 열은 select, 그 밖에 sort, limit, "
+                f"define(파생 필드), market(국가 KR/US)이 있습니다.",
+                error="empty_scan",
+            )
         return ToolResult(False, f"dartlab.scan('{axis}') 결과가 비어 있습니다.", error="empty_scan")
     if axis.lower() == "growth" or "성장" in axis:
         rows = _rankGrowthRows(result)

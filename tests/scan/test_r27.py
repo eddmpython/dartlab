@@ -35,6 +35,19 @@ def test_scan_rejects_unknown_market_instead_of_using_kr_data():
         dartlab.scan("profitability", market="MARS")
 
 
+def test_market_rejection_points_to_indexName_for_exchanges():
+    """막기만 하고 다른 길을 안 알려주면 찾아 헤맨다.
+
+    실측(2026-08-06): "코스피에서" 를 요구한 스크리닝이 market 으로 막힌 뒤 fields 카탈로그를
+    market, 시장, listing 으로 세 번 뒤지고 listing 과 dataHub.catalog 까지 열었다. market 은
+    국가 코드이고 거래소는 screen spec 의 indexName 이 받는다.
+    """
+    import dartlab
+
+    with pytest.raises(ValueError, match="indexName"):
+        dartlab.scan("profitability", market="KOSPI")
+
+
 def test_scan_rejects_us_for_kr_only_axis():
     """US 미지원 축은 KR 구현으로 fallback하지 않는다."""
     import dartlab

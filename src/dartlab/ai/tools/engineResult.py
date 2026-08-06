@@ -237,6 +237,63 @@ def engineResultMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
     return body[:_MAX_BODY_CHARS] + "\n(본문이 길어 여기서 끊었습니다.)\n"
 
 
+# 계단형 판정. 값이 바뀐 지점이 이보다 많으면 계단이 아니라 그냥 변동하는 계열이다.
+_MAX_STEP_ROWS = 24
+# 고유값이 행 수의 이 분의 일 이하일 때 계단으로 본다.
+_STEP_SPARSITY = 10
+
+
+def _isPlainNumber(value: Any) -> bool:
+    """bool 을 수치로 세지 않는다. 파이썬에서 True 는 1 이라 조용히 섞인다."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _stepValueColumn(allRows: list[Mapping[str, Any]], columns: list[str]) -> str | None:
+    """같은 값이 길게 이어지는 수치 열 하나를 찾는다. 없으면 None 이다."""
+    if len(columns) != 2:
+        return None
+    for column in columns:
+        values = [row.get(column) for row in allRows]
+        if not values or not all(_isPlainNumber(value) for value in values):
+            continue
+        if len({float(value) for value in values}) <= max(2, len(values) // _STEP_SPARSITY):
+            return column
+    return None
+
+
+def _previewRows(allRows: list[Mapping[str, Any]], columns: list[str]) -> tuple[list[Mapping[str, Any]], bool]:
+    """미리보기 행을 고른다. 계단형 시계열이면 값이 바뀐 지점을 고른다.
+
+    앞에서 여덟 행을 자르는 것은 대부분의 표에서 맞다. 그런데 며칠씩 같은 값이 이어지는
+    계열에서는 앞부분이 정확히 아무 일도 없는 구간이다. 실측(2026-08-06): 3 년 기준금리
+    946 행을 받은 답변이 본문에서 본 것은 2024-01-01 부터 여드레치이고 값이 전부 3.50 이었다.
+    그래서 모델은 변경 시점을 찾으려 기간을 쪼개 열한 번 다시 불렀다. 표가 쓸모없으면
+    호출로 메운다.
+
+    값이 바뀐 지점만 남기면 946 행이 몇 줄이 되고 그 몇 줄이 질문의 답이다. 크기는 줄고
+    정보는 는다. 마지막 시점은 값이 안 바뀌었어도 반드시 싣는다. "지금 얼마인가" 가 거의
+    항상 질문의 일부다.
+    """
+    if len(allRows) <= _MAX_PERIODS:
+        return allRows, False
+    valueColumn = _stepValueColumn(allRows, columns)
+    if valueColumn is None:
+        return allRows[:_MAX_PERIODS], False
+    picked: list[Mapping[str, Any]] = []
+    sentinel = object()
+    previous: Any = sentinel
+    for row in allRows:
+        current = row.get(valueColumn)
+        if previous is sentinel or current != previous:
+            picked.append(row)
+            previous = current
+    if picked and picked[-1] is not allRows[-1]:
+        picked.append(allRows[-1])
+    if len(picked) <= 1 or len(picked) > _MAX_STEP_ROWS:
+        return allRows[:_MAX_PERIODS], False
+    return picked, True
+
+
 def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
     """격자 결과의 미리보기 행을 표로 편다.
 
@@ -259,8 +316,8 @@ def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
         return ""
     allRows = [row for row in (payload.get("rows") or []) if isinstance(row, Mapping)]
     allColumns = [str(column) for column in (payload.get("columns") or [])]
-    rows = allRows[:_MAX_PERIODS]
     columns = allColumns[:_MAX_METRICS]
+    rows, stepped = _previewRows(allRows, columns)
     if not rows or not columns:
         return ""
     heading = f"## {apiRef}" + (f" {target}" if target else "")
@@ -275,7 +332,12 @@ def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
     total = payload.get("rowCount")
     shown = len(rows)
     lines.append("")
-    if isinstance(total, int) and total > shown:
+    if stepped:
+        lines.append(
+            f"전체 {total if isinstance(total, int) else len(allRows)}행 중 값이 바뀐 지점 {shown}개만 보였습니다. "
+            f"나머지 행은 직전 값과 같습니다."
+        )
+    elif isinstance(total, int) and total > shown:
         lines.append(f"전체 {total}행 중 {shown}행만 보였습니다.")
     lines.extend(_omittedNote("열", len(allColumns), len(columns)))
     lines.append("")

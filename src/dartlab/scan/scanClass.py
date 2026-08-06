@@ -38,7 +38,14 @@ def _normalizeMarket(value: Any) -> str:
         raise ValueError(f"market 은 문자열이어야 합니다: {value!r}")
     normalized = _MARKET_ALIASES.get(value.strip().upper())
     if normalized is None:
-        raise ValueError(f"지원하지 않는 market: {value!r}. KR 또는 US 만 사용하세요.")
+        # 거기가 갈림길인데 막기만 하고 다른 길을 안 알려주면 찾아 헤맨다. 실측(2026-08-06):
+        # "코스피에서" 를 요구한 스크리닝이 market 으로 막힌 뒤 fields 카탈로그를 market,
+        # 시장, listing 세 번 뒤지고 listing 과 dataHub.catalog 까지 열었다. market 은 국가
+        # 코드이고 거래소는 screen spec 의 indexName 이 받는다. 그 이름을 여기서 알려준다.
+        raise ValueError(
+            f"지원하지 않는 market: {value!r}. market 은 국가 코드라 KR 또는 US 만 받습니다. "
+            f"코스피나 코스닥처럼 거래소로 좁히려면 screen spec 의 indexName 을 쓰세요."
+        )
     return normalized
 
 
