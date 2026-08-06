@@ -548,6 +548,33 @@ def _normalizeField(field: str) -> str:
     return aliases.get(f, f)
 
 
+def _unknownFieldMessage(field: str, lookup: str, catalog: pl.DataFrame) -> str:
+    """모르는 field 이름을 카탈로그에서 되찾아 알려준다.
+
+    옛 메시지는 카탈로그 앞 8 개를 예로 들었다. 알파벳 첫머리라 물어본 것과 아무 관계가
+    없고, 함께 안내하던 `dartlab.scan('fields')` 도 검색어 없이 부르면 4900 여 개 중
+    앞부분만 잘려 온다. 실측(2026-08-06): 그래서 `ROE` 를 물은 스크리닝 한 건이 필드를
+    찾지 못하고 종목별 조회로 흩어져 도구 49 회, 228 초를 썼다.
+
+    이름을 모를 때 필요한 것은 목록이 아니라 찾던 그 이름이다. 마지막 마디로 카탈로그를
+    되찾아 실제 후보를 준다. 못 찾으면 목록을 들이밀지 말고 검색하는 법을 알려준다.
+    """
+    needle = lookup.rsplit(".", 1)[-1].strip().casefold()
+    if needle:
+        matched = catalog.filter(
+            pl.col("field").str.to_lowercase().str.contains(needle, literal=True)
+            | pl.col("label").str.to_lowercase().str.contains(needle, literal=True)
+        )
+        if not matched.is_empty():
+            found = ", ".join(f"{row['field']}({row['label']})" for row in matched.head(6).iter_rows(named=True))
+            return f"알 수 없는 scan field: {field!r}. 찾으시는 것은 이것 같습니다: {found}"
+    return (
+        f"알 수 없는 scan field: {field!r}. "
+        f'dartlab.scan("fields", "{needle or "검색어"}") 처럼 검색어를 넣어 찾으세요. '
+        "검색어 없이 부르면 전체 목록의 앞부분만 잘려 옵니다."
+    )
+
+
 def _fieldMeta(field: str, spec: dict[str, Any] | None = None) -> dict[str, str]:
     if field.startswith("@"):
         name = field[1:]
@@ -570,8 +597,7 @@ def _fieldMeta(field: str, spec: dict[str, Any] | None = None) -> dict[str, str]
     lookup = field.split("@", 1)[0] if field.startswith("note.") and "@" in field else field
     hit = catalog.filter(pl.col("field") == lookup)
     if hit.is_empty():
-        examples = ", ".join(catalog["field"].head(8).to_list())
-        raise ValueError(f"알 수 없는 scan field: {field!r}. dartlab.scan('fields') 로 확인하세요. 예: {examples}")
+        raise ValueError(_unknownFieldMessage(field, lookup, catalog))
     meta = dict(hit.row(0, named=True))
     meta["field"] = field
     return meta

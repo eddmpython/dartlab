@@ -44,6 +44,20 @@ def _argSignature(name: str, payload: Any) -> str:
         return f"{name}:{payload!r}"
 
 
+# 예산 초과 케이스의 호출 순서를 남길 때 쓰는 상한. 그 이상은 원인 규명에 보태지 않는다.
+_MAX_TRACE_CALLS = 40
+_MAX_TRACE_ARG_CHARS = 160
+
+
+def _traceArgs(payload: Any) -> str:
+    """호출 인자를 한 줄로 줄인다. 무엇을 반복했는지 보이는 정도면 충분하다."""
+    try:
+        text = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    except (TypeError, ValueError):
+        text = repr(payload)
+    return text[:_MAX_TRACE_ARG_CHARS]
+
+
 def _apiRefOf(payload: Any) -> str:
     """EngineCall 인자에서 apiRef 를 꺼낸다. 없으면 빈 문자열이다."""
     if not isinstance(payload, dict):
@@ -190,6 +204,14 @@ def runCase(case: dict[str, Any], *, runtimeId: str, timeoutSec: float) -> dict[
         "duplicateCalls": duplicates,
         "overCallBudget": bool(maxCalls and len(toolCalls) > maxCalls),
         "malformedArgs": malformed,
+        # 호출 이름 집합만 남기면 "29 회" 가 무엇이었는지 알 수 없다. 실측(2026-08-06):
+        # macroTrend 가 예산 5 회에 29 회를 썼는데 리포트로는 원인을 짚지 못했다. 예산을
+        # 넘긴 케이스만 호출 순서를 남긴다. 전건 저장은 리포트를 읽을 수 없게 만든다.
+        "callTrace": [
+            {"name": call["name"], "args": _traceArgs(call["input"])} for call in toolCalls[:_MAX_TRACE_CALLS]
+        ]
+        if maxCalls and len(toolCalls) > maxCalls
+        else [],
         "answer": "".join(answerParts),
         "quality": answerQualitySignals("".join(answerParts)),
         "evidenceCount": meta.get("evidenceCount"),

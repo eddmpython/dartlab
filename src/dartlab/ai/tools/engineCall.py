@@ -35,6 +35,7 @@ from .filingDeepLink import attachDocRef, buildPeriodToFiling
 from .formatting import formatMoney, formatPercent
 from .industryContext import getIndustryBadge, getSectorPosition
 from .panelInsight import contextMarkdown, insightMarkdown
+from .scanInsight import screenTrapNotes
 from .types import ToolResult
 
 _CANONICAL_TOP_LEVEL_CAPABILITY_REFS = _capabilityExecution.CANONICAL_TOP_LEVEL_CAPABILITY_REFS
@@ -908,13 +909,26 @@ def _scan(plan: dict[str, Any]) -> ToolResult:
             "previewTruncated": rowsTruncated,
         },
     )
+    # 조건 필드 값만 돌려주면 자기자본이 마이너스라 부호가 뒤집힌 값도 조건을 통과한다. 실측
+    # (2026-08-06): "ROE 15% 이상 부채비율 100% 미만" 6 종목 중 3 종목이 부채비율 음수였고
+    # 그중 001140 은 자본 -169억원인 완전자본잠식이었다. 같은 회사를 Company.panel 로 열면
+    # 그 사실이 그대로 보인다. 재료가 있는 경로는 잡고 없는 경로는 놓치던 것을 맞춘다.
+    traps = screenTrapNotes(list(result.columns), rows)
+    summary = f"scan {axis} 실행 완료 ({result.height}행 중 {len(rows)}행 반환)"
+    if traps:
+        # 요약은 모델이 가장 먼저 읽는 줄이다. 경고를 data 에만 넣으면 표만 보고 지나간다.
+        # 다만 요약에 본문을 통째로 옮기면 요약이 아니다. 무엇이 몇 건인지까지만 적고
+        # 이유는 screenTraps 본문이 말한다.
+        headline = "; ".join(note.split(".", 1)[0] for note in traps)
+        summary = f"{summary}. 주의: {headline}"
     return ToolResult(
         True,
-        f"scan {axis} 실행 완료 ({result.height}행 중 {len(rows)}행 반환)",
+        summary,
         refs=[table_ref],
         data={
             "rowCount": result.height,
             "columns": list(result.columns),
+            "screenTraps": traps,
             # 옛 계약은 rowCount 와 columns 만 돌려줘 표 본문이 아예 없었다. 실측
             # (2026-08-05 brokerReach): 스크리닝 질문이 scan 을 제대로 부르고도 결과
             # 표를 못 받아 종목마다 다시 조회하다 도구 56 회, 358 초를 썼다. 표를

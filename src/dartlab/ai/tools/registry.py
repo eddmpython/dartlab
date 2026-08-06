@@ -374,7 +374,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "CreditScorecard": ToolSpec(
         "CreditScorecard",
-        "단일 종목 dCR 신용등급 + 1Y PD + 7 축 분석. includeFactors=True 시 Altman 적용성 점수와 Beneish 비발행 상태를 동행한다. 역사적 basePeriod에는 최신 횡단 factor를 섞지 않는다.",
+        "단일 종목 dCR 신용등급 + 1Y 부도확률(PD) + 7 축 분석. '신용등급 어느 수준', '부도 위험', '신용도 평가', '재무 안정성 등급' 류 질문에 본 도구 1 회 호출. includeFactors=True 시 Altman 적용성 점수와 Beneish 비발행 상태를 동행한다. 역사적 basePeriod에는 최신 횡단 factor를 섞지 않는다.",
         {
             "type": "object",
             "properties": {

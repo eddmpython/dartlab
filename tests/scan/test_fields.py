@@ -94,11 +94,24 @@ def test_screen_spec_rejects_unit_mismatch():
 
 
 def test_screen_spec_rejects_missing_field():
-    """Unknown fields point users back to scan('fields')."""
+    """이름이 아예 안 걸리면 목록이 아니라 검색하는 법을 알려준다.
+
+    옛 계약은 `scan('fields')` 로 안내했다. 그런데 검색어 없이 부르면 4900 여 개 중
+    앞부분만 잘려 오므로 찾던 이름이 그 안에 없다. 실측(2026-08-06): 그래서 스크리닝
+    한 건이 도구 49 회를 썼다.
+    """
     from dartlab.scan.screen import scanScreen
 
-    with pytest.raises(ValueError, match="scan\\('fields'\\)"):
-        scanScreen(spec={"where": [{"field": "missing.field", "op": ">", "value": 1}]}, verbose=False)
+    with pytest.raises(ValueError, match='scan\\("fields", '):
+        scanScreen(spec={"where": [{"field": "zzz.qqnonexistent", "op": ">", "value": 1}]}, verbose=False)
+
+
+def test_screen_spec_suggests_the_real_field_name():
+    """가까운 이름이 있으면 목록 대신 그 이름을 되찾아 준다."""
+    from dartlab.scan.screen import scanScreen
+
+    with pytest.raises(ValueError, match="finance\\.ratio\\.roe"):
+        scanScreen(spec={"where": [{"field": "unknown.roe", "op": ">", "value": 1}]}, verbose=False)
 
 
 def test_docs_condition_uses_search_hits(monkeypatch):
