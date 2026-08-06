@@ -8,6 +8,7 @@ import logging
 import math
 import os
 import re
+import time
 from collections.abc import Mapping
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import fields, is_dataclass
@@ -391,6 +392,8 @@ def _aliasToCanonical(apiRef: str, plan: dict[str, Any]) -> str:
 
 def _companyShow(plan: dict[str, Any]) -> ToolResult:
     """Company.panel - 5 책임 분할 (topic 해결 / company 해결 / table fetch / refs / data)."""
+    # 본체를 가져오는 데 든 시간을 잰다. 곁들이는 재료가 본체보다 오래 걸리면 안 된다.
+    started = time.perf_counter()
     target = str(plan.get("target") or plan.get("stockCode") or "").strip()
     topic = _resolveTopic(plan)
     if topic not in _STMT_LABELS:
@@ -432,7 +435,9 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         )
     refs = _buildShowRefs(stockCode, companyName, topic, summary, company)
     summaryMsg = _showSummaryMessage(companyName, stockCode, topic, summary, autoGatherUsed)
-    data = _buildShowData(company, companyName, stockCode, topic, summary, autoGatherUsed)
+    data = _buildShowData(
+        company, companyName, stockCode, topic, summary, autoGatherUsed, time.perf_counter() - started
+    )
     return ToolResult(True, summaryMsg, refs=refs, data=data)
 
 
@@ -762,6 +767,7 @@ def _buildShowData(
     topic: str,
     summary: dict[str, Any],
     autoGatherUsed: bool,
+    fetchSeconds: float = 0.0,
 ) -> dict[str, Any]:
     """ToolResult.data - 호출자 종합 페이로드 (summary + markdown + dcr/industry badge)."""
     data: dict[str, Any] = {
@@ -782,7 +788,7 @@ def _buildShowData(
     # 두 뱃지는 오래전부터 payload 에 실려 있었지만 본문에 없어 답변에 한 번도 쓰이지
     # 않았다. 모델이 읽는 것은 markdown 이다. 수치 하나에 판단 기준이 생긴다.
     # 맺음말 뒤에 붙이면 마무리 문장이 본문 중간에 끼므로 그 앞에 넣는다.
-    sectorPosition = getSectorPosition(company)
+    sectorPosition = getSectorPosition(company, budgetSeconds=fetchSeconds)
     if sectorPosition:
         data["sectorPosition"] = sectorPosition
     context = contextMarkdown(badge, industryBadge, sectorPosition, summary)

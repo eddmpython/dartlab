@@ -127,7 +127,7 @@ _SECTOR_CACHE = SwrCache(3600.0)
 _SECTOR_WAIT_SECONDS = 25.0
 
 
-def getSectorPosition(company: Any) -> dict[str, Any] | None:
+def getSectorPosition(company: Any, *, budgetSeconds: float | None = None) -> dict[str, Any] | None:
     """수치 하나를 판단으로 바꾸는 업종 내 위치.
 
     "영업이익률 13.1%" 는 그 자체로 좋고 나쁨을 말하지 않는다. 같은 업종 회사들이 어디에
@@ -138,6 +138,9 @@ def getSectorPosition(company: Any) -> dict[str, Any] | None:
 
     Args:
         company: Company 객체. 종목코드와 산업 매핑이 필요하다.
+        budgetSeconds: 본체를 가져오는 데 든 시간. 곁들이는 재료를 본체보다 오래 기다리지
+            않는다. 실데이터 조회는 수십 초라 여유가 있고, 대역으로 즉시 돌아오는 경로는
+            기다리지 않고 그냥 지나간다.
 
     Returns:
         dict[str, Any] | None: 동종사 수, 분포, 백분위. 동종 3 사 미만이면 None 이다.
@@ -170,7 +173,8 @@ def getSectorPosition(company: Any) -> dict[str, Any] | None:
 
     backgroundRefresher().submit(f"sectorPosition:{stockCode}", _compute)
     # 이 회사의 값만 기다린다. 실행기 전체를 기다리면 남의 느린 probe 에 조회가 묶인다.
-    deadline = time.monotonic() + _SECTOR_WAIT_SECONDS
+    allowance = _SECTOR_WAIT_SECONDS if budgetSeconds is None else min(_SECTOR_WAIT_SECONDS, max(0.0, budgetSeconds))
+    deadline = time.monotonic() + allowance
     while time.monotonic() < deadline:
         settled = _SECTOR_CACHE.peek(stockCode)
         if settled is not None:
