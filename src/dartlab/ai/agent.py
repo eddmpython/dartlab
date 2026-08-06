@@ -1444,7 +1444,9 @@ def _runtimeDoneData(
             ),
             # 런타임이 준 실제 사유(타임아웃 등)가 있으면 그것이 우선이다. 품질 이슈는
             # 답이 없어서 생긴 결과라 근본 원인을 가린다.
-            "failureReason": None if answerCommitted else (runtimeErrorReason or _qualityFailureReason(qualityReport)),
+            "failureReason": None
+            if answerCommitted
+            else (runtimeErrorReason or _emptyTurnReason(event.payload) or _qualityFailureReason(qualityReport)),
         },
     }
 
@@ -1479,6 +1481,45 @@ def _qualityNotes(report: dict[str, Any]) -> list[str]:
     """미검증 사유를 뱃지용 한국어 문구 목록으로 만든다(차단 아님, 표시용)."""
     issues = report.get("issues") if isinstance(report.get("issues"), (list, tuple)) else []
     return [_QUALITY_ISSUE_LABELS.get(str(issue), str(issue)) for issue in issues]
+
+
+# 런타임이 턴 종료에 붙여 보내는 상태 중 정상 완료가 아닌 것들. 이름은 런타임마다 다르지만
+# 뜻은 하나다. "내가 끝내긴 했는데 제대로 끝낸 게 아니다".
+_TERMINAL_STATUS_LABELS = {
+    "error_max_turns": "런타임이 허용된 턴 수를 모두 써서 멈췄습니다",
+    "error_during_execution": "런타임이 실행 중 오류로 멈췄습니다",
+    "error_max_tokens": "런타임이 토큰 한도에 걸려 멈췄습니다",
+    "refusal": "런타임이 응답을 거절했습니다",
+}
+_TERMINAL_OK_STATUSES = {"", "success", "completed", "done", "end_turn", "stop"}
+
+
+def _emptyTurnReason(payload: dict[str, Any]) -> str | None:
+    """런타임이 스스로 붙인 종료 상태를 사유로 되살린다.
+
+    실측(2026-08-06). 배터리 11 개 질문이 전부 "최종 답변이 비어 있습니다" 로 끝났다.
+    사실이지만 무엇을 해야 할지는 알 수 없는 문장이다. 정작 런타임은 종료 메시지에 자기
+    상태를 실어 보냈고 우리가 그것을 버리고 있었다. 런타임이 말한 사유는 그대로 보인다.
+
+    Args:
+        payload: 종료 이벤트 payload. `status` 또는 `turn.status` 에 상태가 실린다.
+
+    Returns:
+        str | None: 정상 완료거나 상태가 없으면 None 이다. 짐작해서 채우지 않는다.
+
+    Example:
+        `reason = _emptyTurnReason(event.payload)`
+    """
+    turn = payload.get("turn") if isinstance(payload.get("turn"), dict) else {}
+    raw = str(payload.get("status") or turn.get("status") or payload.get("stopReason") or "").strip()
+    status = raw.lower()
+    if status in _TERMINAL_OK_STATUSES:
+        return None
+    known = _TERMINAL_STATUS_LABELS.get(status)
+    if known:
+        return known
+    # 모르는 상태는 번역하지 않고 그대로 옮긴다. 임의로 해석하면 진짜 사유가 사라진다.
+    return f"런타임이 '{raw}' 상태로 답변 없이 종료했습니다"
 
 
 def _qualityFailureReason(report: dict[str, Any]) -> str:

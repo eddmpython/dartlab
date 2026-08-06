@@ -1,17 +1,17 @@
-"""산업 컨텍스트 badge — Track E (5 phase 라이프사이클 + 밸류체인 peers).
+"""산업 컨텍스트 badge. Track E (5 phase 라이프사이클 + 밸류체인 peers).
 
 Company.industry() (raw 산업 매핑) + industry.calcs.lifecycle (시계열 phase) 합성.
 LLM tool 이 아니라 engineCall.Company.panel 응답에 자동 부착되는 헬퍼.
 
-5 phase (UI 표시 SSOT — 플랜 결정 박음):
-- 도입: yoy >= 30% — 강한 형성기
+5 phase (UI 표시 SSOT, 플랜 결정 박음):
+- 도입: yoy >= 30% (강한 형성기)
 - 성장: 10% <= yoy < 30%
 - 성숙: 0% <= yoy < 10%
 - 재도약: 직전 쇠퇴 후 최근 성장으로 전환된 시계열 패턴 (별도 감지)
 - 쇠퇴: yoy < 0%
 
 backend lifecycle 은 4 phase (도입·성장·성숙·쇠퇴) 만 emit. "재도약" 은 본 모듈 안에서 시계열
-3 행 패턴 (쇠퇴 → 성장/성숙) 으로 derive — 단일 YoY 로 안 잡히는 turnaround 신호.
+3 행 패턴 (쇠퇴 → 성장/성숙) 으로 derive 한다. 단일 YoY 로 안 잡히는 turnaround 신호다.
 """
 
 from __future__ import annotations
@@ -66,15 +66,15 @@ def getIndustryBadge(company: Any) -> dict[str, Any] | None:
     """Company → industry badge dict 또는 None.
 
     반환 키:
-        industryId (str) — "semiconductor" 등 industry node id.
-        industryName (str) — 한국어 표시명.
-        stageName (str | None) — 공정 단계 (예: "전공정(FAB)").
-        role (str | None) — 제조/설계 등.
-        stream (str | None) — upstream/midstream/downstream.
-        phase (str) — 도입/성장/성숙/재도약/쇠퇴/unknown (5 phase SSOT).
-        peers (list[dict]) — 상위 3 종목 {stockCode, corpName}.
-        confidence (int) — 0-100 (산업 매핑 confidence × 100 → int).
-        confidenceMethod (str) — "ratio".
+        industryId (str): "semiconductor" 등 industry node id.
+        industryName (str): 한국어 표시명.
+        stageName (str | None): 공정 단계 (예: "전공정(FAB)").
+        role (str | None): 제조/설계 등.
+        stream (str | None): upstream/midstream/downstream.
+        phase (str): 도입/성장/성숙/재도약/쇠퇴/unknown (5 phase SSOT).
+        peers (list[dict]): 상위 3 종목 {stockCode, corpName}.
+        confidence (int): 0-100 (산업 매핑 confidence × 100 → int).
+        confidenceMethod (str): "ratio".
 
     Company.industry() 실패 시 None.
     """

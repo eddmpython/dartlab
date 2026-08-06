@@ -1129,8 +1129,9 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             "columns": list(result.columns),
             "previewTruncated": bool(payload.get("previewTruncated")) if isinstance(payload, dict) else False,
         }
-        if isinstance(payload, dict) and payload.get("rows"):
-            frameData["rows"] = payload["rows"]
+        # 행을 여기에 또 싣지 않는다. 같은 행이 table_ref.payload 에 이미 있어서 두 벌이
+        # 되고, MCP payload 예산을 넘기면 초과분이 잘리는 게 아니라 결과 전체가 폐기된다.
+        # 모델에게 필요한 것은 읽을 수 있는 본문이고 그것은 아래 markdown 이 준다.
         frameBody = frameMarkdown(apiRef, target, payload)
         if frameBody:
             frameData["markdown"] = frameBody
