@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-from dartlab.ai.tools.engineResult import engineResultMarkdown, engineResultRefs
+from dartlab.ai.tools.engineResult import engineResultMarkdown, engineResultRefs, frameMarkdown
 
 pytestmark = pytest.mark.unit
 
@@ -133,3 +133,36 @@ def test표제목에인용할이름이적힌다() -> None:
     assert refs
     for ref in refs:
         assert ref.id in body
+
+
+def _framePayload() -> dict[str, Any]:
+    return {
+        "_type": "DataFrame",
+        "rowCount": 40,
+        "columns": ["axis", "label", "example"],
+        "rows": [
+            {"axis": "grade", "label": "등급", "example": 'c.credit("등급")'},
+            {"axis": "liquidity", "label": "유동성", "example": 'c.credit("유동성")'},
+        ],
+    }
+
+
+def test격자결과가표가된다() -> None:
+    """옛 계약은 행 수와 열 이름만 줘서 값이 하나도 보이지 않았다. 축 목록조차 못 봤다."""
+    body = frameMarkdown("Company.credit", "005930", _framePayload())
+
+    assert "| axis | label | example |" in body
+    assert "유동성" in body
+
+
+def test보인행수를밝힌다() -> None:
+    """일부만 보여 주고 전부인 척하면 모델이 없는 종목을 없다고 단정한다."""
+    body = frameMarkdown("Company.credit", "005930", _framePayload())
+
+    assert "전체 40행 중 2행만" in body
+
+
+def test행이없으면빈문자열이다() -> None:
+    """빈 표를 그리면 소음이고 payload 예산만 먹는다."""
+    assert frameMarkdown("Company.credit", "005930", {"columns": ["a"], "rows": []}) == ""
+    assert frameMarkdown("Company.credit", "005930", None) == ""

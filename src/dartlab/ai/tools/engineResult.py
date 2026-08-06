@@ -216,6 +216,51 @@ def engineResultMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
     return body[:_MAX_BODY_CHARS] + "\n(본문이 길어 여기서 끊었습니다.)\n"
 
 
+def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
+    """격자 결과의 미리보기 행을 표로 편다.
+
+    Capabilities:
+        `{_type: DataFrame, columns, rows}` 모양을 markdown 표로 편다. 옛 계약은 행 수와
+        열 이름만 본문에 줘서 값이 하나도 보이지 않았다.
+
+    Args:
+        apiRef: 호출된 공개 계약 이름.
+        target: 호출 범위.
+        payload: 직렬화된 격자.
+
+    Returns:
+        str: 행이 없으면 빈 문자열이다.
+
+    Example:
+        `body = frameMarkdown("Company.credit", "005930", payload)`
+    """
+    if not isinstance(payload, Mapping):
+        return ""
+    rows = [row for row in (payload.get("rows") or []) if isinstance(row, Mapping)][:_MAX_PERIODS]
+    columns = [str(column) for column in (payload.get("columns") or [])][:_MAX_METRICS]
+    if not rows or not columns:
+        return ""
+    heading = f"## {apiRef}" + (f" {target}" if target else "")
+    lines = [
+        heading,
+        "",
+        "| " + " | ".join(columns) + " |",
+        "|" + "|".join(["---"] * len(columns)) + "|",
+    ]
+    for row in rows:
+        lines.append("| " + " | ".join(_formatCell(row.get(column)) for column in columns) + " |")
+    total = payload.get("rowCount")
+    shown = len(rows)
+    if isinstance(total, int) and total > shown:
+        lines.append("")
+        lines.append(f"전체 {total}행 중 {shown}행만 보였습니다.")
+    lines.append("")
+    body = "\n".join(lines)
+    if len(body) <= _MAX_BODY_CHARS:
+        return body
+    return body[:_MAX_BODY_CHARS] + "\n(본문이 길어 여기서 끊었습니다.)\n"
+
+
 def engineResultRefs(apiRef: str, target: str | None, payload: Any) -> list[Ref]:
     """본문에 표로 편 블록마다 인용 가능한 근거를 발급한다.
 
@@ -250,4 +295,4 @@ def engineResultRefs(apiRef: str, target: str | None, payload: Any) -> list[Ref]
     ]
 
 
-__all__ = ["engineResultMarkdown", "engineResultRefs"]
+__all__ = ["engineResultMarkdown", "engineResultRefs", "frameMarkdown"]

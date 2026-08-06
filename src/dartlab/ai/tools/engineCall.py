@@ -30,7 +30,7 @@ from dartlab.reference.capability.execution import (
 from dartlab.reference.capability.execution import isEngineCallableRef
 
 from .creditBadge import getDcrBadge
-from .engineResult import engineResultMarkdown, engineResultRefs
+from .engineResult import engineResultMarkdown, engineResultRefs, frameMarkdown
 from .filingDeepLink import attachDocRef, buildPeriodToFiling
 from .formatting import formatMoney, formatPercent
 from .industryContext import getIndustryBadge, getSectorPosition
@@ -1120,17 +1120,21 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             },
         )
         extraRefs = _dataFrameEvidenceRefs(apiRef, payload, target=target, tableRef=table_ref)
-        return ToolResult(
-            True,
-            f"{apiRef} 실행 완료",
-            refs=[table_ref, executionRef, *extraRefs],
-            data={
-                "tableRef": table_ref.id,
-                "rowCount": result.height,
-                "columns": list(result.columns),
-                "previewTruncated": bool(payload.get("previewTruncated")) if isinstance(payload, dict) else False,
-            },
-        )
+        # 옛 계약은 행 수와 열 이름만 본문에 줘서 값이 하나도 보이지 않았다. scan 에서
+        # 이미 배운 것과 같다. 표를 물은 질문에 표를 주지 않으면 회사별 반복 호출을
+        # 막을 수 없다.
+        frameData: dict[str, Any] = {
+            "tableRef": table_ref.id,
+            "rowCount": result.height,
+            "columns": list(result.columns),
+            "previewTruncated": bool(payload.get("previewTruncated")) if isinstance(payload, dict) else False,
+        }
+        if isinstance(payload, dict) and payload.get("rows"):
+            frameData["rows"] = payload["rows"]
+        frameBody = frameMarkdown(apiRef, target, payload)
+        if frameBody:
+            frameData["markdown"] = frameBody
+        return ToolResult(True, f"{apiRef} 실행 완료", refs=[table_ref, executionRef, *extraRefs], data=frameData)
     if isinstance(result, Mapping | list | tuple | set | frozenset) or is_dataclass(result):
         payload = _jsonableResult(result)
         executionContract = _executionContractFields(payload)
