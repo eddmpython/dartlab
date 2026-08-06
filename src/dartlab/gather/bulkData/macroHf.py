@@ -8,10 +8,13 @@ KRX 벌크와 같은 패턴:
 
 from __future__ import annotations
 
+import logging
 from datetime import date as _date
 from datetime import datetime
 
 import polars as pl
+
+_log = logging.getLogger(__name__)
 
 _SOURCE_TO_CATEGORY = {
     "fred": "macroFred",
@@ -295,13 +298,35 @@ def fetchMulti(
         return pl.DataFrame()
 
     frames: list[pl.DataFrame] = []
+    ambiguous: list[str] = []
     for sid in seriesIds:
         df = fetchSeries(source, sid, start=start, end=end)
         if df.is_empty():
             df = pl.DataFrame(schema={"date": pl.Date, sid: pl.Float64})
+        elif df["date"].n_unique() != df.height:
+            # 한 날짜에 값이 여럿인 시리즈다. date 로 full join 하면 행이 곱해지고, 그
+            # 폭발이 멀쩡한 다른 지표까지 오염시킨다. 실측(2026-08-06): CSI 는 하루에
+            # 6 값(80·87·76·88·81·96.5), TRADE 는 4 값(6.08조·17469·2861조·5.91조)이라
+            # 13 지표 wide 표에서 2026-08-01 한 날짜가 열두 행 넘게 나왔고 BASE_RATE 와
+            # USDKRW 까지 같이 복제됐다. seriesId 하나에 세부 항목이 뭉쳐 있는 것이
+            # 근본 원인이며 그 분리는 데이터 정의 작업이다.
+            #
+            # 여기서 값 하나를 고르지 않는다. CSI 가 80 인지 96.5 인지 알 수 없고,
+            # 임의로 고르면 조용히 틀린 값을 준다. 조합에서 빼고 뺐다고 말한다.
+            ambiguous.append(sid)
+            continue
         else:
             df = df.rename({"value": sid})
         frames.append(df)
+
+    if ambiguous:
+        _log.warning(
+            "macro wide 조합에서 제외: %s. 한 날짜에 값이 여럿이라 date 기준 결합이 성립하지 않습니다. "
+            "개별 조회(target 지정)로는 그대로 볼 수 있습니다.",
+            ", ".join(ambiguous),
+        )
+    if not frames:
+        return pl.DataFrame()
 
     result = frames[0]
     for df in frames[1:]:
