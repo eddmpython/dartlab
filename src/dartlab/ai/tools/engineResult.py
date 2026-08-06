@@ -32,6 +32,8 @@ _MAX_PERIODS = 8
 _MAX_METRICS = 8
 # 본문 전체 상한. 소비하는 CLI 가 받아 주는 크기 안에 있어야 결과가 통째로 버려지지 않는다.
 _MAX_BODY_CHARS = 6000
+# 최상위 스칼라를 보일 개수. 판정 엔진은 결론을 여기 담아 보내므로 넉넉히 둔다.
+_MAX_SCALARS = 16
 # 기간을 뜻하는 키 이름 후보. 엔진마다 다른 이름을 쓴다.
 _PERIOD_KEYS = ("period", "연도", "date", "asOf", "기간")
 # 표로 펼 값이 아니라 상태를 말하는 키.
@@ -67,9 +69,20 @@ def _formatCell(value: Any) -> str:
     return text[:60] if len(text) > 60 else text
 
 
+def _omittedNote(kind: str, total: int, shown: int) -> list[str]:
+    """잘라낸 것을 밝힌다.
+
+    조용히 자르면 모델이 보인 것을 전부로 읽고, 없는 것을 없다고 단정한다. 실측
+    (2026-08-06)에서 모델은 `assessmentStatus partial` 을 읽고 스스로 확신을 좁혔다.
+    같은 판단을 하려면 무엇이 잘렸는지 알아야 한다.
+    """
+    return [f"({kind} {total} 개 중 {shown} 개만 보였습니다.)"] if total > shown else []
+
+
 def _historyTable(history: Sequence[Any]) -> list[str]:
     """기간별 dict 목록을 기간 x 지표 markdown 표로 편다. 표가 안 되면 빈 목록이다."""
-    rows = [row for row in history if isinstance(row, Mapping)][:_MAX_PERIODS]
+    allRows = [row for row in history if isinstance(row, Mapping)]
+    rows = allRows[:_MAX_PERIODS]
     if not rows:
         return []
     periodKey = _periodKey(rows[0])
@@ -83,17 +96,21 @@ def _historyTable(history: Sequence[Any]) -> list[str]:
             if isinstance(value, (Mapping, list, tuple)):
                 continue
             metrics.append(key)
-    metrics = metrics[:_MAX_METRICS]
-    if not metrics:
+    shownMetrics = metrics[:_MAX_METRICS]
+    if not shownMetrics:
         return []
     periods = [str(row.get(periodKey)) for row in rows]
     lines = ["| 지표 | " + " | ".join(periods) + " |", "|---|" + "|".join(["---:"] * len(periods)) + "|"]
-    for metric in metrics:
+    for metric in shownMetrics:
         cells = [_formatCell(row.get(metric)) for row in rows]
         if all(cell == "-" for cell in cells):
             continue
         lines.append(f"| {metric} | " + " | ".join(cells) + " |")
-    return lines if len(lines) > 2 else []
+    if len(lines) <= 2:
+        return []
+    lines.extend(_omittedNote("기간", len(allRows), len(rows)))
+    lines.extend(_omittedNote("지표", len(metrics), len(shownMetrics)))
+    return lines
 
 
 def _periodMapTable(block: Mapping[str, Any]) -> tuple[list[str], list[dict[str, Any]]]:
@@ -108,6 +125,7 @@ def _periodMapTable(block: Mapping[str, Any]) -> tuple[list[str], list[dict[str,
         "| 기간 | " + " | ".join(periods) + " |",
         "|---|" + "|".join(["---:"] * len(periods)) + "|",
         "| 값 | " + " | ".join(_formatCell(block[period]) for period in periods) + " |",
+        *_omittedNote("기간", len(keys), len(periods)),
     ]
     rows = [{"period": period, "value": block[period]} for period in periods]
     return lines, rows
@@ -125,9 +143,11 @@ def _tableBlocks(payload: Mapping[str, Any]) -> list[tuple[str, list[str], list[
             continue
         history = block.get("history")
         if isinstance(history, Sequence) and not isinstance(history, (str, bytes)):
-            rows = [row for row in history if isinstance(row, Mapping)][:_MAX_PERIODS]
-            lines = _historyTable(rows)
+            # 자르지 않고 통째로 넘긴다. 여기서 먼저 자르면 몇 개를 잘랐는지 알 수 없어
+            # 잘라낸 사실을 밝힐 수 없다.
+            lines = _historyTable(history)
             if lines:
+                rows = [row for row in history if isinstance(row, Mapping)][:_MAX_PERIODS]
                 blocks.append((name, lines, [dict(row) for row in rows]))
                 continue
         lines, rows = _periodMapTable(block)
@@ -148,7 +168,8 @@ def _scalarLines(payload: Mapping[str, Any]) -> list[str]:
         for key, value in payload.items()
         if not isinstance(value, (Mapping, list, tuple, set)) and value is not None
     ]
-    return [f"- {part}." for part in parts[:16]]
+    shown = parts[:_MAX_SCALARS]
+    return [f"- {part}." for part in shown] + [f"- {note}" for note in _omittedNote("값", len(parts), len(shown))]
 
 
 def _statusLine(name: str, block: Mapping[str, Any]) -> str:
@@ -236,8 +257,10 @@ def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
     """
     if not isinstance(payload, Mapping):
         return ""
-    rows = [row for row in (payload.get("rows") or []) if isinstance(row, Mapping)][:_MAX_PERIODS]
-    columns = [str(column) for column in (payload.get("columns") or [])][:_MAX_METRICS]
+    allRows = [row for row in (payload.get("rows") or []) if isinstance(row, Mapping)]
+    allColumns = [str(column) for column in (payload.get("columns") or [])]
+    rows = allRows[:_MAX_PERIODS]
+    columns = allColumns[:_MAX_METRICS]
     if not rows or not columns:
         return ""
     heading = f"## {apiRef}" + (f" {target}" if target else "")
@@ -251,9 +274,10 @@ def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
         lines.append("| " + " | ".join(_formatCell(row.get(column)) for column in columns) + " |")
     total = payload.get("rowCount")
     shown = len(rows)
+    lines.append("")
     if isinstance(total, int) and total > shown:
-        lines.append("")
         lines.append(f"전체 {total}행 중 {shown}행만 보였습니다.")
+    lines.extend(_omittedNote("열", len(allColumns), len(columns)))
     lines.append("")
     body = "\n".join(lines)
     if len(body) <= _MAX_BODY_CHARS:

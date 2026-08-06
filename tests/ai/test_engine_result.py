@@ -166,3 +166,44 @@ def test행이없으면빈문자열이다() -> None:
     """빈 표를 그리면 소음이고 payload 예산만 먹는다."""
     assert frameMarkdown("Company.credit", "005930", {"columns": ["a"], "rows": []}) == ""
     assert frameMarkdown("Company.credit", "005930", None) == ""
+
+
+def test잘라낸기간을밝힌다() -> None:
+    """조용히 자르면 모델이 보인 것을 전부로 읽고 없는 것을 없다고 단정한다."""
+    payload = {
+        "block": {"history": [{"period": str(2016 + step), "value": float(step)} for step in range(10)]},
+    }
+
+    body = engineResultMarkdown("Company.analysis", "005930", payload)
+
+    assert "기간 10 개 중 8 개만 보였습니다" in body
+
+
+def test잘라낸지표를밝힌다() -> None:
+    """지표 스무 개 중 여덟 개만 보이면 나머지가 없는 것으로 읽힌다."""
+    payload = {
+        "block": {"history": [{"period": "2025", **{f"m{index}": float(index) for index in range(20)}}]},
+    }
+
+    body = engineResultMarkdown("Company.analysis", "005930", payload)
+
+    assert "지표 20 개 중 8 개만 보였습니다" in body
+
+
+def test잘라낸스칼라를밝힌다() -> None:
+    """판정 엔진은 결론을 최상위 스칼라에 담는다. 말없이 버리면 결론이 사라진다."""
+    payload = {f"signal{index}": f"value{index}" for index in range(25)}
+
+    body = engineResultMarkdown("Company.quant", "005930", payload)
+
+    assert "값 25 개 중 16 개만 보였습니다" in body
+
+
+def test잘라낸열을밝힌다() -> None:
+    """열이 잘리면 그 열의 종목이 조건을 안 만족한 것으로 읽힌다."""
+    columns = [f"c{index}" for index in range(15)]
+    payload = {"rowCount": 2, "columns": columns, "rows": [dict.fromkeys(columns, 1), dict.fromkeys(columns, 2)]}
+
+    body = frameMarkdown("scan.growth", "", payload)
+
+    assert "열 15 개 중 8 개만 보였습니다" in body
