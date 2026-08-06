@@ -59,6 +59,7 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
+| [local-agent-workbench](local-agent-workbench/) | 🟢 | 로컬 앱 chat을 ChatGPT 양식에서 에이전트 작업대 양식으로 재편. paseo 아이디어 흡수 원장(01)이 SSOT, 스택 교체 없음. 착수 1단계 = 서버 영속 타임라인(A1). |
 | [ai-workbench-connector](ai-workbench-connector/) | ⚪ | 외부 AI가 호출하는 remote evidence workbench connector. local MCP tool identity는 현재 Agent Runtime 계약과 정합하되 remote auth/CF 경계는 별도. |
 | [first-party-ai](first-party-ai/) | ⚪ | public deterministic/on-device compose 중심으로 재정합 필요. local advanced runtime과 direct edge model 전제는 현재 Agent Runtime 계약 위에서 재검한다. |
 
