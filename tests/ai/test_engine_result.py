@@ -121,3 +121,15 @@ def test본문에상한이있다() -> None:
 
     assert len(body) <= 6200
     assert "여기서 끊었습니다" in body
+
+
+def test표제목에인용할이름이적힌다() -> None:
+    """가리킬 이름을 눈앞에 두지 않으면 인용은 비싼 일이 된다. 실측에서 표 이름만 쓰고
+    인용은 못 했다."""
+    payload = _historyPayload()
+    body = engineResultMarkdown("analysis.이익품질", "005930", payload)
+    refs = engineResultRefs("analysis.이익품질", "005930", payload)
+
+    assert refs
+    for ref in refs:
+        assert ref.id in body

@@ -136,6 +136,11 @@ def _tableBlocks(payload: Mapping[str, Any]) -> list[tuple[str, list[str], list[
     return blocks
 
 
+def _blockRefId(apiRef: str, target: str | None, name: str) -> str:
+    """표 하나를 가리키는 근거 id. 본문과 근거가 같은 이름을 쓰도록 여기서만 만든다."""
+    return ":".join(part for part in ("table", apiRef, str(target or ""), name) if part)
+
+
 def _scalarLines(payload: Mapping[str, Any]) -> list[str]:
     """최상위 스칼라 값. 판정 엔진은 신호와 강도를 여기에 담아 보낸다."""
     parts = [
@@ -192,7 +197,9 @@ def engineResultMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
         return ""
     lines = [heading, ""]
     for name, table, _rows in blocks:
-        lines.append(f"### {name}")
+        # 제목에 근거 id 를 같이 적는다. 실측(2026-08-06)에서 모델이 표 이름은 본문에 쓰면서
+        # 인용은 못 했다. 가리킬 이름을 눈앞에 두지 않으면 인용은 비싼 일이 된다.
+        lines.append(f"### {name} (`{_blockRefId(apiRef, target, name)}`)")
         lines.extend(table)
         lines.append("")
     if scalars:
@@ -233,7 +240,7 @@ def engineResultRefs(apiRef: str, target: str | None, payload: Any) -> list[Ref]
     scope = str(target or "")
     return [
         Ref(
-            id=":".join(part for part in ("table", apiRef, scope, name) if part),
+            id=_blockRefId(apiRef, scope, name),
             kind="tableRef",
             title=f"{apiRef} {target or ''} {name}".strip(),
             source=apiRef,
