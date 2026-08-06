@@ -187,7 +187,19 @@ class AgentRuntimeEngine:
                 raise RuntimeUnavailableError(
                     f"{preferredRuntimeId}의 현재 ACP 구현은 embedded DartLab MCP를 노출하지 않습니다"
                 )
-            if not probeMcpConnection(preferredRuntimeId).get("connected"):
+            connection = probeMcpConnection(preferredRuntimeId)
+            if connection.get("undetermined"):
+                # 상한 초과는 미연결이 아니라 미판정이다. 측정층은 이미 둘을 구분하는데
+                # 이 문에서 하나로 뭉개고 있었다. 실측(2026-08-06): 기기가 바쁜 동안
+                # 13 개 질문이 전부 "연결되지 않았습니다" 로 막혔고, 같은 시점에
+                # `claude mcp list` 는 연결됨이었다. 잠시 뒤에는 성립하므로 한 번 더 잰다.
+                connection = probeMcpConnection(preferredRuntimeId, refresh=True)
+            if connection.get("undetermined"):
+                raise RuntimeUnavailableError(
+                    f"{preferredRuntimeId}의 DartLab MCP 연결을 확인하지 못했습니다(측정 상한 초과). "
+                    f"기기가 바쁘면 잠시 뒤 다시 시도하세요"
+                )
+            if not connection.get("connected"):
                 raise RuntimeUnavailableError(
                     f"{preferredRuntimeId}에 DartLab MCP가 연결되지 않았습니다. "
                     f"`dartlab agent connect {preferredRuntimeId}`로 승인 계획을 확인하세요"

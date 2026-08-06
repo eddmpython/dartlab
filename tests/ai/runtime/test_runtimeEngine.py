@@ -11,7 +11,7 @@ import dartlab.ai.runtime.readiness as runtimeReadinessModule
 import dartlab.productOutcome as outcomeService
 from dartlab.ai.runtime.contracts import AgentEvent, RuntimeDescriptor, RuntimeProbe
 from dartlab.ai.runtime.drivers.base import DriverHandle
-from dartlab.ai.runtime.engine import AgentRuntimeEngine
+from dartlab.ai.runtime.engine import AgentRuntimeEngine, RuntimeUnavailableError
 from dartlab.ai.runtime.eventProjection import EventProjector
 from dartlab.ai.runtime.sessionManager import SessionManager
 from dartlab.ai.runtime.sessionStore import SessionStore
@@ -561,3 +561,42 @@ def testRuntimeStorePathFollowsIsolatedDartlabHome(monkeypatch, tmp_path):
 
     monkeypatch.setenv("DARTLAB_RUNTIME_DB", str(tmp_path / "explicit.sqlite3"))
     assert _runtimeStorePath() == tmp_path / "explicit.sqlite3", "명시 경로가 우선한다"
+
+
+def test미판정연결은한번더재고사유를그대로말한다(tmp_path, monkeypatch):
+    """상한 초과는 미연결이 아니라 미판정이다.
+
+    실측(2026-08-06). 기기가 바쁜 동안 13 개 질문이 전부 "MCP 가 연결되지 않았습니다" 로
+    막혔고, 같은 시점에 `claude mcp list` 는 연결됨이었다. 측정층은 이미 둘을 구분하는데
+    선택 문에서 하나로 뭉갠 탓이다. 필요 없는 재설정으로 사용자를 보내면 안 된다.
+    """
+    engine = _readyProbeEngine(tmp_path, monkeypatch)
+    calls: list[bool] = []
+
+    def _probe(runtimeId, **kwargs):
+        calls.append(bool(kwargs.get("refresh")))
+        # 첫 측정은 미판정, 다시 재면 연결됨. 잠시 뒤에는 성립한다는 실제 양상이다.
+        if len(calls) == 1:
+            return {"connected": False, "undetermined": True, "detail": "probe_undetermined: timeout"}
+        return {"connected": True, "mode": "test"}
+
+    monkeypatch.setattr(runtimeEngineModule, "probeMcpConnection", _probe)
+
+    assert engine.selectRuntime("fake") == "fake"
+    assert calls == [False, True]
+
+
+def test두번다미판정이면재설정으로보내지않는다(tmp_path, monkeypatch):
+    """무엇을 해야 할지 모르는 지시가 사유를 가리면 안 된다."""
+    engine = _readyProbeEngine(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        runtimeEngineModule,
+        "probeMcpConnection",
+        lambda runtimeId, **_kwargs: {"connected": False, "undetermined": True, "detail": "probe_undetermined"},
+    )
+
+    with pytest.raises(RuntimeUnavailableError) as caught:
+        engine.selectRuntime("fake")
+
+    assert "확인하지 못했습니다" in str(caught.value)
+    assert "agent connect" not in str(caught.value)
