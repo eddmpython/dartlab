@@ -471,3 +471,52 @@ def test_axis_engine_invalid_kwargs_returns_typed_error_not_traceback(
     assert result.ok is False
     assert result.error == "invalid_args"
     assert "macro('rates')" in result.summary
+
+
+def test_preview_frame_keeps_value_changes_for_step_series():
+    """계단형 시계열은 앞에서 자르면 아무 일도 없는 구간만 남는다.
+
+    실측(2026-08-06): 3 년 기준금리 1099 행에서 미리보기 스무 행이 전부 2023 년 8 월의
+    3.50 이었다. 3.50 에서 2.50 까지 내려온 사실이 본문에 한 번도 안 보였고, 모델은 변경
+    시점을 찾으려 기간을 쪼개 열 번 넘게 다시 불렀다.
+    """
+    import polars as pl
+
+    from dartlab.ai.tools.engineCall import _previewFrame
+
+    values = [3.5] * 400 + [3.25] * 300 + [3.0] * 399
+    frame = pl.DataFrame({"date": [f"d{i:04d}" for i in range(len(values))], "value": values})
+
+    preview, mode = _previewFrame(frame, 20)
+
+    assert mode == "valueChanges"
+    assert preview["value"].to_list() == [3.5, 3.25, 3.0, 3.0]
+    assert preview["date"].to_list()[-1] == "d1098"
+
+
+def test_preview_frame_falls_back_to_head_for_volatile_series():
+    """환율처럼 값이 늘 다른 계열에 변경점 논리를 쓰면 표가 통째로 실린다."""
+    import polars as pl
+
+    from dartlab.ai.tools.engineCall import _previewFrame
+
+    frame = pl.DataFrame({"date": [f"d{i:04d}" for i in range(400)], "value": [1300.0 + i for i in range(400)]})
+
+    preview, mode = _previewFrame(frame, 20)
+
+    assert mode == "head"
+    assert preview.height == 20
+
+
+def test_preview_frame_returns_short_frames_whole():
+    """자를 것이 없으면 그대로 둔다."""
+    import polars as pl
+
+    from dartlab.ai.tools.engineCall import _previewFrame
+
+    frame = pl.DataFrame({"date": ["d0", "d1"], "value": [1.0, 1.0]})
+
+    preview, mode = _previewFrame(frame, 20)
+
+    assert mode == "full"
+    assert preview.height == 2

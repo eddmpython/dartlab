@@ -318,6 +318,10 @@ def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
     allColumns = [str(column) for column in (payload.get("columns") or [])]
     columns = allColumns[:_MAX_METRICS]
     rows, stepped = _previewRows(allRows, columns)
+    # 직렬화 시점에 이미 변경 지점만 고른 경우가 있다. 그때 여기서 다시 고를 것은 없지만
+    # 무엇을 본 것인지는 그대로 말해야 한다. 앞부분을 본 것으로 읽히면 나머지를 모른다고
+    # 판단해 다시 부른다.
+    stepped = stepped or str(payload.get("previewMode") or "") == "valueChanges"
     if not rows or not columns:
         return ""
     heading = f"## {apiRef}" + (f" {target}" if target else "")

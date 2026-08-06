@@ -43,6 +43,51 @@ _CANONICAL_TOP_LEVEL_CAPABILITY_REFS = _capabilityExecution.CANONICAL_TOP_LEVEL_
 _FILING_DIRECT_CONFIDENCE = _baseScore("filing_direct")
 
 _JSON_PREVIEW_ROWS = 20
+# 계단형 판정. 변경 지점이 이보다 많으면 계단이 아니라 그냥 변동하는 계열이다.
+_STEP_PREVIEW_MAX = 24
+# 고유값이 행 수의 이 분의 일 이하일 때 계단으로 본다.
+_STEP_SPARSITY = 10
+
+
+def _stepSeriesColumn(frame: pl.DataFrame) -> str | None:
+    """같은 값이 길게 이어지는 수치 열 하나를 찾는다. 없으면 None 이다."""
+    if frame.width != 2 or frame.height == 0:
+        return None
+    for name, dtype in zip(frame.columns, frame.dtypes, strict=True):
+        if not dtype.is_numeric():
+            continue
+        if frame[name].n_unique() <= max(2, frame.height // _STEP_SPARSITY):
+            return name
+    return None
+
+
+def _previewFrame(frame: pl.DataFrame, limit: int) -> tuple[pl.DataFrame, str]:
+    """미리보기 행을 고른다. 계단형 시계열이면 값이 바뀐 지점을 남긴다.
+
+    앞에서 스무 행을 자르는 것은 대부분의 표에서 맞다. 그런데 며칠씩 같은 값이 이어지는
+    계열에서는 앞부분이 정확히 아무 일도 없는 구간이다. 실측(2026-08-06): 3 년 기준금리
+    1099 행에서 미리보기 스무 행이 전부 2023 년 8 월의 3.50 이었다. 3.50 에서 2.75 로
+    내려온 사실이 본문에 한 번도 안 나타났고, 모델은 변경 시점을 찾으려 기간을 쪼개 열 번
+    넘게 다시 불렀다. 표가 쓸모없으면 호출로 메운다.
+
+    값이 바뀐 지점만 남기면 1099 행이 몇 줄이 되고 그 몇 줄이 질문의 답이다. 크기는 줄고
+    정보는 는다. 마지막 시점은 값이 안 바뀌었어도 반드시 싣는다. 지금 얼마인가는 거의
+    항상 질문의 일부다.
+    """
+    if frame.height <= limit:
+        return frame, "full"
+    column = _stepSeriesColumn(frame)
+    if column is None:
+        return frame.head(limit), "head"
+    indexed = frame.with_row_index("_stepIndex")
+    changed = indexed.filter(pl.col(column).ne_missing(pl.col(column).shift(1)) | (pl.col("_stepIndex") == 0))
+    if changed.height <= 1 or changed.height > _STEP_PREVIEW_MAX:
+        return frame.head(limit), "head"
+    if changed["_stepIndex"].max() != frame.height - 1:
+        changed = pl.concat([changed, indexed.tail(1)])
+    return changed.drop("_stepIndex"), "valueChanges"
+
+
 _JSON_PREVIEW_BYTES = 4_000
 _JSON_MAX_BYTES = 128 * 1024
 _JSON_METADATA_RESERVE = 2_048
@@ -1638,10 +1683,13 @@ def _serializeJsonTree(value: Any, budget: _JsonBudget, depth: int, active: set[
     if isinstance(value, datetime | date):
         return _boundedString(value.isoformat(), budget)
     if isinstance(value, pl.DataFrame):
-        preview = value.head(_JSON_PREVIEW_ROWS)
+        preview, previewMode = _previewFrame(value, _JSON_PREVIEW_ROWS)
         frame = {
             "_type": "DataFrame",
             "rowCount": value.height,
+            # 어떤 행을 골랐는지 밝힌다. "1099 행 중 7 행" 만 적으면 앞 7 행으로 읽히고,
+            # 그러면 모델은 나머지 구간을 모른다고 판단해 다시 부른다.
+            "previewMode": previewMode,
             "previewRowCount": preview.height,
             "columns": list(value.columns),
             "schema": [
