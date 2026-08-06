@@ -102,3 +102,23 @@ def test종목코드없으면재지않는다() -> None:
     with patch("dartlab.industry.calcs.companyCalcs.calcSectorMetrics") as calc:
         assert industryContext.getSectorPosition(_Company("")) is None
     calc.assert_not_called()
+
+
+def test기다릴수없으면시작도하지않는다() -> None:
+    """시장 전체 횡단면을 읽는 일이라 결과를 못 쓸 것을 배경에서 돌리면 메모리만 먹는다.
+
+    실측(2026-08-06). Polars 네이티브 메모리는 gc 로 회수되지 않아 그 봉우리가 프로세스
+    상한을 그대로 민다. CI 에서 6508 건이 전부 통과하고도 워커가 죽은 원인이 이것이었다.
+    """
+    with patch("dartlab.industry.calcs.companyCalcs.calcSectorMetrics") as calc:
+        got = industryContext.getSectorPosition(_Company("005930"), budgetSeconds=0.05)
+    assert got is None
+    calc.assert_not_called()
+
+
+def test본체가오래걸렸으면기다린다() -> None:
+    """실데이터 조회는 수십 초라 판단 기준을 기다릴 여유가 있다."""
+    with patch("dartlab.industry.calcs.companyCalcs.calcSectorMetrics", return_value=_metrics()) as calc:
+        got = industryContext.getSectorPosition(_Company("005930"), budgetSeconds=30.0)
+    assert got is not None
+    assert calc.call_count == 1

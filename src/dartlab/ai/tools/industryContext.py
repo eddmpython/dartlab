@@ -125,6 +125,8 @@ _SECTOR_CACHE = SwrCache(3600.0)
 # 25 초는 실측(2026-08-06)에서 나왔다. 표를 처음 읽는 데 16 초가 들고, 느린 디스크를 감안해
 # 여유를 뒀다. 이 값을 무는 것은 프로세스에서 처음 묻는 회사 한 번뿐이다.
 _SECTOR_WAIT_SECONDS = 25.0
+# 이보다 짧게밖에 못 기다리면 아예 재지 않는다. 못 쓸 계산을 시작하는 것은 비용만이다.
+_MIN_USEFUL_WAIT_SECONDS = 1.0
 
 
 def getSectorPosition(company: Any, *, budgetSeconds: float | None = None) -> dict[str, Any] | None:
@@ -171,9 +173,15 @@ def getSectorPosition(company: Any, *, budgetSeconds: float | None = None) -> di
         _SECTOR_CACHE.put(stockCode, metrics or {})
         return metrics or {}
 
+    allowance = _SECTOR_WAIT_SECONDS if budgetSeconds is None else min(_SECTOR_WAIT_SECONDS, max(0.0, budgetSeconds))
+    if allowance < _MIN_USEFUL_WAIT_SECONDS:
+        # 기다릴 수 없으면 시작도 하지 않는다. 시장 전체 횡단면을 읽는 일이라 결과를
+        # 못 쓸 것을 배경에서 돌리면 메모리만 먹는다. Polars 네이티브 메모리는 gc 로
+        # 회수되지 않아 그 봉우리가 프로세스 상한을 그대로 민다. 실측(2026-08-06)에서
+        # 이것이 테스트 워커를 죽였다.
+        return None
     backgroundRefresher().submit(f"sectorPosition:{stockCode}", _compute)
     # 이 회사의 값만 기다린다. 실행기 전체를 기다리면 남의 느린 probe 에 조회가 묶인다.
-    allowance = _SECTOR_WAIT_SECONDS if budgetSeconds is None else min(_SECTOR_WAIT_SECONDS, max(0.0, budgetSeconds))
     deadline = time.monotonic() + allowance
     while time.monotonic() < deadline:
         settled = _SECTOR_CACHE.peek(stockCode)

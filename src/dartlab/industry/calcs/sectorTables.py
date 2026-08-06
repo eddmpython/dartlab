@@ -121,20 +121,25 @@ def sectorMetricTables() -> dict[str, dict[str, float]]:
         if _distilled and time.monotonic() - _loadedAt < _TABLE_TTL_SECONDS:
             return _distilled
         out: dict[str, dict[str, float]] = {}
-        indexed: dict[str, dict[str, dict[str, Any]]] = {}
-        for metric, moduleName, functionName, column in _SOURCES:
-            sourceKey = f"{moduleName}.{functionName}"
-            if sourceKey not in indexed:
-                indexed[sourceKey] = _rowsByStockCode(_load(moduleName, functionName))
-            values: dict[str, float] = {}
-            for code, row in indexed[sourceKey].items():
-                raw = row.get(column)
-                if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        # 스캐너 하나를 읽고 그 스캐너가 주는 지표를 다 뽑은 뒤 곧바로 놓는다. 넷을 다
+        # 읽어 놓고 나중에 뽑으면 최대 메모리가 네 배가 된다. Polars 네이티브 메모리는
+        # gc 로 회수되지 않아서 그 봉우리가 그대로 프로세스 상한을 민다.
+        for moduleName, functionName in dict.fromkeys((source[1], source[2]) for source in _SOURCES):
+            rows = _rowsByStockCode(_load(moduleName, functionName))
+            for metric, sourceModule, sourceFunction, column in _SOURCES:
+                if (sourceModule, sourceFunction) != (moduleName, functionName):
                     continue
-                values[code] = float(raw)
-            out[metric] = values
-        # 원본 표는 여기서 놓는다. 실수만 남기고 DataFrame 은 들고 가지 않는다.
-        indexed.clear()
+                values: dict[str, float] = {}
+                for code, row in rows.items():
+                    raw = row.get(column)
+                    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+                        continue
+                    values[code] = float(raw)
+                out[metric] = values
+            # 다음 스캐너를 읽기 전에 놓는다. 전체 회수를 강제하지는 않는다. 실측
+            # (2026-08-06)으로 gc 강제는 6 초를 먹었고 줄여 준 최대 메모리는 재지 못했다.
+            rows.clear()
+            del rows
         _distilled = out
         _loadedAt = time.monotonic()
         return _distilled
