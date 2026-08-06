@@ -29,6 +29,7 @@ from dartlab.reference.capability.execution import (
 from dartlab.reference.capability.execution import isEngineCallableRef
 
 from .creditBadge import getDcrBadge
+from .engineResult import engineResultMarkdown, engineResultRefs
 from .filingDeepLink import attachDocRef, buildPeriodToFiling
 from .formatting import formatMoney, formatPercent
 from .industryContext import getIndustryBadge, getSectorPosition
@@ -1140,7 +1141,14 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
         ]
         refs.extend(_lensRefs(apiRef, payload, target=target))
         refs.extend(_simulationRefs(apiRef, payload, target=target))
-        return ToolResult(True, f"{apiRef} 실행 완료", refs=refs, data={"result": payload})
+        # 모델이 읽는 것은 본문이다. dict 안에만 있는 것은 없는 것과 같다. 판정 엔진의
+        # 결과를 표로 펴고 그 표를 가리키는 근거를 함께 발급한다.
+        refs.extend(engineResultRefs(apiRef, target, payload))
+        body = engineResultMarkdown(apiRef, target, payload)
+        data: dict[str, Any] = {"result": payload}
+        if body:
+            data["markdown"] = body
+        return ToolResult(True, f"{apiRef} 실행 완료", refs=refs, data=data)
     payload = _jsonableResult(result)
     ref = Ref(
         id=f"execution:{apiRef}:{target or 'result'}",

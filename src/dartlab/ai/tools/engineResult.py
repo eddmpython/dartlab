@@ -1,0 +1,246 @@
+"""판정 엔진의 결과 dict 를 모델이 읽는 본문과 인용 가능한 근거로 편다.
+
+실측(2026-08-06)으로 드러난 비대칭이다. `Company.panel` 은 표와 파생 지표와 업종 기준이
+붙은 본문 1810 자를 건네는데, 정작 판정을 내는 `Company.analysis` 와 `Company.quant` 와
+`Company.credit` 은 본문이 0 자다. 요약은 "실행 완료" 다섯 글자이고, 내용은 9184 자짜리
+중첩 dict 로 넘어간다.
+
+결과가 그대로 나타났다. 같은 배터리에서 panel 경로로 답한 질문은 근거 39 건이었고,
+analysis 와 quant 경로로 답한 질문은 3226 자를 쓰고도 근거 3 건에 인용 2 건이었다. 답변에
+적힌 수치가 맞는데도 확인할 방법이 없는 상태다.
+
+모델이 읽는 것은 본문이다. dict 안에만 있는 것은 없는 것과 같다. 신용 등급과 산업 국면
+때 배운 것과 정확히 같은 실패이고, 같은 방법으로 고친다. **지어내지 않고 이미 있는 것을
+옮겨 적는다.** 계산도 해석도 여기서 하지 않는다.
+
+블록마다 `history` 배열이 있는 것이 이 엔진들의 공통 모양이라, 그것을 기간 x 지표 표로
+편다. 표를 그리면 그 표를 가리키는 근거도 함께 발급한다. 본문만 주고 근거를 안 주면
+답변은 읽히되 인용되지 않는다.
+"""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from dartlab.ai.contracts import Ref
+
+# 한 블록에서 보일 기간 수. 더 보이면 표가 읽히지 않고 payload 예산만 먹는다.
+_MAX_PERIODS = 8
+# 한 표에 보일 지표 수. 기간 열은 여기에 포함하지 않는다.
+_MAX_METRICS = 8
+# 본문 전체 상한. 소비하는 CLI 가 받아 주는 크기 안에 있어야 결과가 통째로 버려지지 않는다.
+_MAX_BODY_CHARS = 6000
+# 기간을 뜻하는 키 이름 후보. 엔진마다 다른 이름을 쓴다.
+_PERIOD_KEYS = ("period", "연도", "date", "asOf", "기간")
+# 표로 펼 값이 아니라 상태를 말하는 키.
+_STATUS_KEYS = ("status", "assessmentStatus", "available", "zone", "grade", "score", "interpretation", "reason")
+# 기간처럼 생긴 키. 2025 / 2025FY / 2025Q3 / 2025-03 을 받는다.
+_PERIOD_PATTERN = re.compile(r"^(?:19|20)\d{2}(?:FY|Q[1-4]|-\d{2})?$")
+
+
+def _periodKey(row: Mapping[str, Any]) -> str | None:
+    """행에서 기간 열 이름을 고른다. 없으면 None 이다."""
+    for key in _PERIOD_KEYS:
+        if key in row:
+            return key
+    return None
+
+
+def _formatCell(value: Any) -> str:
+    """값 하나를 표 한 칸으로. 큰 금액은 조원 억원으로 줄여 읽게 한다."""
+    if value is None:
+        return "-"
+    if isinstance(value, bool):
+        return "예" if value else "아니오"
+    if isinstance(value, (int, float)):
+        number = float(value)
+        if abs(number) >= 1e12:
+            return f"{number / 1e12:,.1f}조원"
+        if abs(number) >= 1e8:
+            return f"{number / 1e8:,.0f}억원"
+        if number == int(number) and abs(number) < 1e6:
+            return f"{int(number):,}"
+        return f"{number:,.2f}"
+    text = str(value)
+    return text[:60] if len(text) > 60 else text
+
+
+def _historyTable(history: Sequence[Any]) -> list[str]:
+    """기간별 dict 목록을 기간 x 지표 markdown 표로 편다. 표가 안 되면 빈 목록이다."""
+    rows = [row for row in history if isinstance(row, Mapping)][:_MAX_PERIODS]
+    if not rows:
+        return []
+    periodKey = _periodKey(rows[0])
+    if periodKey is None:
+        return []
+    metrics: list[str] = []
+    for row in rows:
+        for key, value in row.items():
+            if key == periodKey or key in metrics:
+                continue
+            if isinstance(value, (Mapping, list, tuple)):
+                continue
+            metrics.append(key)
+    metrics = metrics[:_MAX_METRICS]
+    if not metrics:
+        return []
+    periods = [str(row.get(periodKey)) for row in rows]
+    lines = ["| 지표 | " + " | ".join(periods) + " |", "|---|" + "|".join(["---:"] * len(periods)) + "|"]
+    for metric in metrics:
+        cells = [_formatCell(row.get(metric)) for row in rows]
+        if all(cell == "-" for cell in cells):
+            continue
+        lines.append(f"| {metric} | " + " | ".join(cells) + " |")
+    return lines if len(lines) > 2 else []
+
+
+def _periodMapTable(block: Mapping[str, Any]) -> tuple[list[str], list[dict[str, Any]]]:
+    """{기간: 값} 모양을 한 줄짜리 표로 편다. 엔진마다 시계열을 이 모양으로도 준다."""
+    keys = [str(key) for key in block]
+    if len(keys) < 2 or not all(_PERIOD_PATTERN.match(key) for key in keys):
+        return [], []
+    if any(isinstance(value, (Mapping, list, tuple)) for value in block.values()):
+        return [], []
+    periods = sorted(keys, reverse=True)[:_MAX_PERIODS]
+    lines = [
+        "| 기간 | " + " | ".join(periods) + " |",
+        "|---|" + "|".join(["---:"] * len(periods)) + "|",
+        "| 값 | " + " | ".join(_formatCell(block[period]) for period in periods) + " |",
+    ]
+    rows = [{"period": period, "value": block[period]} for period in periods]
+    return lines, rows
+
+
+def _tableBlocks(payload: Mapping[str, Any]) -> list[tuple[str, list[str], list[dict[str, Any]]]]:
+    """표로 펼 수 있는 블록만 (이름, 표 줄, 근거용 행) 으로 모은다.
+
+    본문과 근거가 같은 판정을 쓰도록 여기 한 곳에서만 고른다. 두 곳에서 따로 고르면
+    본문에는 있는데 인용할 근거가 없는 표가 생긴다.
+    """
+    blocks: list[tuple[str, list[str], list[dict[str, Any]]]] = []
+    for name, block in payload.items():
+        if not isinstance(block, Mapping):
+            continue
+        history = block.get("history")
+        if isinstance(history, Sequence) and not isinstance(history, (str, bytes)):
+            rows = [row for row in history if isinstance(row, Mapping)][:_MAX_PERIODS]
+            lines = _historyTable(rows)
+            if lines:
+                blocks.append((name, lines, [dict(row) for row in rows]))
+                continue
+        lines, rows = _periodMapTable(block)
+        if lines:
+            blocks.append((name, lines, rows))
+    return blocks
+
+
+def _scalarLines(payload: Mapping[str, Any]) -> list[str]:
+    """최상위 스칼라 값. 판정 엔진은 신호와 강도를 여기에 담아 보낸다."""
+    parts = [
+        f"{key} {_formatCell(value)}"
+        for key, value in payload.items()
+        if not isinstance(value, (Mapping, list, tuple, set)) and value is not None
+    ]
+    return [f"- {part}." for part in parts[:16]]
+
+
+def _statusLine(name: str, block: Mapping[str, Any]) -> str:
+    """상태 키만 모아 한 줄로. 못 재는 것을 못 잰다고 적어야 모델이 지어내지 않는다."""
+    parts = []
+    for key in _STATUS_KEYS:
+        if key not in block:
+            continue
+        value = block[key]
+        if isinstance(value, (Mapping, list, tuple)) or value is None:
+            continue
+        parts.append(f"{key} {_formatCell(value)}")
+    return f"- {name}: {', '.join(parts)}." if parts else ""
+
+
+def engineResultMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
+    """엔진 결과를 모델이 읽는 본문으로 편다.
+
+    Capabilities:
+        블록마다 `history` 배열을 가진 판정 엔진 결과를 기간 x 지표 표와 상태 줄로 편다.
+        계산이나 해석은 하지 않고 이미 있는 값을 옮겨 적기만 한다.
+
+    Args:
+        apiRef: 호출된 공개 계약 이름. 제목에 쓴다.
+        target: 축 이름. 없으면 생략한다.
+        payload: 엔진이 돌려준 직렬화된 결과.
+
+    Returns:
+        str: 펼 것이 없으면 빈 문자열이다.
+
+    Example:
+        `body = engineResultMarkdown("Company.analysis", "이익품질", payload)`
+    """
+    if not isinstance(payload, Mapping):
+        return ""
+    heading = f"## {apiRef}" + (f" {target}" if target else "")
+    blocks = _tableBlocks(payload)
+    tabled = {name for name, _lines, _rows in blocks}
+    statuses = [
+        line
+        for name, block in payload.items()
+        if isinstance(block, Mapping) and name not in tabled and (line := _statusLine(name, block))
+    ]
+    scalars = _scalarLines(payload)
+    if not blocks and not statuses and not scalars:
+        return ""
+    lines = [heading, ""]
+    for name, table, _rows in blocks:
+        lines.append(f"### {name}")
+        lines.extend(table)
+        lines.append("")
+    if scalars:
+        lines.append("### 핵심 값")
+        lines.extend(scalars)
+        lines.append("")
+    if statuses:
+        lines.append("### 상태와 한계")
+        lines.extend(statuses)
+        lines.append("")
+    body = "\n".join(lines)
+    if len(body) <= _MAX_BODY_CHARS:
+        return body
+    return body[:_MAX_BODY_CHARS] + "\n(본문이 길어 여기서 끊었습니다.)\n"
+
+
+def engineResultRefs(apiRef: str, target: str | None, payload: Any) -> list[Ref]:
+    """본문에 표로 편 블록마다 인용 가능한 근거를 발급한다.
+
+    Capabilities:
+        표로 그려진 블록 하나가 근거 하나가 된다. 본문만 주고 근거를 안 주면 답변은
+        읽히되 인용되지 않는다. 실측에서 이 엔진들의 근거는 실행 영수증 하나뿐이었다.
+
+    Args:
+        apiRef: 호출된 공개 계약 이름.
+        target: 호출 범위. 이 경로에서는 종목코드가 실려 오므로 그대로 ref id 에 넣어
+            회사별로 구분한다.
+        payload: 엔진이 돌려준 직렬화된 결과.
+
+    Returns:
+        list[Ref]: 표로 편 블록이 없으면 빈 목록이다.
+
+    Example:
+        `refs = engineResultRefs("analysis.이익품질", "005930", payload)`
+    """
+    if not isinstance(payload, Mapping):
+        return []
+    scope = str(target or "")
+    return [
+        Ref(
+            id=":".join(part for part in ("table", apiRef, scope, name) if part),
+            kind="tableRef",
+            title=f"{apiRef} {target or ''} {name}".strip(),
+            source=apiRef,
+            payload={"apiRef": apiRef, "axis": target or None, "block": name, "history": rows},
+        )
+        for name, _lines, rows in _tableBlocks(payload)
+    ]
+
+
+__all__ = ["engineResultMarkdown", "engineResultRefs"]
