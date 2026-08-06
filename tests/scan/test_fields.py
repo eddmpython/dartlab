@@ -315,3 +315,59 @@ def test_define_abs_and_log(monkeypatch):
     logs = sorted([v for v in dfLog["@l"].to_list() if v is not None])
     assert len(logs) == 1
     assert abs(logs[0] - 2.1972245773) < 1e-6
+
+
+class TestScreenUniverseIndexName:
+    """indexName 은 받아만 두는 키가 아니라 실제로 시장을 좁힌다.
+
+    실측(2026-08-06). 코스피만 요구한 스크리닝이 코스닥을 섞어 돌려줬다. 이 모듈은
+    "조건을 못 읽었으면 빈 결과가 아니라 못 읽었다고 말해야 한다" 는 계약으로 지어졌는데
+    이 키만 읽은 척하고 버리고 있었다. 조용히 틀린 답이 가장 나쁘다.
+    """
+
+    @staticmethod
+    def _listing() -> pl.DataFrame:
+        return pl.DataFrame(
+            {
+                "종목코드": ["005930", "000660", "247540", "217270"],
+                "시장구분": ["유가", "유가", "코스닥", "코넥스"],
+            }
+        )
+
+    def test코스피만남긴다(self, monkeypatch):
+        """섞여 나오면 사용자는 코스닥 종목을 코스피로 읽는다."""
+        import dartlab
+        from dartlab.scan.builders.kr.report import fields
+
+        monkeypatch.setattr(dartlab, "listing", self._listing)
+
+        assert sorted(fields._screenUniverse("KOSPI")["stockCode"].to_list()) == ["000660", "005930"]
+
+    def test코스닥과코넥스도가른다(self, monkeypatch):
+        """시장 이름 하나만 되면 나머지는 못 쓰는 것과 같다."""
+        import dartlab
+        from dartlab.scan.builders.kr.report import fields
+
+        monkeypatch.setattr(dartlab, "listing", self._listing)
+
+        assert fields._screenUniverse("KOSDAQ")["stockCode"].to_list() == ["247540"]
+        assert fields._screenUniverse("KONEX")["stockCode"].to_list() == ["217270"]
+
+    def test지정없으면전부남긴다(self, monkeypatch):
+        """기본은 전 상장이다. 말없이 좁히는 것도 같은 종류의 거짓말이다."""
+        import dartlab
+        from dartlab.scan.builders.kr.report import fields
+
+        monkeypatch.setattr(dartlab, "listing", self._listing)
+
+        assert len(fields._screenUniverse()["stockCode"].to_list()) == 4
+
+    def test모르는이름은조용히무시하지않는다(self, monkeypatch):
+        """무시하면 전 상장 결과가 그 시장 결과인 척 나간다."""
+        import dartlab
+        from dartlab.scan.builders.kr.report import fields
+
+        monkeypatch.setattr(dartlab, "listing", self._listing)
+
+        with pytest.raises(ValueError, match="indexName"):
+            fields._screenUniverse("NASDAQ")

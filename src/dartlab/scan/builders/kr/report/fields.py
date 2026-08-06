@@ -326,7 +326,7 @@ def executeScreenSpecDetailed(spec: dict[str, Any]) -> dict[str, Any]:
     if normalizedAny:
         conditions.append({"field": "__any__", "op": "any", "alternatives": normalizedAny})
 
-    universe = _screenUniverse()
+    universe = _screenUniverse(str(spec.get("indexName") or ""))
     for field, frame in framesByField.items():
         if frame is None or frame.is_empty() or "stockCode" not in frame.columns or field not in frame.columns:
             continue
@@ -443,8 +443,26 @@ def _validateScreenScope(spec: dict[str, Any]) -> None:
         )
 
 
-def _screenUniverse() -> pl.DataFrame:
-    """KR 상장 유니버스를 ``stockCode`` 단일 컬럼으로 반환한다."""
+# screen spec 의 indexName 이 가리키는 시장. 상장 목록의 시장구분 표기가 정본이다.
+_INDEX_TO_MARKET_SEGMENT = {
+    "KOSPI": "유가",
+    "코스피": "유가",
+    "유가": "유가",
+    "KOSDAQ": "코스닥",
+    "코스닥": "코스닥",
+    "KONEX": "코넥스",
+    "코넥스": "코넥스",
+}
+
+
+def _screenUniverse(indexName: str = "") -> pl.DataFrame:
+    """KR 상장 유니버스를 ``stockCode`` 단일 컬럼으로 반환한다.
+
+    ``indexName`` 이 있으면 그 시장 종목만 남긴다. 실측(2026-08-06): 이 키를 spec 에서
+    받아 놓고 쓰지 않아, 코스피만 요구한 스크리닝이 코스닥을 섞어 돌려줬다. 이 모듈은
+    "조건을 못 읽었으면 빈 결과가 아니라 못 읽었다고 말해야 한다" 는 계약으로 지어졌는데,
+    읽은 척하고 버린 셈이다. 상장 목록에 시장구분이 이미 있어 새 조회 없이 걸 수 있다.
+    """
     from dartlab import listing
 
     raw = listing()
@@ -453,6 +471,18 @@ def _screenUniverse() -> pl.DataFrame:
     stockColumn = next((column for column in ("stockCode", "종목코드", "stock_code") if column in raw.columns), None)
     if stockColumn is None:
         return pl.DataFrame({"stockCode": []}, schema={"stockCode": pl.Utf8})
+    wanted = str(indexName or "").strip()
+    if wanted:
+        segment = _INDEX_TO_MARKET_SEGMENT.get(wanted) or _INDEX_TO_MARKET_SEGMENT.get(wanted.upper())
+        if segment is None:
+            raise ValueError(
+                f"screen spec 의 indexName 을 알 수 없습니다: {wanted!r}. "
+                f"사용 가능: {sorted({key for key in _INDEX_TO_MARKET_SEGMENT if key.isascii()})}"
+            )
+        marketColumn = next((column for column in ("시장구분", "marketSegment") if column in raw.columns), None)
+        if marketColumn is None:
+            raise ValueError("상장 목록에 시장구분이 없어 indexName 으로 시장을 좁힐 수 없습니다.")
+        raw = raw.filter(pl.col(marketColumn).cast(pl.Utf8).str.strip_chars() == segment)
     return raw.select(pl.col(stockColumn).cast(pl.Utf8).alias("stockCode")).drop_nulls().unique()
 
 
