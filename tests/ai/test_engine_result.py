@@ -262,3 +262,32 @@ def test짧은표는그대로둔다() -> None:
     body = frameMarkdown("gather.macro", "BASE_RATE", payload)
 
     assert "보였습니다" not in body
+
+
+def test고르게뽑은표를앞에서다시자르지않는다() -> None:
+    """자르는 쪽이 거짓말을 만든다.
+
+    실측(2026-08-06): 직렬화가 3 년 환율을 고르게 스무 행으로 뽑아 왔는데 본문이 앞 여덟
+    행만 다시 잘랐다. 마지막 행이 2024-08 인데도 "마지막 시점을 포함합니다" 라고 적혔다.
+    """
+    rows = [{"date": f"d{index:04d}", "value": 1300.0 + index} for index in range(20)]
+    payload = {"rowCount": 733, "columns": ["date", "value"], "rows": rows, "previewMode": "evenSample"}
+
+    body = frameMarkdown("gather.macro", "DEXKOUS", payload)
+
+    assert "d0000" in body
+    assert "d0019" in body
+    assert "기간 전체에 고르게 퍼진" in body
+
+
+def test고르게뽑기는첫행과마지막행을반드시넣는다() -> None:
+    """어느 구간도 통째로 빠지지 않아야 추세가 보인다."""
+    from dartlab.ai.tools.engineResult import _evenPick
+
+    rows = [{"i": index} for index in range(100)]
+
+    picked = _evenPick(rows, 8)
+
+    assert picked[0]["i"] == 0
+    assert picked[-1]["i"] == 99
+    assert len(picked) <= 9

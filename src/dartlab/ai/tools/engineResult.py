@@ -261,6 +261,15 @@ def _stepValueColumn(allRows: list[Mapping[str, Any]], columns: list[str]) -> st
     return None
 
 
+def _evenPick(rows: list[Mapping[str, Any]], limit: int) -> list[Mapping[str, Any]]:
+    """기간 전체에 고르게 퍼진 행을 고른다. 첫 행과 마지막 행은 반드시 넣는다."""
+    if len(rows) <= limit:
+        return rows
+    step = len(rows) / limit
+    picks = sorted({min(int(index * step), len(rows) - 1) for index in range(limit)} | {0, len(rows) - 1})
+    return [rows[index] for index in picks]
+
+
 def _previewRows(allRows: list[Mapping[str, Any]], columns: list[str]) -> tuple[list[Mapping[str, Any]], bool]:
     """미리보기 행을 고른다. 계단형 시계열이면 값이 바뀐 지점을 고른다.
 
@@ -317,11 +326,17 @@ def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
     allRows = [row for row in (payload.get("rows") or []) if isinstance(row, Mapping)]
     allColumns = [str(column) for column in (payload.get("columns") or [])]
     columns = allColumns[:_MAX_METRICS]
-    rows, stepped = _previewRows(allRows, columns)
-    # 직렬화 시점에 이미 변경 지점만 고른 경우가 있다. 그때 여기서 다시 고를 것은 없지만
-    # 무엇을 본 것인지는 그대로 말해야 한다. 앞부분을 본 것으로 읽히면 나머지를 모른다고
-    # 판단해 다시 부른다.
-    stepped = stepped or str(payload.get("previewMode") or "") == "valueChanges"
+    # 직렬화 시점에 이미 골라 온 경우가 있다. 무엇을 본 것인지는 그대로 말해야 한다.
+    # 앞부분을 본 것으로 읽히면 나머지를 모른다고 판단해 다시 부른다.
+    previewMode = str(payload.get("previewMode") or "")
+    if previewMode == "evenSample":
+        # 고르게 뽑아 온 것을 여기서 앞에서부터 다시 자르면 뒤 구간이 통째로 사라진다.
+        # 실측(2026-08-06): 3 년 환율에서 마지막 행이 2024-08 이 되고도 본문은 "마지막
+        # 시점을 포함합니다" 라고 적었다. 자르는 쪽이 만든 거짓말이다.
+        rows, stepped = _evenPick(allRows, _MAX_PERIODS), False
+    else:
+        rows, stepped = _previewRows(allRows, columns)
+        stepped = stepped or previewMode == "valueChanges"
     if not rows or not columns:
         return ""
     heading = f"## {apiRef}" + (f" {target}" if target else "")
@@ -340,6 +355,12 @@ def frameMarkdown(apiRef: str, target: str | None, payload: Any) -> str:
         lines.append(
             f"전체 {total if isinstance(total, int) else len(allRows)}행 중 값이 바뀐 지점 {shown}개만 보였습니다. "
             f"나머지 행은 직전 값과 같습니다."
+        )
+    elif previewMode == "evenSample" and isinstance(total, int) and total > shown:
+        # 어느 구간을 본 것인지 밝힌다. 앞부분만 본 것으로 읽히면 나머지를 모른다고 판단해
+        # 기간을 쪼개 다시 부른다.
+        lines.append(
+            f"전체 {total}행에서 기간 전체에 고르게 퍼진 {shown}행을 보였습니다. 첫 시점과 마지막 시점을 포함합니다."
         )
     elif isinstance(total, int) and total > shown:
         lines.append(f"전체 {total}행 중 {shown}행만 보였습니다.")

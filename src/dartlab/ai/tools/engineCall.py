@@ -61,6 +61,28 @@ def _stepSeriesColumn(frame: pl.DataFrame) -> str | None:
     return None
 
 
+def _isTimeSeries(frame: pl.DataFrame) -> bool:
+    """첫 열이 날짜인 두 열짜리 표인지. 시계열에만 요약 규칙을 건다."""
+    if frame.width != 2 or frame.height == 0:
+        return False
+    return frame.dtypes[0] in (pl.Date, pl.Datetime) or str(frame.dtypes[0]).startswith("Datetime")
+
+
+def _evenSample(frame: pl.DataFrame, limit: int) -> pl.DataFrame:
+    """기간 전체에 고르게 퍼진 행을 고른다. 첫 시점과 마지막 시점은 반드시 넣는다.
+
+    환율처럼 값이 매일 달라지는 계열은 계단이 아니라 변경 지점 논리가 안 걸린다. 그렇다고
+    앞 스무 행을 주면 3 년을 물었는데 첫 3 주만 보인다. 실측(2026-08-06): 그래서 모델이
+    원달러 환율을 연도별로 다시 세 번 불렀다.
+
+    고르게 뽑으면 어느 구간도 통째로 빠지지 않고 추세가 보인다. 지어내는 값이 없고 실제
+    관측 행만 고른다.
+    """
+    step = frame.height / limit
+    picks = sorted({min(int(index * step), frame.height - 1) for index in range(limit)} | {0, frame.height - 1})
+    return frame[picks]
+
+
 def _previewFrame(frame: pl.DataFrame, limit: int) -> tuple[pl.DataFrame, str]:
     """미리보기 행을 고른다. 계단형 시계열이면 값이 바뀐 지점을 남긴다.
 
@@ -78,11 +100,11 @@ def _previewFrame(frame: pl.DataFrame, limit: int) -> tuple[pl.DataFrame, str]:
         return frame, "full"
     column = _stepSeriesColumn(frame)
     if column is None:
-        return frame.head(limit), "head"
+        return (_evenSample(frame, limit), "evenSample") if _isTimeSeries(frame) else (frame.head(limit), "head")
     indexed = frame.with_row_index("_stepIndex")
     changed = indexed.filter(pl.col(column).ne_missing(pl.col(column).shift(1)) | (pl.col("_stepIndex") == 0))
     if changed.height <= 1 or changed.height > _STEP_PREVIEW_MAX:
-        return frame.head(limit), "head"
+        return (_evenSample(frame, limit), "evenSample") if _isTimeSeries(frame) else (frame.head(limit), "head")
     if changed["_stepIndex"].max() != frame.height - 1:
         changed = pl.concat([changed, indexed.tail(1)])
     return changed.drop("_stepIndex"), "valueChanges"
