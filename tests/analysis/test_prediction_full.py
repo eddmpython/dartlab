@@ -114,7 +114,45 @@ class TestCalcStructuralBreak:
 # ══════════════════════════════════════
 
 
+class _SourceDownGather:
+    """다운로드 불가 재현: dataLoader 는 download 실패를 RuntimeError 로 알린다."""
+
+    def macro(self, *args, **kwargs):
+        raise RuntimeError("데이터 다운로드 실패 (manifest, 테스트 스텁): HTTP Error 429: Too Many Requests")
+
+
+class _SourceDownMacroProvider:
+    def getDefaultGather(self):
+        return _SourceDownGather()
+
+
 class TestCalcMacroSensitivity:
+    @pytest.fixture(autouse=True)
+    def _offline_macro_source(self):
+        """파일 헤더 계약 (외부 API/데이터 의존은 mock 처리) 이행.
+
+        calcMacroSensitivity 의 prediction space enrichment 가 첫 사용 시 ECOS HF 벌크
+        자동 다운로드를 트리거해 이 unit test 들이 실네트워크 가용성 (HF 429) 에
+        종속됐던 자리 (2026-08-07 CI Fast 연속 red). 소스 불가 provider 를 주입해
+        결정론화한다. 주입은 di 의 공식 override 경로.
+        """
+        from dartlab.core import di
+
+        di.setMacroProvider(_SourceDownMacroProvider())
+        yield
+        di.setMacroProvider(None)
+
+    def test_prediction_space_source_down_returns_none(self):
+        """getPredictionSpace 문서 계약 잠금: fetch 실패는 raise 가 아니라 None.
+
+        회귀 형태: dataLoader 의 RuntimeError 가 _fetchMacroData 의 지표별 except
+        (데이터 모양 오류 4종) 에 안 잡혀 위로 새면 이 테스트가 raise 로 죽는다.
+        """
+        from dartlab.analysis.forecast.predictionSpace import getPredictionSpace
+
+        result = getPredictionSpace(forceRefresh=True)
+        assert result is None
+
     def test_returns_dict(self, mock_company):
         _clear_cache(mock_company)
         from dartlab.analysis.financial.predictionSignals import calcMacroSensitivity

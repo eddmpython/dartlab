@@ -405,6 +405,13 @@ def _fetchMacroData() -> dict[str, list[float]]:
                     result[ind] = [v for v in vals if v is not None]
         except (ValueError, TypeError, AttributeError, KeyError) as e:
             log.debug("매크로 지표 %s 로드 실패: %s", ind, e)
+        except (RuntimeError, OSError) as e:
+            # 소스 자체 불가 (dataLoader 다운로드 실패 RuntimeError, 로컬 파일 부재 OSError).
+            # KR 지표는 전부 같은 ECOS 벌크 하나를 쓰므로 나머지 지표도 같은 이유로 실패한다.
+            # 지표별 재시도 낭비 없이 수집을 끊는다. getPredictionSpace 의 문서 계약
+            # (Raises: 없음, fetch 실패 시 None) 이 지켜지는 자리가 여기다.
+            log.debug("매크로 데이터 소스 불가, 수집 중단 (%s): %s", ind, e)
+            break
 
     return result
 
