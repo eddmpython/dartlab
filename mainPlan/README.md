@@ -1,8 +1,8 @@
 # mainPlan
 
-앞으로 지을 임시 설계와 작업 순서다. 영구 문서나 현재 제품 계약의 정본이 아니다. 현재 동작의 정본은 [`docs/handbook/`](../docs/handbook/README.md)이다.
+앞으로 지을 임시 설계와 작업 순서다. 영구 문서나 현재 제품 계약의 정본이 아니다. 현재 동작의 정본은 Skill OS (`src/dartlab/skills/specs/**`, 진입 `start.dartlabSkillOs`) 다.
 
-한 initiative는 폴더 하나다. 구현이 끝나면 코드와 실제 실행에서 확인한 현재 계약을 handbook의 product, architecture, reference, operations에 승격하고 해당 initiative 폴더를 삭제한다. `_done`으로 옮기지 않는다. 영구 자산은 mainPlan을 인용하지 않는다.
+한 initiative는 폴더 하나다. 구현이 끝나면 코드와 실제 실행에서 확인한 현재 계약을 Skill OS 운영문서 (`specs/operation/**` 등) 에 반영하고 해당 initiative 폴더를 삭제한다. 완료는 이니셔티브 문서의 이관·승격이 아니라 확정 사실의 SSOT 반영이다. `_done`으로 옮기지 않는다. 영구 자산은 mainPlan을 인용하지 않는다.
 
 상태 범례: 🟢 활성 구현 · 🟡 부분 구현 · ⚪ 미착수 임시 설계
 

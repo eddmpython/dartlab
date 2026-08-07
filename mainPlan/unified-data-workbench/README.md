@@ -162,7 +162,7 @@ offline = dartlab.dataHub(
 - `mainPlan/dartlab-universe/`의 U0부터 U4까지에서 범용 catalog, identity, provenance, admission 계약을 선별 재사용한다.
 - Universe의 blog, media, RAG, spatial 기능은 data core가 아니라 data를 소비하는 상위 제품으로 남긴다.
 - `mainPlan/scenario-simulator/18-workbench-mirror-design.md`의 Mirror는 검증된 folding prototype이었다. 순수 folding kernel은 `data.factorKernel`로 흡수했고, 사용처가 없던 `simulate.mirror` 드라이버는 제거했다.
-- 현재 [UI 데이터 작업대](../../docs/handbook/architecture/dataWorkbench.md)는 transport와 cache plane이다. Python semantic Data Workbench와 역할이 다르며 우회하지 않는다.
+- 현재 UI 데이터 작업대 (Skill OS `operation.ui` UI 런타임 데이터층) 는 transport와 cache plane이다. Python semantic Data Workbench와 역할이 다르며 우회하지 않는다.
 - AI Workbench는 agent 실행 loop, pipeline은 build orchestration이다. 이 둘을 semantic Data Workbench로 부르지 않는다.
 
 ## 완료 판정

@@ -4,7 +4,7 @@
 상회를 N년 방어 → 자본이 가치 창출". 데이터가 섞이면(사이클) 단정 대신 *조건부*로 정직하게
 쓴다(과장 금지). 반증 가능(bearCase)·관점전환 트리거를 정량으로 결박.
 self-calc 0 — ROIC 시계열은 L2 analysis(calcRoicTimeline)가 계산, 본 모듈은 해석·서사.
-현재 계약은 ``docs/handbook/architecture/analysisProducts.md``에 정리돼 있다.
+현재 계약은 Skill OS ``engines.story`` 에 정리돼 있다.
 """
 
 from __future__ import annotations

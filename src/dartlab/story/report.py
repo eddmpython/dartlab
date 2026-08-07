@@ -3,7 +3,7 @@
 사상: story 는 L3 조합기다. 숫자는 전부 L2 엔진(buildStory builders·analysis.valuation calcDFV)이
 계산하고, 본 모듈은 결과를 계약 블록으로 *엮기*만 한다(self-calc 0). thesis-led 아크 - 결론(thesis)을
 최상단에, 기존 분석 섹션을 본문에, de-gate 밸류에이션(내재가치 bridge·시나리오)을 pro 블록으로.
-현재 계약은 ``docs/handbook/architecture/analysisProducts.md``에 정리돼 있다.
+현재 계약은 Skill OS ``engines.story`` 에 정리돼 있다.
 
 L계층: story=L3, valuation=L2 → L2 를 함수 내부 lazy import(import 방향 L2→L3 준수).
 """

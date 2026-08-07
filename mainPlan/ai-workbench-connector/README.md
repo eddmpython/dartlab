@@ -1,6 +1,6 @@
 # DartLab AI Workbench Connector PRD Index
 
-> 2026-08-03 경계 포인터: 본 계획은 remote public evidence connector를 소유한다. installed local agent의 discovery, auth, session, MCP bootstrap은 현재 [Agent Runtime 계약](../../docs/handbook/architecture/agentRuntime.md)이 소유한다. canonical evidence와 tool identity는 `src/dartlab` 정본을 함께 소비하고 별도 schema를 만들지 않는다.
+> 2026-08-03 경계 포인터: 본 계획은 remote public evidence connector를 소유한다. installed local agent의 discovery, auth, session, MCP bootstrap은 현재 Agent Runtime 계약 (Skill OS `operation.aiEngine`) 이 소유한다. canonical evidence와 tool identity는 `src/dartlab` 정본을 함께 소비하고 별도 schema를 만들지 않는다.
 
 상태: 비전 + 구현 착수 PRD v0.2 (2026-06-17, 제품 전략 · Cloudflare/MCP 아키텍처 · 보안/프라이버시 · AI 생태계 상호운용성 4 렌즈 토론 후 작성, 구현 계약 보강)
 범위: DartLab 을 특정 챗봇에 종속된 기능이 아니라, 외부 AI 들이 공시 · 재무 · 워치리스트 · viewer/terminal 상태를 안전하게 조회하는 **AI-native evidence workbench layer** 로 만든다. ChatGPT 는 1차 배포 채널이지만 제품 코어가 아니다.

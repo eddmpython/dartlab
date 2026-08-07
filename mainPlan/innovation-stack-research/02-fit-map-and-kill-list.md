@@ -82,7 +82,7 @@ Code owner 후보:
 
 ### Browser Parquet Workbench
 
-Owner 계약: `docs/handbook/architecture/dataWorkbench.md` + Skill OS `operation.ui`
+Owner 계약: Skill OS `operation.ui` (UI 런타임 데이터층) + `operation.architecture`
 Code owner 후보:
 
 - `ui/packages/runtime/src/data/fetch`

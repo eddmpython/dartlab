@@ -1,6 +1,6 @@
 """P2 리포트 emitter 게이트 - Story 블록 → 계약 ReportBlock 매핑 + pro 블록 합성 (offline).
 
-현재 계약: docs/handbook/architecture/analysisProducts.md.
+현재 계약: Skill OS engines.story.
 buildReportModel 은 self-calc 0 - 본 파일은 순수 매핑 헬퍼(_mapBlock·_valuationView·
 _scenarioSet·_buildThesis)를 합성 입력으로 검증. company 데이터 의존 end-to-end 는 CI.
 """

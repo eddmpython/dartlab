@@ -210,7 +210,7 @@ the owners or sources again. Remote multi-node serving and authentication remain
 the versioned `/api/dataHub/v1` contract through `DataHubClient` or
 `AsyncDataHubClient`, while pull workers consume the same durable job ledger.
 See [engines.dataHub](https://eddmpython.github.io/dartlab/skills/engines.dataHub)
-and the [data workbench contract](docs/handbook/architecture/dataWorkbench.md) for
+and the [data workbench contract](https://eddmpython.github.io/dartlab/skills/operation.architecture) for
 the full contract.
 
 ## Three Layers of Analysis
