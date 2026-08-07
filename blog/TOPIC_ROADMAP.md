@@ -17,7 +17,7 @@
 **운영 원칙**:
 - 분석·영상·audit 작업 중 발견된 각도가 글이 된다. 후보는 "써야 할 의무" 가 아니다.
 - 같은 회사 후속 글은 frontmatter `stockCode` 동일하게 묶는다 (랜딩에서 회사별 자동 그룹핑).
-- 새 글은 audit → 블로그 → 영상 **한 세트** (`memory/feedback_company_report_pipeline.md`).
+- 새 글은 audit → 블로그 → 영상 **한 세트** (`operation.content`).
 - 글 작성 전 [BLOG.md](BLOG.md) §3 파이프라인 · §4 품질 · §5 dartlab 호출 펴 놓고 시작.
 - 발행 직전 [BLOG.md](BLOG.md) §7 SEO 체크리스트 12 개 통과.
 
@@ -99,7 +99,7 @@
 
 ### 05 기업분석 보고서 (audit + 블로그 + 영상 한 세트)
 
-`memory/feedback_company_report_pipeline.md` 강제 규칙 적용. **기업 한 건 = audit + 블로그 + 영상 한 세트**. 셋 중 하나만 만드는 것 금지.
+`operation.content` 규칙 적용. **기업 한 건 = audit + 블로그 + 영상 한 세트**. 셋 중 하나만 만드는 것 금지.
 
 #### 글 추가 — 5 가지 확인 후에 시작한다
 

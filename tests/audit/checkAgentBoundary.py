@@ -1,6 +1,6 @@
 """AI 엔진 boundary lint — graph 강박 회귀 패턴 감지.
 
-룰 (memory/feedback_no_graph_regression.md):
+룰 (memory/engineering.md 7절):
 - 본체는 ai/agent.py (runAgent — chat-native + LLM 자율 tool calling)
 - WorkbenchLoop 는 옵션 sub-agent — agent_gateway.py / kernel.py 만 직접 호출
 - 새 5 패스 패턴 모듈 / *Loop / *Graph 클래스 추가 금지
@@ -127,9 +127,7 @@ def _check_new_workbench_modules(violations: list[str]) -> None:
         if path.name in _KNOWN_WORKBENCH_FILES:
             continue
         rel = path.relative_to(ROOT)
-        violations.append(
-            f"{rel} — 새 workbench 모듈. 5 패스 패턴 회귀 가능성. memory/feedback_no_graph_regression.md 검토."
-        )
+        violations.append(f"{rel} — 새 workbench 모듈. 5 패스 패턴 회귀 가능성. memory/engineering.md 7절 검토.")
 
 
 def _check_new_loop_classes(violations: list[str]) -> None:
@@ -174,7 +172,7 @@ def _check_regression_keywords(violations: list[str]) -> None:
         for keyword in _REGRESSION_KEYWORDS:
             if keyword in text:
                 rel = path.relative_to(ROOT)
-                violations.append(f"{rel} — '{keyword}' 표현 발견. memory/feedback_no_graph_regression.md 검토.")
+                violations.append(f"{rel} — '{keyword}' 표현 발견. memory/engineering.md 7절 검토.")
                 break
 
 
@@ -201,7 +199,7 @@ def _check_five_pass_node_identifiers(violations: list[str]) -> None:
             if pattern in text:
                 rel = path.relative_to(ROOT)
                 violations.append(
-                    f"{rel} — '{pattern}' 식별자 추가 (5 패스 노드 회귀). memory/feedback_no_graph_regression.md 검토."
+                    f"{rel} — '{pattern}' 식별자 추가 (5 패스 노드 회귀). memory/engineering.md 7절 검토."
                 )
                 break
 
@@ -230,7 +228,7 @@ def main() -> int:
         print(f"[agent-boundary] 구조적 위반 {len(structural)} 건:")
         for v in structural:
             print(f"  - {v}")
-        print("\n룰 본문: memory/feedback_no_graph_regression.md")
+        print("\n룰 본문: memory/engineering.md 7절")
         return 1 if strict else 0
 
     print("[agent-boundary] OK — 구조적 룰 통과 (advisory 는 검토만, 차단 아님).")

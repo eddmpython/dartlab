@@ -8,7 +8,7 @@ WorkbenchLoop 는 *명시적 분석 의도* 시 `agent_gateway` / `kernel.ask()`
 - LLM provider → `streamLLMPasses` (5 패스: brief/work/critique/compose/gate/harvest)
 
 chat-native 는 본 모듈에서 분기하지 않는다 — agent.py 가 본체. 회귀 방지:
-memory/feedback_no_graph_regression.md.
+memory/engineering.md 7절.
 """
 
 from __future__ import annotations

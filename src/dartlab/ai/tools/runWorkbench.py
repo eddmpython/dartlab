@@ -5,7 +5,7 @@ agent.runAgent 의 자율 도구 호출 안에서 호출된다. 내부적으로 
 
 P-revised: intent regex 키워드 routing 폐기 (`isAnalysisIntent` 삭제). 작업대 활성 경로는
 (1) 사용자 명시 mode="analyze" 또는 (2) 모델이 본 도구 호출, 두 가지로 한정 — 회귀 가드
-memory/feedback_no_graph_regression.md.
+memory/engineering.md 7절.
 """
 
 from __future__ import annotations

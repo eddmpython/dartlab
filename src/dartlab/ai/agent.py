@@ -15,7 +15,7 @@ loop (max 8 iter):
 - 흐름 강제 X. LLM 이 *언제 어떤 도구* 자율 결정.
 - workbench 5 패스는 *옵션 sub-agent*. 본 모듈이 본체.
 
-회귀 방지: memory/feedback_no_graph_regression.md 참조. BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST
+회귀 방지: memory/engineering.md 7절 참조. BRIEF/WORK/CRITIQUE/COMPOSE/GATE/HARVEST
 같은 *고정 노드 강제* 패턴을 본 모듈에 추가 금지. 새 능력은 ai/tools/ 안에서.
 """
 
@@ -144,7 +144,7 @@ def _runAgentImpl(
 
     # chat-native 흐름은 phase (단계) 가 없다. 도구 카드 + 텍스트 streaming 이 모든 진행 표현.
     # 무의미한 graph_node 1 회 emit 은 UI groupActivities 가 잘못된 phase ("작성") 라벨 붙이게 만들어 제거.
-    # 회귀 가드: memory/feedback_no_graph_regression.md.
+    # 회귀 가드: memory/engineering.md 7절.
     refs: list[dict[str, Any]] = []
     artifacts: list[dict[str, Any]] = []
     text_emitted = ""
@@ -1022,7 +1022,7 @@ def _microcompact(messages: list[dict[str, Any]], *, keepLast: int = 2) -> None:
     assistant message 는 reasoning 유지 (직전 추론 흐름 단절 방지).
 
     회귀 가드: graph 노드 추가 아님. messages 배열 트리밍만.
-    memory/feedback_no_graph_regression.md 6 패턴과 무관.
+    memory/engineering.md 7절 6 패턴과 무관.
     """
     ai_indices = [i for i, msg in enumerate(messages) if isinstance(msg, dict) and msg.get("role") == "assistant"]
     if len(ai_indices) <= keepLast:

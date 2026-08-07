@@ -88,7 +88,7 @@ testUniverse:
 
 dartlab 의 두 번째 사상 — **숫자를 나열하면 대시보드가 되지만, 숫자의 인과를 연결하면 스토리가 된다** — 의 실행 표면.
 
-**중요**: 본 절차는 *기업 분석 한정*. 단순 수치 질의 · 산업 자체 분석 · 거시 자체 분석에는 6 막 강제하지 않는다. UI / AI 엔진 prompt 어디에도 *모든 질문에 6 막* 강제 X ([feedback_chat_ui_separate_from_six_acts](file://C:/Users/MSI/.claude/projects/C--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/feedback_chat_ui_separate_from_six_acts.md)).
+**중요**: 본 절차는 *기업 분석 한정*. 단순 수치 질의 · 산업 자체 분석 · 거시 자체 분석에는 6 막 강제하지 않는다. UI / AI 엔진 prompt 어디에도 *모든 질문에 6 막* 강제 X (`memory/content.md` 7절).
 
 ## 공개 호출 방식
 

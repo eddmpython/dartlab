@@ -1,6 +1,6 @@
 """Chat-native vs workbench 호출 비율 추적.
 
-memory/feedback_no_graph_regression.md 의 회귀 방지 metric. agent_gateway 가 mode 결정 시
+memory/engineering.md 7절 의 회귀 방지 metric. agent_gateway 가 mode 결정 시
 record() 호출. snapshot() 으로 누적 비율 조회.
 
 룰 (plan Phase H-4):

@@ -125,7 +125,7 @@ README, Skill OS, landing page, blog, JSON index는 사용자가 직접 읽는 �
 |---|---|---|
 | `.claude/hooks/check_no_ai_markers.py` | 커밋 메시지 + staged 본문에 AI attribution 마커 (생성 주체 표식 · 협업 표식 등 — 패턴 SSOT 는 해당 스크립트 본문 `BANNED_PATTERNS` 리스트) 금지. 본 spec "공개 산출물 규칙" + [MEMORY.md "주체 중립"](file://C:/Users/MSI/.claude/projects/c--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/MEMORY.md) 강행 | git commit |
 | `.claude/hooks/validate_ask.py` | `AskUserQuestion` 4 지선다 안티패턴 차단. [CLAUDE.md "사용자 질문 방식"](file://./CLAUDE.md) — 객관식 선택지 = 결정 떠넘김 | `AskUserQuestion` 도구 호출 |
-| `.claude/hooks/validate_plan.py` | `ExitPlanMode` 본문 형식 게이트. 영향 파일 / 영향 함수 / 테스트 매핑 / 롤백 4 섹션 + path ≥ 2 강행. 룰 SSOT [memory/plan_deep_gate.md](file://C:/Users/MSI/.claude/projects/c--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/plan_deep_gate.md) + skill [plan-deep](file://./.claude/skills/plan-deep/SKILL.md) | `ExitPlanMode` 도구 호출 |
+| `.claude/hooks/validate_plan.py` | `ExitPlanMode` 본문 형식 게이트. 영향 파일 / 영향 함수 / 테스트 매핑 / 롤백 4 섹션 + path ≥ 2 강행. 룰 SSOT `memory/conduct.md` 6절 + skill [plan-deep](file://./.claude/skills/plan-deep/SKILL.md) | `ExitPlanMode` 도구 호출 |
 | `.claude/hooks/validate_stop_phrase.py` | Stop hook trigger phrase 가드 — 컷오프 / 4 지선다 안티패턴 차단 | Stop hook (응답 종료 시점) |
 
 위반 시 hook 메시지에 룰 SSOT 경로 노출. 위반 회피로 hook 우회 (`--no-verify` 등) 금지 — 우회 시도 자체가 회귀로 카운트.

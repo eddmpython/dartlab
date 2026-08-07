@@ -5,7 +5,7 @@
 Read 도구로 전체를 다시 읽을 수 있다.
 
 회귀 가드: graph 노드 추가 아님. agent.py 본체에 합치지 않고 단일 책임 모듈로 분리
-(memory/feedback_no_graph_regression.md 패턴 5 — workbench 본체화 금지 정신과 정합).
+(memory/engineering.md 7절 패턴 5 — workbench 본체화 금지 정신과 정합).
 """
 
 from __future__ import annotations

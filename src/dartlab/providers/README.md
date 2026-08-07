@@ -11,7 +11,7 @@
 |-----|------|
 | `providers/dart/` | DART (한국) — sections / finance / disclosure / openapi |
 | `providers/edgar/` | EDGAR (미국) — 10-K/10-Q/8-K + US-GAAP XBRL |
-| `providers/edinet/` | EDINET (일본) — API 통신 불가, P-PR 트랙 패스 (memory/feedback_edinet_api_unavailable) |
+| `providers/edinet/` | EDINET (일본) — API 통신 불가, P-PR 트랙 패스 (memory/engineering.md 13절) |
 | `providers/_common/` | 공통 헬퍼 (HTTP / XBRL / docs zip) |
 
 ---

@@ -68,6 +68,6 @@ KPI 7 종 목표 + scripted baseline 은 `C:\Users\MSI\.claude\plans\cryptic-dis
 ## 관련
 
 - [src/dartlab/skills/specs/runtime/workbenchEvidenceFlow.md](../skills/specs/runtime/workbenchEvidenceFlow.md) — evidence flow 본문 SSOT
-- [memory/feedback_no_graph_regression.md](../../../) — graph 강박 회귀 가드 룰
+- [memory/engineering.md](../../../) — graph 강박 회귀 가드 룰
 - [TODO.md](../../../TODO.md) T11 트랙
 - [docs/diagrams/ARCHITECTURE.md](../../../docs/diagrams/ARCHITECTURE.md) — 워크벤치 sequence 도식

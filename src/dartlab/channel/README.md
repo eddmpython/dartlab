@@ -12,7 +12,7 @@
 
 - 비즈니스 로직 0
 - 외부 publish 는 사용자 명시 지시 필요 (자동 푸시 금지)
-- 캐러셀 cards 시퀀스 템플릿화 금지 (memory/feedback_no_carousel_template)
+- 캐러셀 cards 시퀀스 템플릿화 금지 (memory/engineering.md 11절)
 
 ## 관련
 

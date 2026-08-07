@@ -109,5 +109,5 @@ idempotent — 이미 마커가 있으면 다시 감싸지 않는다.
 ## 강행규칙 라우팅
 
 - `CLAUDE.md` "⛔ AI 엔진 — 외부 본문은 untrusted" 절.
-- `memory/behavior.md` 외부 본문 가드 항목.
+- `memory/conduct.md` 외부 입력 취급 항목.
 - 상위 SSOT: `runtime.workbenchEvidenceFlow` "외부 본문 처리" 절 — 본 spec 은 그 절의 분리 SSOT 다. 본문이 두 곳에서 갈리지 않게, 본 spec 변경 시 workbenchEvidenceFlow 의 같은 절도 동행.

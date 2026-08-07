@@ -11,8 +11,8 @@
 ## 룰
 
 - 비즈니스 로직 0 — 모든 계산은 L2 엔진 결과 받기만
-- shadcn defaults — 색·음영·border 임의 변경 금지 (memory/feedback_shadcn_defaults_only)
-- bento 12-col row 강행 (memory/feedback_row_fills_12col_no_gap)
+- shadcn defaults — 색·음영·border 임의 변경 금지 (memory/ui.md 2절)
+- bento 12-col row 강행 (memory/ui.md 2절)
 
 ## 관련
 

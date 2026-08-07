@@ -74,7 +74,7 @@ recipes/
 - **승격 (복원)**: 역방향 git mv 1 회 — `git mv recipes/.archive/{path} recipes/{path}` + status frontmatter `tested|verified` 변경 + 6 JSON 동기화 (운영자 수동, `feedback_no_skill_json_auto_build` 강행).
 - **현재 격리 76 건** (2026-05-26): drafted 25 + unverified 51. 페르소나 분포: fundamental/credit 10 · disclosure 6 · dividend 5 · governance 5 · quality 10 · valuation 7 · macro 8 · meta/report 6 · meta/screen 9 · meta/workflow 2 · quant 1 · sentiment 1 · technical 6.
 
-배경 (`memory/feedback_recipe_lifecycle.md` 강행): drafted/unverified 가 카탈로그 220 의 35% 차지하면 *검증 안 된 recipe 가 사용자 표면을 오염*. 6-stage lifecycle (drafted → unverified → tested → verified → curated) 의 `tested` 미달은 표면 X — `.archive/` 격리가 정공.
+배경 (`memory/engineering.md` 10절 강행): drafted/unverified 가 카탈로그 220 의 35% 차지하면 *검증 안 된 recipe 가 사용자 표면을 오염*. 6-stage lifecycle (drafted → unverified → tested → verified → curated) 의 `tested` 미달은 표면 X — `.archive/` 격리가 정공.
 
 ## engines/ 와의 직교성
 
