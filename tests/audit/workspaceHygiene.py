@@ -41,6 +41,8 @@ ALLOWED_ROOT = frozenset(
         # git 추적 (git ls-tree HEAD 기준)
         ".env.example",
         ".githooks",
+        "AGENTS.md",
+        "CLAUDE.md",
         ".github",
         ".gitignore",
         ".pre-commit-config.yaml",
@@ -91,8 +93,6 @@ ALLOWED_ROOT = frozenset(
         ".tmp",
         ".venv",
         ".vscode",
-        "AGENTS.md",
-        "CLAUDE.md",
         "data",
         "dist",
         "node_modules",
