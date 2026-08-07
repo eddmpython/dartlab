@@ -2,7 +2,7 @@
   "meta": {
     "entrySkillId": "start.dartlabSkillOs",
     "canonicalSurface": "DartLab Skill OS",
-    "skillCount": 289,
+    "skillCount": 290,
     "categories": [
       {
         "id": "start",
@@ -20,7 +20,7 @@
         "id": "operation",
         "title": "Operation",
         "description": "ops 원문을 skill 절차로 묶어 테스트, 문서, 릴리즈, 확장 규칙을 찾는 운영 지도.",
-        "count": 38
+        "count": 39
       },
       {
         "id": "engines",
@@ -1088,7 +1088,7 @@
         "engines.company",
         "engines.scan"
       ],
-      "bodyPreview": "## 엔진 역할\n\n`search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 외부 모델/서버·GPU·임베딩 0 — 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope=\"auto\" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).\n\n결과 row 는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards` 를 가져야 한다. graph catalog 가 배포된 환경에서는 optional `entityCards` 로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex 와 동거하는 `entityGraphCatalog.parquet` "
+      "bodyPreview": "## 엔진 역할\n\n`search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 외부 모델/서버·GPU·임베딩 0 — 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope=\"auto\" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).\n\n결과 row는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards`를 가져야 한다. graph catalog가 배포된 환경에서는 optional `entityCards`로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex와 동거하는 `entityGraphCatalog.parquet`이고, explicit copy 또는 opt-in offline build 후 manifest r"
     },
     {
       "id": "engines.search.disclosureSearch",
@@ -1772,7 +1772,7 @@
         "Web Push 운영"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 역할\n\n공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron이 발굴해 Web Push로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관, VAPID 서명, 발송만 한다(런타임 SSOT는 `operation.architecture`). 이 문서가 파이프라인의 현재 운영 계약이다.\n\n핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.\n\n## 파이프라인 단계 (notify-watch.yml cron, 평일 17시 KST)\n\n```\n[1] Bake  buildIpoReports.py  발굴→파싱→ reports.parquet(라이브) + history.parquet(누적) → HF push\n[2] Watch watch.py            _baked_ipo_"
+      "bodyPreview": "## 역할\n\n공개 왓처-노티파이 파이프라인은 **감지할 만한 공시 이벤트를 cron이 발굴해 Web Push로 사용자에게 밀고, 클릭 시 터미널의 인사이트로 잇는다**. 감지 지능은 dartlab(gather·scan SSOT)에 살고, 허브(pushHub Worker)는 구독 보관, VAPID 서명, 발송만 한다(런타임 SSOT는 `operation.architecture`). 이 문서가 파이프라인의 현재 운영 계약이다.\n\n핵심 원칙: **왓치가 첫 관문**이다. cron 은 알림을 쏘기 전에 IPO 공모분석을 먼저 베이크해 HF 에 올려, 딥링크가 여는 리포트가 이미 존재하게 한다.\n\n## 파이프라인 단계 (notify-watch.yml cron, 평일 17시 KST)\n\n```\n[1] Bake  buildIpoReports.py  발굴→파싱→ reports.parquet(라이브) + history.parquet(누적) → HF push\n[2] Watch watch.py            _baked_ipo_df 직독(없으면 scan 폴백) → 토픽 평가 → 허브 /send·/active\n[3] Assert                    bake ge"
     },
     {
       "id": "operation.observability",
@@ -1852,9 +1852,9 @@
       "id": "operation.productCycle",
       "title": "제품 운영 주기 — Outcome Review",
       "category": "operation",
-      "purpose": "북극성 goal, 실행 증거, root scorecard, handbook의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.",
+      "purpose": "북극성 goal, 실행 증거, root scorecard, Skill OS 의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.",
       "whenToUse": [
-        "임시 initiative를 완료하고 handbook으로 승격할 때",
+        "임시 initiative를 완료하고 확정 사실을 Skill OS 에 반영할 때",
         "북극성 축 점수를 재판정할 때",
         "release acceptance와 operator journey를 기록할 때"
       ],
@@ -1862,7 +1862,7 @@
         "operation.productDirection",
         "operation.testing"
       ],
-      "bodyPreview": "## 주기\n\n1. 이번 주 실제 사용자 outcome과 operator journey를 모은다.\n2. 각 initiative의 primary goal과 disqualifier를 대조한다.\n3. contracts, integration, UI, security, performance gate가 실제 runner에서 도는지 확인한다.\n4. outcome이 없거나 권위가 부족하면 `noData` 또는 `미측정`을 유지한다.\n5. root README 점수는 반복 검증이 늘거나 줄었을 때만 재판정한다.\n6. 구현된 현재 계약은 코드에서 다시 확인해 handbook에 승격한다. 완료된 임시 initiative는 삭제한다.\n\n## Release 질문\n\n- 실제 질문에서 시작했는가.\n- 정식 엔진 결과와 source identity가 있는가.\n- 사용자가 exact evidence를 열 수 있는가.\n- 실패, 취소, reconnect가 child process나 원장을 손상시키지 않는가.\n- runtime을 바꿔도 같은 capability와 evidence 문법인가.\n\n하나라도 아니면 기능 구현은 존재할 수 있어도 verified outcome 완료로 세지 않는다."
+      "bodyPreview": "## 주기\n\n1. 이번 주 실제 사용자 outcome과 operator journey를 모은다.\n2. 각 initiative의 primary goal과 disqualifier를 대조한다.\n3. contracts, integration, UI, security, performance gate가 실제 runner에서 도는지 확인한다.\n4. outcome이 없거나 권위가 부족하면 `noData` 또는 `미측정`을 유지한다.\n5. root README 점수는 반복 검증이 늘거나 줄었을 때만 재판정한다.\n6. 구현된 현재 계약은 코드에서 다시 확인해 Skill OS 운영문서에 반영한다. 완료는 이니셔티브 문서의 이관·승격이 아니라 확정 사실의 SSOT 반영이다. 반영 전 코드·테스트·README·Skill OS 가 임시 설계를 인용하지 않는지 감사하고, 완료된 임시 initiative 는 삭제한다. GUI 변경 완료는 desktop·tablet·mobile audit receipt 와 스크린숏이 함께 있어야 하며 브라우저 제어가 없으면 시각 검증 미완료로 명시한다.\n\n## Release 질문\n\n- 실제 질문에서 시작했는가.\n- 정식 엔진 결과와 source ident"
     },
     {
       "id": "operation.productDirection",
@@ -1931,7 +1931,7 @@
       "nextSkills": [
         "engines.panel"
       ],
-      "bodyPreview": "# 6 막 인과 서사 — 기업 분석 한정\n\n## 무엇을 하나\n\n종목 하나를 거시 → 산업 → 정량 → 재무 → 신용 → 결론 6 막 인과로 묶는다. 단순 수치 나열 (대시보드) 과 다른 결 — 숫자가 *왜* 그 수준인지 5 단계 위 (거시) 부터 *역방향* 으로 추적해 마지막 막에서 한 줄로 묶는다.\n\ndartlab 의 두 번째 사상 — **숫자를 나열하면 대시보드가 되지만, 숫자의 인과를 연결하면 스토리가 된다** — 의 실행 표면.\n\n**중요**: 본 절차는 *기업 분석 한정*. 단순 수치 질의 · 산업 자체 분석 · 거시 자체 분석에는 6 막 강제하지 않는다. UI / AI 엔진 prompt 어디에도 *모든 질문에 6 막* 강제 X ([feedback_chat_ui_separate_from_six_acts](file://C:/Users/MSI/.claude/projects/C--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/feedback_chat_ui_separate_from_six_acts.md)).\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Comp"
+      "bodyPreview": "# 6 막 인과 서사 — 기업 분석 한정\n\n## 무엇을 하나\n\n종목 하나를 거시 → 산업 → 정량 → 재무 → 신용 → 결론 6 막 인과로 묶는다. 단순 수치 나열 (대시보드) 과 다른 결 — 숫자가 *왜* 그 수준인지 5 단계 위 (거시) 부터 *역방향* 으로 추적해 마지막 막에서 한 줄로 묶는다.\n\ndartlab 의 두 번째 사상 — **숫자를 나열하면 대시보드가 되지만, 숫자의 인과를 연결하면 스토리가 된다** — 의 실행 표면.\n\n**중요**: 본 절차는 *기업 분석 한정*. 단순 수치 질의 · 산업 자체 분석 · 거시 자체 분석에는 6 막 강제하지 않는다. UI / AI 엔진 prompt 어디에도 *모든 질문에 6 막* 강제 X (`memory/content.md` 7절).\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\nstory = c.story()                 # 6 막 자동\nprint(story.act(1))               # 1 막 거시\nprint(story.act(6))               # 6 막 결론\n```\n\n또는 dartla"
     },
     {
       "id": "operation.skillDevelopmentLoop",
@@ -2035,6 +2035,22 @@
       ],
       "nextSkills": [],
       "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## AI 채팅 UI 계약\n\n- AI 제품 바탕 교체의 상세 SSOT는 `operation.aiProductReplatform`이다. `operation.ui`는 UI 표현 계층 규칙만 보완한다.\n- 공식 제품 경로는 `DartLab App → /api/ask stream → Agent Gateway → Agent Runtime → 설치형 agent CLI → DartLab MCP`다.\n- UI 표면은 LibreChat식 conversation/message parts 모델을 따른다. DartLab 브랜드, workspace, evidence, artifact viewer는 유지하되 채팅 본문은 message parts만 렌더한다.\n- UI와 엔진 사이의 공개 stream은 AG-UI compatible event allowlist만 허용한다"
+    },
+    {
+      "id": "operation.uiQa",
+      "title": "UI 검수 운영 (UI QA)",
+      "category": "operation",
+      "purpose": "로컬 개발 GUI 를 의미 단위로 읽고 제한된 동작만 수행하는 검수 표면과 실행기 (uiAudit.mjs) 의 운영 계약이다. 운영 서버나 외부 노출 모드에서는 사용할 수 없다.",
+      "whenToUse": [
+        "로컬 GUI 화면을 viewport 별로 검수할 때",
+        "UI QA API (/api/ui-qa/*) 를 변경할 때",
+        "검수 실행기 uiAudit.mjs 를 실행하거나 수정할 때",
+        "채팅 턴의 시간축 촬영 (live audit) 이 필요할 때"
+      ],
+      "nextSkills": [
+        "operation.ui"
+      ],
+      "bodyPreview": "## 무엇을 하나\n\nUI QA 는 로컬 개발 GUI 를 의미 단위로 읽고 제한된 동작만 수행하는 검수 표면이다. 코드 SSOT 는 `src/dartlab/server/api/uiQa.py` (API) 와 `ui/apps/local/qa/uiAudit.mjs` (실행기) 다. `operation.dashboardDesign` 의 Playwright loop 는 `ui/web`(:5400) React 표면 대상이라 별개 표면이다.\n\n## 시작\n\nloopback 개발 모드에서는 UI QA 가 자동으로 켜진다.\n\n```powershell\nuv run python -X utf8 -m dartlab ai --dev --no-browser\n```\n\nAPI 는 `http://127.0.0.1:8400`, Svelte 개발 화면은 `http://127.0.0.1:5174` 에서 열린다. `--host` 가 loopback 이 아니면 `DARTLAB_UI_QA` 를 자동으로 제거하고 모든 조작 엔드포인트가 403 을 반환한다.\n\n## 계약 확인\n\n```powershell\nInvoke-RestMethod http://127.0.0.1:8400/api/ui-qa/config\nIn"
     },
     {
       "id": "recipes.fundamental.credit.creditRatingMigration",

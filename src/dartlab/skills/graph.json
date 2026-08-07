@@ -902,7 +902,7 @@
       "title": "AI Engine — Bring Your Agent Runtime",
       "category": "operation",
       "purpose": "설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 Skill OS·MCP·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.",
-      "inDegree": 4,
+      "inDegree": 5,
       "outDegree": 8,
       "cluster": "operation",
       "isEntry": false,
@@ -1019,7 +1019,7 @@
       "title": "대시보드 배치·설계 원칙 (bento·정사각·위계·Playwright loop)",
       "category": "operation",
       "purpose": "dashboard 페이지의 카드 배치 규칙 · sub 분류 원칙 · 시각 위계 · 인터랙션 표준 · Playwright visual loop 의 SSOT. 외부 표준 (Apple WWDC25 / PatternFly / Geckoboard / Koyfin / Bloomberg) 합성. P-DASH-V1 통합.",
-      "inDegree": 2,
+      "inDegree": 3,
       "outDegree": 2,
       "cluster": "operation",
       "isEntry": false,
@@ -1226,7 +1226,7 @@
       "id": "operation.productCycle",
       "title": "제품 운영 주기 — Outcome Review",
       "category": "operation",
-      "purpose": "북극성 goal, 실행 증거, root scorecard, handbook의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.",
+      "purpose": "북극성 goal, 실행 증거, root scorecard, Skill OS 의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.",
       "inDegree": 4,
       "outDegree": 4,
       "cluster": "operation",
@@ -1361,12 +1361,25 @@
       "title": "UI 엔진 (L4 표현 계층)",
       "category": "operation",
       "purpose": "UI 엔진 (L4 표현 계층) 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 5,
+      "inDegree": 7,
       "outDegree": 3,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
       "isOrphan": false,
+      "audiences": []
+    },
+    {
+      "id": "operation.uiQa",
+      "title": "UI 검수 운영 (UI QA)",
+      "category": "operation",
+      "purpose": "로컬 개발 GUI 를 의미 단위로 읽고 제한된 동작만 수행하는 검수 표면과 실행기 (uiAudit.mjs) 의 운영 계약이다. 운영 서버나 외부 노출 모드에서는 사용할 수 없다.",
+      "inDegree": 0,
+      "outDegree": 4,
+      "cluster": "operation",
+      "isEntry": false,
+      "isLeaf": false,
+      "isOrphan": true,
       "audiences": []
     },
     {
@@ -5703,6 +5716,26 @@
       "kind": "source"
     },
     {
+      "src": "operation.uiQa",
+      "dst": "operation.ui",
+      "kind": "linkedRecipe"
+    },
+    {
+      "src": "operation.uiQa",
+      "dst": "operation.ui",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.uiQa",
+      "dst": "operation.dashboardDesign",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.uiQa",
+      "dst": "operation.aiEngine",
+      "kind": "knowledge"
+    },
+    {
       "src": "recipes.fundamental.credit.creditRatingMigration",
       "dst": "engines.credit",
       "kind": "linkedRecipe"
@@ -9661,6 +9694,7 @@
     "operation.sixActsAnalysis",
     "operation.skillMarket",
     "operation.stability",
+    "operation.uiQa",
     "recipes.fundamental.credit.creditRatingMigration",
     "recipes.fundamental.credit.usHighYieldSpread",
     "recipes.fundamental.disclosure.sec10kRiskFactors",
@@ -9827,6 +9861,7 @@
     "operation.terminal",
     "operation.testing",
     "operation.ui",
+    "operation.uiQa",
     "recipes.fundamental.credit.creditRatingMigration",
     "recipes.fundamental.credit.usHighYieldSpread",
     "recipes.fundamental.disclosure.sec10kRiskFactors",

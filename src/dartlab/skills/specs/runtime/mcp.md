@@ -144,11 +144,15 @@ dartlab 엔진/Skill OS 가 진화해도 MCP 표면이 자동으로 따라가도
 | `ai/tools/registry._LEGACY_NAME_MAP` | Python 내부 호환 alias. MCP 실행 권한은 부여하지 않음 |
 | `dartlab/__init__._LAZY_ATTRS` (PEP 562) | 새 top-level `dartlab.X` 모듈 추가 시 등록 |
 | `ai/tools/runpythonGuard` import/attribute/path allowlist | RunPython 분석 표면을 추가하거나 차단할 때 |
+| MCP instructions 생성 원천 | 광고 도구가 바뀔 때. 지침은 손으로 적지 않고 광고 SSOT 에서 생성한다 |
 
 ### Silent drift — 조용히 깨질 수 있는 채널 (가드 1 종)
 
 - **새 Skill OS 카테고리** — `prompts/list` 는 `kind == "recipe"` 로 hardcode 필터. `playbook/`, `scenario/` 같은 새 카테고리 도입 시 prompts 에서 누락되며 외부 LLM 이 알아챌 수 없음.
   - **가드**: `tests/test_mcp.py::test_recipe_skills_all_exposed_as_prompts` invariant. recipe 파일 set ↔ `_recipeSkillsForPrompts()` 반환 set 일치 검증. 이 테스트가 fail 하면 `_recipeSkillsForPrompts()` 의 필터를 새 카테고리 포함하도록 갱신.
+- **표면 3종 정합**: 에이전트에게 건네는 표면은 MCP instructions, tools/list 의 도구 설명·스키마, 런타임이 주입하는 분석 캡슐 셋뿐이다. 어느 하나라도 광고 목록에 없는 도구를 가르치면 에이전트는 존재하지 않는 도구의 사용법을 배운다.
+  - **가드**: `tests/mcp/test_brokerSurfaceCoherence.py` 가 세 표면 모두를 프로필별로 검사한다.
+- **payload 예산**: 예산의 기준은 우리가 감당할 크기가 아니라 소비하는 CLI 가 받아 주는 크기다. 예산이 소비자 상한보다 크면 초과분이 잘리는 게 아니라 결과 전체가 폐기되고 근거까지 함께 사라진다. 축약이 필요할 때도 본문을 먼저 줄이고 근거 목록은 끝까지 비우지 않는다.
 
 ### 큰 변화 시 점검 (체크리스트)
 

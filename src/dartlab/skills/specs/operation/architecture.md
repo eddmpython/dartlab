@@ -278,3 +278,21 @@ Skill 은 운영자·사용자·사용자가 명시적으로 위임한 AI 가 �
 
 마커 없는 본문은 3 주체 모두에게 동일 노출 (fallback). 상세: `operation.code` "frontmatter 8 신규 필드" 섹션 + [.claude/skills/skill-os-add/SKILL.md](file://./.claude/skills/skill-os-add/SKILL.md).
 
+## 계약 소유자
+
+수량과 열거값은 코드 또는 생성 계약이 정본이다. 이 표는 소유 위치만 설명하며 수기 복제본을 만들지 않는다.
+
+| 계약 | 코드 정본 | 설명 정본 | 실행 가드 |
+|---|---|---|---|
+| 공개 Python 엔진 | `src/dartlab/__init__.py` | `operation.apiContract` | `tests/audit/notebookContract.py` |
+| 데이터 작업대 | `src/dartlab/dataHub/`, `ui/packages/runtime/src/data/` | `operation.architecture`, `operation.ui` | architecture·UI data wiring audit |
+| 다운로드 카탈로그 | `src/dartlab/core/dataConfig.py` | `operation.dataDownloadCenter` | `tests/core/test_download_catalog.py` |
+| 시뮬레이션 | `src/dartlab/simulate/`, `src/dartlab/macro/simulate/` | `engines.simulate` | simulate focused tests·architecture audit |
+| 리포트 | `src/dartlab/story/` | `engines.story` | story·report model tests |
+| 검색 | `src/dartlab/providers/dart/search/` (진입 `dartlab.search`) | `engines.search` | search contract tests |
+| 알림 파이프라인 | `.github/`, `src/dartlab/scan/`, push hub | `operation.notifyPipeline` | workflow·watcher tests |
+| Agent Runtime | `src/dartlab/ai/runtime/` | `operation.aiEngine` | AI runtime·gateway·schema drift tests |
+| 제품 outcome | `src/dartlab/productOutcome.py`, `ai/runtime/evidenceStore.py` | `operation.productDirection` | outcome API·evidence verification tests |
+
+- 서버용 비동기 API 는 import 시 무거운 엔진을 적재하지 않는다.
+

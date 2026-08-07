@@ -176,3 +176,8 @@ SimulationResult
 - 답변에 인용한 경로와 DCF 수치는 해당 `valueRef`, `dateRef`, `executionRef`와 직접 연결한다.
 - base와 stress 비교는 target, horizon, asOf가 동일한지 확인한다.
 - `partial`의 결손값을 0으로 바꾸지 않고 제한과 필요한 입력을 명시한다.
+
+## 기대 원장과 거시 상태
+
+- expectation ledger (`dartlab.simulate.expectationCycle`, 주기 실행 `.github/workflows/expectationCycle.yml`) 는 관측값, prior, 검증 상태를 분리 보관한다. 표본이 부족하면 검증된 것처럼 표시하지 않는다.
+- 거시 시뮬레이션은 regime transition 과 결과 container 를 공통 타입으로 유지한다. 시나리오 가정과 실제 관측값을 같은 필드에 섞지 않는다.

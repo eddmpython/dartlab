@@ -325,3 +325,5 @@ data.industryBadge = {
 ## 기본 검증
 
 스킬은 공개 실행 문서다. `dartlab.industry()` 시그니처·반환 컬럼·`Company.industry()` 반환 키가 바뀌면 본 파일을 같은 변경에서 갱신한다.
+
+- 산업 비교의 재무 지표는 회사 자료와 산업 집계의 source identity 를 보존한다. dual source 값이 다를 때 임의로 합치지 않고 canonicalization 규칙과 결손 상태를 따른다.

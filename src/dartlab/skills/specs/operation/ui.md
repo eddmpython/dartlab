@@ -99,6 +99,7 @@ testUniverse:
 - Runtime Center는 `/api/agent/*` adapter 하나로 설치 상태, MCP 상태, 명시적 digest 승인, runtime 선택을 제공한다. provider API key와 OAuth 입력란은 두지 않는다.
 - Runtime Center의 action은 서버가 `canInstall` 또는 `canConnect`를 명시한 경우에만 보인다. 근거 protocol 미지원 상태는 `blockingReason`과 `recommendedAction`을 표시하고 성공할 수 없는 버튼을 만들지 않는다.
 - 분석형 질문도 별도 고정 Graph나 Loop로 우회하지 않고 같은 Agent Runtime에 analysis capsule을 전달한다.
+- GUI는 질문을 투자판단, 기업비교, 스크리닝, 공시검토, 실적추이, 일반 리서치 6모드로 분류하고 분석 목표, 공개 진행 단계, 후속 질문을 표시한다.
 - 채팅 본문은 최종 답변, 짧은 activity 로그, 실제 코드/시각화 실행 카드, 실패 notice, source 요약만 렌더한다.
 - raw prompt, raw tool args/result JSON, 내부 trace JSON, `Agent Trace`, `투명성` 박스는 채팅 본문에 렌더하지 않는다.
 - raw thinking과 대화 본문은 browser localStorage에 저장하지 않는다. localStorage에는 opaque session ID와 시간, 고정 여부 같은 content-free metadata만 둔다.
@@ -108,7 +109,7 @@ testUniverse:
 - 내부 tool id는 채팅 본문에 snake_case로 노출하지 않는다. 기본 표시명은 `replaceAll("_", " ")`를 적용하고, activity 문구는 `search reference 실행함`, `read context 실행함`, `inspect dataset 실행함`, `run python 실행함`, `compile visual 실행함`, `verify 실행함` 형식을 사용한다.
 - 진행 중에는 최근 6개 activity만 보이고, 완료 후에는 `명령어 N개 실행` 한 줄로 접는다.
 - 빈 chunk, 검색-only, tool 실패 은폐, 정형 ref 없는 계산 답변은 성공 outcome으로 release하지 않는다.
-- `RUN_FINISHED.responseMeta.answerQuality`가 있으면 채팅 답변에 검증 배지, 정량/문서 계약, 점수를 표시한다. 품질 게이트 실패 턴의 부분 답변은 렌더하지 않고 공개 실패 사유를 표시한다.
+- `RUN_FINISHED.responseMeta.answerQuality`가 있으면 채팅 답변에 검증 배지, 정량/문서 계약, 점수를 표시한다. 품질 판정은 게이트가 아니라 뱃지다: 근거 계약을 못 채운 답도 본문과 근거를 `unverified` 뱃지와 함께 렌더하고, 런타임 자체 실패(`failed`)만 공개 실패 사유로 표시한다. 런타임이 말한 실패 사유는 품질 라벨로 갈아 끼우지 않고 원문 그대로 보인다.
 - 답변 본문에서 실제 사용한 ref와 coverage가 제안했지만 사용하지 않은 보조 ref를 분리한다. 사용 근거는 답변 citation에서 exact match로 강조하고, 보조 근거를 답변이 인용한 것처럼 표시하지 않는다.
 - Evidence 패널은 선택한 ref의 bounded payload와 실행 영수증을 drawer에서 열고, `outcomeId`와 exact ref receipt가 일치한 확인만 사용자 검증으로 표시한다. 자동 답변 품질과 사용자 근거 확인은 서로 다른 상태다.
 - `RUN_FINISHED.responseMeta.runtimeCoverage`는 사용 capability, 보조 capability, 충족·미충족 근거, 결손을 표시한다. artifact와 `VIEW_SPEC`은 같은 결과 작업대에서 열되 raw tool payload를 채팅 본문으로 올리지 않는다.

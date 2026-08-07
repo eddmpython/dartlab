@@ -87,3 +87,4 @@ testUniverse:
 - 전역 값은 원격 privacy PRD와 권위 window가 생기기 전까지 `미측정`이다.
 - 로컬 SQLite는 사용자 기기에서 outcome 상태와 opaque ref hash만 보존한다.
 - root README 축별 점수는 실제 gate와 operator journey에 근거하고 주간 review에서만 재판정한다.
+- 제품 성숙도는 근거, 커버리지, 검증강도, 직관성, 속도, 효율성, 안정성, 혁신성 8차원을 독립적으로 본다. 기능 코드가 있다는 사실만으로 점수를 올리지 않는다. 실제 공개 표면의 반복 여정과 실패 가능한 실행 가드가 추가되거나 사라졌을 때만 outcome review 에서 재판정한다.

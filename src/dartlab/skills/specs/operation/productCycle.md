@@ -5,9 +5,9 @@ kind: curated
 scope: builtin
 status: observed
 category: operation
-purpose: 북극성 goal, 실행 증거, root scorecard, handbook의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.
+purpose: 북극성 goal, 실행 증거, root scorecard, Skill OS 의 현재 제품 계약을 한 주기에서 정합시키는 운영 계약이다.
 whenToUse:
-  - 임시 initiative를 완료하고 handbook으로 승격할 때
+  - 임시 initiative를 완료하고 확정 사실을 Skill OS 에 반영할 때
   - 북극성 축 점수를 재판정할 때
   - release acceptance와 operator journey를 기록할 때
 inputs:
@@ -71,7 +71,7 @@ testUniverse:
 3. contracts, integration, UI, security, performance gate가 실제 runner에서 도는지 확인한다.
 4. outcome이 없거나 권위가 부족하면 `noData` 또는 `미측정`을 유지한다.
 5. root README 점수는 반복 검증이 늘거나 줄었을 때만 재판정한다.
-6. 구현된 현재 계약은 코드에서 다시 확인해 handbook에 승격한다. 완료된 임시 initiative는 삭제한다.
+6. 구현된 현재 계약은 코드에서 다시 확인해 Skill OS 운영문서에 반영한다. 완료는 이니셔티브 문서의 이관·승격이 아니라 확정 사실의 SSOT 반영이다. 반영 전 코드·테스트·README·Skill OS 가 임시 설계를 인용하지 않는지 감사하고, 완료된 임시 initiative 는 삭제한다. GUI 변경 완료는 desktop·tablet·mobile audit receipt 와 스크린숏이 함께 있어야 하며 브라우저 제어가 없으면 시각 검증 미완료로 명시한다.
 
 ## Release 질문
 
