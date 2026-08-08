@@ -74,7 +74,7 @@ source:
   type: absorbed_skills
   absorbedKey: architecture
   format: markdown
-lastUpdated: '2026-07-22'
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -276,7 +276,7 @@ Skill 은 운영자·사용자·사용자가 명시적으로 위임한 AI 가 �
 :::end
 ```
 
-마커 없는 본문은 3 주체 모두에게 동일 노출 (fallback). 상세: `operation.code` "frontmatter 8 신규 필드" 섹션 + [.claude/skills/skill-os-add/SKILL.md](file://./.claude/skills/skill-os-add/SKILL.md).
+마커 없는 본문은 3 주체 모두에게 동일하게 노출한다. 상세 필드와 동기화 절차는 `operation.code`와 `src/dartlab/skills/SCHEMA.md`를 따른다.
 
 ## 계약 소유자
 

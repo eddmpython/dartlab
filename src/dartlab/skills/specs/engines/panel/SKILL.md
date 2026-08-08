@@ -109,7 +109,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-06-05'
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -127,7 +127,7 @@ wide 로 수평화**하는 엔진이다. 양식(era)·회사마다 흔들리는 
 
 - **정렬키 = native canonicalKey** — `disclosureKey` 는 정부 발행 ACLASS(DART XBRL 표준 Link
   Role)를 scope-strip 한 순수함수 산출(`mapper.canonicalKey`, BS_C→BS / NT_C_D826380→NT_D826380).
-  손매핑·학습 0 ([[feedback_xml_native_truth]]).
+  손매핑과 학습 없이 원천 표준 키를 유지한다.
 - **행 순서·계층 = 정부 서식 뼈대(spine)** — `blockOrder` 는 보고서마다 0 리셋이라 read 가
   재발견 못 하고 `canonicalKey` 는 정렬 가능 번호가 아니다 → 정부 문서 표시순서·트리를 빌드 시 1회
   명시 spine 으로 굽는다. `build.buildSpine` 이 **기준 종목 한 회사**(정부 표준 서식이라 reference
@@ -207,18 +207,18 @@ panel artifact(`{code}.parquet (flat)`)에 **굽는 것**과 **read 가 매번 �
 | 옛 주석 **분할** (de-chunk 제목 행) | ✅ build | `dechunkNotes` 가 통짜 덩어리를 `N.제목` 헤더로 물리 분할(blockLeaf=제목, **disclosureKey=null**) — 헤더 검출 규칙 변경 시에만 재빌드 |
 | 옛 주석 **정렬** (NT_ 부여) | ❌ read 정렬 | `alignNotes` 가 read 시 옛 제목 행을 회사 최근 XBRL 뼈대(scope,제목)→NT_ 에 매칭 — **정렬·뼈대 개선이 재빌드 무관**, 뼈대 없는 제목은 narrative |
 | 본문+첨부 중복 제거 (dedup) | ❌ read 정렬 | `dedupKeyed` 가 read 시 `(key,scope,period)` 1개 — build 는 분류만(중복 emit), dedup 은 READ 단일책임 |
-| plain (태그 strip) | ❌ read strip | raw 의 파생 표현 — strip 규칙 변경 가능 + 같은 정보 이중저장([[feedback_no_content_plain_precompute]]) → 안 구움 |
+| plain (태그 strip) | ❌ read strip | raw의 파생 표현이다. strip 규칙이 바뀔 수 있고 같은 정보를 이중 저장하므로 build에 굽지 않는다. |
 
 **원칙**: 파생물·정렬·표현·판정은 **굽지(build) 도, 즉시 다 계산(eager)도 강제하지 않는다.** 굽으면
 규칙 변경 시 전 종목 재빌드 폭탄 + 이중저장 회귀. → scope·spine·plain 이 전부 read 시점인 이유.
-[[feedback_panel_wide_identity]] (wide 정체성 불가침) 와 한 사상.
+이 규칙은 panel wide의 형태와 내용 정체성을 유지하는 원칙과 같다.
 
 ### 콜드스타트 — strip 위치(채택) + lazy(후속), build 굽기·wide 교체 금지
 
 read plain 콜드 비용의 90%가 173MB raw→plain 정규식 strip (정규식 chain 자체는 floor — per-row·
 대체정규식 전부 더 느리거나 틀림, 측정 확인). I/O 72ms·anchor·pivot·orderBySpine 는 ≤10ms.
 strip 을 **빠르게**가 아니라 **언제·어디서 하나**로 푼다 — 세 제약 충족: (1) wide 형태·내용 불가침
-([[feedback_panel_wide_identity]]), (2) build 굽기 금지(위 저장 기준, R4), (3) plain 결과 불변.
+(2) build 굽기 금지, (3) plain 결과 불변을 모두 충족해야 한다.
 
 - **채택(strip 위치 이동)**: strip 을 collapse(long fragment) 단계가 아니라 **pivot·spine 정렬 후
   wide period 셀**에 1회. 큰 셀 1회 정규식이 작은 조각 수천개보다 빠름 → **콜드 ~1s→0.35s (2.8x)**,

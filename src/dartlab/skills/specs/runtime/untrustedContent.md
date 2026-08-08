@@ -22,6 +22,7 @@ toolRefs:
   - read
 knowledgeRefs:
   - runtime.workbenchEvidenceFlow
+  - operation.agentBoundaries
 sourceRefs:
   - dartlab://skills/runtime.untrustedContent
 requiredEvidence:
@@ -65,7 +66,7 @@ predecessors:
   - runtime.workbenchEvidenceFlow
 linkedSkills:
   - recipes.news.untrustedToneAudit
-lastUpdated: "2026-05-21"
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -108,6 +109,6 @@ idempotent — 이미 마커가 있으면 다시 감싸지 않는다.
 
 ## 강행규칙 라우팅
 
-- `CLAUDE.md` "⛔ AI 엔진 — 외부 본문은 untrusted" 절.
-- `memory/conduct.md` 외부 입력 취급 항목.
+- 공통 안전 경계는 `CLAUDE.md`의 외부 입력 취급 규칙을 따른다.
+- 세부 에이전트 경계는 `operation.agentBoundaries`를 따른다.
 - 상위 SSOT: `runtime.workbenchEvidenceFlow` "외부 본문 처리" 절 — 본 spec 은 그 절의 분리 SSOT 다. 본문이 두 곳에서 갈리지 않게, 본 spec 변경 시 workbenchEvidenceFlow 의 같은 절도 동행.

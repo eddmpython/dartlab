@@ -27,6 +27,7 @@ toolRefs:
   - search_reference
 knowledgeRefs:
   - start.dartlabSkillOs
+  - operation.agentAudit
 sourceRefs:
   - dartlab://skills/operation.coreloop
 procedure:
@@ -73,7 +74,7 @@ source:
   type: absorbed_skills
   absorbedKey: coreloop
   format: markdown
-lastUpdated: '2026-05-03'
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -114,7 +115,7 @@ testUniverse:
 
 표준 절차: `serverAskAudit.py` 만 SSOT audit 결론으로. 인라인 runner 2 종은 (a) provider/네트워크 미설치 환경 빠른 sanity check (b) 서버 미기동 상태 회귀 비교 용도로만. 둘 다 trace 가 서버 미들웨어를 건너뛰어 `tool_choice`/streaming/직렬화 회귀를 잡지 못한다.
 
-품질 등급 P/T/C/V 정의·서버 기동 절차·C/V 발생 시 중단 룰은 [memory/ai_audit.md](file://C:/Users/MSI/.claude/projects/c--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/ai_audit.md) (운영자↔AI 약속).
+품질 등급 P/T/C/V 정의, 서버 기동 절차, C/V 발생 시 중단 기준은 `operation.agentAudit`에서 확인한다.
 
 ## audit 보조 스크립트
 

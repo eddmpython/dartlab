@@ -27,6 +27,7 @@ toolRefs:
   - search_reference
 knowledgeRefs:
   - start.dartlabSkillOs
+  - operation.contributionWorkflow
 sourceRefs:
   - dartlab://skills/operation.code
 procedure:
@@ -73,7 +74,7 @@ source:
   type: absorbed_skills
   absorbedKey: code
   format: markdown
-lastUpdated: '2026-05-03'
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -231,7 +232,7 @@ baseline 증가, deferred 사유 누락, 해결된 위반의 baseline 미축소�
 
 ## Skill OS 산출물 6 종
 
-Skill 은 운영자·사용자·사용자가 명시적으로 위임한 AI 가 관리하고 개발한다. spec 소스 (`operation/*.md`, `engines/*.md`) 변경 시 산출물 6 종도 같은 의도에 맞춰 명시적으로 patch 한다. 별도 commit "정리: skill 인덱스 동기화" ([commit-self-change](file://./.claude/skills/commit-self-change/SKILL.md)).
+Skill은 운영자, 사용자, 사용자가 명시적으로 위임한 에이전트가 관리한다. spec 소스를 변경하면 `src/dartlab/skills/SCHEMA.md`에 따라 산출물 6종을 명시적으로 동기화하고, commit 단위는 `operation.contributionWorkflow`를 따른다.
 
 | 산출물 | 대상 | 결 |
 |---|---|---|

@@ -29,6 +29,8 @@ toolRefs:
   - EngineCall
   - RunPython
   - SaveArtifact
+knowledgeRefs:
+  - operation.contributionWorkflow
 sourceRefs:
   - dartlab://skills/operation.opsAsSkills
   - dartlab://skills/operation.code
@@ -71,7 +73,7 @@ examples:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: "2026-05-17"
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -151,7 +153,7 @@ uv run python -X utf8 src/dartlab/skills/addAxis.py {group} {axis} \
 3. `operation.architecture` L2 계층 표 1 줄
 4. SKILL.md 3 강제 섹션 본문 채우기
 
-`--dry-run` 으로 미리보기. axis / recipe / operation / start / runtime sub-spec 은 수동 4 단계 절차 ([skill-os-add](file://./.claude/skills/skill-os-add/SKILL.md)) 따름.
+`--dry-run`으로 미리 본다. axis, recipe, operation, start, runtime sub-spec은 `src/dartlab/skills/SCHEMA.md`의 수동 4단계 절차를 따른다.
 
 ## 신규 frontmatter 필드 8 종 (Skill Graph 모델)
 
@@ -187,5 +189,5 @@ Skill 산출물은 운영자·사용자·사용자가 명시적으로 위임한 
 | `pyodide.json` | 브라우저 Pyodide | ~400 토큰 |
 | `graph.json` | 그래프 시각화 (`/skills/graph`) | nodes + edges + cycles + orphans |
 
-산출물 동기화는 별도 commit "정리: 동기화" ([commit-self-change](file://./.claude/skills/commit-self-change/SKILL.md)) 으로 분리한다.
+산출물 동기화의 commit 분리 여부는 `operation.contributionWorkflow`의 논리 단위 원칙을 따른다.
 

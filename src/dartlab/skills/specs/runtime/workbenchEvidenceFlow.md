@@ -31,6 +31,8 @@ toolRefs:
   - SaveArtifact
   - InspectDataset
   - RememberDecision
+knowledgeRefs:
+  - operation.agentBoundaries
 requiredEvidence:
   - skillRef
   - executionRef
@@ -81,7 +83,7 @@ examples:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: "2026-05-06"
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -170,5 +172,5 @@ LLM 의 의무:
 - nested HTML / 복잡한 escape 는 P1 강화 대상 — 현재는 단순 regex strip.
 
 규칙 SSOT 라우팅:
-- 강행규칙: `CLAUDE.md` "⛔ AI 엔진 — 외부 본문은 untrusted" 절.
-- 행동규약: `memory/conduct.md` 외부 입력 취급 항목.
+- 공통 안전 경계: `CLAUDE.md`의 외부 입력 취급 규칙.
+- 세부 에이전트 경계: `operation.agentBoundaries`.

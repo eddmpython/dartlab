@@ -56,6 +56,7 @@ knowledgeRefs:
   - engines.macro
   - engines.quant
   - engines.industry
+  - operation.content
 linkedSkills:
   - engines.panel
 sourceRefs:
@@ -73,7 +74,7 @@ runtimeCompatibility:
     status: supported
     notes: []
 status: observed
-lastUpdated: "2026-05-12"
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -88,7 +89,7 @@ testUniverse:
 
 dartlab 의 두 번째 사상 — **숫자를 나열하면 대시보드가 되지만, 숫자의 인과를 연결하면 스토리가 된다** — 의 실행 표면.
 
-**중요**: 본 절차는 *기업 분석 한정*. 단순 수치 질의 · 산업 자체 분석 · 거시 자체 분석에는 6 막 강제하지 않는다. UI / AI 엔진 prompt 어디에도 *모든 질문에 6 막* 강제 X (`memory/content.md` 7절).
+**중요**: 본 절차는 기업 분석에만 적용한다. 단순 수치, 산업, 거시 질문에는 6막을 강제하지 않으며 UI와 AI prompt의 적용 범위는 `operation.content`를 따른다.
 
 ## 공개 호출 방식
 

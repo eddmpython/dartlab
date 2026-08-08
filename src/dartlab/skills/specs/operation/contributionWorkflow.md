@@ -75,7 +75,7 @@ examples:
 source:
   type: skill_os
   format: markdown
-lastUpdated: '2026-05-13'
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -104,6 +104,8 @@ testUniverse:
 
 ## 커밋 규칙
 
+- 저장소 기본 작업 브랜치는 `master`다. 별도 브랜치와 worktree를 만들지 않는다. 외부 기여자는 fork의
+  `master`에서 작업하고 PR로 제출한다.
 - 커밋은 한 논리 단위로 나눈다. 기능 변경과 생성 산출물 동기화가 분리 가능한 경우 별도 커밋으로 둔다.
 - staging은 명시 경로만 사용한다. 예: `git add README.md src/dartlab/skills/specs/operation/contributionWorkflow.md`.
 - 전체 staging 명령 (`git add .`, `git add -A`)은 사용하지 않는다.
@@ -117,15 +119,14 @@ README, Skill OS, landing page, blog, JSON index는 사용자가 직접 읽는 �
 
 운영 실패나 폐기 이력은 필요한 경우에만 짧게 남긴다. 내부 사유, 방어적 문구, 도구 중심의 표현보다 현재 운영 원칙과 사용자가 따라야 할 절차를 먼저 적는다.
 
-## PreToolUse hook validator 스크립트
+## 자동화 경계
 
-`.claude/hooks/` 가 PreToolUse 시점에 호출하는 검증 스크립트. 룰 위반 시 hook 이 도구 실행 자체를 차단. 운영자↔AI 약속 (메모리·CLAUDE.md) 의 자동 강행 가드.
+저장소 공통 강제 수단은 Git에 추적되는 `tests/**`, `.github/workflows/**`, lint와 audit 설정이다.
+새 clone에서 실행할 수 없는 개인 설정과 로컬 hook은 공통 계약으로 간주하지 않는다.
 
-| 스크립트 | 룰 | 차단 시점 |
-|---|---|---|
-| `.claude/hooks/check_no_ai_markers.py` | 커밋 메시지 + staged 본문에 AI attribution 마커 (생성 주체 표식 · 협업 표식 등 — 패턴 SSOT 는 해당 스크립트 본문 `BANNED_PATTERNS` 리스트) 금지. 본 spec "공개 산출물 규칙" + [MEMORY.md "주체 중립"](file://C:/Users/MSI/.claude/projects/c--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/MEMORY.md) 강행 | git commit |
-| `.claude/hooks/validate_ask.py` | `AskUserQuestion` 4 지선다 안티패턴 차단. [CLAUDE.md "사용자 질문 방식"](file://./CLAUDE.md) — 객관식 선택지 = 결정 떠넘김 | `AskUserQuestion` 도구 호출 |
-| `.claude/hooks/validate_plan.py` | `ExitPlanMode` 본문 형식 게이트. 영향 파일 / 영향 함수 / 테스트 매핑 / 롤백 4 섹션 + path ≥ 2 강행. 룰 SSOT `memory/conduct.md` 6절 + skill [plan-deep](file://./.claude/skills/plan-deep/SKILL.md) | `ExitPlanMode` 도구 호출 |
-| `.claude/hooks/validate_stop_phrase.py` | Stop hook trigger phrase 가드 — 컷오프 / 4 지선다 안티패턴 차단 | Stop hook (응답 종료 시점) |
+`.claude/**`와 개인 memory는 운영자 로컬 보조 장치일 수 있지만 이 skill의 정본도, CI 통과의 증거도
+아니다. 로컬 hook이 막았다는 사실만으로 제품 결함을 확정하지 않고, 로컬 hook이 통과했다는 사실만으로
+검증 완료를 선언하지 않는다.
 
-위반 시 hook 메시지에 룰 SSOT 경로 노출. 위반 회피로 hook 우회 (`--no-verify` 등) 금지 — 우회 시도 자체가 회귀로 카운트.
+모든 기여자에게 강제해야 하는 규칙은 추적되는 test 또는 audit로 구현하고 CI에 연결한다. 문서에는
+현재 저장소에서 재현 가능한 강제 수단만 적는다. 검증 우회 플래그로 추적되는 gate를 건너뛰지 않는다.

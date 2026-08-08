@@ -55,7 +55,7 @@ uv sync
 
 ### 2. 신규 skill 작성
 
-skill-os-add (`.claude/skills/skill-os-add/SKILL.md`) 4 단계 강행:
+신규 spec은 `src/dartlab/skills/SCHEMA.md`의 4단계 절차를 따른다:
 - `lintSkill` 강제 섹션 충족
 - `capabilityRefs` 명시
 - `readSkill/describeSkill` 검색 가능

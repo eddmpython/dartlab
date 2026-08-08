@@ -875,13 +875,13 @@
       "id": "operation.agentAudit",
       "title": "Agent Audit — 답변 품질 회귀 측정 절차",
       "category": "operation",
-      "purpose": "dartlab 에이전트 답변 품질 회귀 측정 절차서 — P/T/C/V 4 단계 (Prompt/Tool calls/Compliance/Verifier). memory ai_audit 의 외부 공개 SSOT 격상. 회귀 가드 추가 도구로 자동화 가능.",
-      "inDegree": 0,
+      "purpose": "DartLab 에이전트 답변 품질 회귀를 P/T/C/V 4단계로 측정하는 공개 운영 SSOT. 회귀 가드는 추적되는 audit와 CI로 자동화한다.",
+      "inDegree": 1,
       "outDegree": 4,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -889,12 +889,12 @@
       "title": "Agent Boundaries — checkAgentBoundary lint 외부 공개 SSOT",
       "category": "operation",
       "purpose": "tests/audit/checkAgentBoundary.py lint 룰의 외부 공개 SSOT — graph 회귀 가드 8 번째 / chat-native 본체 유지 / Bold leaf 단일 Write / workbench 본체화 금지 4 회귀 신호. 외부 기여자 PR 작성 시 자가 점검 표준.",
-      "inDegree": 0,
+      "inDegree": 2,
       "outDegree": 3,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -941,7 +941,7 @@
       "title": "dartlab 아키텍처 — 전체 청사진",
       "category": "operation",
       "purpose": "dartlab 아키텍처 — 전체 청사진 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
-      "inDegree": 17,
+      "inDegree": 18,
       "outDegree": 1,
       "cluster": "operation",
       "isEntry": false,
@@ -968,7 +968,7 @@
       "category": "operation",
       "purpose": "코드 규칙 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
       "inDegree": 13,
-      "outDegree": 1,
+      "outDegree": 2,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
@@ -980,12 +980,12 @@
       "title": "콘텐츠 작업대. 블로그·카드뉴스·팟캐스트 공동 작업대",
       "category": "operation",
       "purpose": "블로그 글·라이브 카드뉴스(/cards)·팟캐스트를 하나의 공동 작업대에서 기획부터 발행까지 만드는 운영 SSOT. 세 서피스가 공유 front(주제→데이터 워크벤치 직독→서사 코어→근거검증→자산수급)를 거쳐 StoryCore 를 만들고, 서피스 어댑터가 각 형식으로 투영한다. 데이터는 dartlab 데이터 워크벤치가 SSOT.",
-      "inDegree": 0,
+      "inDegree": 1,
       "outDegree": 0,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": true,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -993,7 +993,7 @@
       "title": "기여 작업 흐름과 커밋 규칙",
       "category": "operation",
       "purpose": "DartLab 변경 작업에서 코드 규칙, 검증 범위, 커밋 방식을 일관되게 적용한다.",
-      "inDegree": 2,
+      "inDegree": 4,
       "outDegree": 4,
       "cluster": "operation",
       "isEntry": false,
@@ -1007,7 +1007,7 @@
       "category": "operation",
       "purpose": "Core Loop — 자가개선 루프 운영 SSOT 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
       "inDegree": 6,
-      "outDegree": 1,
+      "outDegree": 2,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
@@ -1071,12 +1071,12 @@
       "title": "capability docstring 의 LLM Specifications 섹션 표준",
       "category": "operation",
       "purpose": "capability docstring 에 LLM 친화 메타 (AntiPatterns / OutputSchema / Prerequisites / Freshness / Dataflow / TargetMarkets) 6 sub-key 표준 정의. 사람용 (Capabilities / Args / Returns / Example) 과 분리해 LLM 비교 선택 정확도를 높인다.",
-      "inDegree": 0,
+      "inDegree": 1,
       "outDegree": 2,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -1098,7 +1098,7 @@
       "category": "operation",
       "purpose": "새 분석법, 운영 규칙, 외부 LLM 사용법을 Skills 체계에 추가하고 official 수준으로 승격하는 기준을 정한다.",
       "inDegree": 1,
-      "outDegree": 3,
+      "outDegree": 4,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
@@ -1201,12 +1201,12 @@
       "title": "Performance Profile — Polars heap + py-spy + mprof 절차서",
       "category": "operation",
       "purpose": "dartlab 성능 측정 절차서 — Polars Rust heap OOM 가드 정황 진단 + py-spy CPU profile + mprof memory tracking + arrow flight 분석. CLAUDE.md 메모리 가드 룰 외부 공개 SSOT.",
-      "inDegree": 0,
+      "inDegree": 1,
       "outDegree": 3,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -1280,7 +1280,7 @@
       "category": "operation",
       "purpose": "종목 분석을 6 막 인과 구조로 묶는 운영 절차. analysis · credit · macro · quant · industry 5 분석엔진을 story 조합기로 결합한다. AI/엔진 prompt 어디에도 모든 질문에 6 막 강제 X — 기업 분석 한정.",
       "inDegree": 0,
-      "outDegree": 7,
+      "outDegree": 8,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
@@ -1349,7 +1349,7 @@
       "category": "operation",
       "purpose": "dartlab 테스트 · CI 운영 규칙 운영 규칙을 Skill OS에서 확인하고 변경 전후 검증 게이트로 사용한다.",
       "inDegree": 9,
-      "outDegree": 1,
+      "outDegree": 4,
       "cluster": "operation",
       "isEntry": false,
       "isLeaf": false,
@@ -3777,7 +3777,7 @@
       "category": "runtime",
       "purpose": "외부 본문 (웹 검색·뉴스·외부 URL fetch) 을 데이터로 다루고 지시로 따르지 않는 단일 SSOT. 마커 형식·도구 작성자 의무·LLM 의무를 분리 명세한다.",
       "inDegree": 12,
-      "outDegree": 3,
+      "outDegree": 4,
       "cluster": "runtime",
       "isEntry": false,
       "isLeaf": false,
@@ -3794,10 +3794,10 @@
       "category": "runtime",
       "purpose": "ask 작업대의 5 패스 (BRIEF→WORK→CRITIQUE→COMPOSE→GATE→HARVEST) 와 각 패스에서 발급해야 할 ref kind 를 단일 SSOT 로 못박는다.",
       "inDegree": 25,
-      "outDegree": 0,
+      "outDegree": 1,
       "cluster": "runtime",
       "isEntry": false,
-      "isLeaf": true,
+      "isLeaf": false,
       "isOrphan": false,
       "audiences": []
     },
@@ -5356,6 +5356,11 @@
       "kind": "knowledge"
     },
     {
+      "src": "operation.code",
+      "dst": "operation.contributionWorkflow",
+      "kind": "knowledge"
+    },
+    {
       "src": "operation.contributionWorkflow",
       "dst": "start.dartlabSkillOs",
       "kind": "knowledge"
@@ -5378,6 +5383,11 @@
     {
       "src": "operation.coreloop",
       "dst": "start.dartlabSkillOs",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.coreloop",
+      "dst": "operation.agentAudit",
       "kind": "knowledge"
     },
     {
@@ -5443,6 +5453,11 @@
     {
       "src": "operation.engineAudit",
       "dst": "start.dartlabSkillOs",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.extendSkills",
+      "dst": "operation.contributionWorkflow",
       "kind": "knowledge"
     },
     {
@@ -5641,6 +5656,11 @@
       "kind": "knowledge"
     },
     {
+      "src": "operation.sixActsAnalysis",
+      "dst": "operation.content",
+      "kind": "knowledge"
+    },
+    {
       "src": "operation.skillDevelopmentLoop",
       "dst": "operation.extendSkills",
       "kind": "knowledge"
@@ -5698,6 +5718,21 @@
     {
       "src": "operation.testing",
       "dst": "start.dartlabSkillOs",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.testing",
+      "dst": "operation.architecture",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.testing",
+      "dst": "operation.docstringStandard",
+      "kind": "knowledge"
+    },
+    {
+      "src": "operation.testing",
+      "dst": "operation.performanceProfile",
       "kind": "knowledge"
     },
     {
@@ -9391,6 +9426,16 @@
       "kind": "knowledge"
     },
     {
+      "src": "runtime.untrustedContent",
+      "dst": "operation.agentBoundaries",
+      "kind": "knowledge"
+    },
+    {
+      "src": "runtime.workbenchEvidenceFlow",
+      "dst": "operation.agentBoundaries",
+      "kind": "knowledge"
+    },
+    {
       "src": "start.contributionPRWalkthrough",
       "dst": "operation.contributionWorkflow",
       "kind": "linkedRecipe"
@@ -9676,19 +9721,14 @@
     "engines.story.companyCausal",
     "engines.story.dartlabStory",
     "engines.viz.tableBackedChart",
-    "operation.agentAudit",
-    "operation.agentBoundaries",
     "operation.cliMaintenance",
-    "operation.content",
     "operation.dataDownloadCenter",
     "operation.dataLineage",
-    "operation.docstringStandard",
     "operation.engineAudit",
     "operation.intentBoosts",
     "operation.issues",
     "operation.methodology",
     "operation.notifyPipeline",
-    "operation.performanceProfile",
     "operation.recipePromote",
     "operation.refactorChecklist",
     "operation.sixActsAnalysis",

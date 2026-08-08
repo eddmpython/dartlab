@@ -27,6 +27,9 @@ toolRefs:
   - search_reference
 knowledgeRefs:
   - start.dartlabSkillOs
+  - operation.architecture
+  - operation.docstringStandard
+  - operation.performanceProfile
 sourceRefs:
   - dartlab://skills/operation.testing
 procedure:
@@ -73,7 +76,7 @@ source:
   type: absorbed_skills
   absorbedKey: testing
   format: markdown
-lastUpdated: '2026-05-03'
+lastUpdated: '2026-08-09'
 testUniverse:
   market: KR
   stockCodes:
@@ -165,14 +168,14 @@ python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dar
 | `tests/audit/docstringNineSection.py` | P-PR 트랙 — providers 한정 9 섹션 측정 게이트 |
 | `tests/audit/docstring_coverage.py` | W-C 트랙 — 9 섹션 충족률 측정 |
 
-상세 9 섹션 표준은 [operation.docstringStandard](/skills/operation.docstringStandard) 와 [.claude/skills/docstring-9section/SKILL.md](file://./.claude/skills/docstring-9section/SKILL.md).
+상세 9섹션 표준은 [operation.docstringStandard](/skills/operation.docstringStandard)를 따른다.
 
 ### 코드 품질·구조 게이트
 
 | 스크립트 | 룰 |
 |---|---|
 | `tests/audit/qualityGate.py` | radon 복잡도 + vulture 죽은 코드 자동 검사 |
-| `tests/audit/coreBoundary.py` | core 경계 lint — `src/dartlab/core/` 안 거주 자격 강행 ([memory/core_boundary.md](file://C:/Users/MSI/.claude/projects/c--Users-MSI-OneDrive-Desktop-sideProject-dartlab/memory/core_boundary.md)) |
+| `tests/audit/coreBoundary.py` | core 경계 lint. `src/dartlab/core/`의 거주 자격은 `operation.architecture`를 따른다. |
 | `tests/audit/overSplitInventory.py` | 과분할 폴더 인벤토리 (operation.code 룰 1) |
 | `tests/audit/staleImports.py` | stale top-level import lint — `from dartlab import X` / `import dartlab as Y` 잔존 검출 |
 | `tests/audit/stale_references.py` | 폐기된 API/이름이 코드에 잔존하는지 검증 |
@@ -195,7 +198,7 @@ python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dar
 | `tests/audit/dataQualityAudit.py` | 전 엔진 데이터 전수조사 (208 호출 품질) |
 | `tests/audit/validateNotebooks.py` | Jupyter 노트북 코드 셀 Python syntax 검증 |
 | `tests/audit/publicApiCoverage.py` | 공개 API 시나리오 매핑 감사 |
-| `tests/audit/memoryBudgetAudit.py` | `withMemoryBudget` 공개 시나리오 매핑 감사 ([CLAUDE.md](file://./CLAUDE.md) 메모리 안전) |
+| `tests/audit/memoryBudgetAudit.py` | `withMemoryBudget` 공개 시나리오 매핑 감사. 메모리 작업 진입은 `CLAUDE.md`와 `operation.performanceProfile`을 따른다. |
 
 > **flaky 처리 SSOT** = `tests/conftest.py` 의 `network` 마커 → `reruns=2` (pytest-rerunfailures). 별도 자동 quarantine 시스템(옛 flakyAudit)은 두지 않는다 — placeholder 였고 데이터소스(`flakyGates.json`) 부재로 작동 0이라 폐기(debt-honesty P2-8). flaky 의심 테스트는 `@pytest.mark.network` 부착으로 rerun 안전망에 든다.
 

@@ -931,7 +931,7 @@
         "engines.company",
         "engines.dataHub"
       ],
-      "bodyPreview": "## 엔진 역할\n\n`panel` 은 DART 공시 본문을 **정부 표준 XBRL 분류(canonicalKey) 뼈대 위에서 항목(행) × 기간(열)\nwide 로 수평화**하는 엔진이다. 양식(era)·회사마다 흔들리는 ACLASS·제목을 기간 간 정렬 가능한\n형태로 고정한다. `Panel(code)` / `c.panel` 을 잡는 순간 그 회사의 큰 분기별 시계열 wide\n`pl.DataFrame` 이 된다 (Panel 은 `pl.DataFrame` subclass).\n\n핵심 설계:\n\n- **정렬키 = native canonicalKey** — `disclosureKey` 는 정부 발행 ACLASS(DART XBRL 표준 Link\n  Role)를 scope-strip 한 순수함수 산출(`mapper.canonicalKey`, BS_C→BS / NT_C_D826380→NT_D826380).\n  손매핑·학습 0 ([[feedback_xml_native_truth]]).\n- **행 순서·계층 = 정부 서식 뼈대(spine)** — `blockOrder` 는 보고서마다 0 리셋이라 read 가\n  재발견 못 하고 `canonicalKey` 는 정렬 가능 번호가 아니"
+      "bodyPreview": "## 엔진 역할\n\n`panel` 은 DART 공시 본문을 **정부 표준 XBRL 분류(canonicalKey) 뼈대 위에서 항목(행) × 기간(열)\nwide 로 수평화**하는 엔진이다. 양식(era)·회사마다 흔들리는 ACLASS·제목을 기간 간 정렬 가능한\n형태로 고정한다. `Panel(code)` / `c.panel` 을 잡는 순간 그 회사의 큰 분기별 시계열 wide\n`pl.DataFrame` 이 된다 (Panel 은 `pl.DataFrame` subclass).\n\n핵심 설계:\n\n- **정렬키 = native canonicalKey** — `disclosureKey` 는 정부 발행 ACLASS(DART XBRL 표준 Link\n  Role)를 scope-strip 한 순수함수 산출(`mapper.canonicalKey`, BS_C→BS / NT_C_D826380→NT_D826380).\n  손매핑과 학습 없이 원천 표준 키를 유지한다.\n- **행 순서·계층 = 정부 서식 뼈대(spine)** — `blockOrder` 는 보고서마다 0 리셋이라 read 가\n  재발견 못 하고 `canonicalKey` 는 정렬 가능 번호가 아니다 → 정부 문서 표시순서·트"
     },
     {
       "id": "engines.quant",
@@ -1389,7 +1389,7 @@
       "id": "operation.agentAudit",
       "title": "Agent Audit — 답변 품질 회귀 측정 절차",
       "category": "operation",
-      "purpose": "dartlab 에이전트 답변 품질 회귀 측정 절차서 — P/T/C/V 4 단계 (Prompt/Tool calls/Compliance/Verifier). memory ai_audit 의 외부 공개 SSOT 격상. 회귀 가드 추가 도구로 자동화 가능.",
+      "purpose": "DartLab 에이전트 답변 품질 회귀를 P/T/C/V 4단계로 측정하는 공개 운영 SSOT. 회귀 가드는 추적되는 audit와 CI로 자동화한다.",
       "whenToUse": [
         "agent audit",
         "에이전트 audit",
@@ -1931,7 +1931,7 @@
       "nextSkills": [
         "engines.panel"
       ],
-      "bodyPreview": "# 6 막 인과 서사 — 기업 분석 한정\n\n## 무엇을 하나\n\n종목 하나를 거시 → 산업 → 정량 → 재무 → 신용 → 결론 6 막 인과로 묶는다. 단순 수치 나열 (대시보드) 과 다른 결 — 숫자가 *왜* 그 수준인지 5 단계 위 (거시) 부터 *역방향* 으로 추적해 마지막 막에서 한 줄로 묶는다.\n\ndartlab 의 두 번째 사상 — **숫자를 나열하면 대시보드가 되지만, 숫자의 인과를 연결하면 스토리가 된다** — 의 실행 표면.\n\n**중요**: 본 절차는 *기업 분석 한정*. 단순 수치 질의 · 산업 자체 분석 · 거시 자체 분석에는 6 막 강제하지 않는다. UI / AI 엔진 prompt 어디에도 *모든 질문에 6 막* 강제 X (`memory/content.md` 7절).\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\nstory = c.story()                 # 6 막 자동\nprint(story.act(1))               # 1 막 거시\nprint(story.act(6))               # 6 막 결론\n```\n\n또는 dartla"
+      "bodyPreview": "# 6 막 인과 서사 — 기업 분석 한정\n\n## 무엇을 하나\n\n종목 하나를 거시 → 산업 → 정량 → 재무 → 신용 → 결론 6 막 인과로 묶는다. 단순 수치 나열 (대시보드) 과 다른 결 — 숫자가 *왜* 그 수준인지 5 단계 위 (거시) 부터 *역방향* 으로 추적해 마지막 막에서 한 줄로 묶는다.\n\ndartlab 의 두 번째 사상 — **숫자를 나열하면 대시보드가 되지만, 숫자의 인과를 연결하면 스토리가 된다** — 의 실행 표면.\n\n**중요**: 본 절차는 기업 분석에만 적용한다. 단순 수치, 산업, 거시 질문에는 6막을 강제하지 않으며 UI와 AI prompt의 적용 범위는 `operation.content`를 따른다.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\nc = dartlab.Company(\"005930\")\nstory = c.story()                 # 6 막 자동\nprint(story.act(1))               # 1 막 거시\nprint(story.act(6))               # 6 막 결론\n```\n\n또는 dartlab.ask 자연어:\n\n```python\ndartlab.as"
     },
     {
       "id": "operation.skillDevelopmentLoop",
@@ -5325,7 +5325,7 @@
         "operation.code",
         "operation.architecture"
       ],
-      "bodyPreview": "## sample PR 흐름\n\n### 1. fork + clone\n\n```bash\ngit clone https://github.com/<your>/dartlab\ncd dartlab\nuv sync\n```\n\n### 2. 신규 skill 작성\n\nskill-os-add (`.claude/skills/skill-os-add/SKILL.md`) 4 단계 강행:\n- `lintSkill` 강제 섹션 충족\n- `capabilityRefs` 명시\n- `readSkill/describeSkill` 검색 가능\n- Skill OS 6 JSON 동기화 (capability 카탈로그는 docstring 라이브 빌드라 재생성 무관)\n\n### 3. 변경 단위 commit\n\n```bash\n# CLAUDE.md 강행: git add -A / . 금지, git commit -o <명시 paths>\ngit add src/dartlab/skills/specs/recipes/macro/myNewRecipe.md\ngit commit -o src/dartlab/skills/specs/recipes/macro/myNewRecipe.md \\\n  -m \"추가: recipes.macro.myNewRecipe "
+      "bodyPreview": "## sample PR 흐름\n\n### 1. fork + clone\n\n```bash\ngit clone https://github.com/<your>/dartlab\ncd dartlab\nuv sync\n```\n\n### 2. 신규 skill 작성\n\n신규 spec은 `src/dartlab/skills/SCHEMA.md`의 4단계 절차를 따른다:\n- `lintSkill` 강제 섹션 충족\n- `capabilityRefs` 명시\n- `readSkill/describeSkill` 검색 가능\n- Skill OS 6 JSON 동기화 (capability 카탈로그는 docstring 라이브 빌드라 재생성 무관)\n\n### 3. 변경 단위 commit\n\n```bash\n# CLAUDE.md 강행: git add -A / . 금지, git commit -o <명시 paths>\ngit add src/dartlab/skills/specs/recipes/macro/myNewRecipe.md\ngit commit -o src/dartlab/skills/specs/recipes/macro/myNewRecipe.md \\\n  -m \"추가: recipes.macro.myNewRecipe — 새 매크로 r"
     },
     {
       "id": "start.dartlabSkillOs",

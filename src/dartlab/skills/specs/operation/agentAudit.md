@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: drafted
 category: operation
-purpose: dartlab 에이전트 답변 품질 회귀 측정 절차서 — P/T/C/V 4 단계 (Prompt/Tool calls/Compliance/Verifier). memory ai_audit 의 외부 공개 SSOT 격상. 회귀 가드 추가 도구로 자동화 가능.
+purpose: DartLab 에이전트 답변 품질 회귀를 P/T/C/V 4단계로 측정하는 공개 운영 SSOT. 회귀 가드는 추적되는 audit와 CI로 자동화한다.
 whenToUse:
   - agent audit
   - 에이전트 audit

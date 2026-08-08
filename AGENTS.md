@@ -1,7 +1,8 @@
 # DartLab Agent Bootstrap
 
-Read `CLAUDE.md` first. It is the single entry point for every agent working in this repository: principles, environment, code map, architecture, and working rules.
+작업 시작 전에 `CLAUDE.md`를 끝까지 읽는다.
 
-If this file conflicts with `CLAUDE.md`, `CLAUDE.md` wins. Do not duplicate rules here.
+`CLAUDE.md`는 공통 안전 경계와 문서 지도만 소유한다. 설계와 운영 계약은
+`src/dartlab/skills/specs/**`가 정본이며, 변경 범위에 맞는 Skill OS 문서를 따라간다.
 
-Deeper references from `CLAUDE.md`: Skill OS specs under `src/dartlab/skills/specs/**` (start at `start.dartlabSkillOs`).
+이 파일에는 규칙을 복제하지 않는다. 충돌하면 `CLAUDE.md`가 안내한 정보 소유권을 기준으로 판단한다.

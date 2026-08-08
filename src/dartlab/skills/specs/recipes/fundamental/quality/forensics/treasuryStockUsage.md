@@ -87,7 +87,7 @@ testUniverse:
   asOfPolicy: latest
 falsifier:
   description: "자사주 변동 공시 또는 처분 상대방 정보 부재 시 의도 판정 불가 — *DART 자기주식취득·처분 공시 fetch 후 재호출* 한계 명시. 또한 *경영권 분쟁 timing* 명시 없으면 지배권 강화 단정 보류."
-lastUpdated: '2026-05-21'
+lastUpdated: '2026-08-09'
 runtimeCompatibility:
   server:
     status: supported
@@ -255,7 +255,7 @@ graph LR
 - **합병 신주배정 자사주 활용**: 합병 시 자기주식을 *피합병회사 주주* 에게 배정하는 케이스 — *지배권 강화* 와 *합병 정상 목적* 분리 어려움. 합병비율·외부평가 동행 검증.
 - **지주사 전환 정상 목적**: 인적분할 후 현물출자 자체는 지배구조 단순화 등 정상 목적 인정. 다만 *지배권 강화 효과* (지분율 상승) 별도 정량 검증.
 - **소각률 측정 시계**: 소각률 = 소각 / 매입 인데 매입 후 수년 후 소각하는 패턴이 있어 *단기 ratio* 만 보면 환원 의도 과소.
-- **임직원 처분 정상 목적**: RSU·스톡옵션 행사 처분은 보상 정상 목적. 다만 *행사 시점 호재 timing* 동행 시 [[executiveCompensationAudit]] 와 결합 검증.
+- **임직원 처분 정상 목적**: RSU와 스톡옵션 행사 처분은 정상적인 보상 목적일 수 있다. 행사 시점과 호재가 겹치면 `recipes.fundamental.quality.forensics.executiveCompensationAudit`와 결합해 검증한다.
 - **공정거래법·세법 제약**: 자사주 활용은 공정거래법·세법 (특수관계자 거래) 제약이 있어 *법적 한계* 안 정상 활용도 多. 단순 패턴만으로 의도 단정 금지.
 
 ### 5. 후속 모니터링
