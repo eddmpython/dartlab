@@ -26,7 +26,7 @@
 		"@dartlab/ui-design": "*",
 		"@dartlab/ui-runtime": "*",
 		"@dartlab/ui-surfaces": "*",
-		"dompurify": "^3.4.12",
+		"dompurify": "^3.4.13",
 		"klinecharts": "^9.8.12",
 		"marked": "^16.4.2"
 	}
