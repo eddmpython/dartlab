@@ -7484,7 +7484,8 @@
       "outputs": [
         "적용한 운영 규칙",
         "검증 결과",
-        "커밋 단위와 메시지"
+        "커밋 단위와 메시지",
+        "push 판단과 근거"
       ],
       "apiRefs": [],
       "toolRefs": [
@@ -7511,7 +7512,8 @@
         "operation.code, operation.architecture, operation.testing 중 변경 범위에 맞는 규칙을 먼저 읽는다.",
         "변경은 한 논리 단위로 묶고, unrelated dirty worktree는 되돌리지 않는다.",
         "검증은 변경 범위에 맞게 최소 충분하게 실행하고 결과를 남긴다.",
-        "커밋은 명시 경로만 포함하고 한국어 메시지로 남긴다."
+        "커밋은 명시 경로만 포함하고 한국어 메시지로 남긴다.",
+        "push 직전 전체 미푸시 범위와 검증 상태를 확인해 자동 push, 승인 대기, 보류 중 하나를 판단한다."
       ],
       "recipeSteps": [],
       "requiredEvidence": [
@@ -7531,6 +7533,7 @@
         "Skill OS 규칙 확인 없이 코드 변경을 시작함",
         "전체 add로 unrelated 변경을 커밋에 포함함",
         "검증 결과 없이 완료 처리함",
+        "push를 항상 별도 요청 대기로 단순화하거나 전체 미푸시 범위를 확인하지 않음",
         "공개 산출물에 도구·모델·작성자 생성 표식을 남김"
       ],
       "forbidden": [
@@ -7541,7 +7544,8 @@
       ],
       "examples": [
         "코드 변경 전 operation.code와 operation.testing을 확인한다.",
-        "문서 변경 커밋은 `문서: README Skill OS 안내 정리`처럼 범주와 내용을 함께 적는다."
+        "문서 변경 커밋은 `문서: README Skill OS 안내 정리`처럼 범주와 내용을 함께 적는다.",
+        "완결된 green master 작업은 전체 미푸시 범위에 UI 변경이 없으면 자동 push한다."
       ],
       "runtimeCompatibility": {
         "server": {

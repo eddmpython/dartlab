@@ -7729,7 +7729,8 @@
       "outputs": [
         "적용한 운영 규칙",
         "검증 결과",
-        "커밋 단위와 메시지"
+        "커밋 단위와 메시지",
+        "push 판단과 근거"
       ],
       "apiRefs": [],
       "toolRefs": [
@@ -7756,7 +7757,8 @@
         "operation.code, operation.architecture, operation.testing 중 변경 범위에 맞는 규칙을 먼저 읽는다.",
         "변경은 한 논리 단위로 묶고, unrelated dirty worktree는 되돌리지 않는다.",
         "검증은 변경 범위에 맞게 최소 충분하게 실행하고 결과를 남긴다.",
-        "커밋은 명시 경로만 포함하고 한국어 메시지로 남긴다."
+        "커밋은 명시 경로만 포함하고 한국어 메시지로 남긴다.",
+        "push 직전 전체 미푸시 범위와 검증 상태를 확인해 자동 push, 승인 대기, 보류 중 하나를 판단한다."
       ],
       "recipeSteps": [],
       "requiredEvidence": [
@@ -7776,6 +7778,7 @@
         "Skill OS 규칙 확인 없이 코드 변경을 시작함",
         "전체 add로 unrelated 변경을 커밋에 포함함",
         "검증 결과 없이 완료 처리함",
+        "push를 항상 별도 요청 대기로 단순화하거나 전체 미푸시 범위를 확인하지 않음",
         "공개 산출물에 도구·모델·작성자 생성 표식을 남김"
       ],
       "forbidden": [
@@ -7786,7 +7789,8 @@
       ],
       "examples": [
         "코드 변경 전 operation.code와 operation.testing을 확인한다.",
-        "문서 변경 커밋은 `문서: README Skill OS 안내 정리`처럼 범주와 내용을 함께 적는다."
+        "문서 변경 커밋은 `문서: README Skill OS 안내 정리`처럼 범주와 내용을 함께 적는다.",
+        "완결된 green master 작업은 전체 미푸시 범위에 UI 변경이 없으면 자동 push한다."
       ],
       "runtimeCompatibility": {
         "server": {
@@ -7810,7 +7814,7 @@
       },
       "humanIntro": null,
       "visualRefs": [],
-      "bodyHuman": "## 원칙\n\n기여 작업은 Skill OS에서 시작한다. 저장소의 공식 규칙은 `start.dartlabSkillOs`를 통해 찾고, 변경 범위에 맞는 `operation.*` skill을 확인한 뒤 작업한다.\n\n문서 소유권: 공개 계약은 Skill OS, 공개 진입·공통 안전 경계는 루트 `CLAUDE.md`, 운영자 개인 약속은 로컬 memory다. 같은 규칙을 두 층에 복제하지 않는다.\n\n코드 변경은 기존 구조와 책임 경계를 우선한다. 새 abstraction은 중복이나 복잡도를 실제로 줄일 때만 추가하고, unrelated 정리 작업은 같은 변경에 섞지 않는다.\n\n## 코드 규칙\n\n- 식별자와 파일명은 기존 DartLab 규칙을 따른다. Python 함수·메서드·변수·파일명은 camelCase, 클래스는 PascalCase, 모듈 상수는 ALL_CAPS를 기본으로 한다.\n- 공개 API, 대표 반환 형태, 오류·제한 동작은 Skill OS와 capability/docstring이 어긋나지 않게 유지한다.\n- 계층 경계는 `operation.architecture`를 따른다. L2 엔진 간 직접 import, L1.5 sibling cross import, 표현/전송 helper의 비즈니스 로직 유입을 회귀로 본다.\n- provider와 대용량 데이터 경로는 `operation.code`의 메모리-safe 룰을 따른다. eager cross-scan, full dataframe 기본 반환, baseline 증가를 새 코드에 만들지 않는다.\n\n## 검증 규칙\n\n- 테스트는 변경 범위에 맞게 좁게 시작하고, shared behavior나 계층 경계를 건드리면 architecture/audit gate까지 넓힌다.\n- 긴 테스트나 pytest 직접 실행이 필요한 경우 `tests/test-lock.sh`를 우선 사용한다.\n- Guard Index 관련 회귀 작업은 `operation.testing`, `operation.code`, `operation.architecture`의 절차를 함께 적용한다.\n- 실패한 검증은 숨기지 않는다. 기존 실패인지, 이번 변경으로 생긴 실패인지 구분해 기록한다.\n\n## 커밋 규칙\n\n- 저장소 기본 작업 브랜치는 `master`다. 별도 브랜치와 worktree를 만들지 않는다. 외부 기여자는 fork의\n  `master`에서 작업하고 PR로 제출한다.\n- 커밋은 한 논리 단위로 나눈다. 기능 변경과 생성 산출물 동기화가 분리 가능한 경우 별도 커밋으로 둔다.\n- staging은 명시 경로만 사용한다. 예: `git add README.md src/dartlab/skills/specs/operation/contributionWorkflow.md`.\n- 전체 staging 명령 (`git add .`, `git add -A`)은 사용하지 않는다.\n- 커밋 메시지는 한국어로 작성하고, 변경 범주와 내용을 함께 담는다. 예: `문서: Skill OS 운영 안내 추가`.\n- 커밋 메시지와 공개 산출물에는 assistant identity, 모델명, vendor명, generated-by 표식을 남기지 않는다.\n- push는 별도 요청이 있을 때만 수행한다.\n\n## 공개 산출물 규칙\n\nREADME, Skill OS, landing page, blog, JSON index는 사용자가 직접 읽는 공개 산출물이다. 표현은 주체 중립적으로 쓴다.\n\n운영 실패나 폐기 이력은 필요한 경우에만 짧게 남긴다. 내부 사유, 방어적 문구, 도구 중심의 표현보다 현재 운영 원칙과 사용자가 따라야 할 절차를 먼저 적는다.\n\n## 자동화 경계\n\n저장소 공통 강제 수단은 Git에 추적되는 `tests/**`, `.github/workflows/**`, lint와 audit 설정이다.\n새 clone에서 실행할 수 없는 개인 설정과 로컬 hook은 공통 계약으로 간주하지 않는다.\n\n`.claude/**`와 개인 memory는 운영자 로컬 보조 장치일 수 있지만 이 skill의 정본도, CI 통과의 증거도\n아니다. 로컬 hook이 막았다는 사실만으로 제품 결함을 확정하지 않고, 로컬 hook이 통과했다는 사실만으로\n검증 완료를 선언하지 않는다.\n\n모든 기여자에게 강제해야 하는 규칙은 추적되는 test 또는 audit로 구현하고 CI에 연결한다. 문서에는\n현재 저장소에서 재현 가능한 강제 수단만 적는다. 검증 우회 플래그로 추적되는 gate를 건너뛰지 않는다."
+      "bodyHuman": "## 원칙\n\n기여 작업은 Skill OS에서 시작한다. 저장소의 공식 규칙은 `start.dartlabSkillOs`를 통해 찾고, 변경 범위에 맞는 `operation.*` skill을 확인한 뒤 작업한다.\n\n문서 소유권: 공개 계약은 Skill OS, 공개 진입·공통 안전 경계는 루트 `CLAUDE.md`, 운영자 개인 약속은 로컬 memory다. 같은 규칙을 두 층에 복제하지 않는다.\n\n코드 변경은 기존 구조와 책임 경계를 우선한다. 새 abstraction은 중복이나 복잡도를 실제로 줄일 때만 추가하고, unrelated 정리 작업은 같은 변경에 섞지 않는다.\n\n## 코드 규칙\n\n- 식별자와 파일명은 기존 DartLab 규칙을 따른다. Python 함수·메서드·변수·파일명은 camelCase, 클래스는 PascalCase, 모듈 상수는 ALL_CAPS를 기본으로 한다.\n- 공개 API, 대표 반환 형태, 오류·제한 동작은 Skill OS와 capability/docstring이 어긋나지 않게 유지한다.\n- 계층 경계는 `operation.architecture`를 따른다. L2 엔진 간 직접 import, L1.5 sibling cross import, 표현/전송 helper의 비즈니스 로직 유입을 회귀로 본다.\n- provider와 대용량 데이터 경로는 `operation.code`의 메모리-safe 룰을 따른다. eager cross-scan, full dataframe 기본 반환, baseline 증가를 새 코드에 만들지 않는다.\n\n## 검증 규칙\n\n- 테스트는 변경 범위에 맞게 좁게 시작하고, shared behavior나 계층 경계를 건드리면 architecture/audit gate까지 넓힌다.\n- 긴 테스트나 pytest 직접 실행이 필요한 경우 `tests/test-lock.sh`를 우선 사용한다.\n- Guard Index 관련 회귀 작업은 `operation.testing`, `operation.code`, `operation.architecture`의 절차를 함께 적용한다.\n- 실패한 검증은 숨기지 않는다. 기존 실패인지, 이번 변경으로 생긴 실패인지 구분해 기록한다.\n\n## 커밋 규칙\n\n- 저장소 기본 작업 브랜치는 `master`다. 별도 브랜치와 worktree를 만들지 않는다. 외부 기여자는 fork의\n  `master`에서 작업하고 PR로 제출한다.\n- 커밋은 한 논리 단위로 나눈다. 기능 변경과 생성 산출물 동기화가 분리 가능한 경우 별도 커밋으로 둔다.\n- staging은 명시 경로만 사용한다. 예: `git add README.md src/dartlab/skills/specs/operation/contributionWorkflow.md`.\n- 전체 staging 명령 (`git add .`, `git add -A`)은 사용하지 않는다.\n- 커밋 메시지는 한국어로 작성하고, 변경 범주와 내용을 함께 담는다. 예: `문서: Skill OS 운영 안내 추가`.\n- 커밋 메시지와 공개 산출물에는 assistant identity, 모델명, vendor명, generated-by 표식을 남기지 않는다.\n\n## Push 판단 규칙\n\npush는 요청 유무 한 가지로 결정하지 않는다. 다음 순서로 판단하고 첫 번째로 맞는 조건을 적용한다.\n\n1. force push, tag 이동, 공개 이력 재작성은 운영자의 직접 지시 없이는 수행하지 않는다.\n2. 운영자가 push 보류를 명시했으면 해제 지시 전까지 보류한다.\n3. 운영자가 일반 push를 직접 지시했으면 현재 브랜치와 미푸시 범위를 확인한 뒤 수행한다. 미완료 검증은\n   숨기지 않고 함께 보고한다.\n4. 별도 지시가 없어도 논리 단위가 완결되고 다음 조건을 모두 만족하면 적정 cycle의 일반 push를 수행한다.\n   - 현재 브랜치가 `master`다.\n   - 작업 트리에 stray 변경이 없다.\n   - 변경에 맞는 테스트가 동행했고 로컬 차단 게이트에 신규 실패가 없다.\n   - `git log origin/master..HEAD`와 `git diff --name-only origin/master..HEAD`로 push될 전체 범위를 확인했다.\n5. 전체 미푸시 범위에 사용자 화면이나 화면 배선 변경(`landing/src`, `ui/packages/surfaces`,\n   `ui/packages/runtime`, `ui/apps/local`)이 포함되면 자동 push 대신 운영자의 시각 검수 또는 명시 승인을 기다린다.\n6. 미완료, stray, 신규 실패, 비기본 브랜치 등 자동 push 조건이 부족하면 그 조건만 명시하고 보류한다.\n\n자동 push와 승인 대기를 구분할 때 현재 커밋 하나만 보지 않는다. 일반 push는 `origin/master..HEAD`의 모든\n조상 커밋을 함께 올리므로 이전 작업의 UI 변경과 미검증 변경도 같은 범위에서 판단한다.\n\n## 공개 산출물 규칙\n\nREADME, Skill OS, landing page, blog, JSON index는 사용자가 직접 읽는 공개 산출물이다. 표현은 주체 중립적으로 쓴다.\n\n운영 실패나 폐기 이력은 필요한 경우에만 짧게 남긴다. 내부 사유, 방어적 문구, 도구 중심의 표현보다 현재 운영 원칙과 사용자가 따라야 할 절차를 먼저 적는다.\n\n## 자동화 경계\n\n저장소 공통 강제 수단은 Git에 추적되는 `tests/**`, `.github/workflows/**`, lint와 audit 설정이다.\n새 clone에서 실행할 수 없는 개인 설정과 로컬 hook은 공통 계약으로 간주하지 않는다.\n\n`.claude/**`와 개인 memory는 운영자 로컬 보조 장치일 수 있지만 이 skill의 정본도, CI 통과의 증거도\n아니다. 로컬 hook이 막았다는 사실만으로 제품 결함을 확정하지 않고, 로컬 hook이 통과했다는 사실만으로\n검증 완료를 선언하지 않는다.\n\n모든 기여자에게 강제해야 하는 규칙은 추적되는 test 또는 audit로 구현하고 CI에 연결한다. 문서에는\n현재 저장소에서 재현 가능한 강제 수단만 적는다. 검증 우회 플래그로 추적되는 gate를 건너뛰지 않는다."
     },
     {
       "id": "operation.coreloop",

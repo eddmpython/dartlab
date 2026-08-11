@@ -60,8 +60,6 @@ Skill id를 찾지 못하면 `start.dartlabSkillOs`와 `src/dartlab/skills/catal
   `uv run python -X utf8 tests/run.py preflight`다.
 - 단일 테스트는 `bash tests/test-lock.sh tests/<path> -v`를 기본으로 한다.
 - 장기 실행 프로세스는 세션 종료 전에 정리하고, 남겨야 하면 이유와 프로세스를 보고한다.
-- staging은 명시 경로만 한다. `git add .`와 `git add -A`는 쓰지 않는다.
-- UI 표면(`landing/src`, `ui/packages`, `ui/apps`) 변경의 push는 운영자 명시 승인 후에만 한다.
 
 ## 검증과 완료
 

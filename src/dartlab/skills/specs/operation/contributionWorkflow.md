@@ -19,6 +19,7 @@ outputs:
   - 적용한 운영 규칙
   - 검증 결과
   - 커밋 단위와 메시지
+  - push 판단과 근거
 capabilityRefs: []
 toolRefs:
   - git
@@ -36,6 +37,7 @@ procedure:
   - 변경은 한 논리 단위로 묶고, unrelated dirty worktree는 되돌리지 않는다.
   - 검증은 변경 범위에 맞게 최소 충분하게 실행하고 결과를 남긴다.
   - 커밋은 명시 경로만 포함하고 한국어 메시지로 남긴다.
+  - push 직전 전체 미푸시 범위와 검증 상태를 확인해 자동 push, 승인 대기, 보류 중 하나를 판단한다.
 requiredEvidence:
   - skillRef
   - testRef
@@ -63,6 +65,7 @@ failureModes:
   - Skill OS 규칙 확인 없이 코드 변경을 시작함
   - 전체 add로 unrelated 변경을 커밋에 포함함
   - 검증 결과 없이 완료 처리함
+  - push를 항상 별도 요청 대기로 단순화하거나 전체 미푸시 범위를 확인하지 않음
   - 공개 산출물에 도구·모델·작성자 생성 표식을 남김
 forbidden:
   - "`git add .` 또는 `git add -A` 로 넓게 staging하지 않는다."
@@ -72,10 +75,11 @@ forbidden:
 examples:
   - 코드 변경 전 operation.code와 operation.testing을 확인한다.
   - "문서 변경 커밋은 `문서: README Skill OS 안내 정리`처럼 범주와 내용을 함께 적는다."
+  - "완결된 green master 작업은 전체 미푸시 범위에 UI 변경이 없으면 자동 push한다."
 source:
   type: skill_os
   format: markdown
-lastUpdated: '2026-08-09'
+lastUpdated: '2026-08-11'
 testUniverse:
   market: KR
   stockCodes:
@@ -113,7 +117,26 @@ testUniverse:
 - 전체 staging 명령 (`git add .`, `git add -A`)은 사용하지 않는다.
 - 커밋 메시지는 한국어로 작성하고, 변경 범주와 내용을 함께 담는다. 예: `문서: Skill OS 운영 안내 추가`.
 - 커밋 메시지와 공개 산출물에는 assistant identity, 모델명, vendor명, generated-by 표식을 남기지 않는다.
-- push는 별도 요청이 있을 때만 수행한다.
+
+## Push 판단 규칙
+
+push는 요청 유무 한 가지로 결정하지 않는다. 다음 순서로 판단하고 첫 번째로 맞는 조건을 적용한다.
+
+1. force push, tag 이동, 공개 이력 재작성은 운영자의 직접 지시 없이는 수행하지 않는다.
+2. 운영자가 push 보류를 명시했으면 해제 지시 전까지 보류한다.
+3. 운영자가 일반 push를 직접 지시했으면 현재 브랜치와 미푸시 범위를 확인한 뒤 수행한다. 미완료 검증은
+   숨기지 않고 함께 보고한다.
+4. 별도 지시가 없어도 논리 단위가 완결되고 다음 조건을 모두 만족하면 적정 cycle의 일반 push를 수행한다.
+   - 현재 브랜치가 `master`다.
+   - 작업 트리에 stray 변경이 없다.
+   - 변경에 맞는 테스트가 동행했고 로컬 차단 게이트에 신규 실패가 없다.
+   - `git log origin/master..HEAD`와 `git diff --name-only origin/master..HEAD`로 push될 전체 범위를 확인했다.
+5. 전체 미푸시 범위에 사용자 화면이나 화면 배선 변경(`landing/src`, `ui/packages/surfaces`,
+   `ui/packages/runtime`, `ui/apps/local`)이 포함되면 자동 push 대신 운영자의 시각 검수 또는 명시 승인을 기다린다.
+6. 미완료, stray, 신규 실패, 비기본 브랜치 등 자동 push 조건이 부족하면 그 조건만 명시하고 보류한다.
+
+자동 push와 승인 대기를 구분할 때 현재 커밋 하나만 보지 않는다. 일반 push는 `origin/master..HEAD`의 모든
+조상 커밋을 함께 올리므로 이전 작업의 UI 변경과 미검증 변경도 같은 범위에서 판단한다.
 
 ## 공개 산출물 규칙
 
