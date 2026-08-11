@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-11
+
 공개 호출계약을 고정하는 것을 목표로 한다. 새 기능을 얹기보다 표면을 확정하고 그 표면이 실제로 도는지 증명하는 데 무게를 둔다. 계약은 `dartlab.{engine}("{axis}", ...)` 와 `Company` 파사드 둘뿐이다.
 
 증명은 격리 가상환경에 wheel 을 설치해서 한다. 공개 표면 17 시나리오가 빈 데이터 상태에서 전부 통과하고, 번들 리소스 열여덟 종이 wheel 안에 다 들어 있다.
@@ -1981,7 +1983,8 @@ unit tests: 2065 → 2066 passed (Plan v10 전체).
 - EDGAR `index` 프로퍼티가 topics DataFrame을 순회할 때 컬럼명이 아닌 topic 리스트로 순회하도록 수정
 - 테스트 코드에서 topics를 리스트로 가정하던 부분을 DataFrame 호환으로 수정
 
-[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.7.9...HEAD
+[Unreleased]: https://github.com/eddmpython/dartlab/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/eddmpython/dartlab/compare/v0.10.9...v0.11.0
 [0.7.9]: https://github.com/eddmpython/dartlab/compare/v0.7.8...v0.7.9
 [0.7.8]: https://github.com/eddmpython/dartlab/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/eddmpython/dartlab/compare/v0.7.6...v0.7.7
