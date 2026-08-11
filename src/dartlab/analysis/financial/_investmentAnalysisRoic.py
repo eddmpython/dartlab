@@ -8,6 +8,7 @@ from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.calc import safePct as _pct
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
 from dartlab.core.utils.safe import get as _get
+from dartlab.gather.types import isOptionalSourceError
 
 _getF = _getF2 = _getF3 = _getF4 = _get
 _MAX_YEARS = 8
@@ -21,19 +22,6 @@ def _estimateWacc(company) -> float | None:
     None 결과도 캐시해야 외부 API 재호출 방지.
     memoized_calc은 None 결과를 캐시 안 함 → 자체 sentinel 캐시 사용.
     """
-
-    def _isOptionalMarketDataError(exc: BaseException) -> bool:
-        if isinstance(exc, BaseExceptionGroup):
-            return bool(exc.exceptions) and all(_isOptionalMarketDataError(child) for child in exc.exceptions)
-        if isinstance(exc, (OSError, RuntimeError)):
-            return True
-        try:
-            import httpx
-
-            from dartlab.gather.types import SourceUnavailableError
-        except ImportError:
-            return False
-        return isinstance(exc, (httpx.HTTPError, SourceUnavailableError))
 
     cache = getattr(company, "_cache", None)
     _KEY = "_estimateWacc_v3"  # v3: bottom-up β + Damodaran 국가테이블 de-gate (P1a)
@@ -63,7 +51,7 @@ def _estimateWacc(company) -> float | None:
             except (ImportError, OSError, RuntimeError):
                 pass
             except Exception as exc:
-                if not _isOptionalMarketDataError(exc):
+                if not isOptionalSourceError(exc):
                     raise
             # 개별 beta
             betaCalc = None
@@ -74,7 +62,7 @@ def _estimateWacc(company) -> float | None:
             except (ImportError, OSError, RuntimeError):
                 pass
             except Exception as exc:
-                if not _isOptionalMarketDataError(exc):
+                if not isOptionalSourceError(exc):
                     raise
             _currency = getattr(company, "currency", "KRW")
             # de-gate (P1a): Damodaran 국가테이블(정밀 Rf/ERP) + bottom-up β fallback 활성.

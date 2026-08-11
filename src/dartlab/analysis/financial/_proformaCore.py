@@ -17,6 +17,7 @@ from dartlab.analysis.financial._proformaWacc import (
     _resolveRfAndErp,
 )
 from dartlab.core.utils.extract import getLatest, getTTM
+from dartlab.gather.types import isOptionalSourceError
 
 if TYPE_CHECKING:
     from dartlab.analysis.financial.proforma import (
@@ -129,13 +130,7 @@ def _fetchBeta(stockCode: str, currency: str = "KRW") -> float | None:
     except (ImportError, OSError, RuntimeError, AttributeError):
         return None
     except Exception as exc:
-        try:
-            import httpx
-
-            from dartlab.gather.types import SourceUnavailableError
-        except ImportError:
-            raise
-        if isinstance(exc, (httpx.HTTPError, SourceUnavailableError)):
+        if isOptionalSourceError(exc):
             return None
         raise
 

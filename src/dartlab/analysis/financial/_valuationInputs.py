@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from dartlab.analysis.financial._companyLookup import _getSectorParams, _getSharesOutstanding
+from dartlab.gather.types import isOptionalSourceError
 
 log = logging.getLogger(__name__)
 
@@ -131,6 +132,10 @@ def _fetchPriceContext(company: Any) -> dict | None:
             }
     except (ImportError, OSError, RuntimeError, AttributeError, GatherError):
         # TimeoutError 는 OSError 계열이라 상한 초과도 여기로 강등된다.
+        log.debug("price fetch 실패: %s", stockCode)
+    except Exception as exc:
+        if not isOptionalSourceError(exc):
+            raise
         log.debug("price fetch 실패: %s", stockCode)
 
     if cache is not None:

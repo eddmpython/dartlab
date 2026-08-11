@@ -130,3 +130,18 @@ def testOptionalMarketExceptionGroupDoesNotBreakLocalWacc(monkeypatch: pytest.Mo
     monkeypatch.setattr(proforma, "computeCompanyWacc", lambda *_args, **_kwargs: (8.5, {}))
 
     assert roic._estimateWacc(_Company()) == 8.5
+
+
+def testBetaFetchDegradesOfflineExceptionGroup(monkeypatch: pytest.MonkeyPatch) -> None:
+    """직접 beta 조회도 Linux AnyIO의 offline 그룹을 None으로 정규화한다."""
+    from dartlab.analysis.financial import _proformaCore as proformaCore
+    from dartlab.core.offlineGuard import OfflineViolation
+    from dartlab.gather.domains import naver
+
+    async def _offlineHistory(*_args, **_kwargs):
+        raise ExceptionGroup("network candidates failed", [OfflineViolation("network blocked")])
+
+    proformaCore._fetchBeta.cache_clear()
+    monkeypatch.setattr(naver, "fetchHistory", _offlineHistory)
+
+    assert proformaCore._fetchBeta("999995", "KRW") is None

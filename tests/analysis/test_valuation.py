@@ -602,6 +602,27 @@ def test_fetch_price_context_gather_error_degrades_to_none(monkeypatch):
 
 
 @pytest.mark.unit
+def test_fetch_price_context_offline_exception_group_degrades_to_none(monkeypatch):
+    """Linux AnyIO가 묶은 offline 오류도 가격 보조 입력 실패로 강등한다."""
+    import dartlab.gather.sources.price as priceMod
+    from dartlab.analysis.financial._valuationInputs import _fetchPriceContext
+    from dartlab.core.offlineGuard import OfflineViolation
+
+    async def boom(*_a, **_k):
+        raise ExceptionGroup("network candidates failed", [OfflineViolation("network blocked")])
+
+    monkeypatch.setattr(priceMod, "fetch", boom)
+
+    class C:
+        stockCode = "005930"
+        _cache: dict = {}
+
+    company = C()
+    assert _fetchPriceContext(company) is None
+    assert company._cache["_priceContext"] is None
+
+
+@pytest.mark.unit
 def test_mock_company_fixture_never_touches_network(monkeypatch, mock_company):
     """conftest MockCompany 는 price 컨텍스트가 시드되어 실네트워크 진입이 불가능하다."""
     import dartlab.gather.sources.price as priceMod

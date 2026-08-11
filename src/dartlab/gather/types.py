@@ -909,6 +909,19 @@ class SourceUnavailableError(GatherError):
     """소스 접근 불가."""
 
 
+def isOptionalSourceError(exc: BaseException) -> bool:
+    """OS별 네트워크 예외 포장 차이를 선택적 source 실패로 정규화한다."""
+    if isinstance(exc, BaseExceptionGroup):
+        return bool(exc.exceptions) and all(isOptionalSourceError(child) for child in exc.exceptions)
+    if isinstance(exc, (ImportError, OSError, RuntimeError, AttributeError, GatherError)):
+        return True
+    try:
+        import httpx
+    except ImportError:
+        return False
+    return isinstance(exc, httpx.HTTPError)
+
+
 class SourceAttemptsExhaustedError(SourceUnavailableError):
     """Fallback source가 모두 실패했음을 원인별로 보존하는 예외.
 
