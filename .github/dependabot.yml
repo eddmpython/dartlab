@@ -63,20 +63,22 @@ updates:
       include: "scope"
     open-pull-requests-limit: 0
 
-  # 정기 버전 범프 중단 (limit 0). 보안 업데이트는 이 설정과 무관하게 계속 흐른다.
-  # 사유: landing 은 배포 패키지가 아니라 package-lock 으로 고정되는 사이트이고,
-  # PR 체크에 npm 빌드가 없어 머지 후 Deploy Site 가 첫 검증이 된다 (#64 lucide-svelte 사고).
+  # pyproc의 npm exact dependency와 lockfile을 함께 갱신한다. PR은 전용 호환성 워크플로가
+  # Node, Chromium, landing 타입, 단위 테스트, 프로덕션 빌드를 모두 검증한다.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "monthly"
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "Asia/Seoul"
+    allow:
+      - dependency-name: "pyproc"
+        dependency-type: "direct"
+    versioning-strategy: "increase"
     labels:
       - "dependencies"
       - "landing"
     commit-message:
-      prefix: "보안"
+      prefix: "개선"
       include: "scope"
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 1

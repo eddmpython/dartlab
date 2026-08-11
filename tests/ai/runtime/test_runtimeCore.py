@@ -717,13 +717,15 @@ def testMcpProbeTimeoutDegradesInsteadOfCrashingStatus(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(mcpBootstrap.subprocess, "run", _timeout)
     monkeypatch.setattr(mcpBootstrap, "discoverExecutable", lambda descriptor: "claude.exe")
+    monkeypatch.setattr(mcpBootstrap, "runtimeExecutableArgv", lambda descriptor, executable: ("claude",))
     with mcpBootstrap._MCP_CACHE_LOCK:
         mcpBootstrap._MCP_CACHE.clear()
 
     result = mcpBootstrap.probeMcpConnection("claude", refresh=True)
 
     assert result["connected"] is False
-    assert "probe_unavailable" in str(result["detail"])
+    assert result["detail"] == "probe_undetermined: timeout"
+    assert result["undetermined"] is True
     # 실패도 캐시해 매 요청마다 느린 probe 를 재시도하지 않는다
     assert "claude" in mcpBootstrap._MCP_CACHE
 

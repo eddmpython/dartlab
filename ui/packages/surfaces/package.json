@@ -74,7 +74,7 @@
 		"d3-force": "^3.0.0",
 		"d3-hierarchy": "^3.1.2",
 		"d3-scale": "^4.0.2",
-		"dompurify": "^3.4.12",
+		"dompurify": "^3.4.13",
 		"klinecharts": "^9.8.12",
 		"lucide-svelte": "^1.0.1"
 	},
@@ -82,7 +82,6 @@
 		"@types/d3-force": "^3.0.10",
 		"@types/d3-hierarchy": "^3.1.7",
 		"@types/d3-scale": "^4.0.9",
-		"@types/dompurify": "^3.2.0",
 		"svelte": "5.56.3",
 		"svelte-check": "^4.6.0",
 		"typescript": "^6.0.3"

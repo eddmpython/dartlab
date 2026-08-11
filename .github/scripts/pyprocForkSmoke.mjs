@@ -9,6 +9,7 @@ const RUNTIME_MANIFEST = JSON.parse(
 	await readFile(new URL('../../landing/runtime-manifest.json', import.meta.url), 'utf8')
 );
 const PYODIDE_VERSION = RUNTIME_MANIFEST.pyodide;
+const PYODIDE_SCRIPT_INTEGRITY = RUNTIME_MANIFEST.pyodideScriptIntegrity;
 const DARTLAB_VERSION = RUNTIME_MANIFEST.dartlab;
 const PYODIDE_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 const PYPROC_DIR = dirname(
@@ -19,9 +20,6 @@ const PYPROC_DIR = dirname(
 const PYPROC_VERSION = JSON.parse(
 	await readFile(join(PYPROC_DIR, 'package.json'), 'utf8')
 ).version;
-if (PYPROC_VERSION !== RUNTIME_MANIFEST.pyproc) {
-	throw new Error(`pyproc manifest ${RUNTIME_MANIFEST.pyproc} != installed ${PYPROC_VERSION}`);
-}
 const MIME = {
 	'.js': 'text/javascript',
 	'.mjs': 'text/javascript',
@@ -36,7 +34,12 @@ const TEST_HTML = `<!doctype html><html><head><meta charset="utf-8"></head><body
 window.__r = { step: 'start', coi: globalThis.crossOriginIsolated };
 try {
   const { boot, checkEnvironment } = await import('/pyproc/index.js');
-  const machine = await boot({ indexURL: '${PYODIDE_INDEX}', packages: ['micropip', 'polars'] });
+  const machine = await boot({
+    indexURL: '${PYODIDE_INDEX}',
+    packages: ['micropip', 'polars'],
+    engineScriptIntegrity: '${PYODIDE_SCRIPT_INTEGRITY}',
+    coreIntegrity: false
+  });
   window.__r.run = machine.run('1 + 1');
   window.__r.environment = checkEnvironment();
   await machine.runtime.install('dartlab==${DARTLAB_VERSION}');
@@ -50,7 +53,11 @@ try {
   const c = machine.history.checkpoint();
   window.__r.branchParent = machine.history.tree().find((node) => node.index === c.index)?.parent;
   window.__r.branchExpected = a.index;
-  const pool = await machine.proc({ lanes: 2, indexURL: '${PYODIDE_INDEX}' });
+  const pool = await machine.proc({
+    lanes: 2,
+    indexURL: '${PYODIDE_INDEX}',
+    engineScriptIntegrity: '${PYODIDE_SCRIPT_INTEGRITY}'
+  });
   window.__r.forkOut = await pool.map('${FN}', [1000, 2000]);
   window.__r.processes = pool.ps().length;
   pool.terminate();

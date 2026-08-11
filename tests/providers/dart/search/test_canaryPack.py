@@ -57,6 +57,29 @@ def test_evaluate_canary_pack_rows_reports_source_and_false_accept_failures() ->
     assert failures >= {"sourceMiss", "sourceRefMiss", "falseAccept"}
 
 
+def test_evaluate_canary_pack_rows_echoes_resolution_diagnostics() -> None:
+    """Regression for #107: reports expose deterministic injection instead of silent fallback."""
+    from dartlab.providers.dart.search.canaryPack import evaluateCanaryPackRows
+
+    report = evaluateCanaryPackRows(
+        [
+            {
+                "query": "유상증자결정 벡트",
+                "expectedSource": "allFilings",
+                "expectedSourceRef": "dart:allFilings:20260806000547#section=0",
+                "_injectionMode": "deterministic",
+                "_sourceResolved": True,
+                "_refResolved": True,
+            }
+        ],
+        {"유상증자결정 벡트": []},
+    )
+
+    assert report["rows"][0]["injectionMode"] == "deterministic"
+    assert report["rows"][0]["_sourceResolved"] is True
+    assert report["rows"][0]["_refResolved"] is True
+
+
 def test_evaluate_canary_pack_rows_can_check_source_without_answerability() -> None:
     from dartlab.providers.dart.search.canaryPack import evaluateCanaryPackRows
 

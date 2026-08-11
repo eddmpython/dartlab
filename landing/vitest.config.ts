@@ -2,12 +2,21 @@
 // 분리한다. 대상은 Svelte 비의존 순수 함수(render.ts 기하/포맷·cards projection)뿐이라 node 환경 + $lib alias 만
 // 있으면 충분하고, sveltekit 플러그인을 끌어오지 않아 빠르고 결정론적이다. ($app/* 는 순수 헬퍼가 안 쓴다.)
 import { defineConfig } from 'vitest/config';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
+const pyprocEntry = createRequire(import.meta.url).resolve('pyproc');
+const pyprocVersion = JSON.parse(
+	fs.readFileSync(path.join(path.dirname(pyprocEntry), 'package.json'), 'utf-8')
+).version;
 
 export default defineConfig({
+	define: {
+		__PYPROC_VERSION__: JSON.stringify(pyprocVersion)
+	},
 	resolve: {
 		alias: { $lib: path.resolve(root, 'src/lib') }
 	},

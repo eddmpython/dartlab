@@ -389,6 +389,7 @@ def test_search_index_build_workflow_is_single_folded_pipeline() -> None:
     assert "promoteSearchCandidate.py" in text
     assert "evaluateSearchResultContract.py" in text
     assert "evaluateSearchCanary.py" in text
+    assert "--require-deterministic" in text
     assert "runSearchQualityDrill.py" in text
     assert "checkSearchRemoteEvidence.py" in text
     assert "--fail-on-missing" in text

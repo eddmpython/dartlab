@@ -1,5 +1,5 @@
 {
-  "pyproc": "0.0.11",
   "pyodide": "0.27.5",
+  "pyodideScriptIntegrity": "sha256-f9vmblP2j2pOk8KVpmc3F1m+CT0r1AK7RFRVFFhAObY=",
   "dartlab": "0.10.9"
 }

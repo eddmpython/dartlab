@@ -242,7 +242,10 @@ GATES: dict[str, Gate] = {
             # Windows에서 16 worker를 띄워 무관한 callable import를 동시 OOM으로
             # 무너뜨렸다. CLAUDE.md 메모리 가드와 같은 상한을 CI 진입점에도 적용한다.
             "pytest tests/ -n 2 --dist loadfile --tb=short "
-            "-m 'unit and not requires_data' "
+            # 모듈 전체가 unit인 파일 안에서도 개별 테스트는 heavy를 추가할 수 있다.
+            # unit만 고르면 격리 venv와 wheel 의존성을 설치하는 heavy 테스트까지 들어와
+            # fast job을 20분 이상 붙잡으므로 모든 비 fast 분류를 명시적으로 제외한다.
+            "-m 'unit and not requires_data and not heavy and not realData and not freshInstall' "
             "--ignore=tests/_attempts "
             "--ignore=tests/test_fixture_analysis_real.py "
             "--ignore=tests/test_fixture_credit_real.py "
@@ -567,6 +570,55 @@ GATES: dict[str, Gate] = {
 # ──────────────────────────────────────────────────────────────────────────
 
 
+def _windowsPosixBash() -> str | None:
+    """실행 가능한 Windows용 GNU bash 경로를 찾는다.
+
+    `C:\\Windows\\System32\\bash.exe`는 WSL 배포판이 없을 때도 PATH에 잡히는
+    실행용 shim이다. 이름만 보고 선택하면 모든 로컬 게이트가 실패하므로 실제
+    `--version` 성공과 GNU bash 서명을 확인한다. PATH 다음에는 Git for Windows의
+    표준 설치 위치를 확인한다.
+    """
+    candidates: list[Path] = []
+    pathBash = shutil.which("bash")
+    if pathBash:
+        candidates.append(Path(pathBash))
+
+    git = shutil.which("git")
+    if git:
+        gitRoot = Path(git).resolve().parent.parent
+        candidates.extend((gitRoot / "bin" / "bash.exe", gitRoot / "usr" / "bin" / "bash.exe"))
+
+    for envName, suffix in (
+        ("ProgramFiles", Path("Git/bin/bash.exe")),
+        ("LOCALAPPDATA", Path("Programs/Git/bin/bash.exe")),
+    ):
+        base = os.environ.get(envName)
+        if base:
+            candidates.append(Path(base) / suffix)
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate).casefold()
+        if key in seen or not candidate.is_file():
+            continue
+        seen.add(key)
+        try:
+            probe = subprocess.run(
+                [str(candidate), "--version"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=5,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if probe.returncode == 0 and "GNU bash" in f"{probe.stdout}\n{probe.stderr}":
+            return str(candidate)
+    return None
+
+
 def _shellInvocation(shellCmd: str) -> tuple[list[str] | str, dict[str, object]]:
     """조합한 POSIX 명령을 실제로 POSIX shell 로 돌리게 만든다.
 
@@ -591,7 +643,7 @@ def _shellInvocation(shellCmd: str) -> tuple[list[str] | str, dict[str, object]]
     """
     if os.name != "nt":
         return [shellCmd], {"shell": True}
-    bash = shutil.which("bash")
+    bash = _windowsPosixBash()
     if bash is None:
         raise SystemExit(
             "게이트 명령은 POSIX shell 을 전제로 한다. bash 를 못 찾았다. Git for Windows 의 bash 를 PATH 에 넣어라."

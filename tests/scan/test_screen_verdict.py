@@ -84,7 +84,7 @@ def test_detailed_result_preserves_executor_members_and_explains_gaps(monkeypatc
     monkeypatch.setattr(
         fields,
         "_screenUniverse",
-        lambda: pl.DataFrame({"stockCode": ["A", "B", "C"]}),
+        lambda indexName="": pl.DataFrame({"stockCode": ["A", "B", "C"]}),
     )
     monkeypatch.setattr(
         fields,
@@ -115,7 +115,7 @@ def test_detailed_result_counts_all_members_before_payload_limit(monkeypatch):
     all_members = pl.DataFrame({"stockCode": ["A", "B", "C", "D", "E"], field: [50, 40, 30, 20, 10]})
     monkeypatch.setattr(fields, "_executeScreenSpec", lambda spec, applyLimit: all_members)
     monkeypatch.setattr(fields, "_computeDerived", lambda spec: ({}, {}))
-    monkeypatch.setattr(fields, "_screenUniverse", lambda: all_members.select("stockCode"))
+    monkeypatch.setattr(fields, "_screenUniverse", lambda indexName="": all_members.select("stockCode"))
     monkeypatch.setattr(
         fields,
         "_fieldMeta",

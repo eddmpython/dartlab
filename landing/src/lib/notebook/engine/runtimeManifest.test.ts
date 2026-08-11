@@ -8,13 +8,15 @@ import {
 } from './runtimeManifest';
 
 describe('browser runtime manifest', () => {
-	it('설치된 pyproc exact pin과 런타임 정본이 같다', () => {
-		expect(packageJson.dependencies.pyproc).toBe(BROWSER_RUNTIME_MANIFEST.pyproc);
+	it('npm exact 의존성과 설치된 pyproc 버전을 일치시킨다', () => {
+		expect(packageJson.dependencies.pyproc).toMatch(/^\d+\.\d+\.\d+$/);
 		expect(BROWSER_RUNTIME_MANIFEST.pyproc).toMatch(/^\d+\.\d+\.\d+$/);
+		expect(BROWSER_RUNTIME_MANIFEST.pyproc).toBe(packageJson.dependencies.pyproc);
 	});
 
 	it('Pyodide, DartLab, cache namespace를 같은 정본에서 만든다', () => {
 		expect(PYODIDE_INDEX).toContain(`/v${BROWSER_RUNTIME_MANIFEST.pyodide}/`);
+		expect(BROWSER_RUNTIME_MANIFEST.pyodideScriptIntegrity).toMatch(/^sha256-[A-Za-z0-9+/]+=$/);
 		expect(DARTLAB_REQUIREMENT).toBe(`dartlab==${BROWSER_RUNTIME_MANIFEST.dartlab}`);
 		expect(PYPROC_CACHE_NAMESPACE).toContain(
 			`pyproc-${BROWSER_RUNTIME_MANIFEST.pyproc.replaceAll('.', '_')}`

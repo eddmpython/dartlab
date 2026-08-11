@@ -304,6 +304,17 @@ def test_buildShellCommandNeverSkipsInstallOnCi(monkeypatch):
 
 
 @pytest.mark.unit
+def testFastGateExcludesHeavyAndExternalTestClasses():
+    """fast unit 선택이 모듈 수준 unit에 겹친 heavy 테스트를 실행하지 않는다."""
+    command = GATES["test-fast"].cmd
+
+    assert "unit and not requires_data" in command
+    assert "and not heavy" in command
+    assert "and not realData" in command
+    assert "and not freshInstall" in command
+
+
+@pytest.mark.unit
 def test_buildShellCommandDefaultKeepsInstallWithoutEnv(monkeypatch):
     """env 미설정(수동 gate/tier 호출)이면 종전 동작 그대로 설치한다."""
     from tests.run import GATES, buildShellCommand

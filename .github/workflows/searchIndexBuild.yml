@@ -280,6 +280,7 @@ jobs:
         run: >
           uv run python -X utf8 .github/scripts/search/evaluateSearchCanary.py
           --manifest data/dart/contentIndex/manifest.json
+          --require-deterministic
           --out "$RUNNER_TEMP/searchCanary.build.json"
           --fail-on-error
 

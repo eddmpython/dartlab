@@ -1,4 +1,5 @@
 import adapter from '@sveltejs/adapter-static';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { mdsvex } from 'mdsvex';
 import { createHighlighter } from 'shiki';
 import { visit } from 'unist-util-visit';
@@ -159,6 +160,7 @@ const highlighter = await createHighlighter({
 const config = {
 	extensions: ['.svelte', '.md'],
 	preprocess: [
+		vitePreprocess(),
 		escapeSkillMarkdownForSvelte(),
 		mdsvex({
 			extensions: ['.md'],

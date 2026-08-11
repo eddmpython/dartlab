@@ -8,14 +8,22 @@
 	],
 	"overrides": {
 		"svelte": "5.56.3",
+		"@sveltejs/kit": "2.70.2",
+		"@sveltejs/vite-plugin-svelte": "6.2.4",
+		"vite": "7.3.6",
 		"cookie": "0.7.2",
 		"protobufjs": "7.6.5",
 		"postcss": "8.5.25",
+		"nanoid": "3.3.17",
 		"sharp": "0.35.3",
-		"dompurify": "3.4.12",
+		"dompurify": "3.4.13",
 		"adm-zip": "0.6.0"
 	},
 	"engines": {
 		"node": ">=20"
+	},
+	"devDependencies": {
+		"@sveltejs/vite-plugin-svelte": "6.2.4",
+		"vite": "7.3.6"
 	}
 }

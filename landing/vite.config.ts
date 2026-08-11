@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type ViteDevServer } from 'vite';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +18,12 @@ const pyprojectText = fs.readFileSync(path.resolve(__dirname, '..', 'pyproject.t
 const versionMatch = pyprojectText.match(/^version\s*=\s*"([^"]+)"/m);
 if (!versionMatch) throw new Error('pyproject.toml version not found');
 const dartlabVersion = versionMatch[1];
+const pyprocEntry = createRequire(import.meta.url).resolve('pyproc');
+const pyprocPackage = JSON.parse(
+	fs.readFileSync(path.join(path.dirname(pyprocEntry), 'package.json'), 'utf-8')
+) as { version?: unknown };
+const pyprocVersion = typeof pyprocPackage.version === 'string' ? pyprocPackage.version : '';
+if (!/^\d+\.\d+\.\d+$/.test(pyprocVersion)) throw new Error('installed pyproc version not found');
 
 // 종목 뉴스 워커 프록시 기본값(secret 아님) — news 는 private 라 HF 직독 fallback 이 없어 env 미설정 시 빈 섹션.
 // dev/직접빌드도 공개와 "공통 배선"으로 워커 /news 를 쓰게 한다. deploy-landing step env 가 우선(??= 가역).
@@ -307,13 +314,18 @@ function hfMediaFallbackPlugin() {
 export default defineConfig({
 	plugins: [tailwindcss(), blogAssetsPlugin(), skillCatalogPlugin(), govPriceDevPlugin(), naverPriceDevPlugin(), newsDevPlugin(), hfMediaFallbackPlugin(), sveltekit()],
 	define: {
-		__DARTLAB_VERSION__: JSON.stringify(dartlabVersion)
+		__DARTLAB_VERSION__: JSON.stringify(dartlabVersion),
+		__PYPROC_VERSION__: JSON.stringify(pyprocVersion)
 	},
 	worker: {
 		format: 'es'
 	},
 	build: {
-		emptyOutDir: true
+		emptyOutDir: true,
+		// Svelte 전처리 전 원본을 Vite의 동적 import 분석기가 파싱하지 않게 한다.
+		dynamicImportVarsOptions: {
+			exclude: [/\.svelte(?:\?|$)/]
+		}
 	},
 	resolve: {
 		alias: {

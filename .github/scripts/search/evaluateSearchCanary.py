@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -20,6 +21,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--scope", default="auto")
     parser.add_argument("--min-pass-rate", type=float, default=1.0)
+    parser.add_argument(
+        "--require-deterministic",
+        action="store_true",
+        help="Fail when manifest metadata cannot provide deterministic source/ref resolution.",
+    )
     parser.add_argument("--fail-on-error", action="store_true")
     args = parser.parse_args(argv)
 
@@ -32,6 +38,8 @@ def main(argv: list[str] | None = None) -> int:
 
     canaries = _loadCanaries(args.canary, args.manifest)
     canaries = _injectRefResolution(canaries, args.manifest)
+    if args.require_deterministic:
+        canaries = [{**row, "_requireDeterministic": True} for row in canaries]
     resultsByQuery = _loadResultsByQuery(args.results_json)
     if resultsByQuery is None:
         from dartlab.providers.dart.search.api import search
@@ -57,6 +65,9 @@ def main(argv: list[str] | None = None) -> int:
                 "valid": report["valid"],
                 "passRate": report["metrics"]["passRate"],
                 "failureCount": len(report["failures"]),
+                "injectionModes": sorted(
+                    {str(row.get("injectionMode") or "") for row in report["rows"] if row.get("injectionMode")}
+                ),
             },
             ensure_ascii=False,
         )
@@ -67,31 +78,52 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _injectRefResolution(canaries: list[dict[str, Any]], manifestPath: str | None) -> list[dict[str, Any]]:
-    """exact-ref 무결성을 결정론 ``_refResolved`` 로 주입 — publish selfcheck 와 동일 SSOT
-    (localUpdate.injectSourceRefResolution). bigram 토크나이저서 보일러플레이트 공시는 BM25
-    self-retrieval 이 불가능해 랭킹 멤버십 ref 검사는 flaky — 인덱스 아티팩트 직독으로 검증한다.
-    인덱스를 못 열면 원본 그대로(BM25 폴백)."""
-    if not manifestPath:
-        return canaries
-    try:
-        from dartlab.providers.dart.search.fieldIndex import loadSegment
-        from dartlab.providers.dart.search.fieldIndexRebuild import _effectiveSegmentMeta
-        from dartlab.providers.dart.search.localUpdate import injectSourceRefResolution, resolveActiveIndexDir
+    """Inject deterministic source/ref resolution from the exact manifest metadata.
 
-        base = Path(manifestPath).resolve().parent
-        indexDir = resolveActiveIndexDir(base) or base
-        segments = {name: segment for name in ("main", "delta") if (segment := loadSegment(name, indexDir)) is not None}
-        if "main" not in segments:
-            return canaries
+    Regression for #107. The canary only needs bounded metadata and must not load the
+    full postings arrays. The manifest hash check binds each metadata file to the
+    candidate that supplied the canary pack.
+    """
+    if not manifestPath:
+        return _markInjectionFallback(canaries, "manifestMissing")
+    try:
+        from dartlab.providers.dart.search.fieldIndexRebuild import _effectiveSegmentMeta, _readManifestMeta
+        from dartlab.providers.dart.search.localUpdate import injectSourceRefResolution
+
+        manifestFile = Path(manifestPath).resolve()
+        manifest = json.loads(manifestFile.read_text(encoding="utf-8"))
+        indexDir = manifestFile.parent
+        hashes = manifest.get("fileHashes") if isinstance(manifest.get("fileHashes"), dict) else {}
+        segmentMeta: dict[str, Any] = {}
+        names = ["main"] + (["delta"] if bool(manifest.get("hasDelta")) else [])
+        for name in names:
+            metaPath = indexDir / f"{name}_meta.parquet"
+            if not metaPath.exists():
+                raise FileNotFoundError(metaPath.name)
+            expectedHash = str(hashes.get(metaPath.name) or "")
+            if expectedHash and _sha256File(metaPath) != expectedHash:
+                raise ValueError(f"metadataHashMismatch:{metaPath.name}")
+            segmentMeta[name] = _readManifestMeta(metaPath)
         effectiveMeta = _effectiveSegmentMeta(
-            segments["main"][1],
-            segments.get("delta", ({}, None))[1],
+            segmentMeta["main"],
+            segmentMeta.get("delta"),
         )
-        # round-trip 검사가 segment sidecar/docLengths 무결성을 먼저 보장한다. 여기서는 delta override와
-        # tombstone을 반영한 유효 meta에서 ref/source 존재를 결정론적으로 확인한다.
-        return injectSourceRefResolution(canaries, {"docLengths": [1] * effectiveMeta.height}, effectiveMeta)
-    except Exception:  # noqa: BLE001 — 폴백: 결정론 주입 실패 시 기존 BM25 평가로 진행.
-        return canaries
+        enriched = injectSourceRefResolution(canaries, {"docLengths": [1] * effectiveMeta.height}, effectiveMeta)
+        return [{**row, "_injectionMode": "deterministic"} for row in enriched]
+    except Exception as exc:  # noqa: BLE001 - report a bounded diagnostic before BM25 fallback.
+        return _markInjectionFallback(canaries, exc.__class__.__name__)
+
+
+def _markInjectionFallback(canaries: list[dict[str, Any]], error: str) -> list[dict[str, Any]]:
+    return [{**row, "_injectionMode": "bm25Fallback", "_injectionError": error} for row in canaries]
+
+
+def _sha256File(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _loadResultsByQuery(path: str | None) -> dict[str, list[dict[str, Any]]] | None:

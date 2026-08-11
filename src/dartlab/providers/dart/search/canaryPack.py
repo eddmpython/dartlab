@@ -87,6 +87,11 @@ def evaluateCanaryPackRows(
         answerable = [result for result in results if _isAnswerable(result)]
         matchedResults = answerable if requireAnswerable else results
         rowFailures: list[str] = []
+        injectionMode = str(row.get("_injectionMode") or "")
+        injectionError = str(row.get("_injectionError") or "")
+
+        if _asBool(row.get("_requireDeterministic"), default=False) and injectionMode != "deterministic":
+            rowFailures.append("resolutionInjectionFailed")
 
         if not expectAnswerable:
             noAnswerRows += 1
@@ -138,6 +143,14 @@ def evaluateCanaryPackRows(
             "topSourceRefs": [_sourceRef(result) for result in results if _sourceRef(result)],
             "topSources": [str(result.get("source") or "") for result in results],
         }
+        if injectionMode:
+            decision["injectionMode"] = injectionMode
+        if injectionError:
+            decision["injectionError"] = injectionError
+        if "_sourceResolved" in row:
+            decision["_sourceResolved"] = bool(row.get("_sourceResolved"))
+        if "_refResolved" in row:
+            decision["_refResolved"] = bool(row.get("_refResolved"))
         decisions.append(decision)
         for failure in rowFailures:
             failures.append(
@@ -149,6 +162,8 @@ def evaluateCanaryPackRows(
                     "expectedSourceRef": ",".join(sorted(expectedRefs)),
                     "topSourceRefs": decision["topSourceRefs"],
                     "policyCandidate": _policyCandidate(failure),
+                    "injectionMode": injectionMode,
+                    "injectionError": injectionError,
                 }
             )
 
@@ -285,4 +300,5 @@ def _policyCandidate(failure: str) -> str:
         "missingAnswerable": "sourceFreshnessOrCoveragePolicy",
         "sourceMiss": "sourceIntentPolicy",
         "sourceRefMiss": "citationIntegrityPolicy",
+        "resolutionInjectionFailed": "candidateAtomicityPolicy",
     }.get(failure, "policyReview")

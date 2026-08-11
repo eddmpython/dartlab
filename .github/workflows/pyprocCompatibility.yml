@@ -1,0 +1,107 @@
+name: pyproc npm compatibility
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "landing/package.json"
+      - "package-lock.json"
+      - "landing/runtime-manifest.json"
+      - "landing/svelte.config.js"
+      - "landing/vite.config.ts"
+      - "landing/vitest.config.ts"
+      - "landing/src/app.d.ts"
+      - "landing/src/lib/notebook/engine/**"
+      - ".github/scripts/pyprocSmoke.mjs"
+      - ".github/scripts/pyprocForkSmoke.mjs"
+      - ".github/workflows/pyprocCompatibility.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "package.json"
+      - "landing/package.json"
+      - "package-lock.json"
+      - "landing/runtime-manifest.json"
+      - "landing/svelte.config.js"
+      - "landing/vite.config.ts"
+      - "landing/vitest.config.ts"
+      - "landing/src/app.d.ts"
+      - "landing/src/lib/notebook/engine/**"
+      - ".github/scripts/pyprocSmoke.mjs"
+      - ".github/scripts/pyprocForkSmoke.mjs"
+      - ".github/workflows/pyprocCompatibility.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pyproc-compatibility-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Install matching Pyodide package
+        run: |
+          PYODIDE_VERSION="$(node -p "require('./landing/runtime-manifest.json').pyodide")"
+          npm install --no-save --package-lock=false "pyodide@$PYODIDE_VERSION"
+      - name: Gate A, Node Pyodide public contract
+        run: node .github/scripts/pyprocSmoke.mjs
+
+  landing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Check, test, and build landing
+        run: |
+          npm --workspace landing run check
+          npm --workspace landing run test
+          npm --workspace landing run build
+
+  gate-b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.61.1
+          npx playwright install --with-deps chromium
+      - name: Gate B, isolated Chromium process contract
+        run: node .github/scripts/pyprocForkSmoke.mjs
+
+  compatibility:
+    if: ${{ always() }}
+    needs: [gate-a, landing, gate-b]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every pyproc compatibility gate
+        env:
+          GATE_A_RESULT: ${{ needs.gate-a.result }}
+          LANDING_RESULT: ${{ needs.landing.result }}
+          GATE_B_RESULT: ${{ needs.gate-b.result }}
+        run: |
+          test "$GATE_A_RESULT" = "success"
+          test "$LANDING_RESULT" = "success"
+          test "$GATE_B_RESULT" = "success"

@@ -1,5 +1,5 @@
 // PYPROC GATE-A: 현재 landing이 쓰는 공개 machine 계약을 node-pyodide에서 검증한다.
-// Pyodide 설치 버전은 landing/runtime-manifest.json과 맞아야 한다.
+// Pyodide 설치 버전은 landing/runtime-manifest.json에서 읽고 pyproc은 npm 설치본을 쓴다.
 
 import { loadPyodide } from 'pyodide';
 import { createRequire } from 'node:module';
@@ -28,10 +28,6 @@ function requireValue(condition, message) {
 }
 
 try {
-	requireValue(
-		pyprocVersion === RUNTIME_MANIFEST.pyproc,
-		`pyproc manifest ${RUNTIME_MANIFEST.pyproc} != installed ${pyprocVersion}`
-	);
 	let loaderCalls = 0;
 	const stdout = [];
 	const machine = await boot({
