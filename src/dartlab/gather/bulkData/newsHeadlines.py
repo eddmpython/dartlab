@@ -27,6 +27,7 @@ from ..sources.newsIo import loadSourceDay
 from ..sources.newsSchema import NEWS_ARCHIVE_SCHEMA, coerceToCanonical
 from ..sources.newsSources import allNewsSources
 from ..transforms.pit import applyAsOf
+from ..types import SourceUnavailableError
 
 log = logging.getLogger(__name__)
 
@@ -101,7 +102,8 @@ def loadNewsArchive(
         date desc + url 정렬. 빈 결과도 동일 schema.
 
     Raises:
-        SourceUnavailableError: 로컬 archive 손상 또는 public HF 로드 실패.
+        예기치 않은 schema 또는 프로그래밍 오류. 개별 source/day 의
+        SourceUnavailableError 는 격리하고 나머지 실제 archive 를 반환한다.
 
     Example::
 
@@ -127,7 +129,17 @@ def loadNewsArchive(
         for sp in specs:
             if marketU not in sp.markets:
                 continue
-            df = loadSourceDay(sp.id, marketU, dayIso)
+            try:
+                df = loadSourceDay(sp.id, marketU, dayIso)
+            except SourceUnavailableError as exc:
+                log.warning(
+                    "news archive source/day 로드 실패를 격리합니다: source=%s market=%s day=%s error=%s",
+                    sp.id,
+                    marketU,
+                    dayIso,
+                    exc,
+                )
+                continue
             if df is not None and df.height > 0:
                 frames.append(df)
 

@@ -93,3 +93,24 @@ def test_gatherKrx_unknown_market_raises_before_loading() -> None:
 
     with pytest.raises(ValueError, match="알 수 없는 market"):
         gatherKrx(start="2026-01-01", end="2026-01-02", market="KRXX")
+
+
+def test_gatherKrx_kr_market_alias_means_all(monkeypatch: pytest.MonkeyPatch) -> None:
+    """공개 entry 기본 시장 KR은 KRX 전시장 ALL로 정규화한다."""
+    import polars as pl
+
+    from dartlab.gather.bulkData import hfBulk
+    from dartlab.gather.krx.krxApi import gatherKrx
+
+    seen: dict[str, str] = {}
+
+    def fakeLoadFiltered(*, start: str, end: str, adjustment: str) -> pl.DataFrame:
+        seen.update(start=start, end=end, adjustment=adjustment)
+        return pl.DataFrame()
+
+    monkeypatch.setattr(hfBulk, "loadFiltered", fakeLoadFiltered)
+
+    result = gatherKrx(start="2026-01-01", end="2026-01-02", market="KR")
+
+    assert result.is_empty()
+    assert seen == {"start": "2026-01-01", "end": "2026-01-02", "adjustment": "split"}

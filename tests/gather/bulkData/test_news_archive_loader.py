@@ -210,13 +210,46 @@ def test_loader_includes_naver_and_sources_filter(isolatedArchive: Path) -> None
     assert rssOnly["url"].to_list() == ["u-rss"]
 
 
-def test_loader_propagates_source_failure(isolatedArchive: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """기간 로더도 소스 장애를 빈 archive로 바꾸지 않는다."""
+def test_loader_all_source_failures_return_typed_empty(isolatedArchive: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """모든 일별 source가 불가하면 canonical 빈 archive를 반환한다."""
 
     def failLoad(*_args, **_kwargs):
         raise SourceUnavailableError("rss failed")
 
     monkeypatch.setattr(newsHeadlines, "loadSourceDay", failLoad)
 
-    with pytest.raises(SourceUnavailableError, match="rss failed"):
-        newsHeadlines.loadNewsArchive("2026-05-01", "2026-05-01", "KR", sources=["rss"])
+    df = newsHeadlines.loadNewsArchive("2026-05-01", "2026-05-01", "KR", sources=["rss"])
+
+    assert df.is_empty()
+    assert set(df.columns) == set(NEWS_ARCHIVE_SCHEMA)
+
+
+def test_loader_isolates_one_missing_day_and_keeps_available_rows(
+    isolatedArchive: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """한 일별 artifact가 없어도 다른 날짜의 실제 행을 보존한다."""
+    capturedAt = datetime(2026, 5, 2, 0, 0, tzinfo=timezone.utc)
+
+    def loadByDay(_sourceId: str, _market: str, dayIso: str) -> pl.DataFrame:
+        if dayIso == "2026-05-02":
+            raise SourceUnavailableError("daily artifact missing")
+        return pl.DataFrame(
+            [
+                {
+                    "date": dayIso,
+                    "title": "available",
+                    "source": "rss",
+                    "url": f"https://example.test/{dayIso}",
+                    "market": "KR",
+                    "query": "q",
+                    "captured_at": capturedAt,
+                }
+            ]
+        )
+
+    monkeypatch.setattr(newsHeadlines, "loadSourceDay", loadByDay)
+
+    df = newsHeadlines.loadNewsArchive("2026-05-01", "2026-05-02", "KR", sources=["rss"])
+
+    assert df.height == 1
+    assert df["url"].to_list() == ["https://example.test/2026-05-01"]

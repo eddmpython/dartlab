@@ -517,6 +517,7 @@ def gatherKrx(
     date = None  # legacy 변수 제거
 
     mktMap = {
+        "KR": "ALL",
         "KOSPI": "STK",
         "KOSDAQ": "KSQ",
         "ALL": "ALL",

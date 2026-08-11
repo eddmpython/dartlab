@@ -944,8 +944,63 @@ class SourceAttemptsExhaustedError(SourceUnavailableError):
 def isOptionalSourceError(exc: BaseException) -> bool:
     """OS별 네트워크 예외 포장 차이를 선택적 source 실패로 정규화한다.
 
-    fallback 집계 예외는 이름만 보고 삼키지 않는다. 보존된 모든 source 원인이
-    선택적 실패일 때만 강등해 로컬 데이터 오류나 프로그래밍 오류를 숨기지 않는다.
+    Capabilities:
+        단일 source 예외, ExceptionGroup, SourceAttemptsExhaustedError 를 재귀 검사해
+        모든 하위 원인이 선택적 공급자 실패인지 판정한다.
+
+    AIContext:
+        분석과 story 엔진 경계에서 네트워크 및 선택 의존성 실패만 강등하고,
+        데이터 오류나 프로그래밍 오류는 그대로 노출하는 공통 판정 함수다.
+
+    Guide:
+        broad except 블록에서 잡힌 예외를 무조건 삼키지 말고 이 함수가 True 인
+        경우에만 coverage 누락 또는 빈 선택 결과로 변환한다.
+
+    When:
+        선택적 외부 source 호출이 OS, AnyIO 또는 fallback 집계 계층에 의해
+        다른 예외 형태로 포장될 수 있는 엔진 경계에서 호출한다.
+
+    How:
+        fallback 집계와 예외 그룹은 모든 자식을 재귀 검사하고, 단일 예외는
+        GatherError, 네트워크 계열, 선택 import 계열인지 판정한다.
+
+    Args:
+        exc: 선택적 공급자 실패 여부를 판정할 예외 객체.
+
+    Returns:
+        bool: 모든 보존 원인이 선택적 source 실패일 때만 True.
+
+    Requires:
+        httpx가 설치돼 있으면 HTTPError 계층도 판정한다. httpx가 없어도
+        기본 GatherError 및 OS 예외 판정은 동작한다.
+
+    Raises:
+        없음. httpx 선택 import 실패도 False 판정으로 처리한다.
+
+    Example::
+
+        if isOptionalSourceError(exc):
+            return None
+
+    SeeAlso:
+        SourceAttemptsExhaustedError: source별 원인을 보존하는 fallback 집계 예외.
+        SourceUnavailableError: 선택적 공급자 사용 불가의 기본 예외.
+
+    LLM Specifications:
+        AntiPatterns:
+            - 예외 클래스 이름만 보고 fallback 집계 오류를 무조건 강등.
+            - 한 자식이 ValueError인 혼합 ExceptionGroup을 선택적 실패로 처리.
+        OutputSchema:
+            - bool: 모든 재귀 원인이 선택적 실패일 때 True.
+        Prerequisites:
+            - 호출자가 broad except로 확보한 BaseException 인스턴스.
+        Freshness:
+            호출 시점의 예외 트리를 즉시 검사하며 외부 상태를 캐시하지 않는다.
+        Dataflow:
+            source 예외 -> fallback 또는 OS 포장 -> isOptionalSourceError -> 엔진 경계 강등 여부.
+        TargetMarkets:
+            - KR
+            - US
     """
     if isinstance(exc, SourceAttemptsExhaustedError):
         return bool(exc.attempts) and all(isOptionalSourceError(child) for _, child in exc.attempts)
