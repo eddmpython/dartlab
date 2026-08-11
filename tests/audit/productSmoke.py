@@ -336,7 +336,7 @@ def _childMain(args: argparse.Namespace) -> int:
                 "ok": False,
                 "errorType": type(exc).__name__,
                 "error": str(exc),
-                "traceback": traceback.format_exc(limit=8),
+                "traceback": traceback.format_exc(),
             }
         )
     finally:

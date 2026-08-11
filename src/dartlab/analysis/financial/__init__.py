@@ -462,6 +462,13 @@ class Analysis:
             ) as exc:
                 results[calc.blockKey] = None
                 calculationErrors[calc.blockKey] = type(exc).__name__
+            except Exception as exc:
+                from dartlab.gather.types import isOptionalSourceError
+
+                if not isOptionalSourceError(exc):
+                    raise
+                results[calc.blockKey] = None
+                calculationErrors[calc.blockKey] = type(exc).__name__
 
         usableBlocks = [
             calc.blockKey

@@ -85,7 +85,11 @@ def _makeSafeCall(failures: list[dict]):
     def _safeCall(fn: Callable):
         try:
             return fn()
-        except _SAFE_BUILD_ERRORS as exc:
+        except Exception as exc:
+            from dartlab.gather.types import isOptionalSourceError
+
+            if not isinstance(exc, _SAFE_BUILD_ERRORS) and not isOptionalSourceError(exc):
+                raise
             name = getattr(fn, "__name__", "?")
             _LOG.debug("story block build 실패: %s - %s: %s", name, type(exc).__name__, exc)
             failures.append(

@@ -30,3 +30,24 @@ def testOptionalSourceErrorRecursesThroughExceptionGroups() -> None:
 
     assert isOptionalSourceError(optional) is True
     assert isOptionalSourceError(mixed) is False
+
+
+def testOptionalSourceErrorInspectsEveryAggregatedAttempt() -> None:
+    """fallback 집계는 모든 원인이 선택적일 때만 강등한다."""
+    from dartlab.core.offlineGuard import OfflineViolation
+    from dartlab.gather.types import SourceAttemptsExhaustedError, SourceUnavailableError, isOptionalSourceError
+
+    optional = SourceAttemptsExhaustedError(
+        "history",
+        [
+            ("naver", ExceptionGroup("connect", [OfflineViolation("blocked")])),
+            ("fmp", SourceUnavailableError("key missing")),
+        ],
+    )
+    mixed = SourceAttemptsExhaustedError(
+        "history",
+        [("naver", SourceUnavailableError("down")), ("local", ValueError("invalid cached row"))],
+    )
+
+    assert isOptionalSourceError(optional) is True
+    assert isOptionalSourceError(mixed) is False

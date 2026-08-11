@@ -358,3 +358,73 @@ def test_run_surfaces_calc_errors_and_mixed_block_periods(monkeypatch):
     assert result["dataAsOf"]["earliestPeriod"] == "2024"
     assert result["dataAsOf"]["blockLatestPeriods"] == {"older": "2024", "newer": "2025"}
     assert result["dataAsOf"]["mixedPeriods"] is True
+
+
+def test_run_degrades_only_optional_aggregated_source_failures(monkeypatch):
+    """OS가 묶은 외부 source 실패는 한 calc 결손으로 남기되 로컬 오류는 숨기지 않는다."""
+    from types import SimpleNamespace
+
+    import dartlab.analysis.financial as financial
+    from dartlab.analysis.financial import Analysis
+    from dartlab.analysis.financial._registry import _AxisEntry, _CalcEntry
+    from dartlab.core.offlineGuard import OfflineViolation
+    from dartlab.gather.types import SourceAttemptsExhaustedError, SourceUnavailableError
+
+    optionalError = SourceAttemptsExhaustedError(
+        "history",
+        [
+            ("naver", ExceptionGroup("connect", [OfflineViolation("blocked")])),
+            ("fmp", SourceUnavailableError("key missing")),
+        ],
+    )
+
+    def stable(company):
+        return {"period": "2025"}
+
+    def optional(company):
+        raise optionalError
+
+    module = SimpleNamespace(stable=stable, optional=optional)
+    monkeypatch.setattr(financial.importlib, "import_module", lambda name: module)
+    entry = _AxisEntry(
+        section="테스트",
+        partId="test",
+        description="",
+        example="",
+        calcs=(
+            _CalcEntry("stable", "synthetic", "stable", "stable"),
+            _CalcEntry("optional", "synthetic", "optional", "optional"),
+        ),
+    )
+
+    result = Analysis()._run(SimpleNamespace(), entry)
+
+    assert result["assessmentStatus"] == "partial"
+    assert result["calculationErrors"] == {"optional": "SourceAttemptsExhaustedError"}
+    assert result["coverage"]["usableBlockKeys"] == ["stable"]
+
+
+def test_run_does_not_hide_mixed_aggregated_source_failures(monkeypatch):
+    """fallback 집계 안의 로컬 데이터 오류는 정상 실패로 다시 올린다."""
+    from types import SimpleNamespace
+
+    import dartlab.analysis.financial as financial
+    from dartlab.analysis.financial import Analysis
+    from dartlab.analysis.financial._registry import _AxisEntry, _CalcEntry
+    from dartlab.gather.types import SourceAttemptsExhaustedError
+
+    def broken(company):
+        raise SourceAttemptsExhaustedError("history", [("local", ValueError("invalid cached row"))])
+
+    module = SimpleNamespace(broken=broken)
+    monkeypatch.setattr(financial.importlib, "import_module", lambda name: module)
+    entry = _AxisEntry(
+        section="테스트",
+        partId="test",
+        description="",
+        example="",
+        calcs=(_CalcEntry("broken", "synthetic", "broken", "broken"),),
+    )
+
+    with pytest.raises(SourceAttemptsExhaustedError):
+        Analysis()._run(SimpleNamespace(), entry)

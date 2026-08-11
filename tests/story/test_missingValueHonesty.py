@@ -132,6 +132,55 @@ def testBlockBuildFailureIsRecorded() -> None:
     assert failures[0]["builder"] == "_brokenBuilder"
 
 
+def testOptionalSourceFailureIsRecordedWithoutBreakingStory() -> None:
+    """스토리의 보조 source 고장은 lens gap으로 남고 다른 블록은 계속 만든다."""
+    from dartlab.core.offlineGuard import OfflineViolation
+    from dartlab.gather.types import SourceAttemptsExhaustedError, SourceUnavailableError
+
+    failures: list[dict] = []
+    safe = _makeSafeCall(failures)
+
+    def _offlineBuilder():
+        raise SourceAttemptsExhaustedError(
+            "history",
+            [
+                ("naver", ExceptionGroup("connect", [OfflineViolation("blocked")])),
+                ("fmp", SourceUnavailableError("key missing")),
+            ],
+        )
+
+    assert safe(_offlineBuilder) == []
+    assert failures == [
+        {
+            "code": "BLOCK_BUILD_FAILED",
+            "builder": "_offlineBuilder",
+            "error": "SourceAttemptsExhaustedError",
+            "message": str(
+                SourceAttemptsExhaustedError(
+                    "history",
+                    [
+                        ("naver", ExceptionGroup("connect", [OfflineViolation("blocked")])),
+                        ("fmp", SourceUnavailableError("key missing")),
+                    ],
+                )
+            ),
+        }
+    ]
+
+
+def testStoryDoesNotHideMixedAggregatedSourceFailure() -> None:
+    """외부 source 집계에 섞인 로컬 오류는 story 경계에서도 전파한다."""
+    from dartlab.gather.types import SourceAttemptsExhaustedError
+
+    safe = _makeSafeCall([])
+
+    def _brokenBuilder():
+        raise SourceAttemptsExhaustedError("history", [("local", ValueError("invalid cached row"))])
+
+    with pytest.raises(SourceAttemptsExhaustedError):
+        safe(_brokenBuilder)
+
+
 def testBlockMapCarriesTheFailures() -> None:
     """기록이 결과까지 따라와야 보고서가 결손을 감추지 않는다."""
 

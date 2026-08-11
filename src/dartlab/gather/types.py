@@ -909,19 +909,6 @@ class SourceUnavailableError(GatherError):
     """소스 접근 불가."""
 
 
-def isOptionalSourceError(exc: BaseException) -> bool:
-    """OS별 네트워크 예외 포장 차이를 선택적 source 실패로 정규화한다."""
-    if isinstance(exc, BaseExceptionGroup):
-        return bool(exc.exceptions) and all(isOptionalSourceError(child) for child in exc.exceptions)
-    if isinstance(exc, (ImportError, OSError, RuntimeError, AttributeError, GatherError)):
-        return True
-    try:
-        import httpx
-    except ImportError:
-        return False
-    return isinstance(exc, httpx.HTTPError)
-
-
 class SourceAttemptsExhaustedError(SourceUnavailableError):
     """Fallback source가 모두 실패했음을 원인별로 보존하는 예외.
 
@@ -952,6 +939,25 @@ class SourceAttemptsExhaustedError(SourceUnavailableError):
         else:
             detail = "설정된 source 없음"
         super().__init__(f"{operation} fallback source가 모두 실패했습니다 ({detail})")
+
+
+def isOptionalSourceError(exc: BaseException) -> bool:
+    """OS별 네트워크 예외 포장 차이를 선택적 source 실패로 정규화한다.
+
+    fallback 집계 예외는 이름만 보고 삼키지 않는다. 보존된 모든 source 원인이
+    선택적 실패일 때만 강등해 로컬 데이터 오류나 프로그래밍 오류를 숨기지 않는다.
+    """
+    if isinstance(exc, SourceAttemptsExhaustedError):
+        return bool(exc.attempts) and all(isOptionalSourceError(child) for _, child in exc.attempts)
+    if isinstance(exc, BaseExceptionGroup):
+        return bool(exc.exceptions) and all(isOptionalSourceError(child) for child in exc.exceptions)
+    if isinstance(exc, (ImportError, OSError, RuntimeError, AttributeError, GatherError)):
+        return True
+    try:
+        import httpx
+    except ImportError:
+        return False
+    return isinstance(exc, httpx.HTTPError)
 
 
 class RateLimitExceededError(GatherError):
