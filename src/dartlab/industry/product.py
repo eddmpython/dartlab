@@ -20,16 +20,30 @@ _EXPECTED_ERRORS = (
 )
 
 
-def companyIndustryResult(company: Any) -> dict[str, Any]:
-    """회사 위치와 산업 내부 자산을 한 번에 조립한다."""
-    from dartlab.industry.build.pipeline import loadEdges, loadNodes
-    from dartlab.industry.calcs.companyCalcs import calcChainPosition, calcSectorCycle, calcSectorMetrics
-    from dartlab.industry.calcs.concentration import calcIndustryConcentration, calcSupplyInsights
-    from dartlab.industry.calcs.profitPoolDynamics import calcProfitPoolDynamics
+def companyIndustryResult(company: Any, *, detail: bool = False) -> dict[str, Any]:
+    """회사 위치를 조립하고 요청된 경우에만 전 시장 산업 자산을 계산한다."""
+    from dartlab.industry.calcs.companyCalcs import calcChainPosition
 
     position = _safeCall(calcChainPosition, company)
     if not isinstance(position, dict):
         return blockedIndustryResult(company, reason="산업 가치사슬의 primary 위치 매핑이 없습니다.")
+
+    result: dict[str, Any] = dict(position)
+    result["stockCode"] = str(getattr(company, "stockCode", "") or "unknown")
+    result["market"] = str(getattr(company, "market", "") or "unknown").upper()
+    result["sectorMetrics"] = None
+    result["sectorCycle"] = None
+    result["profitPool"] = None
+    result["relationships"] = None
+    result["concentration"] = None
+    if not detail:
+        result["product"] = buildIndustryProduct(company, result)
+        return result
+
+    from dartlab.industry.build.pipeline import loadEdges, loadNodes
+    from dartlab.industry.calcs.companyCalcs import calcSectorCycle, calcSectorMetrics
+    from dartlab.industry.calcs.concentration import calcIndustryConcentration, calcSupplyInsights
+    from dartlab.industry.calcs.profitPoolDynamics import calcProfitPoolDynamics
 
     industryId = str(position.get("industry") or "")
     nodes = _safeCall(loadNodes) or []
@@ -41,9 +55,6 @@ def companyIndustryResult(company: Any) -> dict[str, Any]:
     supplyConcentration = _safeCall(calcSupplyInsights, str(getattr(company, "stockCode", "")), edges, nodes)
     relationships = _relationshipSummary(str(getattr(company, "stockCode", "")), industryId, edges)
 
-    result: dict[str, Any] = dict(position)
-    result["stockCode"] = str(getattr(company, "stockCode", "") or "unknown")
-    result["market"] = str(getattr(company, "market", "") or "unknown").upper()
     result["sectorMetrics"] = sectorMetrics
     result["sectorCycle"] = sectorCycle
     result["profitPool"] = profitPool

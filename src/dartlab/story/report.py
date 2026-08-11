@@ -162,7 +162,7 @@ def _creditView(result: dict[str, Any] | None) -> dict | None:
 
     P1e 신용 라이브배선(02e): 구조화 신용 패킷(등급·축·PD·전망)을 valuationBridge 동형 pro 블록으로
     노출한다. 금융사·데이터부족은 None (graceful skip). 여기서는 엔진을 다시 호출하지 않고
-    Story가 보관한 같은 세션 원본의 필드만 투영한다.
+    Story가 보관한 같은 세션 최소 결과의 필드만 투영한다.
     """
     if not isinstance(result, dict) or not result.get("grade"):
         return None

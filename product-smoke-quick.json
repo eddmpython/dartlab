@@ -22,11 +22,11 @@
         "dartlab.capabilities"
       ]
     },
-    "elapsedSec": 1.188,
+    "elapsedSec": 1.704,
     "rssBeforeMb": 23.2,
-    "rssAfterMb": 112.1,
-    "rssDeltaMb": 88.8,
-    "rssPeakMb": 112.1,
+    "rssAfterMb": 112.2,
+    "rssDeltaMb": 88.9,
+    "rssPeakMb": 112.2,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 20.0,
@@ -50,8 +50,8 @@
       "width": null,
       "columns": []
     },
-    "elapsedSec": 1.422,
-    "rssBeforeMb": 23.1,
+    "elapsedSec": 1.531,
+    "rssBeforeMb": 23.2,
     "rssAfterMb": 113.3,
     "rssDeltaMb": 90.1,
     "rssPeakMb": 113.3,
@@ -85,7 +85,7 @@
         "apiKey"
       ]
     },
-    "elapsedSec": 1.141,
+    "elapsedSec": 1.188,
     "rssBeforeMb": 23.1,
     "rssAfterMb": 112.0,
     "rssDeltaMb": 88.9,
@@ -111,11 +111,11 @@
       "type": "Company",
       "height": 1
     },
-    "elapsedSec": 1.172,
+    "elapsedSec": 1.312,
     "rssBeforeMb": 23.2,
-    "rssAfterMb": 119.2,
-    "rssDeltaMb": 96.0,
-    "rssPeakMb": 119.2,
+    "rssAfterMb": 119.3,
+    "rssDeltaMb": 96.1,
+    "rssPeakMb": 119.3,
     "returnCode": 0,
     "budget": {
       "maxElapsedSec": 30.0,

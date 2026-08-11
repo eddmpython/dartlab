@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dartlab.industry.product import blockedIndustryResult, buildIndustryProduct
+from dartlab.industry.product import blockedIndustryResult, buildIndustryProduct, companyIndustryResult
 
 pytestmark = pytest.mark.unit
 
@@ -104,6 +104,35 @@ def testMissingNativeBlocksMakesPartialNotFabricated() -> None:
     assert product["status"] == "partial"
     assert any(gap["id"] == "industry.sectorMetrics" for gap in product["gaps"])
     assert any(gap["id"] == "industry.demandPricingDriver" for gap in product["gaps"])
+
+
+def testCompanyIndustryDefaultsToPositionWithoutCrossSectionFanout(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.industry.calcs import companyCalcs
+
+    positionKeys = {
+        "industry",
+        "industryName",
+        "stage",
+        "stageName",
+        "role",
+        "stream",
+        "confidence",
+        "source",
+        "updatedAt",
+        "mappingUpdatedAt",
+        "financialPeriod",
+        "peers",
+    }
+    position = {key: value for key, value in _result().items() if key in positionKeys}
+    monkeypatch.setattr(companyCalcs, "calcChainPosition", lambda company: position)
+    monkeypatch.setattr(companyCalcs, "calcSectorMetrics", lambda company: pytest.fail("상세 분포 호출"))
+
+    result = companyIndustryResult(_Company())
+
+    assert result["industry"] == "semiconductor"
+    assert result["sectorMetrics"] is None
+    assert result["profitPool"] is None
+    assert result["product"]["status"] == "partial"
 
 
 def testEdgarIndustryReturnsBlockedContract() -> None:

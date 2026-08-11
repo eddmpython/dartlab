@@ -2,7 +2,8 @@
 
 이 모듈은 L3 조립기다. 각 엔진의 공개 대표 축을 호출하고 이미 검증된
 ``product`` 블록을 수집할 뿐, 점수나 통합 결론을 새로 계산하지 않는다.
-원본 결과는 같은 Company 세션에서 재사용할 수 있도록 내부 bundle에만 둔다.
+같은 Company 세션에서는 검증된 product와 신용 패널에 필요한 최소 필드만 재사용한다.
+엔진의 대형 내부 결과를 Story 생명주기 동안 붙잡아 두지 않는다.
 """
 
 from __future__ import annotations
@@ -16,6 +17,17 @@ from dartlab.story.lensTensions import classifyLensTensions
 from dartlab.synth.lensContract import validateLensProduct, validatePublicLensBundle
 
 _ENGINE_ORDER = ("analysis", "credit", "industry", "quant", "macro")
+
+_CREDIT_RESULT_FIELDS = (
+    "grade",
+    "gradeRaw",
+    "score",
+    "healthScore",
+    "pdEstimate",
+    "outlook",
+    "investmentGrade",
+    "axes",
+)
 
 _REPORT_ENGINES: dict[str, tuple[str, ...]] = {
     # 투자 메모의 9차원에 직접 쓰이는 렌즈만 선계산한다. 신용·퀀트는 질문이
@@ -54,7 +66,7 @@ def collectLensProducts(
     """각 공개 대표 축에서 Lens Product를 수집한다.
 
     반환 bundle의 ``products``는 공개 가능한 공통 계약이고 ``results``는
-    Report 같은 같은 세션 소비자가 재계산을 피하기 위한 내부 원본이다.
+    같은 세션 소비자가 재계산을 피하기 위한 최소 내부 투영이다.
     엔진 호출 실패나 계약 누락은 가짜 product로 채우지 않고 ``gaps``에 남긴다.
     """
     selected = _normalizeEngines(engines)
@@ -69,7 +81,7 @@ def collectLensProducts(
         if isinstance(cached, dict) and "state" in cached:
             record = cached
         else:
-            record = _callEngine(company, engine, basePeriod=basePeriod)
+            record = _compactEngineRecord(engine, _callEngine(company, engine, basePeriod=basePeriod))
             cache[cacheKey] = record
 
         result = record.get("result")
@@ -77,17 +89,6 @@ def collectLensProducts(
         if isinstance(result, dict):
             results[engine] = result
         if isinstance(product, dict) and product.get("identity", {}).get("engine") == engine:
-            try:
-                validateLensProduct(product, legacy=result)
-            except (TypeError, ValueError) as exc:
-                gaps.append(
-                    {
-                        "engine": engine,
-                        "status": "blocked",
-                        "reason": f"대표 제품 계약 검증 실패: {str(exc)[:180]}",
-                    }
-                )
-                continue
             products[engine] = product
             for productGap in product.get("gaps", []):
                 if not isinstance(productGap, dict):
@@ -254,9 +255,49 @@ def _callEngine(company: Any, engine: str, *, basePeriod: str | None) -> dict[st
 
     if not isinstance(result, dict):
         return {"state": "missing", "reason": "대표 축 결과가 dict가 아닙니다.", "result": None}
-    if not isinstance(result.get("product"), dict):
+    product = result.get("product")
+    if not isinstance(product, dict):
         return {"state": "missing", "reason": "대표 축 결과에 product 계약이 없습니다.", "result": result}
+    if product.get("identity", {}).get("engine") != engine:
+        return {
+            "state": "blocked",
+            "reason": f"대표 제품 engine이 호출 축과 다릅니다: {engine}",
+            "result": None,
+        }
+    try:
+        validateLensProduct(product, legacy=result)
+    except (TypeError, ValueError) as exc:
+        return {
+            "state": "blocked",
+            "reason": f"대표 제품 계약 검증 실패: {str(exc)[:180]}",
+            "result": None,
+        }
     return {"state": "ok", "reason": "", "result": result}
+
+
+def _compactEngineRecord(engine: str, record: dict[str, Any]) -> dict[str, Any]:
+    """Story에 필요한 필드만 남겨 대형 엔진 결과의 수명을 끊는다."""
+    rawResult = record.get("result")
+    if not isinstance(rawResult, dict):
+        return {
+            "state": record.get("state"),
+            "reason": record.get("reason"),
+            "result": None,
+        }
+
+    compactResult: dict[str, Any] = {}
+    product = rawResult.get("product")
+    if isinstance(product, dict):
+        compactResult["product"] = product
+    if engine == "credit":
+        for field in _CREDIT_RESULT_FIELDS:
+            if field in rawResult:
+                compactResult[field] = rawResult[field]
+    return {
+        "state": record.get("state"),
+        "reason": record.get("reason"),
+        "result": compactResult,
+    }
 
 
 def _basePeriodAsOf(basePeriod: str | None) -> str | None:

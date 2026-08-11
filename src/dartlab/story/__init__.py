@@ -215,7 +215,7 @@ class Story:
     reportType: str | None = None  # 보고서 관점
     lensProducts: dict = field(default_factory=dict)  # 엔진별 Lens Product 원문
     lensGaps: list[dict] = field(default_factory=list)  # 대표 축 호출 또는 계약 결손
-    _lensBundle: dict = field(default_factory=dict, repr=False)  # 같은 세션 원본 재사용
+    _lensBundle: dict = field(default_factory=dict, repr=False)  # 같은 세션 최소 결과 재사용
 
     def __init__(
         self,

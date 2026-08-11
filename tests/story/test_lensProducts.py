@@ -97,6 +97,22 @@ def test_collects_five_products_without_composite_and_reuses_company_session() -
     assert second["products"] == first["products"]
 
 
+def test_collection_does_not_retain_large_private_engine_results() -> None:
+    company = _FakeCompany()
+    privateRows = list(range(100_000))
+    company.analysis = lambda *args, **kwargs: {
+        "product": _product("analysis"),
+        "privateRows": privateRows,
+    }
+
+    first = collectLensProducts(company, engines=("analysis",))
+    second = collectLensProducts(company, engines=("analysis",))
+
+    assert set(first["results"]["analysis"]) == {"product"}
+    assert "privateRows" not in company._cache["_storyLensProducts"]["analysis:latest"]["result"]
+    assert second["products"] == first["products"]
+
+
 def test_report_type_selects_only_relevant_products() -> None:
     assert enginesForReportType("credit") == ("analysis", "credit")
     assert enginesForReportType("valuation") == ("analysis", "quant")

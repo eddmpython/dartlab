@@ -315,6 +315,7 @@ def _childMain(args: argparse.Namespace) -> int:
     payload: dict[str, Any] = {"scenario": args.run_scenario, "ok": False}
     try:
         payload["package"] = _assertImportMode(args.import_mode)
+        _enforceScenarioIsolation()
         details = _runScenario(args.run_scenario)
         payload.update({"ok": True, "details": details})
     except BaseException as exc:
@@ -350,11 +351,23 @@ def _dataEnv(dataMode: str, tmp: tempfile.TemporaryDirectory[str] | None) -> dic
     env["PYTHONUNBUFFERED"] = "1"
     if dataMode == "fixtures":
         env["DARTLAB_DATA_DIR"] = str(REPO_ROOT / "tests" / "fixtures")
+        env["DARTLAB_PRODUCT_SMOKE_OFFLINE"] = "1"
     elif dataMode == "empty":
         if tmp is None:
             raise RuntimeError("empty data mode requires temp directory")
         env["DARTLAB_DATA_DIR"] = str(Path(tmp.name) / "data")
+        env["DARTLAB_PRODUCT_SMOKE_OFFLINE"] = "1"
     return env
+
+
+def _enforceScenarioIsolation() -> bool:
+    """고정 데이터 smoke가 외부 네트워크 상태에 의존하지 않게 한다."""
+    if os.environ.get("DARTLAB_PRODUCT_SMOKE_OFFLINE") != "1":
+        return False
+    from dartlab.core.offlineGuard import enforceOffline
+
+    enforceOffline(strict=True)
+    return True
 
 
 def _runChild(

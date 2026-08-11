@@ -5345,8 +5345,11 @@ class Company:
 
         return computeImpact(self, claims=claims)
 
-    def industry(self) -> dict:
+    def industry(self, *, detail: bool = False) -> dict:
         """이 회사의 밸류체인 산업 내 위치를 분석한다.
+
+        Args:
+            detail: True면 전 시장 섹터 분포, 이익풀, 집중도까지 계산한다. 기본값은 회사 위치와 peer만 반환한다.
 
         Returns:
             dict | None: 산업 내 위치 정보.
@@ -5399,7 +5402,7 @@ class Company:
         """
         from dartlab.industry.calcs.companyCalcs import companyIndustryResult
 
-        return companyIndustryResult(self)
+        return companyIndustryResult(self, detail=detail)
 
     def view(self, *, port: int = 8400) -> None:
         """브라우저에서 공시 뷰어를 엽니다.

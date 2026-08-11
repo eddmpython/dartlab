@@ -621,8 +621,8 @@ def calcSectorDynamics(company: Any, *, macroPhase: str | None = None) -> dict |
     }
 
 
-def companyIndustryResult(company: Any) -> dict[str, Any]:
+def companyIndustryResult(company: Any, *, detail: bool = False) -> dict[str, Any]:
     """Company facade가 허용된 industry calc 경계로 대표 제품을 호출한다."""
     from dartlab.industry.product import companyIndustryResult as _companyIndustryResult
 
-    return _companyIndustryResult(company)
+    return _companyIndustryResult(company, detail=detail)
