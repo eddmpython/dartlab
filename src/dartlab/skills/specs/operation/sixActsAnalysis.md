@@ -153,4 +153,4 @@ ref 없는 막은 출력 차단 (GATE).
 - 5 막 *나열* 만 (인과 연결 누락) 으로 6 막 결론 도출.
 - 결손 채움으로 막을 *완성된 척* (NaN 유지가 정공법).
 
-근본: `engines.story` · `engines.company` · `runtime.workbenchEvidenceFlow` "evidence 검산" · CLAUDE.md "통합 아키텍처".
+근본: `engines.story` · `engines.company` · `runtime.workbenchEvidenceFlow` "evidence 검산" · `operation.architecture`.

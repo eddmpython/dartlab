@@ -139,7 +139,11 @@ API 키 필요 시 발급 URL + `.env` 설정법까지.
 
 같은 내용 두 곳 금지. 발견 시 즉시 통합 + 나머지는 포인터만.
 
-- **문서 · 룰**: `skills/specs/**` · 도메인 문서 · `CLAUDE.md` 중 한 곳에만. 메모리는 라우팅 인덱스 + 운영자↔AI 약속만.
+- **문서 · 룰 (3층, 한 관심사 = 한 정본)**:
+  - 공개 설계·운영 계약 → `skills/specs/**` (Skill OS).
+  - 공개 진입·공통 안전 경계만 → 루트 `CLAUDE.md` (세부 복제 금지, Skill OS로 포인터).
+  - 운영자↔AI 약속·행동 규약 → 로컬 memory 정본. 저장소 계약·CI 근거로 인용하지 않는다.
+  - `feedback_*` 단건 파일 방식은 폐기. 새 교훈은 해당 층의 정본에 흡수한다.
 - **코드**: 상수 · dict · 설정 · 매핑은 한 파일 · 한 심볼에만. 하드코딩 dict + registry 공존 금지. 다단 fallback 패치 금지 — 단일 진입점 재설계. 중복 formatter / validator 는 공통 util 통합.
 - **skill 동기화**: 기능 개선 · API 변경 · 반환 형태 변경 시 `skills/specs/engines/{engine}/SKILL.md` 동시 갱신. **skill 동기화 없는 기능 개선은 미완료**.
 

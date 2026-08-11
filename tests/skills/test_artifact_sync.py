@@ -1,9 +1,9 @@
 """artifactSync — 비파괴 Skill OS 산출물 동기화 가드.
 
 핵심 계약:
-- ``--check`` (기본) 는 쓰지 않고 드리프트만 보고 (exit≠0).
-- ``--write`` 후 재 ``--check`` 는 드리프트 0 (멱등·결정적 파생).
-- 어떤 자동 도구도 artifactSync 를 호출하지 않는다 (feedback_no_patterns §6 — 자동 sync 금지).
+- 기본 check 는 쓰지 않고 드리프트만 보고 (exit≠0).
+- ``--write`` 후 재 check 는 드리프트 0 (멱등·결정적 파생).
+- 어떤 자동 도구도 artifactSync 를 호출하지 않는다 (자동 sync 금지, 수동 --write 만).
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ def test_derive_produces_six_artifacts() -> None:
 
 
 def test_write_then_check_is_clean(tmp_path: Path) -> None:
-    """--write 후 같은 디렉터리 --check 는 드리프트 0 (멱등)."""
+    """--write 후 같은 디렉터리의 기본 check 는 드리프트 0 (멱등)."""
     assert artifactSync.syncArtifacts(write=True, webDir=tmp_path) == 0
     for name in _ARTIFACT_NAMES:
         assert (tmp_path / name).exists(), f"{name} 미생성"
@@ -38,7 +38,7 @@ def test_write_then_check_is_clean(tmp_path: Path) -> None:
 
 
 def test_check_detects_drift(tmp_path: Path) -> None:
-    """--check 는 .md 와 어긋난 on-disk json 을 드리프트로 잡는다 (exit 1)."""
+    """기본 check 는 .md 와 어긋난 on-disk json 을 드리프트로 잡는다 (exit 1)."""
     artifactSync.syncArtifacts(write=True, webDir=tmp_path)
     catalog = tmp_path / "catalog.json"
     payload = json.loads(catalog.read_text(encoding="utf-8"))

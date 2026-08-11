@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: drafted
 category: operation
-purpose: dartlab 성능 측정 절차서 — Polars Rust heap OOM 가드 정황 진단 + py-spy CPU profile + mprof memory tracking + arrow flight 분석. CLAUDE.md 메모리 가드 룰 외부 공개 SSOT.
+purpose: dartlab 성능 측정과 메모리 가드 공개 SSOT — Polars Rust heap OOM 가드 정황 진단 + py-spy CPU profile + mprof memory tracking + arrow flight 분석.
 whenToUse:
   - performance profile
   - 성능 측정
@@ -76,7 +76,7 @@ print(table.nbytes)
 
 ## 가드 룰
 
-1. Company 1 개 ≈ 200-500MB Polars Rust heap (CLAUDE.md 강행).
+1. Company 1 개 ≈ 200-500MB Polars Rust heap (본 spec 강행).
 2. 병렬 Company ≤ 2 (dartlab import 시 순차).
 3. test sweep maxTargets=5 강행 (recipe sweep).
 4. fixture scope `module` (test).

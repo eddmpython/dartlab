@@ -1419,7 +1419,7 @@
         "operation.architecture",
         "runtime.toolComposition"
       ],
-      "bodyPreview": "## 4 회귀 신호\n\n### 1. graph 회귀 가드 (memory feedback_no_graph_regression 8 번째)\n\n다음 패턴 추가 금지:\n- `BRIEF` / `WORK` / `CRITIQUE` / `COMPOSE` / `GATE` / `HARVEST` 식 고정 노드 이름\n- `*Loop` / `*Graph` / `*Kernel` 클래스 신설\n- `verify 강제` / `GATE 차단` / `requiredEvidence 강제` 표현\n- workbench 흐름 분기 4 번째 추가\n\n본체 `ai/agent.py` = chat-native + LLM 자율 tool calling. graph 노드 추가는 본체 회귀 시도로 분류.\n\n### 2. chat-native 본체 유지\n\n- 본체 변경 최소 — 신규 능력은 `ai/tools/*` 별 파일 추가 + `registry._SPECS` dict 항목.\n- 본체 system prompt 변경 시 → `runtime.promptingPatterns` 동시 갱신.\n\n### 3. Bold leaf 단일 Write\n\n- `SaveArtifact` 만 Write 권한. 다른 도구 Write 추가 금지.\n\n"
+      "bodyPreview": "## 4 회귀 신호\n\n### 1. graph 회귀 가드\n\n다음 패턴 추가 금지:\n- `BRIEF` / `WORK` / `CRITIQUE` / `COMPOSE` / `GATE` / `HARVEST` 식 고정 노드 이름\n- `*Loop` / `*Graph` / `*Kernel` 클래스 신설\n- `verify 강제` / `GATE 차단` / `requiredEvidence 강제` 표현\n- workbench 흐름 분기 4 번째 추가\n\n본체 `ai/agent.py` = chat-native + LLM 자율 tool calling. graph 노드 추가는 본체 회귀 시도로 분류.\n\n### 2. chat-native 본체 유지\n\n- 본체 변경 최소 — 신규 능력은 `ai/tools/*` 별 파일 추가 + `registry._SPECS` dict 항목.\n- 본체 system prompt 변경 시 → `runtime.promptingPatterns` 동시 갱신.\n\n### 3. Bold leaf 단일 Write\n\n- `SaveArtifact` 만 Write 권한. 다른 도구 Write 추가 금지.\n\n### 4. workbench 본체화 금지\n\n- workbench (`work"
     },
     {
       "id": "operation.aiEngine",
@@ -1558,7 +1558,7 @@
         "공개 산출물 작성 규칙"
       ],
       "nextSkills": [],
-      "bodyPreview": "## 원칙\n\n기여 작업은 Skill OS에서 시작한다. 저장소의 공식 규칙은 `start.dartlabSkillOs`를 통해 찾고, 변경 범위에 맞는 `operation.*` skill을 확인한 뒤 작업한다.\n\n코드 변경은 기존 구조와 책임 경계를 우선한다. 새 abstraction은 중복이나 복잡도를 실제로 줄일 때만 추가하고, unrelated 정리 작업은 같은 변경에 섞지 않는다.\n\n## 코드 규칙\n\n- 식별자와 파일명은 기존 DartLab 규칙을 따른다. Python 함수·메서드·변수·파일명은 camelCase, 클래스는 PascalCase, 모듈 상수는 ALL_CAPS를 기본으로 한다.\n- 공개 API, 대표 반환 형태, 오류·제한 동작은 Skill OS와 capability/docstring이 어긋나지 않게 유지한다.\n- 계층 경계는 `operation.architecture`를 따른다. L2 엔진 간 직접 import, L1.5 sibling cross import, 표현/전송 helper의 비즈니스 로직 유입을 회귀로 본다.\n- provider와 대용량 데이터 경로는 `operation.code`의 메모리-safe 룰을 따른다. eager cr"
+      "bodyPreview": "## 원칙\n\n기여 작업은 Skill OS에서 시작한다. 저장소의 공식 규칙은 `start.dartlabSkillOs`를 통해 찾고, 변경 범위에 맞는 `operation.*` skill을 확인한 뒤 작업한다.\n\n문서 소유권: 공개 계약은 Skill OS, 공개 진입·공통 안전 경계는 루트 `CLAUDE.md`, 운영자 개인 약속은 로컬 memory다. 같은 규칙을 두 층에 복제하지 않는다.\n\n코드 변경은 기존 구조와 책임 경계를 우선한다. 새 abstraction은 중복이나 복잡도를 실제로 줄일 때만 추가하고, unrelated 정리 작업은 같은 변경에 섞지 않는다.\n\n## 코드 규칙\n\n- 식별자와 파일명은 기존 DartLab 규칙을 따른다. Python 함수·메서드·변수·파일명은 camelCase, 클래스는 PascalCase, 모듈 상수는 ALL_CAPS를 기본으로 한다.\n- 공개 API, 대표 반환 형태, 오류·제한 동작은 Skill OS와 capability/docstring이 어긋나지 않게 유지한다.\n- 계층 경계는 `operation.architecture`를 따른다. L2 엔진 간 직접 import, L1.5 sibling cross import"
     },
     {
       "id": "operation.coreloop",
@@ -1809,7 +1809,7 @@
       "id": "operation.performanceProfile",
       "title": "Performance Profile — Polars heap + py-spy + mprof 절차서",
       "category": "operation",
-      "purpose": "dartlab 성능 측정 절차서 — Polars Rust heap OOM 가드 정황 진단 + py-spy CPU profile + mprof memory tracking + arrow flight 분석. CLAUDE.md 메모리 가드 룰 외부 공개 SSOT.",
+      "purpose": "dartlab 성능 측정과 메모리 가드 공개 SSOT — Polars Rust heap OOM 가드 정황 진단 + py-spy CPU profile + mprof memory tracking + arrow flight 분석.",
       "whenToUse": [
         "performance profile",
         "성능 측정",
@@ -5015,7 +5015,7 @@
       "nextSkills": [
         "runtime.toolComposition"
       ],
-      "bodyPreview": "## 3 cache layer\n\n### 1. Claude prompt cache\n\n- 5 분 TTL (Anthropic 기본).\n- system prompt + tool definitions 고정 → cache breakpoint.\n- 효과: ~90% cost 감축 (cached input).\n\n### 2. dartlab BoundedCache (in-memory)\n\n- Polars heap 가드 (CLAUDE.md 강행규칙).\n- per-Company 200~500MB → max 2 Company 동시 (사용자 메모리).\n- fixture scope `module` (test).\n\n### 3. Disk parquet cache\n\n- 영구 저장 (`data/cache/*.parquet` 또는 HF dataset).\n- key: `<axis>_<target>_<period>.parquet`.\n- invalidation: schema 변경 시 manual delete.\n\n## cache key 설계\n\n```python\ndef cache_key(axis, target, period, **kwargs):\n    \"\"\"axis-target-period + sorted"
+      "bodyPreview": "## 3 cache layer\n\n### 1. Claude prompt cache\n\n- 5 분 TTL (Anthropic 기본).\n- system prompt + tool definitions 고정 → cache breakpoint.\n- 효과: ~90% cost 감축 (cached input).\n\n### 2. dartlab BoundedCache (in-memory)\n\n- Polars heap 가드 (`operation.performanceProfile`).\n- per-Company 200~500MB → max 2 Company 동시 (사용자 메모리).\n- fixture scope `module` (test).\n\n### 3. Disk parquet cache\n\n- 영구 저장 (`data/cache/*.parquet` 또는 HF dataset).\n- key: `<axis>_<target>_<period>.parquet`.\n- invalidation: schema 변경 시 manual delete.\n\n## cache key 설계\n\n```python\ndef cache_key(axis, target, period, **kwargs):\n    \"\"\"axis-target"
     },
     {
       "id": "runtime.channel",
@@ -5163,7 +5163,7 @@
         "runtime.workbenchEvidenceFlow",
         "runtime.untrustedContent"
       ],
-      "bodyPreview": "## 분류\n\n### 1. 회사분석 — 6 막 인과 (engines.story)\n\n회사 단위 답변 한정. 사용자 메모리 (`feedback_chat_ui_separate_from_six_acts`) 강행 — 모든 질문 6 막 강제 X. 회사분석 의도 (`Company.panel` / `Company.analysis`) 시만.\n\n```\n1막 — 산업 위치 (engines.industry.peers + supplyChain)\n2막 — 재무 현황 (engines.analysis 22 axis)\n3막 — 이익품질 (engines.analysis.forensics)\n4막 — 자금조달 (engines.credit + altman)\n5막 — 종합평가 (piotroski + qmj + valuation)\n6막 — 시장분석 (engines.quant + scan)\n```\n\n### 2. 매크로 — axis 가이드 우선\n\n`dartlab.macro()` 가이드 12 axis 먼저 → 사용자 의도 매칭 axis 선택 → 단위/dateRef 강행.\n\n### 3. 횡단 (scan) — universe 정의 강행\n\nuniverse 명시 (default KOSPI200 / 사용자 보유 l"
+      "bodyPreview": "## 분류\n\n### 1. 회사분석 — 6 막 인과 (engines.story)\n\n회사 단위 답변 한정. 모든 질문에 6 막을 강제하지 않는다. 회사분석 의도 (`Company.panel` / `Company.analysis`) 와 `engines.story` / `operation.sixActsAnalysis` 경로에서만 적용한다.\n\n```\n1막 — 산업 위치 (engines.industry.peers + supplyChain)\n2막 — 재무 현황 (engines.analysis 22 axis)\n3막 — 이익품질 (engines.analysis.forensics)\n4막 — 자금조달 (engines.credit + altman)\n5막 — 종합평가 (piotroski + qmj + valuation)\n6막 — 시장분석 (engines.quant + scan)\n```\n\n### 2. 매크로 — axis 가이드 우선\n\n`dartlab.macro()` 가이드 12 axis 먼저 → 사용자 의도 매칭 axis 선택 → 단위/dateRef 강행.\n\n### 3. 횡단 (scan) — universe 정의 강행\n\nuniverse 명시 (default KOSPI200 / 사용자"
     },
     {
       "id": "runtime.providerProtocol",
@@ -5325,7 +5325,7 @@
         "operation.code",
         "operation.architecture"
       ],
-      "bodyPreview": "## sample PR 흐름\n\n### 1. fork + clone\n\n```bash\ngit clone https://github.com/<your>/dartlab\ncd dartlab\nuv sync\n```\n\n### 2. 신규 skill 작성\n\n신규 spec은 `src/dartlab/skills/SCHEMA.md`의 4단계 절차를 따른다:\n- `lintSkill` 강제 섹션 충족\n- `capabilityRefs` 명시\n- `readSkill/describeSkill` 검색 가능\n- Skill OS 6 JSON 동기화 (capability 카탈로그는 docstring 라이브 빌드라 재생성 무관)\n\n### 3. 변경 단위 commit\n\n```bash\n# CLAUDE.md 강행: git add -A / . 금지, git commit -o <명시 paths>\ngit add src/dartlab/skills/specs/recipes/macro/myNewRecipe.md\ngit commit -o src/dartlab/skills/specs/recipes/macro/myNewRecipe.md \\\n  -m \"추가: recipes.macro.myNewRecipe — 새 매크로 r"
+      "bodyPreview": "## sample PR 흐름\n\n### 1. fork + clone\n\n```bash\ngit clone https://github.com/<your>/dartlab\ncd dartlab\nuv sync\n```\n\n### 2. 신규 skill 작성\n\n신규 spec은 `src/dartlab/skills/SCHEMA.md`의 4단계 절차를 따른다:\n- `lintSkill` 강제 섹션 충족\n- `capabilityRefs` 명시\n- `readSkill/describeSkill` 검색 가능\n- Skill OS 6 JSON 동기화 (capability 카탈로그는 docstring 라이브 빌드라 재생성 무관)\n\n### 3. 변경 단위 commit\n\n```bash\n# operation.contributionWorkflow: git add -A / . 금지, 명시 경로만\ngit add src/dartlab/skills/specs/recipes/macro/myNewRecipe.md\ngit commit -o src/dartlab/skills/specs/recipes/macro/myNewRecipe.md \\\n  -m \"추가: recipes.macro.myNewRecipe — 새 매크로 r"
     },
     {
       "id": "start.dartlabSkillOs",

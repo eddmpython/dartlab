@@ -1200,7 +1200,7 @@
       "id": "operation.performanceProfile",
       "title": "Performance Profile — Polars heap + py-spy + mprof 절차서",
       "category": "operation",
-      "purpose": "dartlab 성능 측정 절차서 — Polars Rust heap OOM 가드 정황 진단 + py-spy CPU profile + mprof memory tracking + arrow flight 분석. CLAUDE.md 메모리 가드 룰 외부 공개 SSOT.",
+      "purpose": "dartlab 성능 측정과 메모리 가드 공개 SSOT — Polars Rust heap OOM 가드 정황 진단 + py-spy CPU profile + mprof memory tracking + arrow flight 분석.",
       "inDegree": 1,
       "outDegree": 3,
       "cluster": "operation",

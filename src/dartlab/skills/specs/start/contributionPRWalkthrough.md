@@ -64,7 +64,7 @@ uv sync
 ### 3. 변경 단위 commit
 
 ```bash
-# CLAUDE.md 강행: git add -A / . 금지, git commit -o <명시 paths>
+# operation.contributionWorkflow: git add -A / . 금지, 명시 경로만
 git add src/dartlab/skills/specs/recipes/macro/myNewRecipe.md
 git commit -o src/dartlab/skills/specs/recipes/macro/myNewRecipe.md \
   -m "추가: recipes.macro.myNewRecipe — 새 매크로 recipe ..."
@@ -74,7 +74,7 @@ git commit -o src/dartlab/skills/specs/recipes/macro/myNewRecipe.md \
 
 ```bash
 uv run python -X utf8 tests/run.py preflight
-# → 27 CI gate SSOT
+# → CI gate SSOT
 ```
 
 ### 5. PR submit
@@ -85,10 +85,10 @@ uv run python -X utf8 tests/run.py preflight
 
 ## 강행 룰
 
-1. master 브랜치만 (CLAUDE.md feedback_master_only).
-2. 변경 단위 + commit -o (commit-self-change SSOT).
-3. 자동 매핑 / docstring auto-sweep 도구 신설 금지.
-4. graph 회귀 가드 (no_graph_regression 8 번째).
+1. master 브랜치만 (`operation.contributionWorkflow`).
+2. 변경 단위 + 명시 경로 commit (`operation.contributionWorkflow`).
+3. 자동 매핑 / docstring auto-sweep 도구 신설 금지 (`operation.code`).
+4. graph 회귀 가드 (`operation.agentBoundaries`).
 
 ## 안티패턴
 

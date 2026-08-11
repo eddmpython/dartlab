@@ -47,7 +47,7 @@ linkedSkills:
 
 ### 1. 회사분석 — 6 막 인과 (engines.story)
 
-회사 단위 답변 한정. 사용자 메모리 (`feedback_chat_ui_separate_from_six_acts`) 강행 — 모든 질문 6 막 강제 X. 회사분석 의도 (`Company.panel` / `Company.analysis`) 시만.
+회사 단위 답변 한정. 모든 질문에 6 막을 강제하지 않는다. 회사분석 의도 (`Company.panel` / `Company.analysis`) 와 `engines.story` / `operation.sixActsAnalysis` 경로에서만 적용한다.
 
 ```
 1막 — 산업 위치 (engines.industry.peers + supplyChain)

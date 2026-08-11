@@ -1,13 +1,13 @@
 """artifactSync — Skill OS 산출물(6 JSON) 비파괴 동기화.
 
 ``specs/**/*.md`` (SSOT) → ``catalog/agent/web/mcp/pyodide/graph.json`` 재파생.
-**기본 ``--check``** (드리프트만 보고, 쓰기 0), **명시 ``--write`` 일 때만 기록**.
+**기본 check** (드리프트만 보고, 쓰기 0), **명시 ``--write`` 일 때만 기록**.
 CI·addEngine·addAxis·addRecipe·docs workflow 등 *자동 호출 0* (수동 전용).
 
 2026-05-12 ``b6090528b`` 로 폐기된 ``compiler.py`` 의 결정적 derivation 을 복원하되,
 무단 auto-overwrite 가 아니라 *check 우선 수동 도구* 로 재설계한다
-(``feedback_no_patterns §6`` 개정 — 자동 sync 금지 / 수동 sync 허용). 6 JSON 은 100%
-.md 파생·손가공 전용 필드 0 이라, ``--check`` 가 쓰기 전 변경분을 운영자에게 보여준다.
+(자동 sync 금지 / 수동 sync 허용). 6 JSON 은 100%
+.md 파생·손가공 전용 필드 0 이라, 기본 check 가 쓰기 전 변경분을 운영자에게 보여준다.
 
 사용::
 

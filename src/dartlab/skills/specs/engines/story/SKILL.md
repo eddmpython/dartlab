@@ -90,7 +90,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-05-08'
+lastUpdated: '2026-08-11'
 testUniverse:
   market: KR
   stockCodes:
@@ -145,7 +145,8 @@ story 는 L3 조합기 - *자체 계산 0*. 모든 숫자는 하위 엔진 (anal
 2. **story 안에서 직접 계산 금지** - RunPython 으로 ratio/forecast/score 산출 금지. 하위 엔진 호출 결과의 `items`/`flags`/`assumptions` 그대로 차용.
 3. **블록 evidence 부족 시 빈 섹션 + `limits` 에 명시** - 임의로 채우거나 환각 금지. story 의 spec 가 "evidence 비면 빈 섹션" 정공.
 4. **reportType 미명시 시 자동 감지 결과 본문에 노출** - "자동 선택: `executive` (이유: ...)" 한 줄.
-5. **같은 `(stockCode, period)` 분기 데이터는 1 회 fetch 후 in-memory 재사용** - 같은 회사 같은 기간의 EngineCall 을 axis 만 바꿔 반복 호출 금지. story 가 L3 조합기로서 차입금·충당부채·부문정보 등 여러 블록을 만들 때, Company.panel 한 번으로 모든 stmt (BS/IS/CF) + 분기 시계열을 받아 in-memory 분기 후 각 블록에 분배한다. 회귀 사례 - Q3 hybrid 답변 137s + RSS 7.6GB 폭증 (같은 005930 분기 데이터 차입금/충당부채/부문정보 4 회 반복 load). CLAUDE.md 메모리 안전 강행규칙 (Company 1 개 ≈ 200~500MB) 직결.
+5. **같은 `(stockCode, period)` 분기 데이터는 1 회 fetch 후 in-memory 재사용** - 같은 회사 같은 기간의 EngineCall 을 axis 만 바꿔 반복 호출 금지. story 가 L3 조합기로서 차입금·충당부채·부문정보 등 여러 블록을 만들 때, Company.panel 한 번으로 모든 stmt (BS/IS/CF) + 분기 시계열을 받아 in-memory 분기 후 각 블록에 분배한다. 회귀 사례 - Q3 hybrid 답변 137s + RSS 7.6GB 폭증 (같은 005930 분기 데이터 차입금/충당부채/부문정보 4 회 반복 load). `operation.performanceProfile` 메모리 안전 강행 (Company 1 개 ≈ 200~500MB) 직결.
+6. **렌즈 수집기는 대형 내부 결과를 보존하지 않는다** - `lensProducts` 원문과 신용 패널에 필요한 최소 필드만 Company 세션에 남긴다. analysis, industry, quant, macro의 원본 결과 전체를 `_lensBundle` 또는 별도 Story 캐시에 붙잡아 두지 않는다.
 
 ## 호출 동작
 

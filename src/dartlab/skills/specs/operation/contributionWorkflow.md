@@ -86,6 +86,8 @@ testUniverse:
 
 기여 작업은 Skill OS에서 시작한다. 저장소의 공식 규칙은 `start.dartlabSkillOs`를 통해 찾고, 변경 범위에 맞는 `operation.*` skill을 확인한 뒤 작업한다.
 
+문서 소유권: 공개 계약은 Skill OS, 공개 진입·공통 안전 경계는 루트 `CLAUDE.md`, 운영자 개인 약속은 로컬 memory다. 같은 규칙을 두 층에 복제하지 않는다.
+
 코드 변경은 기존 구조와 책임 경계를 우선한다. 새 abstraction은 중복이나 복잡도를 실제로 줄일 때만 추가하고, unrelated 정리 작업은 같은 변경에 섞지 않는다.
 
 ## 코드 규칙

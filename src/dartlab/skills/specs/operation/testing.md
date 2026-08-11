@@ -76,7 +76,7 @@ source:
   type: absorbed_skills
   absorbedKey: testing
   format: markdown
-lastUpdated: '2026-08-09'
+lastUpdated: '2026-08-11'
 testUniverse:
   market: KR
   stockCodes:
@@ -135,7 +135,7 @@ python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dar
 
 ## audit / lint 스크립트 인벤토리
 
-`tests/audit/` 의 모든 audit·lint 스크립트는 본 spec 또는 명시한 다른 SSOT 에 등록되어야 한다 (운영자↔AI feedback rule `feedback_no_orphan_scripts`). 표 외 신규 스크립트는 PR 차단. **`scripts/` 폴더 절대 금지** — 새 도구는 무조건 도메인 폴더 (`tests/audit/`, `src/dartlab/{engine}/`, `.github/scripts/`, `notebooks/_scripts/`, `landing/_scripts/`, `blog/_scripts/`, `.claude/`) 안에 둔다.
+`tests/audit/` 의 모든 audit·lint 스크립트는 본 spec 또는 명시한 다른 SSOT 에 등록되어야 한다. 표 외 신규 스크립트는 PR 차단. **`scripts/` 폴더 절대 금지** — 새 도구는 무조건 도메인 폴더 (`tests/audit/`, `src/dartlab/{engine}/`, `.github/scripts/`, `notebooks/_scripts/`, `landing/_scripts/`, `blog/_scripts/`, `.claude/`) 안에 둔다.
 
 ### Guard Index 가 subprocess 로 호출하는 게이트 (PR 필수)
 
@@ -193,12 +193,12 @@ python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dar
 |---|---|
 | `tests/audit/bootstrapTiming.py` | Company 첫 호출 5 초 약속 wall-clock regression. `--threshold 5.0` p95 |
 | `tests/audit/mutationSmoke.py` | `dartlab.core` 자작 mutation smoke (Windows 호환, Track 5) |
-| `tests/audit/productSmoke.py` | 사용자 공개 API 제품 스모크 |
+| `tests/audit/productSmoke.py` | 사용자 공개 API 제품 스모크. `fixtures`와 `empty` 모드는 strict offline으로 외부 네트워크를 차단한다. |
 | `tests/audit/externalVenvSmoke.py` | 외부 venv 설치된 dartlab 8 엔진 smoke (nightly CI + 수동 공용) |
 | `tests/audit/dataQualityAudit.py` | 전 엔진 데이터 전수조사 (208 호출 품질) |
 | `tests/audit/validateNotebooks.py` | Jupyter 노트북 코드 셀 Python syntax 검증 |
 | `tests/audit/publicApiCoverage.py` | 공개 API 시나리오 매핑 감사 |
-| `tests/audit/memoryBudgetAudit.py` | `withMemoryBudget` 공개 시나리오 매핑 감사. 메모리 작업 진입은 `CLAUDE.md`와 `operation.performanceProfile`을 따른다. |
+| `tests/audit/memoryBudgetAudit.py` | `withMemoryBudget` 공개 시나리오 매핑 감사. 메모리 작업 진입은 `operation.performanceProfile`을 따른다. |
 
 > **flaky 처리 SSOT** = `tests/conftest.py` 의 `network` 마커 → `reruns=2` (pytest-rerunfailures). 별도 자동 quarantine 시스템(옛 flakyAudit)은 두지 않는다 — placeholder 였고 데이터소스(`flakyGates.json`) 부재로 작동 0이라 폐기(debt-honesty P2-8). flaky 의심 테스트는 `@pytest.mark.network` 부착으로 rerun 안전망에 든다.
 

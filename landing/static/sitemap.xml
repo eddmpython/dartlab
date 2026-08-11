@@ -276,6 +276,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/skills/engines.simulate</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/skills/engines.story</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -481,6 +486,16 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/skills/operation.productCycle</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/skills/operation.productDirection</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/skills/operation.recipePromote</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -522,6 +537,11 @@
   </url>
   <url>
     <loc>https://eddmpython.github.io/dartlab/skills/operation.ui</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eddmpython.github.io/dartlab/skills/operation.uiQa</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

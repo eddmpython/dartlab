@@ -117,7 +117,7 @@ uv run python -X utf8 -c "import dartlab; print(dartlab.industry())"
 uv run python -X utf8 -c "import dartlab; print(dartlab.Company('신규코드').industry())"
 
 # 4. capability 카탈로그는 docstring 라이브 빌드 — 재생성 단계 없음 (loadCapabilities 자동 반영).
-#    (Skill OS 6 JSON 동기화가 필요하면 그건 별도 generateSkills — feedback_no_skill_json_auto_build)
+#    (Skill OS 6 JSON 동기화는 수동 artifactSync --write, 자동 빌드 금지)
 ```
 
 ## 대표 반환 형태
@@ -130,7 +130,7 @@ uv run python -X utf8 -c "import dartlab; print(dartlab.Company('신규코드').
 - **신생 산업 추가**: 운영자 판단 시점 (산업 분류 trend 변동 시).
 - **stage 분류 정정**: 사용자 피드백 또는 사업보고서 검토 후 즉시.
 
-자동 매핑 도구·LLM 추론 매핑 금지 (`feedback_no_docstring_auto_sweep` 동일 사상 — 사람 작성 SSOT).
+자동 매핑 도구·LLM 추론 매핑 금지 (`operation.code` docstring·매핑 사람 작성 SSOT와 동일 사상).
 
 ## 기본 검증
 

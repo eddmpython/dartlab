@@ -91,7 +91,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-05-08'
+lastUpdated: '2026-08-11'
 testUniverse:
   market: KR
   stockCodes:
@@ -134,6 +134,10 @@ timeline = dartlab.industry("semiconductor", timeline=True)
 c = dartlab.Company("005930")
 position = c.industry()
 # → dict: chainId · chainName · stage · stageLabel · confidence · matches · products · peers
+
+# 7. 전 시장 상세 자산은 명시적으로만 계산
+detail = c.industry(detail=True)
+# → 위치 + 섹터 분포 · 이익풀 · 관계 · 집중도
 ```
 
 ## 강행 호출 룰 (agent 답변 품질 회귀 차단)
@@ -157,7 +161,7 @@ position = c.industry()
 
 `polarization=True` → 산업 양극화: **독립 두 자료원 교차검증**으로 "승자독식 심화 vs 동질 평준화" 판정. ① 마진 렌즈 = 멤버 영업이익률(OPM) **IQR(p75−p25)** 첫해→끝해 방향(확대/축소) + 끝해 레벨. ② 밸류 렌즈 = 멤버 **P/B(시총/자본) p90/p10** 분산(스냅샷). 둘 다 넓음 → 승자독식 심화·`교차검증=일치`, 둘 다 좁음 → 동질 평준화·일치, 갈리면 → 혼재·`불일치(렌즈 갈림)`. 2행 two-lens 표(마진·밸류 나란히). 해석 한계: **두 렌즈가 서로 다른 자료원**(제출재무 ↔ 시장가치)인 게 핵심 — 일치하면 한 자료원 인공물이 아닌 강건 신호, **불일치 자체가 통찰**(재무는 갈리는데 시장은 균등 평가). **음수자본 제외수**(`음수자본제외`) 인용·**생존편향**·5점 윈도(방향신호)·밸류 스냅샷(시점 1) 명시. 임계는 `_attempts/industryAnalysisLab/` 실측 분포 기반 라벨 경계(절대 진리 아님). 점유율·인과 주장 금지. `concentration`(산업이 과점이냐)과 직교 — 이건 *회사 간 격차가 벌어지나*.
 
-`Company.industry()` → 단일 종목의 밸류체인 위치 dict — `chainId` (산업 ID), `stage` (공정), `confidence` (0~1 매칭 신뢰도), `peers` (같은 stage 종목코드 list). 매칭 실패 시 `None`.
+`Company.industry()` → 단일 종목의 밸류체인 위치 dict — `chainId` (산업 ID), `stage` (공정), `confidence` (0~1 매칭 신뢰도), `peers` (같은 stage 종목코드 list). 매칭 실패 시 `None`. 전 시장 섹터 분포, 다년 이익풀, 관계, 집중도는 `detail=True`에서만 계산한다. Story와 단일 종목 badge는 기본 경량 위치 계약을 사용하고 상세 근거가 없으면 partial gap으로 공개한다.
 
 분류체계 신선도는 `taxonomy.json` 의 운영자 수동 갱신 시점 — 신생 산업·신규 상장 직후엔 매칭 누락 가능.
 

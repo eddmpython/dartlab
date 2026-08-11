@@ -17,7 +17,8 @@
 정본과 동작이 다르면 읽은 코드와 실행 결과를 근거로 같은 작업에서 문서를 맞춘다.
 
 `.claude/**`와 개인 memory는 로컬 보조 도구다. 새 clone과 다른 에이전트가 사용할 수 있다고 가정하지
-않으며, 저장소 계약이나 실행 강제의 근거로 인용하지 않는다.
+않으며, 저장소 계약이나 실행 강제의 근거로 인용하지 않는다. 로컬 memory가 있으면 운영 보조로 읽되,
+충돌 시 Skill OS와 추적되는 테스트·워크플로가 우선한다.
 
 ## 시작 순서
 
@@ -59,6 +60,8 @@ Skill id를 찾지 못하면 `start.dartlabSkillOs`와 `src/dartlab/skills/catal
   `uv run python -X utf8 tests/run.py preflight`다.
 - 단일 테스트는 `bash tests/test-lock.sh tests/<path> -v`를 기본으로 한다.
 - 장기 실행 프로세스는 세션 종료 전에 정리하고, 남겨야 하면 이유와 프로세스를 보고한다.
+- staging은 명시 경로만 한다. `git add .`와 `git add -A`는 쓰지 않는다.
+- UI 표면(`landing/src`, `ui/packages`, `ui/apps`) 변경의 push는 운영자 명시 승인 후에만 한다.
 
 ## 검증과 완료
 

@@ -61,7 +61,7 @@ examples:
 source:
   type: curated_markdown
   owner: dartlab
-lastUpdated: "2026-07-23"
+lastUpdated: "2026-08-11"
 testUniverse:
   market: KR
   stockCodes:
@@ -83,7 +83,8 @@ testUniverse:
 - 블로그 셀, 브라우저 노트북, 플레이그라운드는 한 `WorkerEngine`과 한 pyproc machine을 공유한다. 별도 main-thread Pyodide를 만들지 않는다.
 - 블로그 글을 전체 화면으로 투영한 `post:<slug>` 노트북은 기본 `sequential`, `autoRun: false`다. 일반 브라우저 노트북만 기본 reactive 자동 실행을 사용한다.
 - 블로그 셀에서 만든 Python 전역은 전체 화면 노트북의 첫 실행 전에 새 machine으로 격리한다. 저장된 옛 글 노트북의 reactive 중복 정의 오류는 로드 시 제거하되 코드와 정상 출력은 보존한다.
-- 런타임 버전 정본은 `landing/runtime-manifest.json`이다. 브라우저와 Node 게이트가 같은 pyproc, Pyodide, DartLab exact pin을 읽고 캐시 namespace를 만든다.
+- Pyodide와 DartLab 버전 정본은 `landing/runtime-manifest.json`이다. pyproc은 `landing/package.json`의 npm exact dependency와 root `package-lock.json`을 쓰며, 브라우저 캐시 namespace에는 빌드 시 확인한 실제 설치 버전을 넣는다.
+- Chromium Gate B에서 외부 Pyodide 배포판을 pyproc 기본 버전 대신 쓸 때는 같은 manifest의 `pyodideScriptIntegrity`로 브라우저 스크립트를 검증한다. pyproc에 다른 버전용 기본 SRI를 적용하지 않는다.
 - `import dartlab`을 실행하기 전에 `lxml`, `numpy`, `polars`, `pyarrow`를 Pyodide 배포판에서 명시적으로 적재하고 DartLab exact wheel을 설치한다. 지연 import만 믿지 않는다.
 - 기본 실행, 파일, 출력, 환경 진단은 pyproc machine 공개 계약을 쓴다. `runtime.raw`는 ASGI 안정화 폴백에만 허용한다.
 
@@ -104,7 +105,7 @@ COOP/COEP가 없다는 이유로 기본 machine 부팅을 실패시키면 안 �
 
 ## 업그레이드 게이트
 
-pyproc은 1.0 전까지 patch도 breaking으로 취급한다. 모든 후보는 다음을 통과하고 사람이 리뷰해야 한다.
+pyproc은 1.0 전까지 patch도 breaking으로 취급한다. Dependabot은 npm exact dependency와 lockfile을 같은 PR에서 갱신하며, 모든 후보는 다음을 통과하고 사람이 리뷰해야 한다.
 
 1. Node Gate A: root `boot`, exact DartLab 설치, transitive C 확장 import, machine FS, stdout, branching history, ASGI health.
 2. Chromium Gate B: 실제 COI와 JSPI 환경, root machine, exact DartLab, branching history, 2-lane process pool.
@@ -112,5 +113,5 @@ pyproc은 1.0 전까지 patch도 breaking으로 취급한다. 모든 후보는 �
 4. 일반 non-COI 블로그에서 초기 무실행, 첫 셀 실행, 편집 후 재실행 수동 smoke.
 5. 글 전체 화면 투영에서 초기 무실행, 순차 단일 셀 실행, reactive 전환, 옛 저장본 정규화 smoke.
 
-자동 병합은 금지한다. PR 토큰이 없으면 전체 게이트를 통과한 후보 브랜치와 중복 방지 이슈만 만든다.
+예약 작업이 package.json의 버전 문자열을 직접 바꾸거나 후보 브랜치를 만들지 않는다. npm lockfile PR과 전용 호환성 워크플로를 사용하며 자동 병합은 금지한다.
 

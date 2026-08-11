@@ -116,7 +116,7 @@ forbidden:
   - 엔진에 이미 있는 계산을 recipe RunPython 코드에 재구현
   - observed 가 아닌 viz skill 을 공식 visualRefs 로 연결
   - selfRun 결과를 외부 본문으로 인용 (sourceType=external 마커 누락)
-  - 종목 3 개 동시 메모리 로드 (CLAUDE.md 메모리 안전 위반)
+  - 종목 3 개 동시 메모리 로드 (`operation.performanceProfile` 메모리 안전 위반)
   - 질문별 실행 코드 저장
   - 답변 템플릿 저장
   - skill 과 공개 API 호출/반환 설명 불일치 방치
@@ -185,7 +185,7 @@ gapSpot → dataSanityCheck → protoSkill → selfRun → redTeam → graduate
 - 새로 저장한 incubating user skill 을 `ReadSkill(includeUser=true)` 로 다시 로드 (검증 — 같은 세션에서 검색 매칭되는지).
 - capabilityRefs 의 각 API 를 EngineCall 로 먼저 호출, 보조 계산은 RunPython fallback 으로 실행한다.
 - EngineCall 결과의 `tableRef` / `valueRef` / `dateRef` / `sourceRef` 를 selfRun 표의 1차 근거로 둔다. fallback 코드도 `emit_result(...)` 로 같은 ref 형태를 남긴다.
-- 3 케이스를 *순차* 실행 (CLAUDE.md 메모리 안전: 동시 로드 ≤ 2).
+- 3 케이스를 *순차* 실행 (`operation.performanceProfile` 메모리 안전: 동시 로드 ≤ 2).
 - 결과 표: `(케이스 / 입력 / 출력 / evidence ref)` 4 열. 각 행은 1~2 줄.
 
 ### 5. redTeam

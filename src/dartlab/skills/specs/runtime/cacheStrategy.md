@@ -51,7 +51,7 @@ linkedSkills:
 
 ### 2. dartlab BoundedCache (in-memory)
 
-- Polars heap 가드 (CLAUDE.md 강행규칙).
+- Polars heap 가드 (`operation.performanceProfile`).
 - per-Company 200~500MB → max 2 Company 동시 (사용자 메모리).
 - fixture scope `module` (test).
 

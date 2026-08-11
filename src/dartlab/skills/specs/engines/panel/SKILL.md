@@ -510,4 +510,4 @@ mapper·role→disclosureKey 앵커링·Panel(us) 보드·finance 라우팅 계�
 `tests/providers/edgar/panel/`(test_submission·instance·linkbase·walker·mapper·builder·panel).
 
 > Skill OS JSON index(`src/dartlab/skills/*.json`)는 **운영자 수동 동기화** — 본 spec 변경 시
-> 자동 생성 금지(CLAUDE.md "자동 빌드 도구 금지").
+> 자동 생성 금지(`SCHEMA.md` 수동 artifactSync, 자동 빌드 금지).

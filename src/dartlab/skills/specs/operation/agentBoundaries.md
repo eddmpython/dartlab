@@ -43,7 +43,7 @@ linkedSkills:
 
 ## 4 회귀 신호
 
-### 1. graph 회귀 가드 (memory feedback_no_graph_regression 8 번째)
+### 1. graph 회귀 가드
 
 다음 패턴 추가 금지:
 - `BRIEF` / `WORK` / `CRITIQUE` / `COMPOSE` / `GATE` / `HARVEST` 식 고정 노드 이름
@@ -80,8 +80,8 @@ uv run python -X utf8 tests/audit/checkAgentBoundary.py
 ## 강행 룰
 
 1. PR 작성 전 본 lint 통과 확인.
-2. 본 lint 신규 룰 추가 → memory feedback_no_graph_regression 갱신 동시.
-3. workbench 흐름 분기 추가 의도 → 본 spec + memory 양쪽 검토 후 결정.
+2. 본 lint 신규 룰 추가 → 본 spec을 정본으로 갱신한다. 로컬 memory에 같은 본문을 복제하지 않는다.
+3. workbench 흐름 분기 추가 의도 → 본 spec과 `runtime.workbenchEvidenceFlow`를 검토한 뒤 결정.
 
 ## 기본 검증
 
