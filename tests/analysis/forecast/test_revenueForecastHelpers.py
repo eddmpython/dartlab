@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pytest
+
 
 @dataclass
 class _Item:
@@ -63,3 +65,19 @@ def test_analyst_never_owns_the_singleton(monkeypatch):
     a = Analyst()
     a.close()
     assert fake.closed is False  # close() 는 차용 싱글턴을 건드리지 않는다
+
+
+def test_consensus_unavailable_is_an_optional_input(monkeypatch: pytest.MonkeyPatch) -> None:
+    """외부 컨센서스 장애가 로컬 재무 기반 가치평가 전체를 중단하면 안 된다."""
+    from dartlab.analysis.forecast import _revenueForecastLifecycle as helpers
+    from dartlab.core import di
+    from dartlab.gather.types import SourceUnavailableError
+
+    class _UnavailableGather:
+        def revenueConsensus(self, stockCode, *, market="KR"):
+            raise SourceUnavailableError(f"consensus unavailable: {stockCode}")
+
+    helpers._fetchConsensusRevenue.cache_clear()
+    monkeypatch.setattr(di, "getMacroProvider", lambda: _FakeProvider(_UnavailableGather()))
+
+    assert helpers._fetchConsensusRevenue("999996") == ()

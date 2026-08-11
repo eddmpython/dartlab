@@ -106,3 +106,27 @@ def testHealthyCompanyIsNotFlagged() -> None:
     _wacc, details = computeCompanyWacc(_series(500e9), sectorParams=getSectorParamsByName("IT"))
 
     assert details["equityValueUnknown"] is False
+
+
+def testOptionalMarketExceptionGroupDoesNotBreakLocalWacc(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AnyIO가 묶은 offline 오류도 선택적 시장 입력 실패로 강등한다."""
+    from dartlab.analysis.financial import _investmentAnalysisRoic as roic
+    from dartlab.analysis.financial import proforma
+    from dartlab.core.offlineGuard import OfflineViolation
+
+    class _Company:
+        stockCode = ""
+        currency = "KRW"
+        sectorParams = None
+        _cache: dict[str, object] = {}
+
+        def _buildFinanceSeries(self, *, freq: str):
+            return _series(500e9), ["2024"]
+
+    def _offlineBeta(*_args, **_kwargs):
+        raise ExceptionGroup("optional market lookup failed", [OfflineViolation("network blocked")])
+
+    monkeypatch.setattr(proforma, "_fetchBeta", _offlineBeta)
+    monkeypatch.setattr(proforma, "computeCompanyWacc", lambda *_args, **_kwargs: (8.5, {}))
+
+    assert roic._estimateWacc(_Company()) == 8.5

@@ -1,4 +1,4 @@
-"""제품 smoke의 네트워크 격리 계약."""
+"""제품 smoke의 데이터 재현성과 네트워크 격리 계약."""
 
 from __future__ import annotations
 
@@ -11,14 +11,29 @@ from tests.audit import productSmoke
 pytestmark = pytest.mark.unit
 
 
-def testFixtureAndEmptyModesEnableStrictOffline(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+def testFixtureModeBuildsCleanCheckoutDataAndEnablesStrictOffline(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.delenv("DARTLAB_PRODUCT_SMOKE_OFFLINE", raising=False)
+    tmp = SimpleNamespace(name=str(tmp_path))
 
-    fixtureEnv = productSmoke._dataEnv("fixtures", None)
-    emptyEnv = productSmoke._dataEnv("empty", SimpleNamespace(name=str(tmp_path)))
+    fixtureEnv = productSmoke._dataEnv("fixtures", tmp)
+    dataRoot = tmp_path / "data"
 
     assert fixtureEnv["DARTLAB_PRODUCT_SMOKE_OFFLINE"] == "1"
-    assert emptyEnv["DARTLAB_PRODUCT_SMOKE_OFFLINE"] == "1"
+    assert fixtureEnv["DARTLAB_NO_REFRESH"] == "1"
+    assert fixtureEnv["DARTLAB_DATA_DIR"] == str(dataRoot)
+    assert (dataRoot / "dart/scan/finance.parquet").is_file()
+    assert (dataRoot / "dart/scan/changes.parquet").is_file()
+    assert (dataRoot / "dart/scan/sharesOutstanding.parquet").is_file()
+    assert (dataRoot / "dart/scan/valuation.parquet").is_file()
+    assert (dataRoot / "dart/panel/005930.parquet").is_file()
+
+
+def testEmptyModeKeepsColdStartNetworkPathVisible(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    monkeypatch.delenv("DARTLAB_PRODUCT_SMOKE_OFFLINE", raising=False)
+
+    emptyEnv = productSmoke._dataEnv("empty", SimpleNamespace(name=str(tmp_path)))
+
+    assert "DARTLAB_PRODUCT_SMOKE_OFFLINE" not in emptyEnv
 
 
 def testScenarioIsolationUsesStrictOffline(monkeypatch: pytest.MonkeyPatch) -> None:

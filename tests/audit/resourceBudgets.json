@@ -6,7 +6,7 @@
   },
   "scenarios": {
     "public.access.all": {
-      "maxElapsedSec": 20,
+      "maxElapsedSec": 30,
       "maxRssDeltaMb": 350,
       "maxRssPeakMb": 900
     },

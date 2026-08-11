@@ -11,12 +11,14 @@ import ctypes
 import ctypes.wintypes
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import threading
 import time
 import traceback
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -26,6 +28,16 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / "tests" / "audit" / "publicApiScenarios.yml"
 BUDGET_PATH = REPO_ROOT / "tests" / "audit" / "resourceBudgets.json"
 SAMSUNG = "005930"
+_FIXTURE_FILE_PATHS: tuple[str, ...] = (
+    "dart/finance/005930.parquet",
+    "dart/finance/005930.parquet.etag",
+    "dart/panel/005930.parquet",
+    "dart/panel/005930.parquet.etag",
+    "dart/report/005930.parquet",
+    "dart/report/005930.parquet.etag",
+    "kindList/corpList.parquet",
+)
+_SCAN_FIXTURE_COMPANY_COUNT = 1200
 
 
 class _ProcessMemoryCounters(ctypes.Structure):
@@ -345,18 +357,140 @@ def _childMain(args: argparse.Namespace) -> int:
     return 0 if payload["ok"] else 1
 
 
+def _writeScanFixtures(dataRoot: Path) -> None:
+    """clean checkout에서도 공개 scan API를 검증할 수 있는 소형 prebuild를 만든다."""
+    import polars as pl
+
+    scanDir = dataRoot / "dart" / "scan"
+    scanDir.mkdir(parents=True, exist_ok=True)
+    codes = [f"{index:06d}" for index in range(100_000, 100_000 + _SCAN_FIXTURE_COMPANY_COUNT)]
+
+    financeRows: list[dict[str, str | None]] = []
+    for index, stockCode in enumerate(codes):
+        common = {
+            "stockCode": stockCode,
+            "bsns_year": "2025",
+            "reprt_nm": "4분기",
+            "fs_nm": "연결재무제표",
+            "thstrm_add_amount": None,
+        }
+        financeRows.extend(
+            (
+                {
+                    **common,
+                    "sj_div": "IS",
+                    "account_id": "ifrs-full_Revenue",
+                    "account_nm": "매출액",
+                    "thstrm_amount": str(1_000_000_000 + index * 1_000_000),
+                },
+                {
+                    **common,
+                    "sj_div": "IS",
+                    "account_id": "ifrs-full_ProfitLoss",
+                    "account_nm": "당기순이익",
+                    "thstrm_amount": str(100_000_000 + index * 100_000),
+                },
+                {
+                    **common,
+                    "sj_div": "BS",
+                    "account_id": "ifrs-full_Equity",
+                    "account_nm": "자본총계",
+                    "thstrm_amount": str(500_000_000 + index * 500_000),
+                },
+            )
+        )
+        prior = {**common, "bsns_year": "2024"}
+        financeRows.extend(
+            (
+                {
+                    **prior,
+                    "sj_div": "IS",
+                    "account_id": "ifrs-full_Revenue",
+                    "account_nm": "매출액",
+                    "thstrm_amount": str(900_000_000 + index * 900_000),
+                },
+                {
+                    **prior,
+                    "sj_div": "IS",
+                    "account_id": "ifrs-full_ProfitLoss",
+                    "account_nm": "당기순이익",
+                    "thstrm_amount": str(90_000_000 + index * 90_000),
+                },
+                {
+                    **prior,
+                    "sj_div": "BS",
+                    "account_id": "ifrs-full_Equity",
+                    "account_nm": "자본총계",
+                    "thstrm_amount": str(450_000_000 + index * 450_000),
+                },
+            )
+        )
+    pl.DataFrame(financeRows).write_parquet(scanDir / "finance.parquet")
+
+    pl.DataFrame(
+        schema={
+            "fromPeriod": pl.Utf8,
+            "toPeriod": pl.Utf8,
+            "sectionTitle": pl.Utf8,
+            "changeType": pl.Utf8,
+            "sizeA": pl.UInt32,
+            "sizeB": pl.UInt32,
+            "sizeDelta": pl.Int64,
+            "preview": pl.Utf8,
+            "stockCode": pl.Utf8,
+        }
+    ).write_parquet(scanDir / "changes.parquet")
+    pl.DataFrame(
+        {
+            "stock_code": [codes[0]],
+            "outstandingShares": [1_000_000],
+        },
+        schema={"stock_code": pl.Utf8, "outstandingShares": pl.Int64},
+    ).write_parquet(scanDir / "sharesOutstanding.parquet")
+    pl.DataFrame(
+        {
+            "stockCode": codes,
+            "marketCap": [float(10_000_000_000 + index * 1_000_000) for index in range(len(codes))],
+            "per": [10.0] * len(codes),
+            "pbr": [1.0] * len(codes),
+            "dividendYield": [2.0] * len(codes),
+            "current": [10_000] * len(codes),
+            "snapshotAt": [datetime(2026, 1, 1)] * len(codes),
+        }
+    ).write_parquet(scanDir / "valuation.parquet")
+
+
+def _prepareFixtureData(tmp: tempfile.TemporaryDirectory[str]) -> Path:
+    """추적 fixture만 임시 루트에 복사하고 합성 scan prebuild를 더한다."""
+    sourceRoot = REPO_ROOT / "tests" / "fixtures"
+    dataRoot = Path(tmp.name) / "data"
+    for relative in _FIXTURE_FILE_PATHS:
+        source = sourceRoot / relative
+        if not source.is_file():
+            raise RuntimeError(f"product smoke fixture 누락: {source}")
+        destination = dataRoot / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+    _writeScanFixtures(dataRoot)
+    return dataRoot
+
+
 def _dataEnv(dataMode: str, tmp: tempfile.TemporaryDirectory[str] | None) -> dict[str, str]:
     env = os.environ.copy()
+    env.pop("DARTLAB_PRODUCT_SMOKE_OFFLINE", None)
+    env.pop("DARTLAB_NO_REFRESH", None)
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUNBUFFERED"] = "1"
     if dataMode == "fixtures":
-        env["DARTLAB_DATA_DIR"] = str(REPO_ROOT / "tests" / "fixtures")
+        if tmp is None:
+            raise RuntimeError("fixtures data mode requires temp directory")
+        env["DARTLAB_DATA_DIR"] = str(_prepareFixtureData(tmp))
         env["DARTLAB_PRODUCT_SMOKE_OFFLINE"] = "1"
+        env["DARTLAB_NO_REFRESH"] = "1"
     elif dataMode == "empty":
         if tmp is None:
             raise RuntimeError("empty data mode requires temp directory")
         env["DARTLAB_DATA_DIR"] = str(Path(tmp.name) / "data")
-        env["DARTLAB_PRODUCT_SMOKE_OFFLINE"] = "1"
     return env
 
 
@@ -441,7 +575,7 @@ def runSuite(args: argparse.Namespace) -> int:
     failures: list[str] = []
     tmpCtx: tempfile.TemporaryDirectory[str] | None = None
     cwdCtx: tempfile.TemporaryDirectory[str] | None = None
-    if args.data_mode == "empty":
+    if args.data_mode in {"fixtures", "empty"}:
         tmpCtx = tempfile.TemporaryDirectory(prefix="dartlab-product-smoke-")
     if args.cwd_mode == "temp":
         cwdCtx = tempfile.TemporaryDirectory(prefix="dartlab-product-cwd-")

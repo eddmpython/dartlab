@@ -39,7 +39,14 @@ def _fetchConsensusRevenue(
         # 싱글턴 차용: 닫지 않는다. 여기서 close 하면 이후 모든 gather 호출이
         # "client has been closed" 로 죽는다 (전상장사 sweep 2번째 회사부터 전멸).
         return tuple((item.fiscal_year, item.revenue_est, item.source) for item in items if item.revenue_est > 0)
-    except (ImportError, OSError) as exc:
+    except (ImportError, OSError, RuntimeError) as exc:
+        log.debug("컨센서스 수집 실패: %s", exc)
+        return ()
+    except Exception as exc:
+        from dartlab.gather.types import SourceUnavailableError
+
+        if not isinstance(exc, SourceUnavailableError):
+            raise
         log.debug("컨센서스 수집 실패: %s", exc)
         return ()
 

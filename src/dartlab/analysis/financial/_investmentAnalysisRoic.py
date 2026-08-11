@@ -22,7 +22,11 @@ def _estimateWacc(company) -> float | None:
     memoized_calc은 None 결과를 캐시 안 함 → 자체 sentinel 캐시 사용.
     """
 
-    def _isOptionalMarketDataError(exc: Exception) -> bool:
+    def _isOptionalMarketDataError(exc: BaseException) -> bool:
+        if isinstance(exc, BaseExceptionGroup):
+            return bool(exc.exceptions) and all(_isOptionalMarketDataError(child) for child in exc.exceptions)
+        if isinstance(exc, (OSError, RuntimeError)):
+            return True
         try:
             import httpx
 
