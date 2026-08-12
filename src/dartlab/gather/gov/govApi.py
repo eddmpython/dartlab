@@ -13,6 +13,10 @@
 from __future__ import annotations
 
 import logging
+import os
+import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 
 import httpx
 import polars as pl
@@ -21,6 +25,8 @@ log = logging.getLogger(__name__)
 
 _GOV_ENDPOINT = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo"
 _GOV_INDEX_ENDPOINT = "https://apis.data.go.kr/1160100/service/GetMarketIndexInfoService/getStockMarketIndex"
+_GOV_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+_GOV_BACKOFF_SECONDS = (2, 5, 10, 20)
 
 # gov 응답 컬럼 → 회사 표준 schema.
 GOV_TO_STD = {
@@ -201,18 +207,66 @@ def _rawFrame(rows: list[dict]) -> pl.DataFrame:
     return df.with_columns(casts) if casts else df
 
 
+def _retryAttempts() -> int:
+    try:
+        return max(1, int(os.environ.get("DARTLAB_GOV_RETRY_ATTEMPTS", "4")))
+    except ValueError:
+        return 4
+
+
+def _retryWait(exc: Exception, attempt: int) -> float:
+    response = getattr(exc, "response", None)
+    retryAfter = response.headers.get("Retry-After") if response is not None else None
+    wait: float | None = None
+    if retryAfter:
+        try:
+            wait = max(0.0, float(retryAfter))
+        except ValueError:
+            try:
+                parsed = parsedate_to_datetime(retryAfter)
+                wait = max(0.0, (parsed - datetime.now(timezone.utc)).total_seconds())
+            except (TypeError, ValueError, OverflowError):
+                wait = None
+    if wait is None:
+        wait = float(_GOV_BACKOFF_SECONDS[min(attempt, len(_GOV_BACKOFF_SECONDS) - 1)])
+    try:
+        maximum = max(0.0, float(os.environ.get("DARTLAB_GOV_RETRY_MAX_SINGLE_WAIT_SECONDS", "60")))
+    except ValueError:
+        maximum = 60.0
+    return min(wait, maximum)
+
+
+def _isRetryable(exc: Exception) -> bool:
+    if isinstance(exc, httpx.TransportError):
+        return True
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code in _GOV_RETRYABLE_STATUS
+    return False
+
+
 def _get(params: dict, *, apiKey: str, client: httpx.Client | None, endpoint: str = _GOV_ENDPOINT) -> dict:
-    """단일 gov 호출 → JSON. serviceKey(디코딩 키)는 httpx params 가 1회 URL-encode."""
+    """단일 gov 호출을 transient 재시도 후 JSON으로 반환한다."""
     query = {"serviceKey": apiKey, "resultType": "json", **params}
     own = client is None
     cl = client or httpx.Client(timeout=30.0)
     try:
-        resp = cl.get(endpoint, params=query)
-        resp.raise_for_status()
-        return resp.json()
+        attempts = _retryAttempts()
+        for attempt in range(attempts):
+            try:
+                resp = cl.get(endpoint, params=query)
+                resp.raise_for_status()
+                return resp.json()
+            except Exception as exc:
+                if not _isRetryable(exc) or attempt == attempts - 1:
+                    raise
+                wait = _retryWait(exc, attempt)
+                status = getattr(getattr(exc, "response", None), "status_code", None) or type(exc).__name__
+                log.warning("gov API %s, %.1f초 후 재시도 (%d/%d)", status, wait, attempt + 1, attempts - 1)
+                time.sleep(wait)
     finally:
         if own:
             cl.close()
+    raise RuntimeError("unreachable")
 
 
 def fetchGovStock(

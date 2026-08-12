@@ -2010,14 +2010,14 @@
       "whenToUse": [
         "dartlab 테스트 · CI 운영 규칙",
         "testing",
-        "1. 핵심 원칙 — 4 개로 간다",
+        "1. 핵심 원칙 - 4 개로 간다",
         "2. 3-Tier CI 구조",
-        "Tier 1 — `ci-fast.yml` (PR + master push, 목표 ≤ 3 분)",
-        "Tier 2 — `ci-full.yml` (master push only, 목표 ≤ 10 분)",
-        "Tier 3 — `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분)"
+        "Tier 1 - `ci-fast.yml` (PR + master push, 목표 ≤ 3 분)",
+        "Tier 2 - `ci-full.yml` (master push only, 목표 ≤ 10 분)",
+        "Tier 3 - `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분)"
       ],
       "nextSkills": [],
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 핵심 원칙 — 4 개로 간다 기준을 확인한다.\n- 2. 3-Tier CI 구조 기준을 확인한다.\n- Tier 1 — `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.\n- Tier 2 — `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.\n- Tier 3 — `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.\n- **module scope 권장** — 파일 단위 로드·해제.\n- **session scope 지양** — Company 여러 개 로드 누적 시 OOM.\n- **function scope** — 필요하면 사용, `gc.collect()` 권장.\n- roo"
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 핵심 원칙: 4 개로 간다 기준을 확인한다.\n- 2. 3-Tier CI 구조 기준을 확인한다.\n- Tier 1: `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.\n- Tier 2: `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.\n- Tier 3: `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.\n- **module scope 권장**: 파일 단위 로드·해제.\n- **session scope 지양**: Company 여러 개 로드 누적 시 OOM.\n- **function scope**: 필요하면 사용, `gc.collect()` 권장.\n- root `dart"
     },
     {
       "id": "operation.ui",

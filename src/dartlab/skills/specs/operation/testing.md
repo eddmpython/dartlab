@@ -9,11 +9,11 @@ purpose: dartlab 테스트 · CI 운영 규칙 운영 규칙을 Skill OS에서 �
 whenToUse:
   - dartlab 테스트 · CI 운영 규칙
   - testing
-  - 1. 핵심 원칙 — 4 개로 간다
+  - 1. 핵심 원칙 - 4 개로 간다
   - 2. 3-Tier CI 구조
-  - Tier 1 — `ci-fast.yml` (PR + master push, 목표 ≤ 3 분)
-  - Tier 2 — `ci-full.yml` (master push only, 목표 ≤ 10 분)
-  - Tier 3 — `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분)
+  - Tier 1 - `ci-fast.yml` (PR + master push, 목표 ≤ 3 분)
+  - Tier 2 - `ci-full.yml` (master push only, 목표 ≤ 10 분)
+  - Tier 3 - `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분)
 inputs:
   - 작업 목적
   - 대상 엔진 또는 실행 환경
@@ -33,14 +33,14 @@ knowledgeRefs:
 sourceRefs:
   - dartlab://skills/operation.testing
 procedure:
-  - 1. 핵심 원칙 — 4 개로 간다 기준을 확인한다.
+  - 1. 핵심 원칙 - 4 개로 간다 기준을 확인한다.
   - 2. 3-Tier CI 구조 기준을 확인한다.
-  - Tier 1 — `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.
-  - Tier 2 — `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.
-  - Tier 3 — `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.
-  - '**module scope 권장** — 파일 단위 로드·해제.'
-  - '**session scope 지양** — Company 여러 개 로드 누적 시 OOM.'
-  - '**function scope** — 필요하면 사용, `gc.collect()` 권장.'
+  - Tier 1 - `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.
+  - Tier 2 - `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.
+  - Tier 3 - `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.
+  - '**module scope 권장**: 파일 단위 로드·해제.'
+  - '**session scope 지양**: Company 여러 개 로드 누적 시 OOM.'
+  - '**function scope**: 필요하면 사용, `gc.collect()` 권장.'
   - root `dartlab` logger 에 stderr `StreamHandler` 자동 부착 (최초 1 회).
 requiredEvidence:
   - skillRef
@@ -76,7 +76,7 @@ source:
   type: absorbed_skills
   absorbedKey: testing
   format: markdown
-lastUpdated: '2026-08-11'
+lastUpdated: '2026-08-12'
 testUniverse:
   market: KR
   stockCodes:
@@ -91,14 +91,14 @@ testUniverse:
 
 ## 실행 순서
 
-- 1. 핵심 원칙 — 4 개로 간다 기준을 확인한다.
+- 1. 핵심 원칙: 4 개로 간다 기준을 확인한다.
 - 2. 3-Tier CI 구조 기준을 확인한다.
-- Tier 1 — `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.
-- Tier 2 — `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.
-- Tier 3 — `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.
-- **module scope 권장** — 파일 단위 로드·해제.
-- **session scope 지양** — Company 여러 개 로드 누적 시 OOM.
-- **function scope** — 필요하면 사용, `gc.collect()` 권장.
+- Tier 1: `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.
+- Tier 2: `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.
+- Tier 3: `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.
+- **module scope 권장**: 파일 단위 로드·해제.
+- **session scope 지양**: Company 여러 개 로드 누적 시 OOM.
+- **function scope**: 필요하면 사용, `gc.collect()` 권장.
 - root `dartlab` logger 에 stderr `StreamHandler` 자동 부착 (최초 1 회).
 
 ## L0~L1.5 완료 게이트
@@ -118,9 +118,9 @@ pytest 는 회귀를 실패시키는 표면이고, 전수조사는 AST/import gr
 
 공식 gate 는 3 단계다.
 
-- `quick` — 변경 파일과 reverse dependency 영향 테스트만 실행한다. 목표 5~15 초. 개발 중 기본 확인.
-- `strict-l0-l15` — L0~L1.5 architecture/provider/gather/public API gate. PR 필수 fail gate.
-- `full-census` — 전체 repo 전수조사. nightly/release 전 확인.
+- `quick`: 변경 파일과 reverse dependency 영향 테스트만 실행한다. 목표 5~15 초. 개발 중 기본 확인.
+- `strict-l0-l15`: L0~L1.5 architecture/provider/gather/public API gate. PR 필수 fail gate.
+- `full-census`: 전체 repo 전수조사. nightly/release 전 확인.
 
 Guard Index 공식 interface:
 
@@ -131,11 +131,35 @@ python -X utf8 tests/audit/dartlabGuard.py full --baseline tests/audit/_baseline
 python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dart,edgar --json
 ```
 
+### Push 영향 테스트와 nightly 전수
+
+`ci-full.yml`의 `test-full`은 push의 이전 commit부터 HEAD까지 변경 파일을 구하고,
+Guard Index import graph의 역방향 전이 closure를 계산한다. 영향 module의 mirror 테스트
+폴더와 그 module을 직접 import하는 테스트 파일만 실행한다. 기준 commit을 확인할 수 없거나
+공용 계약인 `pyproject.toml`, `uv.lock`, `tests/conftest.py`, `tests/run.py`, root facade,
+공용 fixture가 바뀌면 `tests/` 전수로 fail closed 한다. 실행 계획은
+`impact-test-plan.json`과 Actions artifact에 남긴다.
+
+`ci-nightly.yml`의 `test-full-nightly`는 선택기를 우회하고 같은 marker와 timeout 계약으로
+`tests/` 전수를 매일 실행한다. 동적 import, 데이터 결합, 공유 fixture처럼 정적 graph가
+설명하지 못하는 영향은 이 게이트가 보완한다.
+
+nightly에서 push 선택 실행이 놓친 회귀가 발견되면 아래 순서로 선택 규칙에 되먹임한다.
+
+1. 실패한 테스트 경로와 최초 실패 commit을 nightly artifact에서 확인한다.
+2. 같은 commit의 `impacted-test-plan-*` artifact에서 변경 파일, 영향 module, 선택 target을 확인한다.
+3. 누락 원인이 정적 import면 `reverseImportClosure` 회귀 표본을 추가한다.
+4. 동적 결합이나 공용 계약이면 `selectImpactedTestTargets`의 명시 mapping 또는 full trigger를 추가한다.
+5. 알려진 전이 사슬 테스트와 누락 재현 테스트를 먼저 통과시킨 뒤 규칙을 반영한다.
+
+Unit marker 테스트는 fixture setup 이전부터 strict offline guard를 적용한다. 외부 통신이
+계약인 테스트만 `network` marker를 함께 선언하며 fast unit 선택에서는 제외한다.
+
 기존 audit script 는 제거하지 않는다. Guard Index 는 기존 script 를 rule source 로 사용하고, AST index 와 baseline ledger 결과를 같은 실행 표면으로 묶는다. `full-census` 는 nightly/release 용 전수조사이며 `tests/audit/_baselines/dartlabGuard.json` 을 대표 원장으로 사용한다.
 
 ## audit / lint 스크립트 인벤토리
 
-`tests/audit/` 의 모든 audit·lint 스크립트는 본 spec 또는 명시한 다른 SSOT 에 등록되어야 한다. 표 외 신규 스크립트는 PR 차단. **`scripts/` 폴더 절대 금지** — 새 도구는 무조건 도메인 폴더 (`tests/audit/`, `src/dartlab/{engine}/`, `.github/scripts/`, `notebooks/_scripts/`, `landing/_scripts/`, `blog/_scripts/`, `.claude/`) 안에 둔다.
+`tests/audit/` 의 모든 audit·lint 스크립트는 본 spec 또는 명시한 다른 SSOT 에 등록되어야 한다. 표 외 신규 스크립트는 PR 차단. **`scripts/` 폴더 절대 금지**: 새 도구는 무조건 도메인 폴더 (`tests/audit/`, `src/dartlab/{engine}/`, `.github/scripts/`, `notebooks/_scripts/`, `landing/_scripts/`, `blog/_scripts/`, `.claude/`) 안에 둔다.
 
 ### Guard Index 가 subprocess 로 호출하는 게이트 (PR 필수)
 
@@ -152,21 +176,21 @@ python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dar
 
 | 스크립트 | 룰 |
 |---|---|
-| `tests/audit/folderSize.py` | P-트랙 룰 3 — 폴더 vs 단일 `.py` 임계 검증 |
-| `tests/audit/initThin.py` | P-트랙 룰 4 — `__init__.py` thin 검증 |
-| `tests/audit/underscoreModules.py` | P-트랙 룰 5 — `_*.py` 파일명 검증 |
-| `tests/audit/limitDefault.py` | P-트랙 룰 8 — provider collection-반환 메서드 `limit` keyword 기본값 검증 |
-| `tests/audit/providerSymmetry.py` | P-PR 트랙 — provider method-level symmetry 측정 게이트 |
-| `tests/audit/behaviorCoverage.py` | P-PR 트랙 — 행동 테스트 커버리지 (providers/ 공개 method ↔ tests/providers/ 매핑). `--mode baseline\|strict` |
+| `tests/audit/folderSize.py` | P-트랙 룰 3: 폴더 vs 단일 `.py` 임계 검증 |
+| `tests/audit/initThin.py` | P-트랙 룰 4: `__init__.py` thin 검증 |
+| `tests/audit/underscoreModules.py` | P-트랙 룰 5: `_*.py` 파일명 검증 |
+| `tests/audit/limitDefault.py` | P-트랙 룰 8: provider collection-반환 메서드 `limit` keyword 기본값 검증 |
+| `tests/audit/providerSymmetry.py` | P-PR 트랙: provider method-level symmetry 측정 게이트 |
+| `tests/audit/behaviorCoverage.py` | P-PR 트랙: 행동 테스트 커버리지 (providers/ 공개 method ↔ tests/providers/ 매핑). `--mode baseline\|strict` |
 
 ### docstring 게이트
 
 | 스크립트 | 룰 |
 |---|---|
-| `tests/audit/docstring4Section.py` | P-트랙 룰 6 — 4 섹션 (Args/Returns/Raises/Example) 최소 게이트. PR 차단 |
-| `tests/audit/docstring9Section.py` | G+ 트랙 룰 6b — 9 섹션 rich docstring 측정 (warn-only) |
-| `tests/audit/docstringNineSection.py` | P-PR 트랙 — providers 한정 9 섹션 측정 게이트 |
-| `tests/audit/docstring_coverage.py` | W-C 트랙 — 9 섹션 충족률 측정 |
+| `tests/audit/docstring4Section.py` | P-트랙 룰 6: 4 섹션 (Args/Returns/Raises/Example) 최소 게이트. PR 차단 |
+| `tests/audit/docstring9Section.py` | G+ 트랙 룰 6b: 9 섹션 rich docstring 측정 (warn-only) |
+| `tests/audit/docstringNineSection.py` | P-PR 트랙: providers 한정 9 섹션 측정 게이트 |
+| `tests/audit/docstring_coverage.py` | W-C 트랙: 9 섹션 충족률 측정 |
 
 상세 9섹션 표준은 [operation.docstringStandard](/skills/operation.docstringStandard)를 따른다.
 
@@ -177,14 +201,14 @@ python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dar
 | `tests/audit/qualityGate.py` | radon 복잡도 + vulture 죽은 코드 자동 검사 |
 | `tests/audit/coreBoundary.py` | core 경계 lint. `src/dartlab/core/`의 거주 자격은 `operation.architecture`를 따른다. |
 | `tests/audit/overSplitInventory.py` | 과분할 폴더 인벤토리 (operation.code 룰 1) |
-| `tests/audit/staleImports.py` | stale top-level import lint — `from dartlab import X` / `import dartlab as Y` 잔존 검출 |
+| `tests/audit/staleImports.py` | stale top-level import lint: `from dartlab import X` / `import dartlab as Y` 잔존 검출 |
 | `tests/audit/stale_references.py` | 폐기된 API/이름이 코드에 잔존하는지 검증 |
-| `tests/audit/namingConsistency.py` | 매개변수 의미 일관성 lint — `core/naming/aliases.json` 표준 사전 검사 |
-| `tests/audit/snakeCaseInventory.py` | camelCase 100% 인벤토리 — snake_case 식별자 카운트 |
+| `tests/audit/namingConsistency.py` | 매개변수 의미 일관성 lint: `core/naming/aliases.json` 표준 사전 검사 |
+| `tests/audit/snakeCaseInventory.py` | camelCase 100% 인벤토리: snake_case 식별자 카운트 |
 | `tests/audit/structureMap.py` | dartlab 전체 구조 맵 자동 생성 (refactor 보조) |
-| `tests/audit/testCoverageGate.py` | Track 6 — `src/` 새 함수 vs `tests/` 참조 매핑 강제 |
+| `tests/audit/testCoverageGate.py` | Track 6: `src/` 새 함수 vs `tests/` 참조 매핑 강제 |
 | `tests/audit/lint_camelcase_ast.py` | camelCase + docstring AST lint, diff 기준 (legacy 비차단) |
-| `tests/audit/lint_layer_designation.py` | 계층 명명 lint — alias 금지 강행 |
+| `tests/audit/lint_layer_designation.py` | 계층 명명 lint: alias 금지 강행 |
 | `tests/audit/checkSilentFail.py` | Silent-fail 패턴 lint (2026-04-19 사고 회귀 차단) |
 
 ### Smoke · timing · 데이터 품질
@@ -200,7 +224,7 @@ python -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dar
 | `tests/audit/publicApiCoverage.py` | 공개 API 시나리오 매핑 감사 |
 | `tests/audit/memoryBudgetAudit.py` | `withMemoryBudget` 공개 시나리오 매핑 감사. 메모리 작업 진입은 `operation.performanceProfile`을 따른다. |
 
-> **flaky 처리 SSOT** = `tests/conftest.py` 의 `network` 마커 → `reruns=2` (pytest-rerunfailures). 별도 자동 quarantine 시스템(옛 flakyAudit)은 두지 않는다 — placeholder 였고 데이터소스(`flakyGates.json`) 부재로 작동 0이라 폐기(debt-honesty P2-8). flaky 의심 테스트는 `@pytest.mark.network` 부착으로 rerun 안전망에 든다.
+> **flaky 처리 SSOT** = `tests/conftest.py` 의 `network` 마커 → `reruns=2` (pytest-rerunfailures). 별도 자동 quarantine 시스템(옛 flakyAudit)은 두지 않는다. placeholder 였고 데이터소스(`flakyGates.json`) 부재로 작동 0이라 폐기(debt-honesty P2-8). flaky 의심 테스트는 `@pytest.mark.network` 부착으로 rerun 안전망에 든다.
 
 ### 진척 측정
 

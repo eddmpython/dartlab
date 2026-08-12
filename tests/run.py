@@ -40,6 +40,7 @@ exit code 0 = 모든 명령 0. blocking=False gate 는 fail 해도 0 유지.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shlex
 import shutil
@@ -245,7 +246,7 @@ GATES: dict[str, Gate] = {
             # 모듈 전체가 unit인 파일 안에서도 개별 테스트는 heavy를 추가할 수 있다.
             # unit만 고르면 격리 venv와 wheel 의존성을 설치하는 heavy 테스트까지 들어와
             # fast job을 20분 이상 붙잡으므로 모든 비 fast 분류를 명시적으로 제외한다.
-            "-m 'unit and not requires_data and not heavy and not realData and not freshInstall' "
+            "-m 'unit and not network and not requires_data and not heavy and not realData and not freshInstall' "
             "--ignore=tests/_attempts "
             "--ignore=tests/test_fixture_analysis_real.py "
             "--ignore=tests/test_fixture_credit_real.py "
@@ -386,20 +387,7 @@ GATES: dict[str, Gate] = {
             "PYTEST_MEMORY_LIMIT_MB": "1900",
             "DARTLAB_TEST_LOCKED": "1",
         },
-        # --timeout=300: 테스트 하나가 서면 job 전체(60분)가 아니라 그 테스트만 5분에
-        # 죽는다. 실측(2026-08-04): analysis 통합 테스트 하나가 러너 네트워크 지연으로
-        # 42분을 서서 job 이 타임아웃 취소됐다. test-full 정상 테스트 최장은 수십 초라
-        # 300초는 검출 약화 없는 상한이다.
-        cmd=(
-            "pytest tests/ -n 2 --dist loadfile --tb=short --timeout=300 "
-            "-m 'not requires_data and not heavy and not realData and not freshInstall' "
-            "--ignore=tests/_attempts "
-            "--ignore=tests/_fixtures/test_analysis_real.py "
-            "--ignore=tests/_fixtures/test_credit_real.py "
-            "--ignore=tests/_fixtures/test_story_real.py "
-            "--ignore=tests/realData "
-            "{cov_flags} --benchmark-disable"
-        ),
+        cmd="python -X utf8 tests/run.py impacted-pytest --python {python}",
         timeout_minutes=60,
     ),
     "fixture-integration": Gate(
@@ -478,6 +466,19 @@ GATES: dict[str, Gate] = {
         timeout_minutes=30,
     ),
     # ─ Tier 3 — Nightly ───────────────────────────────────────────────────
+    "test-full-nightly": Gate(
+        name="test-full-nightly",
+        tier="nightly",
+        deps=(*PYTEST_PARALLEL, *DEV_SCHEMA_SNAPSHOT, *MCP_PIN, "networkx", "pytest-timeout"),
+        install_pkg="non-editable",
+        env={
+            "DARTLAB_DATA_DIR": "${{ github.workspace }}/tests/fixtures",
+            "PYTEST_MEMORY_LIMIT_MB": "1900",
+            "DARTLAB_TEST_LOCKED": "1",
+        },
+        cmd="python -X utf8 tests/run.py impacted-pytest --python 3.12 --force-full",
+        timeout_minutes=60,
+    ),
     "guard-full-census": Gate(
         name="guard-full-census",
         tier="nightly",
@@ -697,14 +698,8 @@ def buildShellCommand(gate: Gate, mp: dict[str, str]) -> str:
     # 4. main cmd — placeholder 치환
     cmd = gate.cmd
     if gate.matrix_param == "python":
-        # test-full 의 cov_flags 분기 — 3.12 만 cov 활성
         py = mp.get("python", "3.12")
-        cov_flags = (
-            "--cov=dartlab --cov-report=term-missing --cov-report=html --cov-report=xml --cov-fail-under=40"
-            if py == "3.12"
-            else "--no-cov"
-        )
-        cmd = cmd.format(cov_flags=cov_flags)
+        cmd = cmd.format(python=py)
     elif gate.matrix_param == "test":
         cmd = cmd.format(test_file=mp.get("test", REALDATA_SHARDS[0]))
     # os 는 cmd 자체 변형 없음 (runner 만 다름)
@@ -773,6 +768,96 @@ def runGate(name: str, *, dry_run: bool, mp: dict[str, str]) -> int:
     return proc.returncode
 
 
+def _changedFilesForImpact(base: str) -> list[str] | None:
+    """base부터 HEAD까지의 변경 파일을 반환하고, 기준이 불명확하면 None을 반환한다."""
+    base = base.strip()
+    if not base or set(base) == {"0"}:
+        return None
+    valid = subprocess.run(
+        ["git", "rev-parse", "--verify", f"{base}^{{commit}}"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if valid.returncode != 0:
+        return None
+    diff = subprocess.run(
+        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if diff.returncode != 0:
+        return None
+    return [line.strip() for line in diff.stdout.splitlines() if line.strip()]
+
+
+def runImpactedPytest(*, pythonVersion: str, base: str | None, forceFull: bool) -> int:
+    """Guard Index 역방향 closure로 push 테스트를 고르고 pytest를 실행한다."""
+    changedFiles = None if forceFull else _changedFilesForImpact(base or os.environ.get("DARTLAB_TEST_BASE", ""))
+    if changedFiles is None:
+        plan = {
+            "mode": "full",
+            "targets": ["tests/"],
+            "changedFiles": [],
+            "changedModules": [],
+            "impactedModules": [],
+            "reason": "forcedOrUnknownBase",
+        }
+    else:
+        auditRoot = REPO_ROOT / "tests" / "audit"
+        sys.path.insert(0, str(auditRoot))
+        from guard.indexer import selectImpactedTestTargets
+
+        plan = selectImpactedTestTargets(REPO_ROOT, changedFiles)
+    (REPO_ROOT / "impact-test-plan.json").write_text(
+        json.dumps(plan, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print("[impacted-pytest] " + json.dumps(plan, ensure_ascii=False, sort_keys=True))
+    if plan["mode"] == "skip":
+        print("[impacted-pytest] 실행할 Python 테스트가 없다")
+        return 0
+
+    args = [
+        sys.executable,
+        "-X",
+        "utf8",
+        "-m",
+        "pytest",
+        *plan["targets"],
+        "-n",
+        "2",
+        "--dist",
+        "loadfile",
+        "--tb=short",
+        "--timeout=300",
+        "-m",
+        "not requires_data and not heavy and not realData and not freshInstall",
+        "--ignore=tests/_attempts",
+        "--ignore=tests/_fixtures/test_analysis_real.py",
+        "--ignore=tests/_fixtures/test_credit_real.py",
+        "--ignore=tests/_fixtures/test_story_real.py",
+        "--ignore=tests/realData",
+        "--benchmark-disable",
+    ]
+    if plan["mode"] == "full" and pythonVersion == "3.12":
+        args.extend(
+            [
+                "--cov=dartlab",
+                "--cov-report=term-missing",
+                "--cov-report=html",
+                "--cov-report=xml",
+                "--cov-fail-under=40",
+            ]
+        )
+    else:
+        args.append("--no-cov")
+    return subprocess.run(args, cwd=REPO_ROOT, check=False).returncode
+
+
 def runTier(tier: Tier, *, blocking_only: bool, dry_run: bool) -> int:
     """tier 의 게이트들을 순차 실행. matrix-driven 게이트는 첫 항목만 (로컬 검증용)."""
     gates = [g for g in GATES.values() if g.tier == tier]
@@ -824,8 +909,8 @@ def cmdAuditSelf() -> int:
     for gate in GATES.values():
         if not gate.cmd:
             errors.append(f"{gate.name}: cmd 비어있음")
-        if gate.matrix_param == "python" and "{cov_flags}" not in gate.cmd:
-            errors.append(f"{gate.name}: matrix_param=python 인데 {{cov_flags}} placeholder 없음")
+        if gate.matrix_param == "python" and "{python}" not in gate.cmd:
+            errors.append(f"{gate.name}: matrix_param=python 인데 {{python}} placeholder 없음")
         if gate.matrix_param == "test" and "{test_file}" not in gate.cmd:
             errors.append(f"{gate.name}: matrix_param=test 인데 {{test_file}} placeholder 없음")
         if gate.tier not in ("fast", "full", "nightly"):
@@ -865,7 +950,7 @@ def renderGatesBlock() -> str:
     nightly = [g for g in GATES.values() if g.tier == "nightly"]
     fastBlocking = sum(1 for g in fast if g.blocking)
     lines = [
-        f"**합계 {len(GATES)} 게이트 — fast {len(fast)} · full {len(full)} · nightly {len(nightly)}. "
+        f"**합계 {len(GATES)} 게이트: fast {len(fast)} · full {len(full)} · nightly {len(nightly)}. "
         f"push 전 `preflight` 차단 게이트(fast·blocking) {fastBlocking}.**",
         "",
         "| 게이트 | tier | 차단 | matrix | timeout |",
@@ -873,7 +958,7 @@ def renderGatesBlock() -> str:
     ]
     for g in GATES.values():
         lines.append(
-            f"| `{g.name}` | {g.tier} | {'✅' if g.blocking else '—'} "
+            f"| `{g.name}` | {g.tier} | {'✅' if g.blocking else '-'} "
             f"| {g.matrix_param or '-'} | {g.timeout_minutes}m |"
         )
     return "\n".join(lines)
@@ -944,6 +1029,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("audit-self", help="GATES 무결성 점검")
     p_docs = sub.add_parser("docs", help="사람용 문서 게이트 표 동기화/검사")
     p_docs.add_argument("--write", action="store_true", help="문서에 렌더 블록 덮어쓰기 (없으면 검사만)")
+    p_impact = sub.add_parser("impacted-pytest", help="변경 영향 pytest target 실행")
+    p_impact.add_argument("--python", default="3.12", help="coverage 정책용 Python 버전")
+    p_impact.add_argument("--base", default=None, help="비교할 git commit")
+    p_impact.add_argument("--force-full", action="store_true", help="영향 선택 없이 전수 실행")
 
     args = parser.parse_args(argv)
 
@@ -963,6 +1052,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmdAuditSelf()
     if args.command == "docs":
         return cmdDocs(write=args.write)
+    if args.command == "impacted-pytest":
+        return runImpactedPytest(pythonVersion=args.python, base=args.base, forceFull=args.force_full)
     return 2
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import httpx
 import polars as pl
 import pytest
 
@@ -166,3 +167,66 @@ def test_fetchGovBydd_requires_totalCount(monkeypatch: pytest.MonkeyPatch) -> No
 
     with pytest.raises(ValueError, match="totalCount"):
         govApi.fetchGovBydd("20260101", apiKey="key")
+
+
+class _SequenceClient:
+    def __init__(self, results):
+        self.results = iter(results)
+        self.calls = 0
+
+    def get(self, *_args, **_kwargs):
+        self.calls += 1
+        result = next(self.results)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+
+def _response(status: int, payload: dict | None = None, headers: dict | None = None) -> httpx.Response:
+    return httpx.Response(
+        status,
+        json=payload or {},
+        headers=headers,
+        request=httpx.Request("GET", "https://apis.data.go.kr/example"),
+    )
+
+
+def test_get_retries_connect_timeout_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.gov import govApi
+
+    client = _SequenceClient(
+        [
+            httpx.ConnectTimeout("first"),
+            httpx.ConnectTimeout("second"),
+            _response(200, {"ok": True}),
+        ]
+    )
+    waits: list[float] = []
+    monkeypatch.setattr(govApi.time, "sleep", waits.append)
+    monkeypatch.setenv("DARTLAB_GOV_RETRY_ATTEMPTS", "3")
+
+    assert govApi._get({}, apiKey="key", client=client) == {"ok": True}
+    assert client.calls == 3
+    assert waits == [2.0, 5.0]
+
+
+def test_get_does_not_retry_fatal_400(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.gov import govApi
+
+    client = _SequenceClient([_response(400)])
+    monkeypatch.setattr(govApi.time, "sleep", lambda _wait: pytest.fail("400은 재시도하면 안 됩니다"))
+
+    with pytest.raises(httpx.HTTPStatusError):
+        govApi._get({}, apiKey="key", client=client)
+    assert client.calls == 1
+
+
+def test_get_honors_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
+    from dartlab.gather.gov import govApi
+
+    client = _SequenceClient([_response(429, headers={"Retry-After": "7"}), _response(200, {"ok": True})])
+    waits: list[float] = []
+    monkeypatch.setattr(govApi.time, "sleep", waits.append)
+
+    assert govApi._get({}, apiKey="key", client=client) == {"ok": True}
+    assert waits == [7.0]

@@ -8,10 +8,12 @@ write a new manifest. This script follows the current HF ``manifest.json``
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
@@ -44,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
         previousManifestPath=Path(args.previous_manifest) if args.previous_manifest else None,
         optionalFiles=args.optional_file,
     )
-    print(json.dumps({"valid": report["valid"], "errors": report["errors"], "pulled": report["pulled"]}))
+    print(json.dumps(report))
     return 0 if report["valid"] else 1
 
 
@@ -62,53 +64,80 @@ def pullCurrentIndex(
 
     tier = (tier or "full").strip()
     target = outDir or (_contentIndexDir() if tier == "full" else _contentIndexDir(tier))
-    target.mkdir(parents=True, exist_ok=True)
+    target.parent.mkdir(parents=True, exist_ok=True)
     previousManifestPath = previousManifestPath or (target / "previous_manifest.json")
     repoPrefix = contentIndexRepoPrefix(tier=tier)
     download = _downloadHook(repoId=repoId, remoteRoot=remoteRoot)
     errors: list[str] = []
     pulled: list[str] = []
+    requiredFiles: list[str] = []
+    fileSources: dict[str, str] = {}
+    verifiedHashes: list[str] = []
 
-    try:
-        manifestSrc = download(f"{repoPrefix}/manifest.json")
-        manifest = json.loads(manifestSrc.read_text(encoding="utf-8"))
-    except Exception as exc:
-        return {
-            "valid": False,
-            "errors": [f"manifest:{type(exc).__name__}"],
-            "pulled": [],
-            "outDir": str(target),
-            "tier": tier,
-        }
-
-    manifestTarget = target / "manifest.json"
-    _copyFile(manifestSrc, manifestTarget)
-    _copyFile(manifestSrc, previousManifestPath)
-    pulled.extend(["manifest.json", previousManifestPath.name])
-
-    requiredFiles = _requiredFiles(manifest)
-    fileSources = _fileSources(manifest)
-    for rel in requiredFiles:
-        if rel == "manifest.json":
-            continue
-        repoPath = _repoPathFor(rel, repoPrefix=repoPrefix, fileSources=fileSources)
+    # Regression for #107. 원격 manifest를 target에 먼저 쓰면 뒤이은 delta 다운로드
+    # 실패 시 새 manifest와 옛 세그먼트가 섞인다. 같은 파일시스템 임시 디렉터리에
+    # 전부 받고 hash까지 검증한 뒤 세그먼트를 옮기고 manifest를 마지막에 활성화한다.
+    with tempfile.TemporaryDirectory(prefix=f".{target.name}-pull-", dir=target.parent) as tempDir:
+        staged = Path(tempDir)
         try:
-            src = download(repoPath)
-            _copyFile(src, target / rel)
-            pulled.append(rel)
+            manifestSrc = download(f"{repoPrefix}/manifest.json")
+            manifest = json.loads(manifestSrc.read_text(encoding="utf-8"))
+            _copyFile(manifestSrc, staged / "manifest.json")
         except Exception as exc:
-            errors.append(f"required:{rel}:{type(exc).__name__}")
+            return {
+                "valid": False,
+                "errors": [f"manifest:{type(exc).__name__}"],
+                "pulled": [],
+                "outDir": str(target),
+                "tier": tier,
+                "activationMode": "stagedManifestLast",
+            }
 
-    for rel in optionalFiles or []:
-        if not rel or rel in requiredFiles:
-            continue
-        repoPath = _repoPathFor(rel, repoPrefix=repoPrefix, fileSources=fileSources)
-        try:
-            src = download(repoPath)
-            _copyFile(src, target / rel)
-            pulled.append(rel)
-        except Exception:
-            continue
+        requiredFiles = _requiredFiles(manifest)
+        fileSources = _fileSources(manifest)
+        errors.extend(_manifestFileSetErrors(manifest, requiredFiles, fileSources))
+        hashes = manifest.get("fileHashes") if isinstance(manifest.get("fileHashes"), dict) else {}
+
+        for rel in requiredFiles:
+            if rel == "manifest.json":
+                continue
+            repoPath = _repoPathFor(rel, repoPrefix=repoPrefix, fileSources=fileSources)
+            try:
+                src = download(repoPath)
+                stagedPath = staged / rel
+                _copyFile(src, stagedPath)
+                expectedHash = str(hashes.get(rel) or "")
+                if expectedHash:
+                    if _sha256File(stagedPath) != expectedHash:
+                        raise ValueError("hashMismatch")
+                    verifiedHashes.append(rel)
+                pulled.append(rel)
+            except Exception as exc:
+                errors.append(f"required:{rel}:{type(exc).__name__}")
+
+        pulledOptional: list[str] = []
+        for rel in optionalFiles or []:
+            if not rel or rel in requiredFiles:
+                continue
+            repoPath = _repoPathFor(rel, repoPrefix=repoPrefix, fileSources=fileSources)
+            try:
+                src = download(repoPath)
+                _copyFile(src, staged / rel)
+                pulled.append(rel)
+                pulledOptional.append(rel)
+            except Exception:
+                continue
+
+        if not errors:
+            _activateStagedIndex(
+                target=target,
+                staged=staged,
+                requiredFiles=requiredFiles,
+                optionalFiles=optionalFiles or [],
+                pulledOptional=pulledOptional,
+                previousManifestPath=previousManifestPath,
+            )
+            pulled.extend(["manifest.json", previousManifestPath.name])
 
     return {
         "valid": not errors,
@@ -119,6 +148,8 @@ def pullCurrentIndex(
         "repoPrefix": repoPrefix,
         "fileSourcesCount": len(fileSources),
         "requiredFiles": requiredFiles,
+        "verifiedHashes": sorted(verifiedHashes),
+        "activationMode": "stagedManifestLast",
     }
 
 
@@ -178,6 +209,70 @@ def _fileSources(manifest: dict[str, Any]) -> dict[str, str]:
         for rel, repoPath in raw.items()
         if isinstance(rel, str) and isinstance(repoPath, str) and rel and repoPath
     }
+
+
+def _manifestFileSetErrors(
+    manifest: dict[str, Any],
+    requiredFiles: list[str],
+    fileSources: dict[str, str],
+) -> list[str]:
+    """manifest pointer가 완결된 세그먼트 집합을 가리키는지 fail-closed 검증한다."""
+    errors: list[str] = []
+    required = set(requiredFiles)
+    if bool(manifest.get("hasDelta")):
+        for rel in ("delta_info.json", "delta_meta.parquet"):
+            if rel not in required:
+                errors.append(f"manifest:missingDeltaRequired:{rel}")
+    if manifest.get("publishMode") == "manifestPointer":
+        missingSources = sorted(rel for rel in required if rel != "manifest.json" and rel not in fileSources)
+        errors.extend(f"manifest:missingFileSource:{rel}" for rel in missingSources)
+    return errors
+
+
+def _activateStagedIndex(
+    *,
+    target: Path,
+    staged: Path,
+    requiredFiles: list[str],
+    optionalFiles: list[str],
+    pulledOptional: list[str],
+    previousManifestPath: Path,
+) -> None:
+    """검증된 세그먼트를 옮긴 뒤 manifest를 마지막에 교체한다."""
+    target.mkdir(parents=True, exist_ok=True)
+    oldRequired: set[str] = set()
+    oldManifest = target / "manifest.json"
+    if oldManifest.exists():
+        try:
+            oldRequired = set(_requiredFiles(json.loads(oldManifest.read_text(encoding="utf-8"))))
+        except (OSError, json.JSONDecodeError):
+            oldRequired = set()
+
+    activeNames = {rel for rel in requiredFiles if rel != "manifest.json"}
+    for rel in sorted(activeNames | set(pulledOptional)):
+        destination = target / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(staged / rel, destination)
+
+    for rel in sorted((oldRequired - activeNames) - {"manifest.json"}):
+        stale = target / rel
+        if stale.is_file():
+            stale.unlink()
+    for rel in sorted(set(optionalFiles) - set(pulledOptional) - activeNames):
+        stale = target / rel
+        if stale.is_file():
+            stale.unlink()
+
+    os.replace(staged / "manifest.json", target / "manifest.json")
+    _copyFile(target / "manifest.json", previousManifestPath)
+
+
+def _sha256File(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _copyFile(src: Path, dst: Path) -> None:

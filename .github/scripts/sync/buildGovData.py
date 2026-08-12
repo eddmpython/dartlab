@@ -56,10 +56,22 @@ def _env(name: str) -> str:
 
 def _hfRead(pathInRepo: str) -> pl.DataFrame | None:
     """HF parquet 읽기 (없으면 None) — cold-cache 시 기존 이력 seed(축소 사고 방지)."""
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
+
+    from dartlab.core.hfRetry import retryHfCall
+
     try:
-        return pl.read_parquet(f"{_HF_BASE}/{pathInRepo}")
-    except Exception:
+        localPath = retryHfCall(
+            hf_hub_download,
+            repo_id=_REPO,
+            filename=pathInRepo,
+            repo_type="dataset",
+            token=_env("HF_TOKEN") or None,
+        )
+    except EntryNotFoundError:
         return None
+    return pl.read_parquet(localPath)
 
 
 def _deployFolder(localRoot: Path, pathInRepo: str, hfToken: str, msg: str) -> int:
@@ -70,8 +82,12 @@ def _deployFolder(localRoot: Path, pathInRepo: str, hfToken: str, msg: str) -> i
         return 0
     from huggingface_hub import HfApi, create_repo
 
-    create_repo(_REPO, token=hfToken, repo_type="dataset", exist_ok=True)
-    HfApi(token=hfToken).upload_folder(
+    from dartlab.core.hfRetry import retryHfCall
+
+    retryHfCall(create_repo, _REPO, token=hfToken, repo_type="dataset", exist_ok=True)
+    api = HfApi(token=hfToken)
+    retryHfCall(
+        api.upload_folder,
         folder_path=str(localRoot),
         path_in_repo=pathInRepo,
         repo_id=_REPO,
@@ -86,12 +102,24 @@ def _uploadFile(df: pl.DataFrame, pathInRepo: str, hfToken: str, msg: str) -> No
     """단일 parquet → HF 업로드 (온디맨드 캐시 채움용)."""
     from huggingface_hub import HfApi
 
+    from dartlab.core.hfRetry import retryHfCall
+
     buf = io.BytesIO()
     df.write_parquet(buf, compression="zstd")
     buf.seek(0)
-    HfApi(token=hfToken).upload_file(
-        path_or_fileobj=buf, path_in_repo=pathInRepo, repo_id=_REPO, repo_type="dataset", commit_message=msg
-    )
+    api = HfApi(token=hfToken)
+
+    def upload() -> None:
+        buf.seek(0)
+        api.upload_file(
+            path_or_fileobj=buf,
+            path_in_repo=pathInRepo,
+            repo_id=_REPO,
+            repo_type="dataset",
+            commit_message=msg,
+        )
+
+    retryHfCall(upload)
 
 
 # ─────────────────────────── 주가 (prices) ───────────────────────────

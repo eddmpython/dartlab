@@ -72,7 +72,7 @@ def test_matrixParamPlaceholderPresent():
     """matrix_param 설정된 게이트는 cmd 안에 placeholder 필수."""
     for gate in GATES.values():
         if gate.matrix_param == "python":
-            assert "{cov_flags}" in gate.cmd, f"{gate.name}: {{cov_flags}} 누락"
+            assert "{python}" in gate.cmd, f"{gate.name}: {{python}} 누락"
         elif gate.matrix_param == "test":
             assert "{test_file}" in gate.cmd, f"{gate.name}: {{test_file}} 누락"
 
@@ -151,8 +151,8 @@ def test_realdataShardsMatchNightlyMatrix():
 
 @pytest.mark.unit
 def test_totalGateCountFrozen():
-    """30 게이트 동결 — 의도 없는 추가/삭제 방지. 변경 시 본 테스트 함께 수정."""
-    assert len(GATES) == 30, f"게이트 수 변경: {len(GATES)} (의도된 변경이면 본 테스트도 수정)"
+    """31 게이트 동결. 의도 없는 추가와 삭제를 방지한다."""
+    assert len(GATES) == 31, f"게이트 수 변경: {len(GATES)} (의도된 변경이면 본 테스트도 수정)"
 
 
 @pytest.mark.unit
@@ -160,7 +160,7 @@ def test_tierDistributionFrozen():
     from collections import Counter
 
     c = Counter(g.tier for g in GATES.values())
-    assert dict(c) == {"fast": 17, "full": 6, "nightly": 7}, f"tier 분포 변경: {dict(c)}"
+    assert dict(c) == {"fast": 17, "full": 6, "nightly": 8}, f"tier 분포 변경: {dict(c)}"
 
 
 @pytest.mark.unit
@@ -308,10 +308,19 @@ def testFastGateExcludesHeavyAndExternalTestClasses():
     """fast unit 선택이 모듈 수준 unit에 겹친 heavy 테스트를 실행하지 않는다."""
     command = GATES["test-fast"].cmd
 
-    assert "unit and not requires_data" in command
+    assert "and not network" in command
+    assert "not requires_data" in command
     assert "and not heavy" in command
     assert "and not realData" in command
     assert "and not freshInstall" in command
+
+
+@pytest.mark.unit
+def testUnitTierEnforcesOfflineBeforeFixtureSetup() -> None:
+    """Regression for #105: unit tier에는 strict socket guard가 항상 켜져 있다."""
+    from dartlab.core.offlineGuard import isOfflineEnforced
+
+    assert isOfflineEnforced()
 
 
 @pytest.mark.unit

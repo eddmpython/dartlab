@@ -471,6 +471,10 @@ def _prepareFixtureData(tmp: tempfile.TemporaryDirectory[str]) -> Path:
         destination = dataRoot / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
+        # TTL cache fixture는 원본 commit 시각이 아니라 smoke 시작 시각부터 유효해야 한다.
+        # copy2가 보존한 오래된 mtime 때문에 KIND fixture를 stale로 보고 live API로
+        # 빠지던 회귀를 막는다.
+        destination.touch()
     _writeScanFixtures(dataRoot)
     return dataRoot
 

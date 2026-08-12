@@ -516,19 +516,140 @@ def isTypeCheckingGuard(test: ast.expr) -> bool:
 
 def reverseImportClosure(records: list[ModuleRecord], changedModules: set[str]) -> set[str]:
     """변경 module을 import하는 역방향 의존 closure."""
-    reverseGraph: dict[str, set[str]] = {}
-    moduleNames = {record.module for record in records}
-    for record in records:
-        for importName in record.importModules:
-            matched = {name for name in moduleNames if name == importName or name.startswith(importName + ".")}
-            for target in matched:
-                reverseGraph.setdefault(target, set()).add(record.module)
     seen = set(changedModules)
     stack = list(changedModules)
     while stack:
         current = stack.pop()
-        for parent in reverseGraph.get(current, set()):
-            if parent not in seen:
-                seen.add(parent)
-                stack.append(parent)
+        for record in records:
+            if record.module in seen:
+                continue
+            if any(_modulePathsOverlap(importName, current) for importName in record.importModules):
+                seen.add(record.module)
+                stack.append(record.module)
     return seen
+
+
+def selectImpactedTestTargets(
+    repoRoot: Path,
+    changedFiles: list[str],
+    *,
+    records: list[ModuleRecord] | None = None,
+) -> dict[str, Any]:
+    """변경 파일에서 push용 pytest target을 보수적으로 선택한다.
+
+    Regression for #103. src 변경은 Guard Index 역방향 closure와 테스트의 직접 import를
+    함께 사용한다. 공용 fixture, 실행기, 공개 root facade처럼 그래프가 충분히 설명하지
+    못하는 변경은 전수 실행으로 올리고, 동적·데이터 결합의 나머지는 nightly 전수가 맡는다.
+    """
+    normalized = sorted(
+        {normalizedPath.removeprefix("./") for item in changedFiles if (normalizedPath := item.replace("\\", "/"))}
+    )
+    fullTriggers = {
+        "pyproject.toml",
+        "uv.lock",
+        "tests/conftest.py",
+        "tests/run.py",
+        "src/dartlab/__init__.py",
+        "src/dartlab/_aiEntries.py",
+        "src/dartlab/_listingDispatch.py",
+    }
+    if any(path in fullTriggers or path.startswith("tests/fixtures/") for path in normalized):
+        return {
+            "mode": "full",
+            "targets": ["tests/"],
+            "changedFiles": normalized,
+            "changedModules": [],
+            "impactedModules": [],
+            "reason": "sharedContractChange",
+        }
+
+    targets: set[str] = set()
+    changedModules = {_sourceModuleForPath(path) for path in normalized}
+    changedModules.discard(None)
+    impactedModules: set[str] = set()
+    if changedModules:
+        indexRecords = records if records is not None else buildIndex(repoRoot)
+        impactedModules = reverseImportClosure(indexRecords, set(changedModules))
+        topPackages = {
+            module.split(".")[1]
+            for module in impactedModules
+            if module.startswith("dartlab.") and len(module.split(".")) > 1
+        }
+        for package in sorted(topPackages):
+            mirror = repoRoot / "tests" / package
+            if mirror.is_dir():
+                targets.add(mirror.relative_to(repoRoot).as_posix())
+        targets.update(_testFilesImportingModules(repoRoot, impactedModules))
+
+    for path in normalized:
+        candidate = repoRoot / path
+        if path.startswith("tests/") and path.endswith(".py") and candidate.is_file():
+            targets.add(path)
+        elif path.startswith(".github/scripts/search/"):
+            _addExistingTarget(repoRoot, targets, "tests/search")
+        elif path.startswith(".github/scripts/ops/"):
+            _addExistingTarget(repoRoot, targets, "tests/pipeline")
+        elif path.startswith(".github/scripts/sync/"):
+            for testDir in ("tests/sync", "tests/pipeline", "tests/gather"):
+                _addExistingTarget(repoRoot, targets, testDir)
+        elif path.startswith(".github/workflows/"):
+            _addExistingTarget(repoRoot, targets, "tests/pipeline")
+            if path.startswith(".github/workflows/ci-"):
+                _addExistingTarget(repoRoot, targets, "tests/audit/test_runEntrypoint.py")
+
+    if changedModules and not targets:
+        return {
+            "mode": "full",
+            "targets": ["tests/"],
+            "changedFiles": normalized,
+            "changedModules": sorted(changedModules),
+            "impactedModules": sorted(impactedModules),
+            "reason": "unmappedSourceChange",
+        }
+    return {
+        "mode": "selected" if targets else "skip",
+        "targets": sorted(targets),
+        "changedFiles": normalized,
+        "changedModules": sorted(changedModules),
+        "impactedModules": sorted(impactedModules),
+        "reason": "guardIndexReverseClosure" if targets else "noPythonTestImpact",
+    }
+
+
+def _sourceModuleForPath(path: str) -> str | None:
+    prefix = "src/dartlab/"
+    if not path.startswith(prefix) or not path.endswith(".py"):
+        return None
+    rel = path[len("src/") : -3]
+    parts = rel.split("/")
+    if parts[-1] == "__init__":
+        parts = parts[:-1]
+    return ".".join(parts)
+
+
+def _modulePathsOverlap(left: str, right: str) -> bool:
+    """package import와 구체 module 변경을 양방향 prefix로 연결한다."""
+    if DYNAMIC_UNKNOWN in {left, right}:
+        return False
+    return left == right or left.startswith(right + ".") or right.startswith(left + ".")
+
+
+def _testFilesImportingModules(repoRoot: Path, impactedModules: set[str]) -> set[str]:
+    targets: set[str] = set()
+    testsRoot = repoRoot / "tests"
+    for path in testsRoot.rglob("*.py"):
+        if any(part in {"__pycache__", "_attempts", "realData"} for part in path.parts):
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (OSError, UnicodeDecodeError, SyntaxError):
+            continue
+        imports = {item.module for item in extractImports(tree) if item.module != "dartlab"}
+        if any(_modulePathsOverlap(importName, impacted) for importName in imports for impacted in impactedModules):
+            targets.add(path.relative_to(repoRoot).as_posix())
+    return targets
+
+
+def _addExistingTarget(repoRoot: Path, targets: set[str], relPath: str) -> None:
+    if (repoRoot / relPath).exists():
+        targets.add(relPath)

@@ -47,6 +47,8 @@ jobs:
             artifact_path: product-smoke-wheel-release.json
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: ${{ matrix.gate == 'test-full' && 0 || 1 }}
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python || '3.12' }}
@@ -54,6 +56,7 @@ jobs:
         shell: bash
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DARTLAB_TEST_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: |
           python -X utf8 tests/run.py gate ${{ matrix.gate }} \
             ${{ matrix.python && format('--python {0}', matrix.python) || '' }}
@@ -64,6 +67,13 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload impacted test plan
+        if: ${{ always() && matrix.gate == 'test-full' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: impacted-test-plan-${{ matrix.python }}
+          path: impact-test-plan.json
+          if-no-files-found: error
       - name: Upload artifact
         if: ${{ always() && matrix.artifact_name }}
         uses: actions/upload-artifact@v7

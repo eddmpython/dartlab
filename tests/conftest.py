@@ -138,6 +138,29 @@ def pytest_collection_modifyitems(items):
             item.add_marker(flaky_mark)
 
 
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item):
+    """unit 테스트는 fixture setup부터 외부 네트워크를 fail-fast 차단한다.
+
+    Regression for #105. mock 기반 unit 테스트가 로컬 HF cache 유무에 따라 실네트워크로
+    빠지면 fast gate가 외부 서비스 가용성에 종속된다. 명시적인 ``network`` 테스트만
+    예외로 두며, test-fast 자체도 해당 marker를 선택하지 않는다.
+    """
+    from dartlab.core.offlineGuard import enforceOffline, releaseOffline
+
+    releaseOffline()
+    if item.get_closest_marker("unit") and not item.get_closest_marker("network"):
+        enforceOffline(strict=True)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_teardown(item, nextitem):
+    """다음 테스트로 unit offline 상태가 새지 않게 원래 socket 함수를 복원한다."""
+    from dartlab.core.offlineGuard import releaseOffline
+
+    releaseOffline()
+
+
 @pytest.fixture(autouse=True)
 def _isolated_dartlab_home(tmp_path, monkeypatch):
     """shared AI profile/secret store를 테스트별 임시 경로로 격리."""

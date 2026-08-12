@@ -178,6 +178,20 @@ def test_classify_failure_reads_failed_log_before_summary(monkeypatch):
     assert calls == [["run", "view", "123", "--log-failed"]]
 
 
+def test_classify_timeout_wins_over_unrelated_429(monkeypatch):
+    mod = _loadMonitor()
+    logText = "dependency build 429 records\nTraceback\nhttpx.ConnectTimeout: connection timed out"
+    monkeypatch.setattr(mod, "_gh", lambda *a, **k: logText)
+    assert mod._classifyFailure(123) == "timeout/cancelled"
+
+
+def test_classify_uses_last_specific_failure_signal(monkeypatch):
+    mod = _loadMonitor()
+    logText = "earlier timeout while installing\nHfHubHTTPError: 429 Client Error"
+    monkeypatch.setattr(mod, "_gh", lambda *a, **k: logText)
+    assert mod._classifyFailure(123) == "HF rate-limit (429)"
+
+
 def test_classify_failure_window_preserves_consecutive_causes(monkeypatch):
     mod = _loadMonitor()
     causes = {3: "메모리/디스크 (runner)", 2: "timeout/cancelled"}

@@ -27,6 +27,8 @@ from guard.indexer import (  # noqa: E402
     buildIndex,
     extractImports,
     indexFile,
+    reverseImportClosure,
+    selectImpactedTestTargets,
 )
 from guard.rules import checkCoreImportBoundary  # noqa: E402
 
@@ -161,6 +163,57 @@ def testGuardIndexFailsClosedOnMalformedSource(tmp_path: Path) -> None:
         assert "SyntaxError" in str(exc)
     else:
         raise AssertionError("malformed source가 Guard Index를 통과했습니다")
+
+
+def testGuardIndexReverseClosureKeepsKnownTransitiveChain() -> None:
+    """Regression for #103: core 변경이 analysis를 거쳐 story까지 전파된다."""
+    records = [
+        ModuleRecord("src/dartlab/core/base.py", "dartlab.core.base", "core", 0.0, ()),
+        ModuleRecord(
+            "src/dartlab/analysis/calc.py",
+            "dartlab.analysis.calc",
+            "analysis",
+            2.0,
+            (ImportRecord("dartlab.core.base", "core", 1, True, "static", EAGER_PHASE),),
+        ),
+        ModuleRecord(
+            "src/dartlab/story/report.py",
+            "dartlab.story.report",
+            "story",
+            3.0,
+            (ImportRecord("dartlab.analysis.calc", "analysis", 1, True, "static", EAGER_PHASE),),
+        ),
+    ]
+
+    assert reverseImportClosure(records, {"dartlab.core.base"}) == {
+        "dartlab.core.base",
+        "dartlab.analysis.calc",
+        "dartlab.story.report",
+    }
+
+
+def testGuardIndexTestSelectionUsesMirrorDirectoriesAndFailsClosed(tmp_path: Path) -> None:
+    """Regression for #103: 영향 package mirror를 고르고 공용 계약 변경은 전수로 올린다."""
+    (tmp_path / "tests/analysis").mkdir(parents=True)
+    (tmp_path / "tests/story").mkdir(parents=True)
+    records = [
+        ModuleRecord("src/dartlab/analysis/calc.py", "dartlab.analysis.calc", "analysis", 2.0, ()),
+        ModuleRecord(
+            "src/dartlab/story/report.py",
+            "dartlab.story.report",
+            "story",
+            3.0,
+            (ImportRecord("dartlab.analysis.calc", "analysis", 1, True, "static", EAGER_PHASE),),
+        ),
+    ]
+
+    selected = selectImpactedTestTargets(tmp_path, ["src/dartlab/analysis/calc.py"], records=records)
+    assert selected["mode"] == "selected"
+    assert selected["targets"] == ["tests/analysis", "tests/story"]
+
+    full = selectImpactedTestTargets(tmp_path, ["tests/conftest.py"], records=records)
+    assert full["mode"] == "full"
+    assert full["targets"] == ["tests/"]
 
 
 def testActualCoreHasNoConcreteUpperImport() -> None:

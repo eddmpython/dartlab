@@ -188,25 +188,25 @@ $env:DARTLAB_TEST_LOCKED="1"; uv run python -X utf8 -m pytest tests/cli/test_out
 `tests/run.py` 의 `GATES` dict 가 SSOT. 아래 블록은 `uv run python -X utf8 tests/run.py docs --write` 가 렌더하며, 어긋나면 [tests/audit/test_runEntrypoint.py](audit/test_runEntrypoint.py)`::test_docsGatesBlockInSync` 가 CI Fast 에서 차단한다 (27↔34 류 드리프트 영구 0).
 
 <!-- gates:auto:start — `tests/run.py docs --write` 가 생성. 손으로 편집 금지 -->
-**합계 30 게이트 — fast 17 · full 6 · nightly 7. push 전 `preflight` 차단 게이트(fast·blocking) 14.**
+**합계 31 게이트: fast 17 · full 6 · nightly 8. push 전 `preflight` 차단 게이트(fast·blocking) 14.**
 
 | 게이트 | tier | 차단 | matrix | timeout |
 |---|---|---|---|---|
 | `format` | fast | ✅ | - | 20m |
 | `lint` | fast | ✅ | - | 20m |
 | `architecture-l0-l15` | fast | ✅ | - | 20m |
-| `typecheck` | fast | — | - | 20m |
+| `typecheck` | fast | - | - | 20m |
 | `smoke` | fast | ✅ | - | 20m |
 | `test-fast` | fast | ✅ | - | 60m |
 | `wheel-smoke` | fast | ✅ | - | 20m |
 | `quality-gate` | fast | ✅ | - | 20m |
-| `security` | fast | — | - | 20m |
-| `deps-check` | fast | — | - | 20m |
+| `security` | fast | - | - | 20m |
+| `deps-check` | fast | - | - | 20m |
 | `notebooks` | fast | ✅ | - | 20m |
 | `snapshot-regression` | fast | ✅ | - | 5m |
 | `schema-drift` | fast | ✅ | - | 5m |
 | `eval-rule` | fast | ✅ | - | 5m |
-| `eval-full` | nightly | — | - | 30m |
+| `eval-full` | nightly | - | - | 30m |
 | `mutation-smoke` | fast | ✅ | - | 5m |
 | `test-coverage-gate` | fast | ✅ | - | 5m |
 | `test-full` | full | ✅ | python | 60m |
@@ -215,13 +215,14 @@ $env:DARTLAB_TEST_LOCKED="1"; uv run python -X utf8 -m pytest tests/cli/test_out
 | `product-smoke-wheel` | full | ✅ | - | 30m |
 | `realdata-plan` | full | ✅ | - | 20m |
 | `realdata-suite` | full | ✅ | test | 30m |
+| `test-full-nightly` | nightly | ✅ | - | 60m |
 | `guard-full-census` | nightly | ✅ | - | 15m |
 | `realdata-suite-full` | nightly | ✅ | test | 30m |
 | `external-venv-smoke` | nightly | ✅ | - | 45m |
 | `freshInstall` | nightly | ✅ | - | 30m |
-| `mutation-testing` | nightly | — | - | 90m |
+| `mutation-testing` | nightly | - | - | 90m |
 | `dart-panel-only` | fast | ✅ | - | 5m |
-| `benchmark-weekly` | nightly | — | - | 30m |
+| `benchmark-weekly` | nightly | - | - | 30m |
 <!-- gates:auto:end -->
 
 **차단(✅) = PR 머지 fail gate, `차단=—` = blocking=False (리포트만, push 가능)**. baseline 회귀 (Guard Index `strict --scope l0-l15`) 는 본 표와 별개로 차단.

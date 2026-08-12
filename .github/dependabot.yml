@@ -19,6 +19,9 @@ updates:
     open-pull-requests-limit: 2
     groups:
       python-runtime:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "polars*"
           - "pyarrow"
@@ -32,6 +35,9 @@ updates:
           - "pydantic*"
           - "plotly"
       python-test-tooling:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "pytest*"
           - "hypothesis"
@@ -40,6 +46,9 @@ updates:
           - "mutmut"
           - "ruff"
       python-ai-tooling:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "openai"
           - "anthropic"

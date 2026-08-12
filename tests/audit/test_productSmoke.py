@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from types import SimpleNamespace
 
 import pytest
@@ -26,6 +27,7 @@ def testFixtureModeBuildsCleanCheckoutDataAndEnablesStrictOffline(monkeypatch: p
     assert (dataRoot / "dart/scan/sharesOutstanding.parquet").is_file()
     assert (dataRoot / "dart/scan/valuation.parquet").is_file()
     assert (dataRoot / "dart/panel/005930.parquet").is_file()
+    assert (dataRoot / "kindList/corpList.parquet").stat().st_mtime >= time.time() - 60
 
 
 def testEmptyModeKeepsColdStartNetworkPathVisible(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

@@ -47,13 +47,17 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: data/gov/indices
-          key: dartlab-gov-indices-${{ github.run_id }}
+          key: dartlab-gov-indices-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: dartlab-gov-indices-
 
       - name: Build gov index parquet + push to HF
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DARTLAB_GOV_RETRY_ATTEMPTS: "5"
+          DARTLAB_GOV_RETRY_MAX_SINGLE_WAIT_SECONDS: "60"
+          DARTLAB_HF_RETRY_ATTEMPTS: "5"
+          DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: "300"
         run: uv run python -X utf8 .github/scripts/sync/buildGovData.py --daily-index --lookback 4 ${{ github.event.inputs.basDt && format('--basDt {0}', github.event.inputs.basDt) || '' }}
 
       - name: Save gov index parquet cache
@@ -61,7 +65,7 @@ jobs:
         if: always()
         with:
           path: data/gov/indices
-          key: dartlab-gov-indices-${{ github.run_id }}
+          key: dartlab-gov-indices-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Summary
         if: always()

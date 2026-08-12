@@ -68,8 +68,15 @@ STALE_AFTER_HOURS: dict[str, float] = {
 # 실패 원인 분류 시그니처 (gh run view 출력 = 잡 목록 + ANNOTATIONS, 소문자 매칭).
 _SIG = {
     "메모리/디스크 (runner)": ("lost communication", "out of memory", "killed", "no space left", "oom"),
-    "HF rate-limit (429)": ("429", "too many requests", "rate limit", "retry this action"),
-    "timeout/cancelled": ("timed out", "timeout", "cancel"),
+    "timeout/cancelled": ("timed out", "timeout", "connecttimeout", "connect timeout", "cancel"),
+    "HF rate-limit (429)": (
+        "http 429",
+        "status code: 429",
+        "429 client error",
+        "too many requests",
+        "rate limit",
+        "retry this action",
+    ),
 }
 
 
@@ -127,9 +134,19 @@ def _classifyFailure(runId: int) -> str:
         out = _gh(["run", "view", str(runId)], check=False).lower()
     if not out:
         return "unknown"
-    for label, sigs in _SIG.items():
-        if any(s in out for s in sigs):
-            return label
+    return _classifyLog(out)
+
+
+def _classifyLog(out: str) -> str:
+    """실패 로그에서 가장 뒤에 나타난 구체 원인 시그니처를 고른다."""
+    matches = [
+        (out.rfind(signature), label)
+        for label, signatures in _SIG.items()
+        for signature in signatures
+        if signature in out
+    ]
+    if matches:
+        return max(matches, key=lambda item: item[0])[1]
     return "code/기타"
 
 
