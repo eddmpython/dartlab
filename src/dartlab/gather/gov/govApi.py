@@ -221,17 +221,20 @@ def _retryWait(exc: Exception, attempt: int) -> float:
     if retryAfter:
         try:
             wait = max(0.0, float(retryAfter))
-        except ValueError:
+        except ValueError as exc:
+            log.warning("gov Retry-After 초 파싱 실패: %s", exc)
             try:
                 parsed = parsedate_to_datetime(retryAfter)
                 wait = max(0.0, (parsed - datetime.now(timezone.utc)).total_seconds())
-            except (TypeError, ValueError, OverflowError):
+            except (TypeError, ValueError, OverflowError) as dateExc:
+                log.warning("gov Retry-After 날짜 파싱 실패: %s", dateExc)
                 wait = None
     if wait is None:
         wait = float(_GOV_BACKOFF_SECONDS[min(attempt, len(_GOV_BACKOFF_SECONDS) - 1)])
     try:
         maximum = max(0.0, float(os.environ.get("DARTLAB_GOV_RETRY_MAX_SINGLE_WAIT_SECONDS", "60")))
-    except ValueError:
+    except ValueError as exc:
+        log.warning("DARTLAB_GOV_RETRY_MAX_SINGLE_WAIT_SECONDS 파싱 실패: %s", exc)
         maximum = 60.0
     return min(wait, maximum)
 
