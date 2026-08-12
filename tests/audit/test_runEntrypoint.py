@@ -122,6 +122,17 @@ def test_gatesDictMatchesYamlMatrix(tier, filename):
 
 
 @pytest.mark.unit
+def testPublishWorkflowUsesCanonicalCiFullGate():
+    """릴리즈가 정식 CI 진입점을 우회해 tests/ 전수를 직접 실행하지 않는다."""
+    text = (WORKFLOWS / "publish.yml").read_text(encoding="utf-8")
+
+    assert "uses: ./.github/workflows/ci-full.yml" in text
+    assert not re.search(r"(?m)^\s*run:\s*(?:python\s+-\S+\s+-m\s+)?pytest\s+tests/", text)
+    assert re.search(r"(?ms)^  wheel-smoke:\s*.*?^    needs: ci-full\s*$", text)
+    assert re.search(r"(?ms)^  build:\s*.*?^    needs: \[ci-full, wheel-smoke\]\s*$", text)
+
+
+@pytest.mark.unit
 def test_realdataShardsMatchNightlyMatrix():
     """REALDATA_SHARDS 상수 ↔ ci-nightly.yml realdata-suite-full matrix 일치."""
     yaml_path = WORKFLOWS / "ci-nightly.yml"
