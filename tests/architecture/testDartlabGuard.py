@@ -192,6 +192,66 @@ def testGuardIndexReverseClosureKeepsKnownTransitiveChain() -> None:
     }
 
 
+def testGuardIndexReverseClosureStopsAtUnchangedTopPackageFacade() -> None:
+    """Regression for #103: 하위 provider 변경이 공개 facade를 통해 전수로 팽창하지 않는다."""
+
+    records = [
+        ModuleRecord("src/dartlab/gather/gov/govApi.py", "dartlab.gather.gov.govApi", "gather", 1.0, ()),
+        ModuleRecord(
+            "src/dartlab/gather/gov/__init__.py",
+            "dartlab.gather.gov",
+            "gather",
+            1.0,
+            (ImportRecord("dartlab.gather.gov.govApi", "gather", 1, True, "static", EAGER_PHASE),),
+        ),
+        ModuleRecord(
+            "src/dartlab/gather/__init__.py",
+            "dartlab.gather",
+            "gather",
+            1.0,
+            (ImportRecord("dartlab.gather.gov", "gather", 1, True, "static", EAGER_PHASE),),
+        ),
+        ModuleRecord(
+            "src/dartlab/analysis/unrelated.py",
+            "dartlab.analysis.unrelated",
+            "analysis",
+            2.0,
+            (ImportRecord("dartlab.gather", "gather", 1, True, "static", EAGER_PHASE),),
+        ),
+    ]
+
+    assert reverseImportClosure(records, {"dartlab.gather.gov.govApi"}) == {
+        "dartlab.gather.gov.govApi",
+        "dartlab.gather.gov",
+        "dartlab.gather",
+    }
+
+
+def testGuardIndexSelectionUsesDeepestMirrorBelowFacade(tmp_path: Path) -> None:
+    """Regression for #103: gov 변경은 tests/gather 전체가 아니라 gov mirror만 고른다."""
+    (tmp_path / "tests/gather/gov").mkdir(parents=True)
+    records = [
+        ModuleRecord("src/dartlab/gather/gov/govApi.py", "dartlab.gather.gov.govApi", "gather", 1.0, ()),
+        ModuleRecord(
+            "src/dartlab/gather/gov/__init__.py",
+            "dartlab.gather.gov",
+            "gather",
+            1.0,
+            (ImportRecord("dartlab.gather.gov.govApi", "gather", 1, True, "static", EAGER_PHASE),),
+        ),
+        ModuleRecord(
+            "src/dartlab/gather/__init__.py",
+            "dartlab.gather",
+            "gather",
+            1.0,
+            (ImportRecord("dartlab.gather.gov", "gather", 1, True, "static", EAGER_PHASE),),
+        ),
+    ]
+
+    selected = selectImpactedTestTargets(tmp_path, ["src/dartlab/gather/gov/govApi.py"], records=records)
+    assert selected["targets"] == ["tests/gather/gov"]
+
+
 def testGuardIndexTestSelectionUsesMirrorDirectoriesAndFailsClosed(tmp_path: Path) -> None:
     """Regression for #103: 영향 package mirror를 고르고 공용 계약 변경은 전수로 올린다."""
     (tmp_path / "tests/analysis").mkdir(parents=True)

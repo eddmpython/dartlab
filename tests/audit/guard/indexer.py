@@ -520,6 +520,12 @@ def reverseImportClosure(records: list[ModuleRecord], changedModules: set[str]) 
     stack = list(changedModules)
     while stack:
         current = stack.pop()
+        # ``dartlab.gather`` 같은 최상위 package facade는 서로 무관한 하위 모듈을
+        # 한데 재수출한다. 하위 변경으로 facade까지 도달한 뒤 다시 모든 facade
+        # 소비자로 전파하면 단일 provider 변경도 전수 테스트가 된다. facade 자체가
+        # 변경된 경우에만 그 소비자까지 전파하고, 하위에서 올라온 경우는 경계로 둔다.
+        if current not in changedModules and _isTopPackageFacade(current):
+            continue
         for record in records:
             if record.module in seen:
                 continue
@@ -570,15 +576,10 @@ def selectImpactedTestTargets(
     if changedModules:
         indexRecords = records if records is not None else buildIndex(repoRoot)
         impactedModules = reverseImportClosure(indexRecords, set(changedModules))
-        topPackages = {
-            module.split(".")[1]
-            for module in impactedModules
-            if module.startswith("dartlab.") and len(module.split(".")) > 1
-        }
-        for package in sorted(topPackages):
-            mirror = repoRoot / "tests" / package
-            if mirror.is_dir():
-                targets.add(mirror.relative_to(repoRoot).as_posix())
+        for module in sorted(impactedModules):
+            if _isTopPackageFacade(module) and module not in changedModules:
+                continue
+            _addMirrorTarget(repoRoot, targets, module)
         targets.update(_testFilesImportingModules(repoRoot, impactedModules))
 
     for path in normalized:
@@ -606,9 +607,10 @@ def selectImpactedTestTargets(
             "impactedModules": sorted(impactedModules),
             "reason": "unmappedSourceChange",
         }
+    minimalTargets = _minimalTargets(targets)
     return {
         "mode": "selected" if targets else "skip",
-        "targets": sorted(targets),
+        "targets": minimalTargets,
         "changedFiles": normalized,
         "changedModules": sorted(changedModules),
         "impactedModules": sorted(impactedModules),
@@ -628,10 +630,20 @@ def _sourceModuleForPath(path: str) -> str | None:
 
 
 def _modulePathsOverlap(left: str, right: str) -> bool:
-    """package import와 구체 module 변경을 양방향 prefix로 연결한다."""
+    """import 경로 ``left``가 변경 module ``right``에 의존하는지 판정한다.
+
+    자식 module import는 부모 package 변경의 영향을 받지만, 부모 package import가
+    모든 자식 module에 의존하는 것은 아니다. 후자는 package ``__init__`` record의
+    실제 import edge로만 연결해야 공개 facade가 전체 그래프를 합치지 않는다.
+    """
     if DYNAMIC_UNKNOWN in {left, right}:
         return False
-    return left == right or left.startswith(right + ".") or right.startswith(left + ".")
+    return left == right or left.startswith(right + ".")
+
+
+def _isTopPackageFacade(module: str) -> bool:
+    parts = module.split(".")
+    return len(parts) == 2 and parts[0] == "dartlab"
 
 
 def _testFilesImportingModules(repoRoot: Path, impactedModules: set[str]) -> set[str]:
@@ -653,3 +665,27 @@ def _testFilesImportingModules(repoRoot: Path, impactedModules: set[str]) -> set
 def _addExistingTarget(repoRoot: Path, targets: set[str], relPath: str) -> None:
     if (repoRoot / relPath).exists():
         targets.add(relPath)
+
+
+def _addMirrorTarget(repoRoot: Path, targets: set[str], module: str) -> None:
+    """source module에 대응하는 가장 구체적인 기존 테스트 디렉터리를 추가한다."""
+    parts = module.split(".")
+    if not parts or parts[0] != "dartlab":
+        return
+    relativeParts = parts[1:]
+    while relativeParts:
+        candidate = repoRoot.joinpath("tests", *relativeParts)
+        if candidate.is_dir():
+            targets.add(candidate.relative_to(repoRoot).as_posix())
+            return
+        relativeParts = relativeParts[:-1]
+
+
+def _minimalTargets(targets: set[str]) -> list[str]:
+    """부모 디렉터리가 이미 선택된 자식 파일과 디렉터리를 제거한다."""
+    kept: list[str] = []
+    for target in sorted(targets, key=lambda item: (item.count("/"), item)):
+        if any(target.startswith(parent.rstrip("/") + "/") for parent in kept):
+            continue
+        kept.append(target)
+    return sorted(kept)
