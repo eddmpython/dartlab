@@ -488,6 +488,7 @@ def test_ensure_content_index_activates_manifest_download(tmp_path, monkeypatch)
 
     calls = []
     monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.delenv("DARTLAB_NO_HF_DOWNLOAD", raising=False)
     monkeypatch.setattr(fieldIndexRebuild, "_HF_CONTENTINDEX_ATTEMPTED", False, raising=False)
 
     def fakeDownloadAndActivate(*, tier=None, baseDir=None, **kwargs):
