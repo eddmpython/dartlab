@@ -92,13 +92,8 @@ _ALLOWED_SUFFIXES: tuple[str, ...] = (
 _extraAllowed: set[str] = set()
 
 
-class OfflineViolation(ConnectionError):
-    """prebuild·offline 단계에서 외부 네트워크 호출 시도 발생.
-
-    ``ConnectionError`` 하위 타입으로 두어 네트워크 실패를 best-effort로 강등하는
-    제품 경로가 실제 socket 실패와 같은 방식으로 처리하게 한다. 가드 자체의 typed
-    신호는 유지되므로 테스트와 운영 로그에서는 원인을 구분할 수 있다.
-    """
+class OfflineViolation(RuntimeError):
+    """prebuild·offline 단계에서 외부 네트워크 호출 시도 발생."""
 
     code = "OFFLINE_NETWORK_BLOCKED"
 

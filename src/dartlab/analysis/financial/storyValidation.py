@@ -12,7 +12,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+log = logging.getLogger(__name__)
 
 
 def calcStoryPrecedents(
@@ -434,8 +437,8 @@ def _peerGrowthMarginSamples() -> tuple[list[float], list[float]]:
                             margin = op_cur / rev_cur * 100
                             if -100 < margin < 80:
                                 peerMargin.append(float(margin))
-    except (ImportError, AttributeError, TypeError, ValueError, OSError):
-        pass
+    except Exception as exc:
+        log.warning("peer 성장률 및 마진 표본 준비 실패: %s: %s", type(exc).__name__, exc)
     return peerGrowth, peerMargin
 
 

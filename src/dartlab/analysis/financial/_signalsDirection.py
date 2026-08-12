@@ -13,6 +13,7 @@ import logging
 from dartlab.analysis.financial._companyLookup import _getSectorKey
 from dartlab.analysis.financial._predictionProbability import _DIRECTION_SCORES, _bayesUpdate, _calibrate
 from dartlab.core.memory import memoizedCalc
+from dartlab.core.offlineGuard import OfflineViolation
 from dartlab.core.utils.calc import safeDiv as _safe
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
 from dartlab.core.utils.safe import get as _get
@@ -165,7 +166,7 @@ def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | 
                 "confidence": "high" if abs(growthPct) > 10 else ("medium" if abs(growthPct) > 3 else "low"),
             }
 
-    except (httpx.RequestError, OSError, ValueError, KeyError, TypeError):
+    except (OfflineViolation, httpx.RequestError, OSError, ValueError, KeyError, TypeError):
         return None
 
     return None
@@ -266,7 +267,7 @@ def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
             "confidence": "high" if abs(smartMoney) > 1000000 else ("medium" if abs(smartMoney) > 100000 else "low"),
         }
 
-    except (httpx.RequestError, OSError, ValueError, KeyError, TypeError):
+    except (OfflineViolation, httpx.RequestError, OSError, ValueError, KeyError, TypeError):
         return None
 
 

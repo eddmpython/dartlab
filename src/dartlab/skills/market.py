@@ -15,6 +15,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from dartlab.core.offlineGuard import OfflineViolation
+
 DEFAULT_MARKET_URL = "https://eddmpython.github.io/dartlab/skills/market/marketIndex.json"
 TRUST_ORDER = {
     "marketCurated": 4,
@@ -86,7 +88,7 @@ def loadMarketIndex(
         # 광고돼 있었다. 지금은 도구가 인자를 받지 않고 환경변수와 기본값만 쓴다.
         with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
             payload = response.read().decode("utf-8")
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+    except (OfflineViolation, urllib.error.URLError, TimeoutError, OSError, ValueError):
         return emptyMarketIndex()
     try:
         return _normalizeMarketIndex(json.loads(payload))
