@@ -70,8 +70,19 @@ def testAllProvenanceChannelsAgree() -> None:
     assert result.qualityAssertions == ()
 
 
-def testPartialRunStillReturnsItsRowsAndReceipts() -> None:
+def testPartialRunStillReturnsItsRowsAndReceipts(monkeypatch: pytest.MonkeyPatch) -> None:
     """완전성을 요구하지 않은 요청까지 비우면 안 된다."""
+
+    from dartlab.dataHub import execution as executionModule
+
+    originalExecute = executionModule._execute
+
+    def _offlineExecute(descriptor, query, selector, runtimeParams=None):
+        if descriptor.assetId == "scan.ratio":
+            return pl.DataFrame({"stockCode": ["005930"], "roe": [12.5]})
+        return originalExecute(descriptor, query, selector, runtimeParams)
+
+    monkeypatch.setattr(executionModule, "_execute", _offlineExecute)
 
     result = _run("allowPartial")
 

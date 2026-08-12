@@ -146,19 +146,30 @@ def pytest_runtest_setup(item):
     빠지면 fast gate가 외부 서비스 가용성에 종속된다. 명시적인 ``network`` 테스트만
     예외로 두며, test-fast 자체도 해당 marker를 선택하지 않는다.
     """
+    import os
+
     from dartlab.core.offlineGuard import enforceOffline, releaseOffline
 
     releaseOffline()
     if item.get_closest_marker("unit") and not item.get_closest_marker("network"):
+        item._dartlabNoHfDownload = os.environ.get("DARTLAB_NO_HF_DOWNLOAD")
+        os.environ["DARTLAB_NO_HF_DOWNLOAD"] = "1"
         enforceOffline(strict=True)
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
     """다음 테스트로 unit offline 상태가 새지 않게 원래 socket 함수를 복원한다."""
+    import os
+
     from dartlab.core.offlineGuard import releaseOffline
 
     releaseOffline()
+    previous = getattr(item, "_dartlabNoHfDownload", None)
+    if previous is None:
+        os.environ.pop("DARTLAB_NO_HF_DOWNLOAD", None)
+    else:
+        os.environ["DARTLAB_NO_HF_DOWNLOAD"] = previous
 
 
 @pytest.fixture(autouse=True)

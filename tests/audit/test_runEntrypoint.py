@@ -318,9 +318,12 @@ def testFastGateExcludesHeavyAndExternalTestClasses():
 @pytest.mark.unit
 def testUnitTierEnforcesOfflineBeforeFixtureSetup() -> None:
     """Regression for #105: unit tier에는 strict socket guard가 항상 켜져 있다."""
+    import os
+
     from dartlab.core.offlineGuard import isOfflineEnforced
 
     assert isOfflineEnforced()
+    assert os.environ["DARTLAB_NO_HF_DOWNLOAD"] == "1"
 
 
 @pytest.mark.unit

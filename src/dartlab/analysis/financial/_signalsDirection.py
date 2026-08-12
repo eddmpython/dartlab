@@ -106,7 +106,10 @@ def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | 
 
     try:
         import httpx
+    except ImportError:
+        return None
 
+    try:
         resp = httpx.get(
             f"https://m.stock.naver.com/api/stock/{stockCode}/finance/annual",
             headers={"User-Agent": "dartlab/1.0"},
@@ -162,7 +165,7 @@ def calcConsensusDirection(company, *, basePeriod: str | None = None) -> dict | 
                 "confidence": "high" if abs(growthPct) > 10 else ("medium" if abs(growthPct) > 3 else "low"),
             }
 
-    except (ImportError, ValueError, KeyError, TypeError):
+    except (httpx.RequestError, OSError, ValueError, KeyError, TypeError):
         return None
 
     return None
@@ -224,7 +227,10 @@ def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
 
     try:
         import httpx
+    except ImportError:
+        return None
 
+    try:
         resp = httpx.get(
             f"https://m.stock.naver.com/api/stock/{stockCode}/integration",
             headers={"User-Agent": "dartlab/1.0"},
@@ -260,7 +266,7 @@ def calcFlowDirection(company, *, basePeriod: str | None = None) -> dict | None:
             "confidence": "high" if abs(smartMoney) > 1000000 else ("medium" if abs(smartMoney) > 100000 else "low"),
         }
 
-    except (ImportError, OSError, ValueError, KeyError, TypeError):
+    except (httpx.RequestError, OSError, ValueError, KeyError, TypeError):
         return None
 
 

@@ -43,9 +43,15 @@ def test_quant_empty_string_raises():
         c.quant("")
 
 
-def test_quant_korean_alias():
+def test_quant_korean_alias(monkeypatch):
     """한글 alias 동작."""
+    import polars as pl
+
     import dartlab
+    import dartlab.quant.signal.momentum as momentumModule
+
+    prices = pl.DataFrame({"close": [float(i) for i in range(1, 31)]})
+    monkeypatch.setattr(momentumModule, "fetchOhlcv", lambda *args, **kwargs: prices)
 
     c = dartlab.Company("005930")
     r = c.quant("모멘텀")

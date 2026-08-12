@@ -150,9 +150,22 @@ def test_phase10_storyValidation_in_all_reportTypes():
 
 
 @pytest.mark.unit
-def test_quant_axis_alias_for_metric():
+def test_quant_axis_alias_for_metric(monkeypatch):
     """quant: axis= (정규) + metric= (호환 alias) 둘 다 동작."""
     import dartlab
+    import dartlab.quant.screen.axTechnical as technicalModule
+
+    prices = pl.DataFrame(
+        {
+            "date": pl.date_range(pl.date(2026, 1, 1), pl.date(2026, 3, 31), "1d", eager=True),
+            "open": [100.0] * 90,
+            "high": [101.0] * 90,
+            "low": [99.0] * 90,
+            "close": [100.0] * 90,
+            "volume": [1000] * 90,
+        }
+    )
+    monkeypatch.setattr(technicalModule, "fetchOhlcv", lambda *args, **kwargs: prices)
 
     c = dartlab.Company("005930")
     a = c.quant(axis="지표")
