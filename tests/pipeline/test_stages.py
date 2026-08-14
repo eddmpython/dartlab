@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -205,6 +207,56 @@ def test_edgar_bulk_quarterly(monkeypatch):
     # 4분기 중 (2023,4) 보유 → 3개만 convert
     assert seen["convertQ"] == [(2024, 2), (2024, 1), (2023, 3)]
     assert res.report.ok == 2 and res.report.err == 0
+
+
+def test_edgar_universe_ciks_seeds_ticker_map(monkeypatch):
+    """클린 러너에서도 SEC ticker map을 먼저 만들고 상장 CIK만 반환한다."""
+    import polars as pl
+
+    import dartlab.gather.edgar.identity as identity
+    import dartlab.pipeline.stages.edgarPanel as edgarPanel
+    from dartlab.pipeline.stages.edgar import _universeCiks
+
+    monkeypatch.setattr(edgarPanel, "_priorityTickers", lambda: ["AAPL", "MSFT"])
+    monkeypatch.setattr(
+        identity,
+        "loadTickers",
+        lambda refresh=False: pl.DataFrame(
+            {"ticker": ["AAPL", "MSFT", "PRIVATE"], "cik": ["320193", "789019", "999999"]}
+        ),
+    )
+
+    assert _universeCiks() == {"0000320193", "0000789019"}
+
+
+def test_edgar_public_upload_fails_closed_without_universe(monkeypatch):
+    """상장 universe가 비면 17k filer를 HF flat 경로에 발행하지 않고 stage를 실패시킨다."""
+    import dartlab.pipeline.stages.edgar as stage
+    import dartlab.providers.edgar.bulk as bulk
+
+    monkeypatch.setattr(bulk, "downloadCompanyfactsBulk", lambda **_kwargs: "/cf.zip")
+    monkeypatch.setattr(
+        bulk,
+        "convertBulkToParquets",
+        lambda **_kwargs: {"changed": ["0000320193.parquet"], "failed": 0},
+    )
+    monkeypatch.setattr(bulk, "discoverLatestQuarter", lambda: None)
+    monkeypatch.setattr(stage, "_universeCiks", lambda: set())
+
+    result = stage.runEdgar(upload=True)
+
+    assert result.report.err == 1
+    assert any("상장 universe" in failure for failure in result.report.failures)
+
+
+def test_edgar_workflow_does_not_cache_full_panel_tree():
+    """약 9GB panel 전체 cache가 bulk와 finance cache를 축출하는 회귀를 막는다."""
+    workflow = (Path(__file__).resolve().parents[2] / ".github" / "workflows" / "edgarSync.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "Restore EDGAR panel cache" not in workflow
+    assert "Save EDGAR panel cache" not in workflow
+    assert "path: data/edgar/panel" not in workflow
 
 
 def test_dart_recent_respects_sync_categories_env(monkeypatch):

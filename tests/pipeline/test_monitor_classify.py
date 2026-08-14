@@ -154,6 +154,7 @@ def test_stale_after_hours_covers_notify_watch():
     [
         ("The hosted runner lost communication with the server", "메모리/디스크 (runner)"),
         ("HTTP 429 Too Many Requests — retry this action in 5 minutes", "HF rate-limit (429)"),
+        ("Your push was rejected because it contains too many files per directory", "HF directory file limit"),
         ("The job running on runner timed out after 120 minutes", "timeout/cancelled"),
         ("Traceback: ValueError in buildScan", "code/기타"),
         ("", "unknown"),
@@ -265,3 +266,12 @@ def test_monitored_covers_core_scheduled_pipelines():
     }
     missing = required - set(mod.MONITORED_WORKFLOWS)
     assert not missing, f"감시목록 누락(조용한 실패 위험): {missing}"
+
+
+def test_data_audit_rechecks_after_monitored_workflow_completion():
+    """복구 재실행이 끝나면 다음 날까지 기다리지 않고 이슈를 즉시 다시 판정한다."""
+    workflow = (ROOT / ".github" / "workflows" / "dataAudit.yml").read_text(encoding="utf-8")
+    assert "workflow_run:" in workflow
+    assert "types: [completed]" in workflow
+    for name in ("EDGAR Data Sync (Bulk)", "Gov Price Sync (Bulk)", "Macro Data Sync (Bulk)"):
+        assert f"- {name}" in workflow

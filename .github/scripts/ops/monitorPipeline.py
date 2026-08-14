@@ -69,6 +69,7 @@ STALE_AFTER_HOURS: dict[str, float] = {
 _SIG = {
     "메모리/디스크 (runner)": ("lost communication", "out of memory", "killed", "no space left", "oom"),
     "timeout/cancelled": ("timed out", "timeout", "connecttimeout", "connect timeout", "cancel"),
+    "HF directory file limit": ("too many files per directory", "can only contain up to 10000 files"),
     "HF rate-limit (429)": (
         "http 429",
         "status code: 429",

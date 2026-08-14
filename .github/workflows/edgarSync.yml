@@ -87,13 +87,8 @@ jobs:
           key: dartlab-edgar-sections-${{ github.run_id }}
           restore-keys: dartlab-edgar-sections-
 
-      # EDGAR panel 보드 cache — SEC text 메모리 fetch 후 panel 단일 artifact.
-      - name: Restore EDGAR panel cache
-        uses: actions/cache/restore@v5
-        with:
-          path: data/edgar/panel
-          key: dartlab-edgar-panel-${{ github.run_id }}
-          restore-keys: dartlab-edgar-panel-
+      # EDGAR panel은 영향 ticker만 HF에서 선택적으로 seed한다.
+      # 전체 panel cache는 약 9GB로 Actions cache quota를 점유해 bulk와 finance cache를 축출하므로 두지 않는다.
 
       # ── 1+2. daily 벌크(companyfacts.zip) + 분기 벌크(sub/pre/tag, 최신 4분기) ──
       # 통합 진입점(dartlab.pipeline) — edgar stage 가 두 inline 스텝을 byte 동형 호출.
@@ -244,13 +239,6 @@ jobs:
         with:
           path: data/edgar/sections
           key: dartlab-edgar-sections-${{ github.run_id }}
-
-      - name: Save EDGAR panel cache
-        uses: actions/cache/save@v5
-        if: always()
-        with:
-          path: data/edgar/panel
-          key: dartlab-edgar-panel-${{ github.run_id }}
 
       - name: Summary
         if: always()

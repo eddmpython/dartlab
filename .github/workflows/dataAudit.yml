@@ -1,7 +1,7 @@
 name: Data Audit
 
 # ──────────────────────────────────────────────────────────────
-# 매일 1회 데이터 파이프라인 감사 — 모든 실패 Issue 자동 알림(단발은 auto-rerun 병행).
+# 데이터 파이프라인 정기 및 완료 이벤트 감사. 모든 실패 Issue 자동 알림(단발은 auto-rerun 병행).
 #
 # 감사 대상 = scheduled(cron) 데이터/자동화 파이프라인 전체 (목록 SSOT = monitorPipeline.py
 #          MONITORED_WORKFLOWS): Original SSOT Sync · Data Sync · DART New Stocks · Data Prebuild ·
@@ -17,6 +17,27 @@ name: Data Audit
 on:
   schedule:
     - cron: '0 20 * * *'  # UTC 20:00 = KST 05:00, 일일 감사
+  workflow_run:
+    workflows:
+      - Original SSOT Sync
+      - AllFilings Backfill
+      - Data Sync
+      - DART New Stocks Sync
+      - Data Prebuild (DART)
+      - EDGAR Data Sync (Bulk)
+      - Gov Price Sync (Bulk)
+      - Gov Index Sync (Bulk)
+      - Macro Data Sync (Bulk)
+      - News Archive Sync
+      - GDELT Sync
+      - Naver News Sync
+      - Valuation Snapshot
+      - Search Index Build
+      - Quant Audit
+      - Update KindList
+      - Intent Model Pipeline
+      - Notify Watch
+    types: [completed]
   workflow_dispatch:
 
 permissions:

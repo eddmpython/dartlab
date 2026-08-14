@@ -118,21 +118,30 @@ def _universeCiks() -> set[str]:
     한도 밑(~6k). 비-universe filer 는 로컬엔 변환돼 있고(백엔드 직독) HF 미러만 제외.
 
     Returns:
-        set[str] — universe CIK(zero-pad 10). tickers/universe 부재 시 빈 set(상위가 발행 skip).
+        set[str]: universe CIK(zero-pad 10). tickers/universe 부재 시 빈 set(상위가 발행 중단).
     """
     try:
-        from pathlib import Path
-
         import polars as pl
 
-        import dartlab.config as cfg
+        from dartlab.gather.edgar.identity import loadTickers
         from dartlab.pipeline.stages.edgarPanel import _priorityTickers
 
-        uni = {str(t).upper() for t in _priorityTickers()}
-        tk = pl.read_parquet(Path(cfg.dataDir) / "edgar" / "tickers.parquet")
-        hit = tk.filter(pl.col("ticker").cast(pl.Utf8).str.to_uppercase().is_in(list(uni)))
-        return {str(c).strip().zfill(10) for c in hit["cik"].to_list()}
-    # universe 산출 실패면 발행만 skip 하고 빌드는 진행
+        universe = {str(t).strip().upper() for t in _priorityTickers() if str(t).strip()}
+        if not universe:
+            raise RuntimeError("상장 ticker universe가 비어 있음")
+
+        tickerFrame = loadTickers(refresh=False)
+        required = {"ticker", "cik"}
+        if not required.issubset(tickerFrame.columns):
+            missing = sorted(required - set(tickerFrame.columns))
+            raise RuntimeError(f"ticker map 필수 컬럼 누락: {missing}")
+
+        hit = tickerFrame.filter(pl.col("ticker").cast(pl.Utf8).str.to_uppercase().is_in(list(universe)))
+        ciks = {str(c).strip().zfill(10) for c in hit["cik"].to_list() if str(c).strip()}
+        if not ciks:
+            raise RuntimeError("상장 universe와 ticker map의 CIK 교집합이 비어 있음")
+        return ciks
+    # universe 산출 실패면 빈 집합을 반환하고 호출자가 공개 발행을 fail-closed 처리한다.
     except Exception as exc:  # noqa: BLE001
         print(f"[pipeline] edgar universe CIK 산출 실패: {type(exc).__name__}: {exc}", flush=True)
         return set()
@@ -187,8 +196,9 @@ def runEdgar(
             # HF 디렉터리당 10k 파일 한도 + panel 과 동일 scope 일관 → universe(상장 universe)만 발행.
             # 비-universe(무명·상폐) filer 는 로컬엔 있으나(백엔드 _loadFacts 직독) HF 미러 제외.
             uniCiks = _universeCiks()
-            if uniCiks:
-                changedFin = [f for f in changedFin if f.removesuffix(".parquet") in uniCiks]
+            if not uniCiks:
+                raise RuntimeError("EDGAR 상장 universe를 확인할 수 없어 edgar/finance 공개 발행을 중단함")
+            changedFin = [f for f in changedFin if f.removesuffix(".parquet") in uniCiks]
             from dartlab.pipeline.changed import writeChanged
 
             writeChanged("edgar", changedFin)

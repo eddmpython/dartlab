@@ -167,6 +167,33 @@ def _lookbackBizDays(endYmd: str, n: int) -> list[str]:
     return out
 
 
+def _collectedPriceDates(days: list[str], dateDir: Path) -> set[str]:
+    """로컬 또는 HF 연도 샤드에서 이미 완결된 거래일을 찾고 로컬 캐시를 복원한다."""
+    collected: set[str] = set()
+    try:
+        minRows = max(1, int(os.environ.get("DARTLAB_GOV_MIN_COMPLETE_ROWS", "1000")))
+    except ValueError:
+        minRows = 1000
+    for year in sorted({day[:4] for day in days}):
+        path = dateDir / f"{year}.parquet"
+        frame = pl.read_parquet(path) if path.exists() else _hfRead(f"gov/prices/date/{year}.parquet")
+        if frame is None or frame.is_empty() or "BAS_DD" not in frame.columns:
+            continue
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            frame.write_parquet(path, compression="zstd")
+            print(f"[gov/daily] {year}: HF date 샤드로 로컬 캐시 복원 ({frame.height}행)")
+        complete = (
+            frame.select(pl.col("BAS_DD").cast(pl.Utf8))
+            .drop_nulls()
+            .group_by("BAS_DD")
+            .len()
+            .filter(pl.col("len") >= minRows)
+        )
+        collected.update(str(value) for value in complete["BAS_DD"].to_list())
+    return collected
+
+
 def daily(*, apiKey: str, hfToken: str, basDt: str | None = None, lookbackDays: int = 1) -> int:
     """어제(또는 basDt) 기준 최근 lookbackDays 영업일 전종목 수집 → date/{year} upsert + recent → HF. 반환: 행수.
 
@@ -178,8 +205,15 @@ def daily(*, apiKey: str, hfToken: str, basDt: str | None = None, lookbackDays: 
 
     end = (basDt or (date.today() - timedelta(days=1)).strftime("%Y%m%d")).replace("-", "")
     days = _lookbackBizDays(end, lookbackDays)
+    dateDir = Path("data/gov/prices/date")
+    collected = _collectedPriceDates(days, dateDir)
+    pendingDays = [day for day in days if day not in collected]
+    if not pendingDays:
+        print(f"[gov/daily] {days[-1]}~{days[0]}: 이미 수집 완료, API 호출과 HF 재발행 생략")
+        return 0
+
     frames = []
-    for day in days:
+    for day in pendingDays:
         raw = normalizeGovToKrxRaw(fetchGovBydd(day, apiKey=apiKey))
         if raw.is_empty():
             print(f"[gov/daily] {day}: 데이터 없음(휴장/미확정)")
@@ -188,7 +222,6 @@ def daily(*, apiKey: str, hfToken: str, basDt: str | None = None, lookbackDays: 
             print(f"[gov/daily] {day}: {raw.height}행")
     if not frames:
         return 0
-    dateDir = Path("data/gov/prices/date")
     counts = _appendYearlyRaw(pl.concat(frames, how="diagonal_relaxed"), dateDir)
     _deployFolder(dateDir, "gov/prices/date", hfToken, f"갱신: 주가 일별 {days[-1]}~{days[0]}")
     buildRecent(hfToken=hfToken)

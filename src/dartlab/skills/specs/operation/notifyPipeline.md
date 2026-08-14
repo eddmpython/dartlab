@@ -49,7 +49,7 @@ forbidden:
   - reports.parquet(라이브 whole-file)에 전이력 누적 (1.5MB 게이트 초과, history.parquet 별도)
   - graph 회귀 (BRIEF/WORK 고정노드) 또는 파이썬 파서 JS 재구현
   - 시뮬레이터에 rcept 키 아카이브 직결 (corpCode 에서 stock_code 브리지 없이 orphan)
-lastUpdated: '2026-07-06'
+lastUpdated: '2026-08-14'
 ---
 
 ## 역할
@@ -96,10 +96,16 @@ lastUpdated: '2026-07-06'
 
 ## 헬스체크 (Data Audit, 매일 05시 KST)
 
-`monitorPipeline.py`(`operation.observability`)가 scheduled 파이프라인 전체의 실패·cron drop 을 매일 감시해 pipeline-failure Issue 로 알린다. "Notify Watch" 등록 상태:
+`monitorPipeline.py`(`operation.observability`)가 scheduled 파이프라인 전체의 실패와 cron drop 을 감시해 pipeline-failure Issue 로 알린다. Data Audit은 매일 05시 KST 정기 감사에 더해 감시 대상 workflow의 `completed` 이벤트마다 전체 상태를 다시 판정한다. 자동 재실행이 끝난 직후 같은 이슈를 갱신하거나 닫으므로 복구 전 상태가 다음 날까지 남지 않는다. "Notify Watch" 등록 상태:
 
 - **실패 감지**: MONITORED_WORKFLOWS 등록. bake genuine-failure 는 위 assert 스텝이 job RED 로 만들어 여기서 잡힌다.
 - **cron drop 감지**: STALE_AFTER_HOURS 80h(금~월 72h 주말 갭 초과) 등록. 3일+ 연속 스케줄 누락(퍼블릭 IPO SSOT 동결) 시 stale 감지·자동 트리거(nonce 멱등이라 오탐 무해).
+
+데이터 sync 재발 방지 경계:
+
+- EDGAR finance 공개 발행은 SEC ticker map과 상장 universe의 교집합이 비면 중단한다. 필터 실패를 전체 filer 발행으로 해석하지 않아 HF 디렉터리 10,000 파일 제한을 다시 밟지 않는다.
+- EDGAR panel은 영향 ticker만 HF에서 선택 seed하며 전체 panel tree를 Actions cache에 넣지 않는다. 대형 panel cache가 bulk, finance, freshness cache를 축출해 재실행을 전량 변환으로 바꾸는 것을 막는다.
+- Gov Price의 같은 날 backstop은 로컬 또는 HF date shard에서 완결된 날짜를 먼저 확인한다. 이미 수집된 lookback이면 공공데이터포털 호출과 HF 재발행을 생략하고, 행 수가 기준 미만인 부분 shard만 다시 복구한다.
 
 ★ 운영자 상시 규칙: 이 파이프라인은 하루 1회 헬스 체크(자동=Data Audit). 세션 체크 3점: Notify Watch run 초록+assert 통과 / HF reports.parquet 최신 / 열린 pipeline-failure Issue.
 
