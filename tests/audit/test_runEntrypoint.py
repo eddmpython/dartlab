@@ -122,6 +122,16 @@ def test_gatesDictMatchesYamlMatrix(tier, filename):
 
 
 @pytest.mark.unit
+def testCiFullCoverageTimeoutCoversCanonicalGateBudget():
+    """3.12 coverage 후처리가 정본 test-full 제한 밖에서 취소되지 않아야 한다."""
+    text = (WORKFLOWS / "ci-full.yml").read_text(encoding="utf-8")
+    match = re.search(r'- gate: test-full\s+python: "3\.12"\s+timeout: (\d+)', text)
+
+    assert match, "ci-full.yml의 Python 3.12 test-full matrix를 찾을 수 없음"
+    assert int(match.group(1)) >= GATES["test-full"].timeout_minutes
+
+
+@pytest.mark.unit
 def testPublishWorkflowUsesCanonicalCiFullGate():
     """릴리즈가 정식 CI 진입점을 우회해 tests/ 전수를 직접 실행하지 않는다."""
     text = (WORKFLOWS / "publish.yml").read_text(encoding="utf-8")

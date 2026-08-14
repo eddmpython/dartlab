@@ -27,7 +27,7 @@ jobs:
         include:
           - gate: test-full
             python: "3.12"
-            timeout: 45  # 커버리지 계측 오버헤드 — 무계측 3.13 ~26분이 계측 시 30분 초과(어제 28/30 빠듯→타임아웃). ~50% 여유.
+            timeout: 60  # tests/run.py test-full 정본과 일치. coverage와 artifact cleanup까지 같은 예산으로 보장.
             artifact_name: coverage-report
             artifact_path: htmlcov/
           - gate: test-full
