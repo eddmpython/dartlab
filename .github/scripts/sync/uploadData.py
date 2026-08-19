@@ -7,6 +7,7 @@ CLI(--target hf/gh) + SYNC_CATEGORY env 호환만 유지. GitHub Releases(--targ
 
 import argparse
 import os
+from pathlib import Path
 
 
 def main() -> None:
@@ -22,9 +23,17 @@ def main() -> None:
     if "DARTLAB_DATA_DIR" not in os.environ:
         os.environ["DARTLAB_DATA_DIR"] = os.path.join(os.getcwd(), "data")
 
+    # SYNC_CHANGED_FILE: 이 호출에서만 올릴 상대경로 목록. checkpoint 업로더가 배치 단위로 넘긴다.
+    # 없으면 기존대로 dist/changed_{category}.txt(누적 매니페스트)를 hfUpload 가 읽는다.
+    changedFiles = None
+    changedFile = os.environ.get("SYNC_CHANGED_FILE", "").strip()
+    if changedFile:
+        text = Path(changedFile).read_text(encoding="utf-8") if Path(changedFile).exists() else ""
+        changedFiles = [line.strip() for line in text.splitlines() if line.strip()]
+
     from dartlab.pipeline.hfUpload import uploadCategoryToHf
 
-    uploadCategoryToHf(category)
+    uploadCategoryToHf(category, changedFiles=changedFiles)
 
 
 if __name__ == "__main__":

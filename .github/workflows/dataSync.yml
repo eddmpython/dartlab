@@ -49,7 +49,12 @@ jobs:
   sync-finance-report:
     if: ${{ github.event.inputs.mode != 'full' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # 90 -> 180. 정기보고서 마감 주에는 report 대상이 2700 종목대로 뛴다(2026-08-19 실측 2717).
+    # 엔드포인트 복구 전에는 전량 실패라 저장이 없어 85 분에 잘렸고, 복구 후에는 실제 수집과
+    # 저장을 하므로 종목당 시간이 늘어난다. checkpoint 업로드를 배치 단위로 바꾼 뒤 추정
+    # 소요는 100 종목당 약 4 분, 2700 종목 기준 약 110 분이다. 계절 피크를 정상 작업량으로
+    # 보고 상한을 맞춘다. checkpoint 가 100 종목마다 저장·업로드하므로 잘려도 진전은 남는다.
+    timeout-minutes: 180
     # job 레벨 concurrency 를 쓴다. 워크플로 레벨은 run 생성 즉시 큐를 점유하고, GitHub 은 그룹당
     # pending 을 1 개만 유지해 새 트리거가 오면 기존 pending 을 취소한다(cancel-in-progress 무관).
     # 2026-08 사고: hf-dart-push 대기 중이던 run 8 건이 job 0 개인 채 취소됐다. job 레벨이면

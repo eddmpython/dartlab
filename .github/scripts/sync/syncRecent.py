@@ -362,11 +362,16 @@ def _makeCheckpointUploader(cat: str) -> "callable":
         existing = set(catPath.read_text(encoding="utf-8").splitlines()) if catPath.exists() else set()
         catPath.write_text("\n".join(sorted(existing | set(files))) + "\n", encoding="utf-8")
 
-        # checkpoint batch 만 changed.txt → uploadData 가 그것만 HF push.
-        (distDir / "changed.txt").write_text("\n".join(files) + "\n", encoding="utf-8")
+        # 이번 batch 만 별도 매니페스트로 넘긴다. hfUpload 는 인자가 없으면 누적
+        # changed_{cat}.txt 를 읽으므로, 그대로 두면 checkpoint 마다 지금까지의 전량을 다시
+        # 올려 O(n^2) 가 된다. 2026-08-19 실측: 100 종목당 업로드 대상이 1000 개에서 1500 개로
+        # 늘며 소요가 3 분 41 초에서 12 분 14 초로 벌어졌고 90 분 timeout 에 잘렸다.
+        batchPath = distDir / f"changed_{cat}_checkpoint.txt"
+        batchPath.write_text("\n".join(files) + "\n", encoding="utf-8")
 
         env = os.environ.copy()
         env["SYNC_CATEGORY"] = cat
+        env["SYNC_CHANGED_FILE"] = str(batchPath)
         rc = subprocess.run(
             [sys.executable, "-X", "utf8", "-u", str(uploadScript), "--target", "hf"],
             env=env,
