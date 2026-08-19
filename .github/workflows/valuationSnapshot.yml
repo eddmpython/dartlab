@@ -15,10 +15,6 @@ on:
     - cron: '0 23 * * *'   # UTC 23:00 = KST 08:00 (장 마감 후 + searchIndexBuild 19:00·Data Sync 18:00 과 HF 충돌 분리)
   workflow_dispatch:
 
-concurrency:
-  group: hf-dart-push
-  cancel-in-progress: false
-
 permissions:
   contents: read
 
@@ -26,6 +22,13 @@ jobs:
   snapshot:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # job 레벨 concurrency 를 쓴다. 워크플로 레벨은 run 생성 즉시 큐를 점유하고, GitHub 은 그룹당
+    # pending 을 1 개만 유지해 새 트리거가 오면 기존 pending 을 취소한다(cancel-in-progress 무관).
+    # 2026-08 사고: hf-dart-push 대기 중이던 run 8 건이 job 0 개인 채 취소됐다. job 레벨이면
+    # if 로 skip 되는 job 은 큐에 진입조차 하지 않는다.
+    concurrency:
+      group: hf-dart-push
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v6

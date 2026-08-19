@@ -41,18 +41,22 @@ on:
 permissions:
   contents: read  # HF push 는 HF_TOKEN 사용 — git commit/push/release 없음(checkout+cache 만). 최소권한.
 
-# DART 경로 (dart/*) 에 push 하는 워크플로우만 직렬화.
-# 다른 경로 (edgar/*, kindlist/*, search/*) 는 별도 group — cancelled 연쇄 방지.
-concurrency:
-  group: hf-dart-push
-  cancel-in-progress: false
-
+# DART 경로 (dart/*) 에 push 하는 워크플로우만 hf-dart-push 로 직렬화한다 (HF 412 회피).
+# 직렬화는 job 레벨에 건다. 아래 각 job 의 concurrency 주석 참고.
+# 다른 경로 (edgar/*, kindlist/*, search/*) 는 별도 group 이라 이 큐와 경쟁하지 않는다.
 jobs:
   # ── Job 1: finance + report (list.json 기반, ~30분) ──
   sync-finance-report:
     if: ${{ github.event.inputs.mode != 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # job 레벨 concurrency 를 쓴다. 워크플로 레벨은 run 생성 즉시 큐를 점유하고, GitHub 은 그룹당
+    # pending 을 1 개만 유지해 새 트리거가 오면 기존 pending 을 취소한다(cancel-in-progress 무관).
+    # 2026-08 사고: hf-dart-push 대기 중이던 run 8 건이 job 0 개인 채 취소됐다. job 레벨이면
+    # if 로 skip 되는 job 은 큐에 진입조차 하지 않는다.
+    concurrency:
+      group: hf-dart-push
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v6
@@ -168,9 +172,16 @@ jobs:
     if: ${{ github.event.inputs.mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 300
+    concurrency:
+      group: hf-dart-push
+      cancel-in-progress: false
 
     strategy:
       fail-fast: false
+      # matrix 팬아웃(finance·report)이 같은 hf-dart-push 를 동시에 요청하면 서로를 큐에서
+      # 밀어낸다. originalSync 의 needs 직렬과 같은 목적으로, 한 번에 한 job 만 그룹을
+      # 요청하도록 직렬화한다. HF 동시 커밋(412) 회피도 겸한다.
+      max-parallel: 1
       matrix:
         category: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.category == 'all' && 'finance","report' || inputs.category)) || fromJSON('["finance","report"]') }}
 
