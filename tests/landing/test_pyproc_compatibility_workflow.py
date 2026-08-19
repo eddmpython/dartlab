@@ -57,11 +57,14 @@ def test_pyproc_pull_requests_run_all_compatibility_gates() -> None:
     assert "compatibility:" in workflow
     assert "needs: [gate-a, landing, gate-b]" in workflow
 
-    # pyproc 은 그룹에서 제외해야 개별 PR 로 오고, 전용 호환성 게이트가 그 PR 을 검증한다.
-    assert "exclude-patterns:" in dependabot
-    assert '- "pyproc"' in dependabot
     assert 'versioning-strategy: "increase"' in dependabot
     assert 'interval: "daily"' in dependabot
+
+    # npm 블록에 group 을 두지 않는다. workspace 저장소에서 묶음 PR 이 lockfile 을 완전히
+    # 갱신하지 못해 `npm ci` 가 거부하고, 전용 호환성 게이트가 설치 단계에서 죽는다
+    # (2026-08-19 PR #115 실측, recreate 후에도 동일). 소음은 동시 PR 수로 제한한다.
+    npmBlock = dependabot.split('package-ecosystem: "npm"', 1)[1]
+    assert "groups:" not in npmBlock, "npm group PR 은 workspace lockfile 을 깨뜨린다"
 
     # allow 목록 금지. allow 는 정기 범프뿐 아니라 보안 업데이트에도 적용되어 목록 밖
     # 패키지의 보안 패치를 조용히 막는다 (2026-08-19 nanoid high 경보 실측).

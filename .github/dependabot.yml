@@ -94,17 +94,17 @@ updates:
     commit-message:
       prefix: "개선"
       include: "scope"
+    # group 을 쓰지 않는다. 이 저장소는 npm workspace 구성인데, 묶음 PR 이 workspace lockfile 을
+    # 완전히 갱신하지 못해 `npm ci` 가 거부한다. 2026-08-19 실측: PR #115 가 열릴 때도,
+    # `@dependabot recreate` 후에도 같은 오류로 호환성 게이트 4 개가 설치 단계에서 죽었다.
+    #   npm error `npm ci` can only install packages when your package.json and
+    #   package-lock.json are in sync. / Missing: svelte@5.56.9 from lock file
+    # 같은 시점의 개별 PR(pyproc)은 lockfile 이 정상이었다. 소음은 group 이 아니라 동시 PR 수로
+    # 제한한다. 이 상한은 정기 범프에만 걸리고 보안 업데이트는 별도로 흐른다.
     open-pull-requests-limit: 2
-    groups:
-      landing-npm:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "pyproc"
-        update-types:
-          - "minor"
-          - "patch"
     ignore:
+      # 정기 major 범프만 차단한다. version-update:semver-* 는 정기 갱신에만 적용되므로
+      # 보안 업데이트는 major 라도 그대로 흐른다.
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
