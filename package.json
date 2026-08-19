@@ -14,7 +14,7 @@
 		"cookie": "0.7.2",
 		"protobufjs": "7.6.5",
 		"postcss": "8.5.25",
-		"nanoid": "3.3.17",
+		"nanoid": "3.3.18",
 		"sharp": "0.35.3",
 		"dompurify": "3.4.13",
 		"adm-zip": "0.6.0"
