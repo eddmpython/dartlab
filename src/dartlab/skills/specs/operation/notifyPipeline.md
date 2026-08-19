@@ -129,6 +129,6 @@ lastUpdated: '2026-08-14'
 
 ## 검증
 
-- 러너: `.github/scripts/notify/test_watch.py`(16, screenAlert 멤버십 포함) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(20, Notify Watch staleness).
+- 러너: `.github/scripts/notify/test_watch.py`(16, screenAlert 멤버십 포함) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(34, Notify Watch staleness · concurrency 큐 축출 · 데이터 정지 판정).
 - 실측: 실 DART 발행사 build 로 reports + history 2파일 산출 확인. 첫 빌드는 baseline 없어 history==live.
 - 감사: 5차원 적대검증(wf_47c0b9eb 확증 10) + 파이프라인 적합성(wf_2af24a25). 상세 원장 05 §감사.

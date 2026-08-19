@@ -196,7 +196,7 @@ def test_classify_uses_last_specific_failure_signal(monkeypatch):
 def test_classify_failure_window_preserves_consecutive_causes(monkeypatch):
     mod = _loadMonitor()
     causes = {3: "메모리/디스크 (runner)", 2: "timeout/cancelled"}
-    monkeypatch.setattr(mod, "_classifyFailure", lambda runId: causes[runId])
+    monkeypatch.setattr(mod, "_classifyFailure", lambda runId, conclusion="": causes[runId])
     result = mod._classifyFailureWindow(
         [
             {"conclusion": "failure", "databaseId": 3, "url": "u3"},
@@ -275,3 +275,100 @@ def test_data_audit_rechecks_after_monitored_workflow_completion():
     assert "types: [completed]" in workflow
     for name in ("EDGAR Data Sync (Bulk)", "Gov Price Sync (Bulk)", "Macro Data Sync (Bulk)"):
         assert f"- {name}" in workflow
+
+
+# ─── concurrency 큐 축출 + 데이터 정지 (2026-08 사고 회귀 가드) ───────────
+
+
+def test_queue_evicted_run_is_classified_separately(monkeypatch):
+    """job 0 개인 cancelled 는 timeout 이 아니라 큐 축출로 분류한다."""
+    mod = _loadMonitor()
+    calls: list[list[str]] = []
+
+    def fakeGh(args, **_kwargs):
+        calls.append(args)
+        if args[0] == "api":
+            return "0"
+        return "The operation was canceled."
+
+    monkeypatch.setattr(mod, "_gh", fakeGh)
+    assert mod._classifyFailure(123, "cancelled") == mod.QUEUE_EVICTED
+    # 축출 판정이 먼저 끝나 로그 조회까지 가지 않는다.
+    assert all(args[0] == "api" for args in calls)
+
+
+def test_run_with_jobs_is_not_queue_evicted(monkeypatch):
+    """job 이 실제로 돈 cancelled 는 축출이 아니라 기존 시그니처 분류를 따른다."""
+    mod = _loadMonitor()
+
+    def fakeGh(args, **_kwargs):
+        if args[0] == "api":
+            return "2"
+        # 실제 GitHub 출력 순서: 원인(초과) 다음에 결과(취소)가 찍힌다.
+        return "The job has exceeded the maximum execution time of 1h30m0s" + chr(10) + "The operation was canceled."
+
+    monkeypatch.setattr(mod, "_gh", fakeGh)
+    assert mod._classifyFailure(123, "cancelled") == mod.JOB_TIMEOUT
+
+
+def test_job_count_unavailable_does_not_claim_eviction(monkeypatch):
+    """job 수 조회가 실패하면 축출로 단정하지 않는다."""
+    mod = _loadMonitor()
+    monkeypatch.setattr(mod, "_gh", lambda args, **_kwargs: "" if args[0] == "api" else "timed out")
+    assert mod._isQueueEvicted(123, "cancelled") is False
+
+
+def test_persistent_failure_reports_data_stall():
+    """연속 실패 중에도 마지막 성공 이후 경과로 데이터 정지를 표면화한다."""
+    mod = _loadMonitor()
+    now = datetime(2026, 8, 19, 5, 0, tzinfo=timezone.utc)
+    runs = [
+        {"conclusion": "cancelled", "databaseId": 5, "url": "u5", "createdAt": "2026-08-18T18:47:27Z"},
+        {"conclusion": "cancelled", "databaseId": 4, "url": "u4", "createdAt": "2026-08-18T06:49:17Z"},
+        {"conclusion": "success", "databaseId": 1, "url": "u1", "createdAt": "2026-08-14T19:02:29Z"},
+    ]
+    result = mod._triage(runs, maxGapHours=30, now=now)
+    assert result["state"] == "persistent"
+    assert result["dataStalled"] is True
+    assert result["lastSuccessAgeHours"] > 100
+
+
+def test_recent_success_during_transient_failure_is_not_stalled():
+    """직전에 성공이 있으면 단발 실패를 데이터 정지로 부풀리지 않는다."""
+    mod = _loadMonitor()
+    now = datetime(2026, 8, 19, 5, 0, tzinfo=timezone.utc)
+    runs = [
+        {"conclusion": "failure", "databaseId": 5, "url": "u5", "createdAt": "2026-08-19T04:00:00Z"},
+        {"conclusion": "success", "databaseId": 4, "url": "u4", "createdAt": "2026-08-19T00:00:00Z"},
+    ]
+    result = mod._triage(runs, maxGapHours=30, now=now)
+    assert result["state"] == "transient"
+    assert "dataStalled" not in result
+
+
+def test_stale_after_hours_covers_dart_collection_axis():
+    """DART 수집 축이 staleness 감시에 등록돼 있다 (미등록 = 정지 미탐)."""
+    mod = _loadMonitor()
+    required = {
+        "Original SSOT Sync",
+        "Data Sync",
+        "AllFilings Backfill",
+        "Data Prebuild (DART)",
+        "DART New Stocks Sync",
+    }
+    missing = required - set(mod.STALE_AFTER_HOURS)
+    assert missing == set(), f"staleness 미등록: {sorted(missing)}"
+
+
+def test_only_skipped_runs_since_last_success_is_stale():
+    """skipped 만 이어져도 마지막 성공이 오래됐으면 stale 로 잡는다."""
+    mod = _loadMonitor()
+    now = datetime(2026, 8, 19, 5, 0, tzinfo=timezone.utc)
+    runs = [
+        {"conclusion": "skipped", "databaseId": 9, "url": "u9", "createdAt": "2026-08-19T04:00:00Z"},
+        {"conclusion": "skipped", "databaseId": 8, "url": "u8", "createdAt": "2026-08-18T20:18:00Z"},
+        {"conclusion": "success", "databaseId": 1, "url": "u1", "createdAt": "2026-08-14T20:16:14Z"},
+    ]
+    result = mod._triage(runs, maxGapHours=42, now=now)
+    assert result["state"] == "stale"
+    assert "마지막 성공" in result["conclusion"]
