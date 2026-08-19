@@ -35,14 +35,17 @@ permissions:
   contents: read
 
 # engines.data — 모든 HF push 워크플로우는 단일 그룹으로 직렬화 (sliding-window 429 회피).
-concurrency:
-  group: hf-dataset-push
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # job 레벨 concurrency 를 쓴다. 워크플로 레벨은 run 생성 즉시 큐를 점유하고, GitHub 은
+    # 그룹당 pending 을 1 개만 유지해 새 트리거가 오면 기존 pending 을 취소한다
+    # (cancel-in-progress 와 무관한 기본 동작). 2026-08 hf-dart-push 에서 대기 중이던 run
+    # 8 건이 job 0 개인 채 취소됐다. 같은 그룹을 2 개 이상이 공유하면 같은 위험을 진다.
+    concurrency:
+      group: hf-dataset-push
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v6
