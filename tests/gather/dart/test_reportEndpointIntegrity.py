@@ -55,6 +55,23 @@ def test_no_known_invalid_endpoint_in_use() -> None:
     assert dartRevived == [], f"무효 엔드포인트가 dart.py 매핑에 복귀: {dartRevived}"
 
 
+def test_no_dead_label_for_invalid_endpoint() -> None:
+    """무효 엔드포인트의 라벨·apiType 매핑도 남기지 않는다.
+
+    `eleStockIstySttus` 는 한 번도 성공한 적이 없어 그 apiType 으로 저장된 데이터가 없다
+    (2026-08-19 로컬 report parquet 38 개 표본에서 majorShareholderChange 0 건 확인).
+    죽은 매핑을 남기면 다음 사람이 실재하는 수집 항목으로 오독한다.
+    """
+    from pathlib import Path as _Path
+
+    # tests/gather/dart/<file> 기준 저장소 루트는 parents[3] 이다.
+    root = _Path(__file__).resolve().parents[3]
+    for rel in ("src/dartlab/core/dartConstants.py", "src/dartlab/providers/dart/build/saver.py"):
+        text = (root / rel).read_text(encoding="utf-8")
+        assert "eleStockIstySttus" not in text, f"{rel}: 무효 엔드포인트 라벨이 복귀했다"
+        assert "majorShareholderChange" not in text, f"{rel}: 죽은 apiType 매핑이 복귀했다"
+
+
 def test_duplicate_endpoint_tables_agree() -> None:
     """batch.py 와 dart.py 의 중복 매핑은 겹치는 키에서 값이 같아야 한다."""
     endpoints, _, dartEndpoints = _mappings()

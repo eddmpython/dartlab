@@ -39,7 +39,6 @@ _API_NAMES: dict[str, str] = {
     "hmvAuditAllSttus": "이사ㆍ감사전체의보수현황",
     "indvdlByPay": "개인별보수지급금액",
     "otrCprInvstmntSttus": "타법인출자현황",
-    "eleStockIstySttus": "주식등의대량보유상황보고서",
     "stockTotqySttus": "주식총수현황",
     "accnutAdtorNmNdAdtOpinion": "회계감사인의명칭및감사의견",
     "adtServcCnclsSttus": "감사용역체결현황",

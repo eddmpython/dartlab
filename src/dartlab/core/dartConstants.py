@@ -60,7 +60,6 @@ KR_TO_API_TYPE: dict[str, str] = {
     "단기사채미상환": "shortTermBond",
     "공모자금용도": "publicOfferingUsage",
     "공모자금사용": "privateOfferingUsage",
-    "대주주지분변동": "majorShareholderChange",
     "기업어음미상환": "commercialPaper",
     "채무증권발행실적": "debtSecurities",
     "조건부자본증권미상환": "contingentCapital",
