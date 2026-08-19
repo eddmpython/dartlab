@@ -57,6 +57,12 @@ def test_pyproc_pull_requests_run_all_compatibility_gates() -> None:
     assert "compatibility:" in workflow
     assert "needs: [gate-a, landing, gate-b]" in workflow
 
-    assert 'dependency-name: "pyproc"' in dependabot
+    # pyproc 은 그룹에서 제외해야 개별 PR 로 오고, 전용 호환성 게이트가 그 PR 을 검증한다.
+    assert "exclude-patterns:" in dependabot
+    assert '- "pyproc"' in dependabot
     assert 'versioning-strategy: "increase"' in dependabot
     assert 'interval: "daily"' in dependabot
+
+    # allow 목록 금지. allow 는 정기 범프뿐 아니라 보안 업데이트에도 적용되어 목록 밖
+    # 패키지의 보안 패치를 조용히 막는다 (2026-08-19 nanoid high 경보 실측).
+    assert "allow:" not in dependabot, "dependabot allow 목록은 보안 업데이트까지 차단한다"

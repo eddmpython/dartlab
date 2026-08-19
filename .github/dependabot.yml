@@ -74,15 +74,19 @@ updates:
 
   # pyproc의 npm exact dependency와 lockfile을 함께 갱신한다. PR은 전용 호환성 워크플로가
   # Node, Chromium, landing 타입, 단위 테스트, 프로덕션 빌드를 모두 검증한다.
+  #
+  # allow 목록을 두지 않는다. allow 는 정기 버전 범프뿐 아니라 보안 업데이트에도 적용되어,
+  # 목록 밖 패키지의 보안 패치가 조용히 실패한다. 2026-08-19 실측: nanoid high 경보의
+  # 자동 업데이트 job 이 command=security 인데도 allowed-updates=[pyproc] 를 받아
+  # "cannot update to the required version as all versions were ignored" 로 끝났다.
+  # 소음은 allow 가 아니라 group 과 major 무시로 줄인다. version-update:semver-* 는 정기
+  # 갱신에만 적용되므로 보안 업데이트는 major 라도 그대로 흐른다.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
       time: "09:00"
       timezone: "Asia/Seoul"
-    allow:
-      - dependency-name: "pyproc"
-        dependency-type: "direct"
     versioning-strategy: "increase"
     labels:
       - "dependencies"
@@ -90,4 +94,17 @@ updates:
     commit-message:
       prefix: "개선"
       include: "scope"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 2
+    groups:
+      landing-npm:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "pyproc"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
