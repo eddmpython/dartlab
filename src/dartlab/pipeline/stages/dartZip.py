@@ -201,6 +201,13 @@ def _seedPanelFromHf(codes: list[str], *, token: str | None) -> tuple[int, set[s
     return n, safe
 
 
+# 원본 tar 업로드 배치 경계. 2026-08-19 사고: 종목당 upload_file 1 회씩 2448 회를 순차 호출해
+# HF 429 가 걸렸고 60s -> 300s -> 900s 백오프 도중 job timeout(150 분)에 잘렸다. 커밋을 묶어
+# API 호출 수를 두 자릿수로 낮춘다. 배치가 끝날 때마다 stage 를 비워 러너 디스크를 지킨다.
+_MAX_BATCH_TARS = 150
+_MAX_BATCH_BYTES = 1_500_000_000
+
+
 def _bundleAndUpload(codes: list[str], *, token: str | None) -> int:
     """변경 종목의 zip 을 회사당 tar 로 묶어 dartlab-dart-original 에 증분 업로드.
 
@@ -217,19 +224,46 @@ def _bundleAndUpload(codes: list[str], *, token: str | None) -> int:
     Example:
         >>> _bundleAndUpload(["005930"], token=None)  # doctest: +SKIP
     """
-    from huggingface_hub import HfApi
+    import time
+
+    from huggingface_hub import CommitOperationAdd, HfApi
 
     import dartlab.config as cfg
     from dartlab.core.dataConfig import repoFor
     from dartlab.core.hfRetry import retryHfCall
-    from dartlab.pipeline.hfUpload import _resolveHfToken
+    from dartlab.pipeline.hfUpload import _BATCH_INTERVAL_SECONDS, _resolveHfToken
 
     base = Path(cfg.dataDir) / "original" / "dart" / "docs"
     stage = Path(cfg.dataDir) / "original" / "_bundleStage" / "docs"
     stage.mkdir(parents=True, exist_ok=True)
     api = HfApi(token=_resolveHfToken(token))
     repo = repoFor("dartOriginal")
-    n = 0
+
+    ops: list = []
+    staged: list[Path] = []
+    pendingBytes = 0
+    uploaded = 0
+    batchNo = 0
+
+    def flush() -> None:
+        """모아 둔 tar 를 한 커밋으로 올리고 stage 를 비운다."""
+        nonlocal ops, staged, pendingBytes, batchNo
+        if not ops:
+            return
+        batchNo += 1
+        retryHfCall(
+            api.create_commit,
+            repo_id=repo,
+            repo_type="dataset",
+            operations=ops,
+            commit_message=f"sync dart originals: {len(ops)} tars (batch {batchNo})",
+        )
+        print(f"[dartZip] 원본 tar batch {batchNo}: {len(ops)}개 업로드 완료", flush=True)
+        for path in staged:
+            path.unlink(missing_ok=True)
+        ops, staged, pendingBytes = [], [], 0
+        time.sleep(_BATCH_INTERVAL_SECONDS)
+
     for code in codes:
         d = base / code
         zips = sorted(d.glob("*.zip")) if d.exists() else []
@@ -239,16 +273,17 @@ def _bundleAndUpload(codes: list[str], *, token: str | None) -> int:
         with tarfile.open(tp, "w") as tf:
             for z in zips:
                 tf.add(z, arcname=z.name)
-        retryHfCall(
-            api.upload_file,
-            path_or_fileobj=str(tp),
-            path_in_repo=f"docs/{code}.tar",
-            repo_id=repo,
-            repo_type="dataset",
-        )
-        tp.unlink()
-        n += 1
-    return n
+        size = tp.stat().st_size
+        # 파일 수와 누적 바이트 둘 다로 끊는다. tar 크기 편차가 커서 개수만으로는 러너 디스크를
+        # 넘길 수 있고, 바이트만으로는 작은 tar 가 많을 때 커밋당 파일 수가 과해진다.
+        if ops and (len(ops) >= _MAX_BATCH_TARS or pendingBytes + size > _MAX_BATCH_BYTES):
+            flush()
+        ops.append(CommitOperationAdd(path_in_repo=f"docs/{code}.tar", path_or_fileobj=str(tp)))
+        staged.append(tp)
+        pendingBytes += size
+        uploaded += 1
+    flush()
+    return uploaded
 
 
 def _buildPanelIncremental(

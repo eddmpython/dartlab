@@ -734,3 +734,112 @@ def test_dartzip_full_rebuild_flag_routes_build(monkeypatch, tmp_path) -> None:
             assert fullCalls and not incCalls  # 전이력 재빌드
         else:
             assert incCalls and not fullCalls  # within-company 증분
+
+
+# ─── dartZip 원본 tar 업로드 배치 (2026-08-19 사고 회귀 가드) ────────────────
+
+
+def _fakeHfApi(calls: dict):
+    class _Api:
+        def __init__(self, token=None):
+            self.token = token
+
+        def create_commit(self, *, repo_id, repo_type, operations, commit_message):
+            calls.setdefault("commits", []).append(len(operations))
+            return object()
+
+        def upload_file(self, **kwargs):  # pragma: no cover
+            calls.setdefault("individual", []).append(kwargs.get("path_in_repo"))
+            raise AssertionError("종목당 개별 upload_file 은 429 를 유발한다. 배치 커밋을 써야 한다.")
+
+    return _Api
+
+
+def _prepareDocs(tmp_path, codes: list[str], *, zipBytes: int = 64) -> None:
+    for code in codes:
+        d = tmp_path / "original" / "dart" / "docs" / code
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{code}_1.zip").write_bytes(b"PK\x03\x04" + b"\x00" * zipBytes)
+
+
+def _patchUploadEnv(monkeypatch, tmp_path, calls: dict) -> None:
+    import huggingface_hub
+
+    import dartlab.config as cfg
+    import dartlab.core.dataConfig as dataConfig
+    import dartlab.pipeline.hfUpload as hfUpload
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _fakeHfApi(calls))
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(dataConfig, "repoFor", lambda key: "test/dartOriginal")
+    monkeypatch.setattr(hfUpload, "_resolveHfToken", lambda token=None: "token")
+    monkeypatch.setattr(hfUpload, "_BATCH_INTERVAL_SECONDS", 0)
+
+
+def test_bundle_upload_batches_commits_instead_of_per_code_calls(monkeypatch, tmp_path) -> None:
+    """종목당 개별 upload_file 이 아니라 커밋을 묶어 올린다.
+
+    2026-08-19: 변경 종목이 85 에서 2448 로 늘자 종목당 1 회 upload_file 이 HF 429 를 유발했고
+    60s -> 300s -> 900s 백오프 중 job timeout(150 분)에 잘렸다.
+    """
+    from dartlab.pipeline.stages import dartZip
+
+    calls: dict = {}
+    codes = [f"00000{i}" for i in range(5)]
+    _prepareDocs(tmp_path, codes)
+    _patchUploadEnv(monkeypatch, tmp_path, calls)
+    monkeypatch.setattr(dartZip, "_MAX_BATCH_TARS", 2)
+
+    uploaded = dartZip._bundleAndUpload(codes, token=None)
+
+    assert uploaded == 5
+    assert calls.get("individual") is None, "개별 upload_file 이 호출됐다"
+    assert calls["commits"] == [2, 2, 1], f"배치 경계가 어긋났다: {calls['commits']}"
+
+
+def test_bundle_upload_flushes_on_byte_budget(monkeypatch, tmp_path) -> None:
+    """누적 바이트 상한에서도 끊는다. tar 크기 편차로 러너 디스크가 터지지 않게 한다."""
+    from dartlab.pipeline.stages import dartZip
+
+    calls: dict = {}
+    codes = [f"00000{i}" for i in range(4)]
+    _prepareDocs(tmp_path, codes, zipBytes=4096)
+    _patchUploadEnv(monkeypatch, tmp_path, calls)
+    monkeypatch.setattr(dartZip, "_MAX_BATCH_TARS", 1000)
+    monkeypatch.setattr(dartZip, "_MAX_BATCH_BYTES", 1)
+
+    uploaded = dartZip._bundleAndUpload(codes, token=None)
+
+    assert uploaded == 4
+    assert calls["commits"] == [1, 1, 1, 1], f"바이트 상한이 무시됐다: {calls['commits']}"
+
+
+def test_bundle_upload_clears_stage_after_each_batch(monkeypatch, tmp_path) -> None:
+    """배치를 올린 뒤 stage tar 를 지운다. 안 지우면 전 종목 tar 가 러너 디스크에 남는다."""
+    from dartlab.pipeline.stages import dartZip
+
+    calls: dict = {}
+    codes = [f"00000{i}" for i in range(3)]
+    _prepareDocs(tmp_path, codes)
+    _patchUploadEnv(monkeypatch, tmp_path, calls)
+    monkeypatch.setattr(dartZip, "_MAX_BATCH_TARS", 2)
+
+    dartZip._bundleAndUpload(codes, token=None)
+
+    stage = tmp_path / "original" / "_bundleStage" / "docs"
+    leftover = sorted(p.name for p in stage.glob("*.tar"))
+    assert leftover == [], f"stage 에 tar 가 남았다: {leftover}"
+
+
+def test_bundle_upload_skips_codes_without_zips(monkeypatch, tmp_path) -> None:
+    """zip 이 없는 종목은 빈 tar 를 올리지 않는다."""
+    from dartlab.pipeline.stages import dartZip
+
+    calls: dict = {}
+    _prepareDocs(tmp_path, ["000001"])
+    _patchUploadEnv(monkeypatch, tmp_path, calls)
+
+    uploaded = dartZip._bundleAndUpload(["000001", "999999"], token=None)
+
+    assert uploaded == 1
+    assert calls["commits"] == [1]

@@ -66,7 +66,12 @@ jobs:
   dart-zip:
     if: ${{ github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'dart-zip' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    # 150 -> 240. 정기보고서 마감 주에는 변경 종목이 평시의 30 배 가까이 뛴다
+    # (2026-08-12 85 종목 -> 2026-08-19 2448 종목 실측). 그 주에 dart-zip 과
+    # dart-reconcile 이 둘 다 정확히 150 분에 잘렸다. 업로드를 배치 커밋으로 바꿔
+    # HF 호출 수를 낮췄지만 seed 와 merge 는 여전히 종목 수에 비례하고 429 백오프가
+    # 최대 900 초씩 남아 있다. 계절 피크를 정상 작업량으로 인정하고 상한을 맞춘다.
+    timeout-minutes: 240
     concurrency:
       group: hf-dart-push
       cancel-in-progress: false
@@ -122,7 +127,7 @@ jobs:
     needs: dart-zip  # 자가 축출 차단 — 한 번에 한 dart job 만 hf-dart-push 요청
     if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'dart-reconcile') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 240
     concurrency:
       group: hf-dart-push  # 메인 public repo(panel) + private(dartOriginal) push → dart-zip 와 직렬(412 회피)
       cancel-in-progress: false
