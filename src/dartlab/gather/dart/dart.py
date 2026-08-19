@@ -62,7 +62,7 @@ from dartlab.gather.dart.disclosure import (
     listFilings,
 )
 
-# 사업보고서 주요정보 29개 + 주요사항보고 27개 = 56개 카테고리
+# 사업보고서 주요정보 28개 + 주요사항보고 27개 = 55개 카테고리
 _REPORT_ENDPOINTS: dict[str, str] = {
     # ── 사업보고서 주요정보 (정기보고서) ──
     "증자감자": "irdsSttus",
@@ -77,7 +77,6 @@ _REPORT_ENDPOINTS: dict[str, str] = {
     "이사회임원전체보수": "hmvAuditAllSttus",
     "개인별보수": "indvdlByPay",
     "타법인출자": "otrCprInvstmntSttus",
-    "대주주지분변동": "eleStockIstySttus",
     # 추가 보고서 (미등기임원, 채무증권, 감사, 주식총수 등)
     "미등기임원보수": "unrstExctvMendngSttus",
     "주식총수": "stockTotqySttus",
@@ -125,7 +124,7 @@ _REPORT_ENDPOINTS: dict[str, str] = {
     "해외상장폐지": "ovDlst",
 }
 
-# 정기보고서 전체 28개 카테고리 (saveReport 기본값)
+# 정기보고서 전체 27개 카테고리 (saveReport 기본값)
 _PERIODIC_REPORT_CATEGORIES: list[str] = [
     # eddmpython 기본 22개
     "배당",
@@ -150,8 +149,7 @@ _PERIODIC_REPORT_CATEGORIES: list[str] = [
     "단기사채미상환",
     "공모자금용도",
     "공모자금사용",
-    # 추가 정기보고서 6개
-    "대주주지분변동",
+    # 추가 정기보고서 5개
     "기업어음미상환",
     "신종자본증권미상환",
     "채무증권발행실적",
