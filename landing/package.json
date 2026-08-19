@@ -22,7 +22,7 @@
 		"@tailwindcss/vite": "^4.3.0",
 		"@types/d3-force": "^3.0.10",
 		"@types/d3-scale": "^4.0.9",
-		"@types/node": "^25.9.3",
+		"@types/node": "^25.9.5",
 		"dompurify": "^3.4.13",
 		"mdsvex": "^0.12.7",
 		"shiki": "^4.2.0",
