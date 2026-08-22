@@ -17,6 +17,8 @@ import importlib.util
 import json
 import os
 import subprocess
+import sys
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -719,5 +721,24 @@ def _writeSummary(
             f.write("\n**전체 정상**\n")
 
 
+def _exitNow(exitCode: int) -> None:
+    """출력을 비우고 인터프리터 정리를 건너뛰어 바로 끝낸다.
+
+    신선도 감사가 예산을 넘기면 HF 조회 daemon 스레드가 남는다. 정상 종료 경로에서 pyarrow/fsspec 스레드 상태와
+    부딪혀 "Fatal Python error: PyGILState_Release" 로 죽었다(2026-08-22 실측, exit 134. 보고는 이미 끝난 뒤였다).
+    """
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(exitCode)
+
+
 if __name__ == "__main__":
-    main()
+    exitCode = 0
+    try:
+        main()
+    except SystemExit as exc:
+        exitCode = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
+    except BaseException:  # noqa: BLE001 (원인을 찍고 1 로 끝낸다. 삼키지 않는다)
+        traceback.print_exc()
+        exitCode = 1
+    _exitNow(exitCode)

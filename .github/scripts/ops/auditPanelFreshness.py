@@ -305,4 +305,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # 예산 초과로 남은 daemon 조회 스레드가 인터프리터 정리와 부딪히지 않게(PyGILState_Release 크래시) 바로 끝낸다.
+    exitCode = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(exitCode)
