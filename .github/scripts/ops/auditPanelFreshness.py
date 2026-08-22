@@ -24,6 +24,7 @@ from __future__ import annotations
 import math
 import os
 import queue
+import re
 import sys
 import threading
 import time
@@ -38,6 +39,9 @@ MISSING_RATIO_ALERT = 0.02  # 기대 rcept 대비 비율 상한.
 LOOKUP_WORKERS = 8
 AUDIT_BUDGET_SECONDS = 900.0  # HF rceptNo 조회 예산. Data Audit job 상한(30분) 안에서 gh 호출 몫을 남긴다.
 MIN_COVERAGE_FOR_VERDICT = 0.5  # 예산 초과 시 이 비율 미만으로만 봤으면 판정하지 않는다.
+# 첨부만 바뀐 정정은 DART document API 가 status 014(파일 없음)를 돌려줘 본문 zip 이 없다(2026-08-22 실측:
+# 000440 20260730000361·20260730000551). panel 에 들어올 수 없으므로 기대 집합에서 뺀다. 두면 영구 "누락" 이 된다.
+_ATTACHMENT_ONLY_RE = re.compile(r"^\[(?:첨부정정|첨부추가)\]")
 
 
 def judge(expected: int, missing: int) -> bool:
@@ -184,7 +188,7 @@ def auditPanelFreshness(
         ["stock_code", "rcept_no", "rcept_dt", "report_nm"]
     ).iter_rows():
         code = (stockCode or "").strip()
-        if not code or not rceptNo:
+        if not code or not rceptNo or _ATTACHMENT_ONLY_RE.match(str(reportNm)):
             continue
         expectedByCode.setdefault(code, {})[str(rceptNo)] = (str(rceptDt), str(reportNm))
 
