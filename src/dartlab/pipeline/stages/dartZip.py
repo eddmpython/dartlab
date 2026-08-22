@@ -19,10 +19,15 @@ from __future__ import annotations
 import os
 import tarfile
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
 
 from dartlab.pipeline.types import PipelineMode, StageResult
+
+# HF seed(원본 tar·panel merge base) 동시 다운로드 수. 종목별로 독립이라 병렬이 안전하고, 순차로는 200 종목
+# tar(약 2GB)에 10 분 넘게 걸려 reconcile 이 chunk 마다 같은 비용을 치렀다(2026-08-22 실측). 429 는 retryHfCall 이 흡수.
+_SEED_WORKERS = 8
 
 
 def _hfFileSet(repo: str, *, token: str | None) -> set[str] | None:
@@ -103,9 +108,9 @@ def _seedChangedFromHf(codes: list[str], *, token: str | None) -> tuple[int, set
     repo = repoFor("dartOriginal")
     tok = _resolveHfToken(token)
     remote = _hfFileSet(repo, token=tok)  # spurious 404 vs 진짜 신규 구분 oracle
-    n = 0
-    safe: set[str] = set()
-    for code in codes:
+
+    def seedOne(code: str) -> tuple[str, bool, bool]:
+        """종목 하나의 tar 를 받아 풀고 (code, 추출 성공, safe) 를 돌려준다. 분기는 전부 안에서 처리한다."""
         try:
             local = retryHfCall(
                 hf_hub_download,
@@ -116,37 +121,41 @@ def _seedChangedFromHf(codes: list[str], *, token: str | None) -> tuple[int, set
                 local_dir=str(tarStage),
             )
         except (EntryNotFoundError, RepositoryNotFoundError):
-            # listing 에 *진짜 없음*(신규) 일 때만 safe → archive 분 빌드 정당. listing 엔 있는데
-            # 404(spurious/전파지연)면 unsafe → 제외(부분 tar 가 원본 SSOT 를 truncate 하는 손실 가드).
-            if remote is not None and f"docs/{code}.tar" not in remote:
-                safe.add(code)
-            continue
-        except Exception:  # noqa: BLE001 — 일시 실패(네트워크/5xx) → 이력 불완전, build/upload 제외
-            continue
+            # listing 에 *진짜 없음*(신규) 일 때만 safe(archive 분 빌드 정당). listing 엔 있는데 404(spurious/
+            # 전파지연)면 unsafe 로 제외한다(부분 tar 가 원본 SSOT 를 truncate 하는 손실 가드).
+            return code, False, remote is not None and f"docs/{code}.tar" not in remote
+        except Exception:  # noqa: BLE001 (일시 실패(네트워크/5xx). 이력 불완전이라 build/upload 제외)
+            return code, False, False
         dest = base / code
         dest.mkdir(parents=True, exist_ok=True)
-        # 무결성 검증: 추출된 zip 수가 tar 멤버 수 이상이어야 *완전* 이력. dest 에 바로 풀면 이전
-        # run 잔재 zip 이 카운트를 부풀려 *부분 추출*을 통과시킨다(idempotency 위반) → 격리된 임시
-        # 디렉터리에 풀어 거기서 검증 후 통과분만 dest 로 옮긴다(잔재 오염 0). 부분 추출이면 unsafe →
-        # 제외(부분 이력으로 빌드+재번들하면 정상 panel·원본 tar 를 잘라 덮어쓰는 컴파운딩 truncation).
-        # 통과 시 dest ⊇ tar 보장 → _bundleAndUpload 재번들은 항상 superset(축소 0).
+        # 무결성 검증: 추출된 zip 수가 tar 멤버 수 이상이어야 *완전* 이력. dest 에 바로 풀면 이전 run 잔재 zip 이
+        # 카운트를 부풀려 *부분 추출*을 통과시킨다(idempotency 위반). 격리된 임시 디렉터리에 풀어 검증 후 통과분만
+        # dest 로 옮긴다(잔재 오염 0). 부분 추출이면 unsafe 로 제외(부분 이력으로 빌드+재번들하면 정상 panel·원본
+        # tar 를 잘라 덮어쓰는 컴파운딩 truncation). 통과 시 dest 가 tar 의 superset 이라 재번들은 축소 0.
         try:
             with tarfile.open(local, "r") as tf:
                 memberCount = sum(1 for m in tf.getmembers() if m.isfile())
                 with tempfile.TemporaryDirectory(dir=str(base)) as td:
-                    tf.extractall(td, filter="data")  # 평탄 zip 파일명만 — filter='data' 안전 추출
+                    tf.extractall(td, filter="data")  # 평탄 zip 파일명만. filter='data' 안전 추출
                     extracted = list(Path(td).glob("*.zip"))
                     if len(extracted) < memberCount:
                         raise OSError(f"부분 추출 {code}: zip {len(extracted)} < tar 멤버 {memberCount}")
                     for z in extracted:  # 검증 통과분만 dest 로 이동(동일 fs atomic per-file rename)
                         z.replace(dest / z.name)
-        except Exception as exc:  # noqa: BLE001 — tar 손상/부분추출 → unsafe(이번 run 제외, 다음 회복)
+        except Exception as exc:  # noqa: BLE001 (tar 손상/부분추출. unsafe 로 이번 run 제외, 다음 회복)
             print(f"[pipeline] dartZip seed {code} 무결성 실패(제외): {exc}", flush=True)
-            continue
+            return code, False, False
         finally:
             Path(local).unlink(missing_ok=True)  # 추출이 끝난 tar 본체는 불필요. 디스크 반환
-        n += 1
-        safe.add(code)
+        return code, True, True
+
+    n = 0
+    safe: set[str] = set()
+    with ThreadPoolExecutor(max_workers=_SEED_WORKERS, thread_name_prefix="tar-seed") as executor:
+        for seededCode, extractedOk, isSafe in executor.map(seedOne, codes):
+            n += int(extractedOk)
+            if isSafe:
+                safe.add(seededCode)
     return n, safe
 
 
@@ -187,29 +196,34 @@ def _seedPanelFromHf(codes: list[str], *, token: str | None) -> tuple[int, set[s
     repo = repoFor("panel")
     tok = _resolveHfToken(token)
     remote = _hfFileSet(repo, token=tok)  # spurious 404 vs 진짜 신규 구분 oracle
-    n = 0
-    safe: set[str] = set()
-    for code in codes:
+
+    def seedOne(code: str) -> tuple[str, bool, bool]:
+        """종목 하나의 panel parquet 를 merge base 로 받아 (code, 받음, safe) 를 돌려준다."""
         try:
-            retryHfCall(  # HF read SSOT(core.hfRetry) — 429/503/504 단일 백오프
+            retryHfCall(  # HF read SSOT(core.hfRetry). 429/503/504 단일 백오프
                 hf_hub_download,
                 repo_id=repo,
                 repo_type="dataset",
                 filename=f"{relDir}/{code}.parquet",
-                local_dir=str(cfg.dataDir),  # → data/dart/panel/{code}.parquet (merge base)
+                local_dir=str(cfg.dataDir),  # data/dart/panel/{code}.parquet (merge base)
                 token=tok,
             )
         except (EntryNotFoundError, RepositoryNotFoundError):
-            # listing 에 *진짜 없음*(신규) 일 때만 safe → base 없이 신규 write 정당. listing 엔 있는데
-            # 404(spurious/전파지연)면 merge base 부재로 overwrite=신규만 → 정상 HF panel 파괴적
-            # 덮어쓰기(history 소실, 043260-class). 그 경우 unsafe → 제외(다음 run 회복).
-            if remote is not None and f"{relDir}/{code}.parquet" not in remote:
-                safe.add(code)
-            continue
-        except Exception:  # noqa: BLE001 — 일시 실패(네트워크/5xx): merge base 부재 → 파괴적 덮어쓰기 가드로 제외
-            continue
-        n += 1
-        safe.add(code)
+            # listing 에 *진짜 없음*(신규) 일 때만 safe(base 없이 신규 write 정당). listing 엔 있는데 404(spurious/
+            # 전파지연)면 merge base 부재로 정상 HF panel 을 파괴적으로 덮어쓴다(history 소실, 043260-class).
+            # 그 경우 unsafe 로 제외(다음 run 회복).
+            return code, False, remote is not None and f"{relDir}/{code}.parquet" not in remote
+        except Exception:  # noqa: BLE001 (일시 실패(네트워크/5xx). merge base 부재는 파괴적 덮어쓰기 가드로 제외)
+            return code, False, False
+        return code, True, True
+
+    n = 0
+    safe: set[str] = set()
+    with ThreadPoolExecutor(max_workers=_SEED_WORKERS, thread_name_prefix="panel-seed") as executor:
+        for seededCode, fetchedOk, isSafe in executor.map(seedOne, codes):
+            n += int(fetchedOk)
+            if isSafe:
+                safe.add(seededCode)
     return n, safe
 
 
