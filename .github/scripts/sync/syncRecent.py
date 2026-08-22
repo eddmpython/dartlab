@@ -14,6 +14,7 @@
 """
 
 import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta
@@ -138,6 +139,66 @@ def _reportNmToFinanceKey(reportNm: str) -> tuple[str, str] | None:
     return None
 
 
+# 첨부만 바뀐 정정은 재무·보고서 API 의 본문 버전(rcept)을 바꾸지 않는다. 본문 버전 판정에서 뺀다.
+_ATTACHMENT_ONLY_RE = re.compile(r"^\[(?:첨부정정|첨부추가)\]")
+# 본문 정정(기재정정)이 올라온 뒤 DART API 가 새 rcept 로 갈아타기까지의 유예(일). 그 안에는 재수집하고,
+# 지나면 API 가 그 버전을 돌려주지 않는 것으로 보고 더 쫓지 않는다(영구 재수집·영구 "누락" 방지).
+_CORRECTION_GRACE_DAYS = 7
+
+
+def _keyMissingRows(
+    rows: list[dict],
+    existing: set[str],
+    *,
+    today: datetime | None = None,
+    correctionGrace: bool = True,
+) -> list[dict]:
+    """한 종목·한 카테고리의 정기공시 행 중 수집이 필요한 행만 고른다. 판정 단위는 (bsns_year, reprt_code) 다.
+
+    DART 재무·보고서 API 는 (year, reprt_code) 당 최신 본문 버전의 rcept 하나만 돌려준다. 원본과 정정이
+    함께 있는 분기는 parquet 에 한 버전만 남고 다른 버전의 rcept 는 영영 "없다". rcept 단위로 누락을 재던
+    옛 규칙은 그런 분기를 매 run 재수집하고 잔여 누락으로 보고했다(2026-08-21 실측 207 건, 데이터는 모두
+    있었다. 예: 035720 원본 20260814003797 vs API 가 돌려준 기재정정 20260819000055).
+
+    규칙:
+      - key 의 어느 버전(rcept)도 parquet 에 없으면 그 key 의 행 전부 누락(수집 대상).
+      - 어떤 버전이든 있으면 충족. 단 correctionGrace 가 켜져 있고 최신 본문 버전(원본·기재정정. 첨부정정·
+        첨부추가 제외)이 parquet 에 없으며 제출 _CORRECTION_GRACE_DAYS 일 이내면 그 행만 누락으로 두어
+        정정 반영을 재수집한다.
+      - key 를 못 읽는 행(정기보고서 아님)은 옛 규칙대로 rcept 유무로 본다.
+    """
+    now = today or datetime.now()
+    byKey: dict[tuple[str, str], list[dict]] = {}
+    missing: list[dict] = []
+    for row in rows:
+        key = _reportNmToFinanceKey(str(row.get("report_nm", "")))
+        if key is None:
+            if str(row.get("rcept_no", "") or "") not in existing:
+                missing.append(row)
+            continue
+        byKey.setdefault(key, []).append(row)
+    for keyRows in byKey.values():
+        rcepts = {str(r.get("rcept_no", "") or "") for r in keyRows}
+        if not (rcepts & existing):
+            missing.extend(keyRows)
+            continue
+        if not correctionGrace:
+            continue
+        bodyRows = [r for r in keyRows if not _ATTACHMENT_ONLY_RE.match(str(r.get("report_nm", "")))]
+        if not bodyRows:
+            continue
+        newest = max(bodyRows, key=lambda r: str(r.get("rcept_no", "") or ""))
+        if str(newest.get("rcept_no", "") or "") in existing:
+            continue
+        try:
+            filedAt = datetime.strptime(str(newest.get("rcept_dt", "")), "%Y%m%d")
+        except ValueError:
+            continue
+        if (now - filedAt).days <= _CORRECTION_GRACE_DAYS:
+            missing.append(newest)
+    return missing
+
+
 def _discoverNewFilings(keys: str, lookbackDays: int, dataDir: str) -> tuple[set[str], dict[str, list[dict]]]:
     """최근 N일 정기공시에서 새 보고서 있는 종목 + rcept_no 매핑 반환.
 
@@ -230,8 +291,8 @@ def _discoverNewFilings(keys: str, lookbackDays: int, dataDir: str) -> tuple[set
         existingFinance = _existingRceptNos(financeDir, sc)
         existingReport = _existingRceptNos(reportDir, sc)
 
-        missingFinance = [r for r in rows if r["rcept_no"] not in existingFinance]
-        missingReport = [r for r in rows if r["rcept_no"] not in existingReport]
+        missingFinance = _keyMissingRows(rows, existingFinance)
+        missingReport = _keyMissingRows(rows, existingReport)
 
         if missingFinance:
             missingFinanceCount += 1
@@ -294,15 +355,15 @@ def _verifyCollectedRcepts(
                 continue
 
             existing = _existingRceptNos(localDir, stockCode)
-            for row in expected:
-                rceptNo = str(row.get("rcept_no", "") or "")
-                if rceptNo in existing:
-                    continue
+            # 수집 뒤 검증은 "그 분기 데이터가 어떤 버전으로든 들어왔는가" 만 본다. 정정 버전 반영은 다음 run 의
+            # 발견 단계(유예 재수집)가 맡는다. 여기서 버전까지 따지면 API 가 돌려주지 않는 버전을 영원히 잔여
+            # 누락으로 찍는다.
+            for row in _keyMissingRows(expected, existing, correctionGrace=False):
                 failures.append(
                     {
                         "category": cat,
                         "stockCode": stockCode,
-                        "rceptNo": rceptNo,
+                        "rceptNo": str(row.get("rcept_no", "") or ""),
                         "reportNm": str(row.get("report_nm", "")),
                         "rceptDt": str(row.get("rcept_dt", "")),
                     }
@@ -434,6 +495,12 @@ def main():
                     pendingCodes |= newToRetry
                     print(f"[syncRecent] 이전 실행 failures: {len(newToRetry)}개 종목 재시도 추가")
         except (OSError, ValueError):
+            pass
+        # 흡수했으니 지운다. 이번 run 에서 다시 실패하면 batchCollect 가 새로 쓴다. 안 지우면 한 번의 대규모
+        # 장애 목록이 GHA cache 를 타고 영구히 남아 매 run "재시도 추가" 로 찍힌다(2026-08-21 실측 2718 종목).
+        try:
+            failuresPath.unlink()
+        except OSError:
             pass
 
     # 1단계: 새 보고서가 있는 종목 발견
