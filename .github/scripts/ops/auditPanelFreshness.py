@@ -38,7 +38,8 @@ MIN_MISSING_ALERT = 20  # 절대 하한. 이 수 이하의 잔여는 reconcile �
 MISSING_RATIO_ALERT = 0.02  # 기대 rcept 대비 비율 상한.
 LOOKUP_WORKERS = 8
 AUDIT_BUDGET_SECONDS = 900.0  # HF rceptNo 조회 예산. Data Audit job 상한(30분) 안에서 gh 호출 몫을 남긴다.
-MIN_COVERAGE_FOR_VERDICT = 0.5  # 예산 초과 시 이 비율 미만으로만 봤으면 판정하지 않는다.
+MIN_COVERAGE_FOR_VERDICT = 0.5  # 조회에 성공한 종목 비율이 이 미만이면 판정하지 않는다(예산 초과·429 폭주 모두).
+LOOKUP_RETRIES = 3  # 종목당 조회 시도 수. HF 429 같은 일시 실패를 짧은 백오프로 흡수한다(2026-08-22 실측 2,703 건 429).
 # 첨부만 바뀐 정정은 DART document API 가 status 014(파일 없음)를 돌려줘 본문 zip 이 없다(2026-08-22 실측:
 # 000440 20260730000361·20260730000551). panel 에 들어올 수 없으므로 기대 집합에서 뺀다. 두면 영구 "누락" 이 된다.
 _ATTACHMENT_ONLY_RE = re.compile(r"^\[(?:첨부정정|첨부추가)\]")
@@ -194,11 +195,18 @@ def auditPanelFreshness(
 
     repo = repoFor("panel")
     relDir = DATA_RELEASES["panel"]["dir"]
+
+    def lookup(code: str) -> set[str] | None:
+        """종목 하나의 panel rcept 집합. 일시 실패(None)는 짧은 백오프 뒤 다시 시도한다."""
+        for attempt in range(LOOKUP_RETRIES):
+            owned = _panelRceptsFromHf(repo, relDir, code, token=token)
+            if owned is not None:
+                return owned
+            time.sleep(2.0 * (attempt + 1))
+        return None
+
     have, timedOut = lookupWithBudget(
-        sorted(expectedByCode),
-        lambda code: _panelRceptsFromHf(repo, relDir, code, token=token),
-        workers=LOOKUP_WORKERS,
-        budgetSeconds=budgetSeconds,
+        sorted(expectedByCode), lookup, workers=LOOKUP_WORKERS, budgetSeconds=budgetSeconds
     )
 
     expected = 0
@@ -215,7 +223,7 @@ def auditPanelFreshness(
                 missing.append((code, rceptNo, rceptDt, reportNm))
     missing.sort(key=lambda item: (item[2], item[0], item[1]))
     companies = len(expectedByCode)
-    lookedUp = len(have)
+    lookedUp = sum(1 for owned in have.values() if owned is not None)  # 조회에 *성공* 한 종목만 표본이다
     return {
         "expected": expected,
         "missing": len(missing),
@@ -224,6 +232,8 @@ def auditPanelFreshness(
         "lookedUp": lookedUp,
         "coverage": (lookedUp / companies) if companies else 1.0,
         "timedOut": timedOut,
+        # 표본이 절반도 안 되면 breach 도 pass 도 아니다. 호출자는 thinSample 로 유보를 가른다.
+        "thinSample": companies > 0 and (lookedUp / companies) < MIN_COVERAGE_FOR_VERDICT,
         "breach": judge(expected, len(missing)),
         "samples": missing[:20],
         "window": f"{start}~{cutoff}",
@@ -253,9 +263,11 @@ def describe(result: dict) -> str:
         f"누락 {missing}/{expected} ({ratio:.1%}) · 조회실패 {int(result.get('unknownCompanies', 0))}종목 · "
         f"창 {result.get('window', '-')}"
     )
-    if result.get("timedOut"):
+    coverage = float(result.get("coverage", 1.0))
+    if result.get("timedOut") or coverage < 1.0:
         unseen = int(result.get("companies", 0)) - int(result.get("lookedUp", 0))
-        text += f" · 예산 초과(미조회 {unseen}종목, 표본 {float(result.get('coverage', 0.0)):.0%})"
+        reason = "예산 초과" if result.get("timedOut") else "조회 실패"
+        text += f" · {reason}(미조회 {unseen}종목, 표본 {coverage:.0%})"
     return text
 
 
@@ -286,7 +298,7 @@ def main() -> int:
     print(f"[{AUDIT_NAME}] {describe(result)} · breach={result['breach']}", flush=True)
     for code, rceptNo, rceptDt, reportNm in result["samples"]:
         print(f"  - {code} {rceptNo} {rceptDt} {reportNm}", flush=True)
-    if result["timedOut"] and result["coverage"] < MIN_COVERAGE_FOR_VERDICT:
+    if result["thinSample"]:
         print(f"[{AUDIT_NAME}] 표본 부족으로 판정 유보.", flush=True)
         return 2
     return 1 if result["breach"] else 0

@@ -248,3 +248,50 @@ def test_monitor_withholds_verdict_when_sample_is_thin():
     enough = {"breach": True, "timedOut": True, "coverage": 0.8, "expected": 100, "missing": 90, "samples": []}
     entry = monitor._freshnessEntry(enough, auditName=audit.AUDIT_NAME, describe=audit.describe)
     assert entry["state"] == "persistent"
+
+
+def test_audit_counts_only_successful_lookups_as_sample(monkeypatch):
+    """HF 429 처럼 조회가 None 으로 무더기 실패하면 표본이 아니다. thinSample 이 올라가 판정을 유보한다."""
+    mod = _load("auditPanelFreshness")
+    filings = [(f"{i:06d}", f"2026081400{i:04d}", "20260814", "반기보고서 (2026.06)") for i in range(1, 41)]
+    have = {
+        f"{i:06d}": (set() if i <= 4 else None) for i in range(1, 41)
+    }  # 4 종목만 조회 성공(전부 누락), 36 종목 None
+    _wire(monkeypatch, filings=filings, panelHave=have)
+    monkeypatch.setattr(mod, "LOOKUP_RETRIES", 1)
+
+    result = mod.auditPanelFreshness(today=date(2026, 8, 22), budgetSeconds=30)
+
+    assert result["lookedUp"] == 4 and result["unknownCompanies"] == 36
+    assert result["coverage"] == 0.1 and result["thinSample"] is True
+    assert (
+        result["missing"] == 4 and result["breach"] is False
+    )  # 절대 하한(20) 미만이라 breach 는 아니지만 pass 도 아니다
+    assert "조회 실패" in mod.describe(result)
+
+
+def test_monitor_withholds_verdict_on_thin_sample_without_timeout():
+    """429 폭주로 조회 성공이 적으면(timedOut 아님) 'pass' 를 찍지 않고 unknown."""
+    monitor = _load("monitorPipeline")
+    audit = _load("auditPanelFreshness")
+    result = {
+        "breach": False,
+        "thinSample": True,
+        "timedOut": False,
+        "coverage": 0.01,
+        "expected": 20,
+        "missing": 16,
+        "samples": [],
+    }
+    entry = monitor._freshnessEntry(result, auditName=audit.AUDIT_NAME, describe=audit.describe)
+    assert entry["state"] == "unknown"
+
+
+def test_monitor_keeps_freshness_issue_when_audit_skipped_or_withheld():
+    """신선도 실패로 열린 Issue 는 감사를 건너뛴 run(None)·유보한 run(unknown)이 닫지 않는다. ok 로 잰 run 만 닫는다."""
+    monitor = _load("monitorPipeline")
+    body = "## report\n" + monitor.FRESHNESS_SAMPLE_MARKER + "\n- 000A"
+    assert monitor._mayCloseIssue(None, body) is False
+    assert monitor._mayCloseIssue({"state": "unknown"}, body) is False
+    assert monitor._mayCloseIssue({"state": "ok"}, body) is True
+    assert monitor._mayCloseIssue(None, "## report without freshness") is True

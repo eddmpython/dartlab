@@ -83,11 +83,12 @@ def _freshnessEntry(result: dict, *, auditName: str, describe) -> dict:
         'ok'
     """
     breach = bool(result.get("breach"))
-    # 예산 초과로 표본이 절반도 안 되면 판정하지 않는다(알림도 통과도 아님). HF 가 느린 날의 오탐·미탐 방지.
-    thin = bool(result.get("timedOut")) and float(result.get("coverage", 1.0)) < 0.5
+    # 조회에 성공한 표본이 절반도 안 되면 판정하지 않는다(알림도 통과도 아님). 2026-08-22 실측: HF 429 로 20 종목만
+    # 조회된 채 16/20 누락을 "pass" 로 찍을 뻔했다(절대 하한 20 미만). 예산 초과와 429 폭주를 같은 규칙으로 막는다.
+    thin = bool(result.get("thinSample")) or float(result.get("coverage", 1.0)) < 0.5
     state = "unknown" if thin else ("persistent" if breach else "ok")
     classification = (
-        "신선도 감사 표본 부족(HF 조회 예산 초과). 판정 유보"
+        "신선도 감사 표본 부족(HF 조회 예산 초과 또는 429). 판정 유보"
         if thin
         else ("panel 에 최신 정기보고서 미반영 (수집 job 결론과 무관한 데이터 정지)" if breach else "")
     )
@@ -100,6 +101,41 @@ def _freshnessEntry(result: dict, *, auditName: str, describe) -> dict:
         "runId": None,
         "samples": list(result.get("samples") or []),
     }
+
+
+FRESHNESS_SAMPLE_MARKER = "### 데이터 신선도 누락 표본"
+
+
+def _mayCloseIssue(freshness: dict | None, issueBody: str) -> bool:
+    """실패 0 인 run 이 열린 Issue 를 닫아도 되는지(순수 함수).
+
+    신선도 감사를 건너뛴(gate off) run 이나 표본 부족으로 유보한 run 은 신선도가 회복됐는지 모른다. 그런 run 이
+    신선도 실패로 열린 Issue 를 "정상 복구" 로 닫으면 다음 감사가 새 번호로 다시 열어 알림만 늘어난다
+    (2026-08-22 실측: #125, #126 이 9 분 간격으로 열리고 닫혔다). 신선도를 실제로 재서 ok 일 때만 닫는다.
+
+    Args:
+        freshness: 이번 run 의 신선도 entry. None 이면 건너뜀.
+        issueBody: 열린 Issue 본문.
+
+    Returns:
+        닫아도 되면 True.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> _mayCloseIssue(None, "x"), _mayCloseIssue(None, FRESHNESS_SAMPLE_MARKER)
+        (True, False)
+    """
+    freshnessFailureOpen = FRESHNESS_SAMPLE_MARKER in (issueBody or "")
+    if not freshnessFailureOpen:
+        return True
+    return freshness is not None and freshness.get("state") == "ok"
+
+
+def _issueBody(number: int) -> str:
+    """열린 Issue 본문(조회 실패는 빈 문자열)."""
+    return _gh(["issue", "view", str(number), "--json", "body", "--jq", ".body"], check=False)
 
 
 def _auditFreshness() -> dict | None:
@@ -575,6 +611,8 @@ def main():
         else:
             out = _gh(["issue", "create", "--title", title, "--body", body, "--label", FAILURE_LABEL])
             print(f"[monitor] Issue 생성 (연속 {len(persistent)} · 단발 {len(retried)} · 누락 {len(stale)}): {out}")
+    elif openIssue and not _mayCloseIssue(freshness, _issueBody(openIssue)):
+        print(f"[monitor] Issue #{openIssue} 유지 (신선도 실패가 열려 있는데 이번 run 은 신선도를 재지 못함)")
     elif openIssue:
         _gh(["issue", "close", str(openIssue), "--comment", "모든 파이프라인 정상 복구 — 자동 닫기."])
         print(f"[monitor] Issue #{openIssue} 자동 닫기 (실패 0)")
