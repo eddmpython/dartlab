@@ -56,8 +56,9 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    # 10 -> 20. 신선도 감사(공시목록 1회 + 종목당 HF rceptNo range read 수천 건, 8 스레드)가 약 5 분 든다.
-    timeout-minutes: 20
+    # 10 -> 30. 신선도 감사(공시목록 1회 + 종목당 HF rceptNo range read 수천 건, 8 스레드)가 보통 5 분,
+    # HF 가 느린 날엔 예산(15 분)까지 쓴다. 2026-08-22 실측: 연결 끊김 재시도가 겹쳐 20 분에 잘렸다.
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -81,3 +82,4 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           # 신선도 감사는 일일 cron·수동·panel 생산자(Original SSOT Sync) 완료 때만. 그 밖의 workflow_run 은 run 감시만.
           DARTLAB_FRESHNESS_AUDIT: ${{ (github.event_name != 'workflow_run' || github.event.workflow_run.name == 'Original SSOT Sync') && '1' || '0' }}
+          DARTLAB_FRESHNESS_BUDGET_SECONDS: '900'  # HF rceptNo 조회 예산. 넘기면 표본으로 판정(절반 미만이면 유보).

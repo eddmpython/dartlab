@@ -83,11 +83,19 @@ def _freshnessEntry(result: dict, *, auditName: str, describe) -> dict:
         'ok'
     """
     breach = bool(result.get("breach"))
+    # 예산 초과로 표본이 절반도 안 되면 판정하지 않는다(알림도 통과도 아님). HF 가 느린 날의 오탐·미탐 방지.
+    thin = bool(result.get("timedOut")) and float(result.get("coverage", 1.0)) < 0.5
+    state = "unknown" if thin else ("persistent" if breach else "ok")
+    classification = (
+        "신선도 감사 표본 부족(HF 조회 예산 초과). 판정 유보"
+        if thin
+        else ("panel 에 최신 정기보고서 미반영 (수집 job 결론과 무관한 데이터 정지)" if breach else "")
+    )
     return {
         "name": auditName,
-        "state": "persistent" if breach else "ok",
+        "state": state,
         "conclusion": describe(result),
-        "classification": "panel 에 최신 정기보고서 미반영 (수집 job 결론과 무관한 데이터 정지)" if breach else "",
+        "classification": classification,
         "url": FRESHNESS_URL,
         "runId": None,
         "samples": list(result.get("samples") or []),
@@ -298,6 +306,31 @@ def _classifyFailureWindow(runs: list[dict]) -> dict:
     return {"classification": classification, "causeHistory": history}
 
 
+def _shouldRerun(conclusion: str, classification: str) -> bool:
+    """단발 실패를 자동 재실행할지(순수 함수). 큐 축출과 startup_failure 는 rerun 이 아무것도 못 고치므로 뺀다.
+
+    startup_failure 는 job 이 하나도 안 뜬 GitHub 측 실패(워크플로 파일 또는 인프라)라 rerun 해도 같은 자리에서
+    즉시 다시 실패한다. 2026-08-22 실측: 감사가 돌 때마다 rerun 을 걸어 한 run 이 19 attempt 까지 늘었다.
+
+    Args:
+        conclusion: run 의 conclusion.
+        classification: 실패 원인 분류 라벨.
+
+    Returns:
+        rerun 을 걸어도 되는지.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> _shouldRerun("startup_failure", "code/기타"), _shouldRerun("failure", "code/기타")
+        (False, True)
+    """
+    if conclusion == "startup_failure":
+        return False
+    return not str(classification).startswith(QUEUE_EVICTED)
+
+
 def _rerunFailed(runId: int) -> bool:
     """실패 run 의 실패 잡만 자동 재실행 (actions:write 필요). 성공 트리거 시 True."""
     result = subprocess.run(
@@ -498,7 +531,8 @@ def main():
             # 시도하지 않고, 데이터가 실제로 밀리면 staleness 축이 재트리거를 맡는다.
             evicted = str(entry.get("classification", "")).startswith(QUEUE_EVICTED)
             entry["evicted"] = evicted
-            entry["reran"] = False if evicted else (_rerunFailed(triage["runId"]) if triage["runId"] else False)
+            canRerun = _shouldRerun(str(triage.get("conclusion") or ""), str(entry.get("classification", "")))
+            entry["reran"] = _rerunFailed(triage["runId"]) if (canRerun and triage["runId"]) else False
             retried.append(entry)
             icon = "queue-evict" if evicted else ("retry" if entry["reran"] else "FAIL×1")
         elif triage["state"] == "stale":

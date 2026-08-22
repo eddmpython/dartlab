@@ -187,3 +187,57 @@ def test_data_audit_workflow_passes_dart_keys_to_monitor():
     assert "DARTLAB_FRESHNESS_AUDIT:" in text  # 트리거 게이트 배선
     assert "github.event.workflow_run.name == 'Original SSOT Sync'" in text  # panel 생산자 완료 뒤엔 반드시 감사
     assert "cancel-in-progress: false" in text  # 진행 중 감사가 뒤따르는 트리거에 끊기지 않게
+
+
+def test_lookup_with_budget_returns_partial_when_slow():
+    """HF 가 느리면 예산 안에 본 종목만 돌려주고 timedOut 을 올린다(daemon 스레드라 프로세스 종료를 안 묶는다)."""
+    import time
+
+    mod = _load("auditPanelFreshness")
+
+    def slow(code: str):
+        time.sleep(0.3)
+        return {code}
+
+    results, timedOut = mod.lookupWithBudget([f"{i:06d}" for i in range(40)], slow, workers=4, budgetSeconds=0.5)
+    assert timedOut is True
+    assert 0 < len(results) < 40
+    fast, timedOutFast = mod.lookupWithBudget(["a", "b"], lambda c: {c}, workers=2, budgetSeconds=5)
+    assert timedOutFast is False and fast == {"a": {"a"}, "b": {"b"}}
+
+
+def test_audit_budget_exhaustion_counts_unseen_as_unknown(monkeypatch):
+    """예산 초과로 못 본 종목은 조회 실패로 세고 판정 모수에서 빠진다."""
+    import time
+
+    mod = _load("auditPanelFreshness")
+    filings = [(f"{i:06d}", f"2026081400{i:04d}", "20260814", "반기보고서 (2026.06)") for i in range(1, 41)]
+    _wire(monkeypatch, filings=filings, panelHave={})
+    from dartlab.pipeline.stages import panelRceptReconcile
+
+    def slowLookup(repo, relDir, code, *, token=None):
+        time.sleep(0.3)
+        return set()
+
+    monkeypatch.setattr(panelRceptReconcile, "_panelRceptsFromHf", slowLookup)
+
+    result = mod.auditPanelFreshness(today=date(2026, 8, 22), budgetSeconds=0.5)
+
+    assert result["timedOut"] is True
+    assert result["companies"] == 40
+    assert 0 < result["lookedUp"] < 40
+    assert result["unknownCompanies"] == 40 - result["lookedUp"]
+    assert result["expected"] == result["lookedUp"]  # 본 종목만 모수
+    assert "예산 초과" in mod.describe(result)
+
+
+def test_monitor_withholds_verdict_when_sample_is_thin():
+    """예산 초과 + 표본 절반 미만이면 unknown(알림도 통과도 아님). 표본이 충분하면 평소대로 판정한다."""
+    monitor = _load("monitorPipeline")
+    audit = _load("auditPanelFreshness")
+    thin = {"breach": True, "timedOut": True, "coverage": 0.3, "expected": 10, "missing": 9, "samples": []}
+    entry = monitor._freshnessEntry(thin, auditName=audit.AUDIT_NAME, describe=audit.describe)
+    assert entry["state"] == "unknown" and "표본 부족" in entry["classification"]
+    enough = {"breach": True, "timedOut": True, "coverage": 0.8, "expected": 100, "missing": 90, "samples": []}
+    entry = monitor._freshnessEntry(enough, auditName=audit.AUDIT_NAME, describe=audit.describe)
+    assert entry["state"] == "persistent"

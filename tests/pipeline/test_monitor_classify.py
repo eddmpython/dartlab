@@ -372,3 +372,12 @@ def test_only_skipped_runs_since_last_success_is_stale():
     result = mod._triage(runs, maxGapHours=42, now=now)
     assert result["state"] == "stale"
     assert "마지막 성공" in result["conclusion"]
+
+
+def test_should_rerun_skips_startup_failure_and_queue_eviction():
+    """startup_failure(job 0 개, GitHub 측)와 큐 축출은 rerun 으로 못 고친다. 2026-08-22 실측 19 attempt 가드."""
+    mod = _loadMonitor()
+    assert mod._shouldRerun("startup_failure", "code/기타") is False
+    assert mod._shouldRerun("failure", mod.QUEUE_EVICTED) is False
+    assert mod._shouldRerun("failure", "code/기타") is True
+    assert mod._shouldRerun("cancelled", "job timeout (실행시간 초과)") is True
