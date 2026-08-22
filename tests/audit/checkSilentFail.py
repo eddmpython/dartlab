@@ -148,6 +148,9 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         # HF panel 404는 해당 종목 보유 rcept 0을 뜻하는 reconcile 신호다.
         # 빈 set이 신규 종목과 과거 누락분을 heal 대상으로 올리는 공개 계약이다.
         "pipeline/stages/dartZip.py",
+        # panelRceptReconcile: HF panel 미존재(404)는 "보유 rcept 0" 으로 판정해야 heal 대상이 된다(빈 set).
+        # 일시 실패는 None 으로 구분해 skip 하므로 silent-fail 이 아니라 설계된 분기다(dartZip 에서 분리).
+        "pipeline/stages/panelRceptReconcile.py",
         # KRX 업종과 발행주식수는 factor 적용성 보강 데이터다. 부재 시 Altman은
         # company_type_missing, Piotroski는 F7 미관측으로 명시하고 점수를 발행하지 않는다.
         "quant/alphas/altman.py",

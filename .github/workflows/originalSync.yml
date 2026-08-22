@@ -71,6 +71,8 @@ jobs:
     # dart-reconcile 이 둘 다 정확히 150 분에 잘렸다. 업로드를 배치 커밋으로 바꿔
     # HF 호출 수를 낮췄지만 seed 와 merge 는 여전히 종목 수에 비례하고 429 백오프가
     # 최대 900 초씩 남아 있다. 계절 피크를 정상 작업량으로 인정하고 상한을 맞춘다.
+    # panel 업로드는 200 종목마다 checkpoint 로 올리고(dartZip._PANEL_UPLOAD_EVERY) 원본 tar 를 panel
+    # 보다 먼저 올리므로, 상한에 잘려도 그때까지의 merge 는 HF 에 남고 다음 run 은 HF 차집합만 본다.
     timeout-minutes: 240
     concurrency:
       group: hf-dart-push
@@ -144,6 +146,8 @@ jobs:
       - name: panel rcept 단위 자가치유 (DART 정기 rcept vs panel 누락분 fetch+merge+HF)
         # forward dartZip 7일 윈도가 놓친 분기보고서를 85일 윈도 reconcile 로 회복.
         # 탐지=HF panel rceptNo 컬럼 range-read(싸다), heal=누락 rcept zip 만 fetch.
+        # heal 은 200 종목 chunk 로 "원본 tar, 그다음 panel(checkpoint 업로드)" 순으로 닫는다
+        # (panelRceptReconcile._HEAL_CHUNK). 분기 마감 뒤 수천 종목 backlog 가 timeout 에 통째로 증발하지 않는다.
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}

@@ -312,3 +312,59 @@ def test_changed_to_empty_removes_only_matching_receipt(tmp_path: Path) -> None:
     empty = pl.read_parquet(tmp_path / "000001.parquet")
     assert empty.is_empty()
     assert empty.columns == list(builder.PANEL_SCHEMA)
+
+
+def test_merge_migrates_unbounded_legacy_artifact_without_full_rebuild(tmp_path: Path) -> None:
+    """bounded 계약 이전에 발행된 회사 panel(회사 전체가 row group 하나)에 신규 receipt 를 merge 하면
+    기존 receipt 행을 그대로 보존한 채 bounded 레이아웃으로 다시 발행된다.
+
+    회귀 가드: 2026-07-30 계약 도입 뒤 HF 의 옛 레이아웃 panel 은 merge 때 PanelArtifactLayoutError
+    ("full rebuild 필요") 로 전부 튕겨 2026-08 반기보고서가 2천여 종목에서 영영 안 들어왔다. 기존
+    artifact 는 schema 만 강제하고 레이아웃은 스트리밍으로 흡수해야 한다.
+    """
+    from dartlab.providers.dart.build.saver import _ROW_GROUP_SIZE
+    from dartlab.providers.dart.panel.build import builder
+    from dartlab.providers.dart.panel.build.builder import _finalizePeriodRows
+
+    destination = tmp_path / "000001.parquet"
+    legacy = pl.concat(
+        [
+            _finalizePeriodRows(
+                [
+                    _panelRow(index, receiptNumber="20250319000001", period="2024Q4")
+                    for index in range(_ROW_GROUP_SIZE + 7)
+                ]
+            ),
+            _finalizePeriodRows(
+                [_panelRow(index, receiptNumber="20250514000002", period="2025Q1") for index in range(3)]
+            ),
+        ]
+    )
+    # 옛 saver 는 row_group_size 없이 써서 회사 전체가 row group 하나였다.
+    legacy.write_parquet(destination, compression="zstd", statistics=True)
+    legacyMeta = pq.read_metadata(destination)
+    assert legacyMeta.num_row_groups == 1 and legacyMeta.row_group(0).num_rows > _ROW_GROUP_SIZE
+    legacyRead = pl.read_parquet(destination)
+
+    builder.buildPanelFromStream(
+        "000001",
+        [("20250814000003", _zipBytes("C"))],
+        refDf=_loadRef(),
+        outBaseDir=tmp_path,
+        overwrite=True,
+        verbose=False,
+    )
+
+    migrated = pq.read_metadata(destination)
+    assert migrated.num_row_groups > 1
+    assert max(migrated.row_group(index).num_rows for index in range(migrated.num_row_groups)) <= _ROW_GROUP_SIZE
+    result = pl.read_parquet(destination)
+    assert result["rceptNo"].unique(maintain_order=True).to_list() == [
+        "20250319000001",
+        "20250514000002",
+        "20250814000003",
+    ]
+    retained = result.filter(pl.col("rceptNo") != "20250814000003")
+    assert retained.equals(legacyRead)  # 옛 행은 내용·순서 그대로 보존
+    added = result.filter(pl.col("rceptNo") == "20250814000003")
+    assert added.height > 0 and any("<P>C</P>" in content for content in added["contentRaw"].to_list())

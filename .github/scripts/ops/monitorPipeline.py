@@ -13,10 +13,12 @@ gh CLI로 각 워크플로우의 최근 실행을 조회한다. **실패는 단�
   GH_TOKEN: GitHub 토큰 (Actions에서 자동 제공). rerun 은 actions:write, Issue 는 issues:write.
 """
 
+import importlib.util
 import json
 import os
 import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 
 # scheduled(cron) 데이터/자동화 파이프라인 전체 — gh run list 의 워크플로우 `name:` 값과 정확히 일치해야 함.
 # (제외: 코드 CI/CodeQL/Policy·Deploy·Publish·Metrics·EDGAR Safety Gate·Data Audit 자기 자신·mapBuild(cron 없음))
@@ -44,6 +46,79 @@ MONITORED_WORKFLOWS = [
 FAILURE_LABEL = "pipeline-failure"
 RECENT_N = 5
 _OK_CONCLUSIONS = ("success", "skipped")
+
+# 데이터 신선도 축. run 결론이 전부 초록이어도 HF panel 에 최신 정기보고서가 없으면 알린다.
+# 2026-07-30~08-21 사고: 종목 단위 실패가 run 결론에 안 실려 3 주 동안 아무 run 도 빨갛지 않았고,
+# 공시뷰어가 읽는 panel 은 6 월에 멈춘 채였다. run 기반 감시만으로는 구조적으로 못 보는 갭이다.
+FRESHNESS_URL = "https://huggingface.co/datasets/eddmpython/dartlab-data/tree/main/dart/panel"
+
+
+def _loadFreshnessModule():
+    """같은 폴더의 auditPanelFreshness.py 를 경로로 적재한다(스크립트·테스트 양쪽에서 동일)."""
+    path = Path(__file__).resolve().with_name("auditPanelFreshness.py")
+    spec = importlib.util.spec_from_file_location("auditPanelFreshness", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"auditPanelFreshness 적재 실패: {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _freshnessEntry(result: dict, *, auditName: str, describe) -> dict:
+    """감사 결과를 모니터 entry 로 바꾼다(순수 함수). breach 면 persistent(조치 필요), 아니면 ok.
+
+    Args:
+        result: ``auditPanelFreshness`` 반환값.
+        auditName: 표시 이름.
+        describe: 결과 한 줄 요약 함수.
+
+    Returns:
+        statuses/persistent 에 그대로 넣을 entry dict.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> _freshnessEntry({"breach": False, "expected": 10, "missing": 0}, auditName="x", describe=str)["state"]
+        'ok'
+    """
+    breach = bool(result.get("breach"))
+    return {
+        "name": auditName,
+        "state": "persistent" if breach else "ok",
+        "conclusion": describe(result),
+        "classification": "panel 에 최신 정기보고서 미반영 (수집 job 결론과 무관한 데이터 정지)" if breach else "",
+        "url": FRESHNESS_URL,
+        "runId": None,
+        "samples": list(result.get("samples") or []),
+    }
+
+
+def _auditFreshness() -> dict | None:
+    """DART panel 신선도 감사를 돌려 entry 로 돌려준다. 키가 없으면 None(건너뜀 로그), 감사 불능은 unknown entry."""
+    module = _loadFreshnessModule()
+    # 감사는 수천 번의 HF range read 라 매 workflow_run 완료마다 돌리지 않는다. 워크플로가 일일 cron,
+    # 수동, 그리고 panel 생산자(Original SSOT Sync) 완료 때만 "1" 을 준다. 미설정(로컬)은 실행.
+    if os.environ.get("DARTLAB_FRESHNESS_AUDIT", "1") == "0":
+        print(f"[monitor] {module.AUDIT_NAME}: 이 트리거에서는 건너뜀(DARTLAB_FRESHNESS_AUDIT=0)")
+        return None
+    if not (os.environ.get("DART_API_KEYS") or os.environ.get("DART_API_KEY")):
+        print(f"[monitor] {module.AUDIT_NAME}: DART_API_KEYS 없음. 신선도 감사 건너뜀")
+        return None
+    try:
+        result = module.auditPanelFreshness(token=os.environ.get("HF_TOKEN") or None)
+    except Exception as exc:  # noqa: BLE001 (감사 불능은 entry 로 드러내되 run 감시를 막지 않는다)
+        return {
+            "name": module.AUDIT_NAME,
+            "state": "unknown",
+            "conclusion": f"감사 실패: {type(exc).__name__}: {str(exc)[:120]}",
+            "classification": "신선도 감사 불능",
+            "url": FRESHNESS_URL,
+            "runId": None,
+            "samples": [],
+        }
+    return _freshnessEntry(result, auditName=module.AUDIT_NAME, describe=module.describe)
+
 
 # 스케줄 누락(cron drop) 감지 — 최신 run 이 성공이어도 이 시간(h)보다 오래됐으면 stale(드랍된 cron)로 판정.
 # GitHub Actions 스케줄은 best-effort 라 혼잡 시 run 기록 없이 건너뛴다 → 실패 0 인데 데이터가 안 들어오는
@@ -443,6 +518,14 @@ def main():
             + (f" — {entry.get('classification', '')}" if entry.get("classification") else "")
         )
 
+    freshness = _auditFreshness()
+    if freshness is not None:
+        statuses.append(freshness)
+        if freshness["state"] == "persistent":
+            persistent.append(freshness)
+        icon = {"persistent": "FAIL", "ok": "pass"}.get(freshness["state"], "unknown")
+        print(f"  [{icon}] {freshness['name']}: {freshness['conclusion']}")
+
     _ensureLabel()
     openIssue = _findOpenIssue()
 
@@ -514,6 +597,12 @@ def _buildIssueBody(
         for r in retried:
             mark = "재실행됨" if r.get("reran") else "재실행 실패"
             lines.append(f"- {r['name']}: {r.get('classification', '-')} ({mark}) — [로그]({r['url']})")
+
+    for f in persistent:
+        if f.get("samples"):
+            lines.append(f"\n### 데이터 신선도 누락 표본 ({f['name']}, 오래된 순 최대 20건)")
+            for code, rceptNo, rceptDt, reportNm in f["samples"]:
+                lines.append(f"- {code} `{rceptNo}` {rceptDt} {reportNm}")
 
     histories = [item for status in (persistent + retried) for item in status.get("causeHistory", [])]
     if histories:

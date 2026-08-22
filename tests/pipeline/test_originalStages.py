@@ -46,7 +46,7 @@ def test_dartzip_seed_safe_set_404_vs_transient(monkeypatch, tmp_path) -> None:
     tarDir = tmp_path / "_hf"
     _makeTar(tarDir / "AAA.tar", ["r1.zip", "r2.zip"])  # 완전 tar(2 멤버)
 
-    def fakeDownload(*, repo_id, repo_type, filename, token):
+    def fakeDownload(*, repo_id, repo_type, filename, token, local_dir=None):
         code = filename.split("/")[-1][:-4]
         if code == "AAA":
             return str(tarDir / "AAA.tar")
@@ -114,6 +114,110 @@ def test_dartzip_seed_isolates_count_from_stale_zips(monkeypatch, tmp_path) -> N
     assert safe == {"AAA"} and n == 1
     names = sorted(p.name for p in dest.glob("*.zip"))
     assert names == ["r1.zip", "r2.zip", "stale1.zip", "stale2.zip"]  # 잔재 보존 + 신규 병합
+
+
+def _wireIncrementalBuild(monkeypatch, tmp_path, *, failing: set[str]):
+    """_buildPanelIncremental 의 외부 의존(HF seed·빌드·업로드)을 stub 으로 차단하고 관찰 지점을 돌려준다."""
+    import dartlab.config as cfg
+    from dartlab.pipeline import hfUpload
+    from dartlab.pipeline.stages import dartZip
+    from dartlab.providers.dart.panel import build as panelBuild
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(dartZip, "_seedPanelFromHf", lambda codes, *, token=None: (len(codes), set(codes)))
+    uploads: list[list[str]] = []
+
+    def fakeUpload(category, *, changedFiles=None, dataDir=None, token=None):
+        assert category == "panel"
+        uploads.append(sorted(changedFiles or []))
+
+    monkeypatch.setattr(hfUpload, "uploadCategoryToHf", fakeUpload)
+
+    def fakeBuild(code, stream, *, refDf, outBaseDir, overwrite):
+        list(stream)  # bytes 소비(실제 빌더와 같은 계약)
+        if code in failing:
+            raise RuntimeError(f"boom {code}")
+        return {"2026Q2": 1}
+
+    monkeypatch.setattr(panelBuild, "buildPanelFromStream", fakeBuild)
+    return uploads
+
+
+def _newZips(tmp_path, codes: list[str]) -> dict:
+    """종목별 신규 zip 1 개(더미 bytes)를 docs/{code}/ 에 만들어 newZipsByCode 를 돌려준다."""
+    out: dict = {}
+    for code in codes:
+        z = tmp_path / "original" / "dart" / "docs" / code / "20260814000001.zip"
+        z.parent.mkdir(parents=True, exist_ok=True)
+        z.write_bytes(b"PK\x03\x04")
+        out[code] = [z]
+    return out
+
+
+def test_buildpanelincremental_counts_failures_and_checkpoints_upload(monkeypatch, tmp_path) -> None:
+    """종목 빌드 실패는 err 로 집계(삼킴 금지)하고, 성공분은 uploadEvery 종목마다 checkpoint 업로드한다.
+
+    회귀 가드: 2026-07-30~08-21 에 레이아웃 계약 위반으로 매일 2천여 종목이 publish 실패했는데
+    failures 문자열에만 남고 err=0 이라 run 이 초록으로 끝나 3 주를 놓쳤다.
+    """
+    from dartlab.pipeline.stages import dartZip
+    from dartlab.pipeline.types import StageResult
+
+    uploads = _wireIncrementalBuild(monkeypatch, tmp_path, failing={"000B"})
+    zips = _newZips(tmp_path, ["000A", "000B", "000C", "000D", "000E"])
+    res = StageResult(category="dartOriginal")
+
+    built = dartZip._buildPanelIncremental(list(zips), zips, res, token=None, uploadEvery=2)
+
+    assert built == ["000A", "000C", "000D", "000E"]
+    assert res.report.err == 1
+    assert any("000B" in f and "RuntimeError" in f for f in res.report.failures)
+    assert len(uploads) == 2 and all(len(batch) == 2 for batch in uploads)  # 4 성공 / 2 마다 checkpoint
+    assert sorted(c for batch in uploads for c in batch) == [
+        "000A.parquet",
+        "000C.parquet",
+        "000D.parquet",
+        "000E.parquet",
+    ]
+
+
+def test_buildpanelincremental_uploads_tail_and_skips_when_disabled(monkeypatch, tmp_path) -> None:
+    """uploadEvery 를 못 채운 꼬리도 끝에서 올리고, None 이면 업로드하지 않는다(호출부 책임)."""
+    from dartlab.pipeline.stages import dartZip
+    from dartlab.pipeline.types import StageResult
+
+    uploads = _wireIncrementalBuild(monkeypatch, tmp_path, failing=set())
+    zips = _newZips(tmp_path, ["000A", "000B", "000C"])
+
+    built = dartZip._buildPanelIncremental(
+        list(zips), zips, StageResult(category="dartOriginal"), token=None, uploadEvery=2
+    )
+    assert built == ["000A", "000B", "000C"]
+    assert sorted(len(batch) for batch in uploads) == [1, 2]  # 2 + 꼬리 1
+
+    uploads.clear()
+    res = StageResult(category="dartOriginal")
+    built = dartZip._buildPanelIncremental(list(zips), zips, res, token=None, uploadEvery=None)
+    assert built == ["000A", "000B", "000C"] and uploads == [] and res.report.err == 0
+
+
+def test_prunehistoryzips_keeps_only_new_zips(tmp_path) -> None:
+    """번들이 끝난 종목의 전이력 zip 은 지우고 이번 run 의 신규 zip(keep)만 남긴다."""
+    from dartlab.pipeline.stages import panelRceptReconcile
+
+    docs = tmp_path / "docs"
+    for code, names in {"000A": ["old1.zip", "old2.zip", "new.zip"], "000B": ["x.zip"]}.items():
+        (docs / code).mkdir(parents=True)
+        for name in names:
+            (docs / code / name).write_bytes(b"PK")
+
+    removed = panelRceptReconcile._pruneHistoryZips(
+        docs, ["000A", "000B", "000Z"], keep={"000A": [docs / "000A" / "new.zip"]}
+    )
+
+    assert removed == 3
+    assert sorted(p.name for p in (docs / "000A").glob("*.zip")) == ["new.zip"]
+    assert list((docs / "000B").glob("*.zip")) == []
 
 
 def test_runincremental_partial_fetch_skips_build_without_raw(monkeypatch, tmp_path) -> None:

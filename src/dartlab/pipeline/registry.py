@@ -37,6 +37,7 @@ def buildRegistry() -> dict[str, StageSpec]:
         edgarPanel,
         macro,
         news,
+        panelRceptReconcile,
         prebuild,
         reconcile,
     )
@@ -78,7 +79,7 @@ def buildRegistry() -> dict[str, StageSpec]:
         ),
         StageSpec(
             "panelRceptReconcile",
-            run=dartZip.runPanelRceptReconcile,
+            run=panelRceptReconcile.runPanelRceptReconcile,
             uploadCategories=("dartOriginal", "panel"),
             label="DART panel rcept 단위(파일내) 자가치유 — DART 정기 rcept vs panel 누락분 fetch+merge",
         ),

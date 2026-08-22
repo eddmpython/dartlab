@@ -35,19 +35,23 @@ class PanelArtifactLockError(RuntimeError):
     """동일 회사 panel writer lock을 제한 시간 안에 얻지 못했다."""
 
 
-def _validateParquet(parquet: pq.ParquetFile, source: Path) -> None:
+def _validateSchema(parquet: pq.ParquetFile, source: Path) -> None:
     if not parquet.schema_arrow.equals(_PANEL_ARROW_SCHEMA):
         raise PanelArtifactLayoutError(
             "panel parquet schema가 PANEL_SCHEMA와 정확히 일치하지 않습니다: "
             f"source={source}, actual={parquet.schema_arrow}, expected={_PANEL_ARROW_SCHEMA}"
         )
+
+
+def _validateParquet(parquet: pq.ParquetFile, source: Path) -> None:
+    """이번 build 가 쓴 stage 와 최종 발행물의 계약: 정확한 schema + bounded row group."""
+    _validateSchema(parquet, source)
     for rowGroupIndex in range(parquet.metadata.num_row_groups):
         rowCount = parquet.metadata.row_group(rowGroupIndex).num_rows
         if rowCount > _ROW_GROUP_SIZE:
             raise PanelArtifactLayoutError(
-                "panel row group이 bounded merge 계약을 위반했습니다: "
-                f"source={source}, rowGroup={rowGroupIndex}, rows={rowCount}, max={_ROW_GROUP_SIZE}. "
-                "full rebuild가 필요합니다"
+                "panel row group이 bounded 발행 계약을 위반했습니다: "
+                f"source={source}, rowGroup={rowGroupIndex}, rows={rowCount}, max={_ROW_GROUP_SIZE}"
             )
 
 
@@ -347,15 +351,22 @@ class PanelArtifactAssembler:
         return rowCount
 
     def _stageRetainedExisting(self) -> None:
+        # 기존 artifact 는 schema 만 강제하고 물리 row group 크기는 강제하지 않는다. bounded 계약이
+        # 들어오기 전에 발행된 회사 panel 은 회사 전체가 row group 하나라, 그 파일을 거부하면 그
+        # 회사는 신규 공시를 영영 merge 하지 못한다(2026-08 반기보고서 2천여 종목이 이 경로에서
+        # 멈췄다). iter_batches 는 물리 row group 과 무관하게 _ROW_GROUP_SIZE 행씩 끊어 읽으므로
+        # 옛 레이아웃도 bounded 로 소비하고, 발행은 항상 bounded 로 다시 쓴다(_validatePublished 가
+        # 보증). 따라서 옛 레이아웃은 첫 merge 에서 자동으로 이행된다.
         source = self._destination
+        changedReceipts = sorted(self._changedReceipts)
         with _openParquet(source) as parquet:
-            _validateParquet(parquet, source)
-            for rowGroupIndex in range(parquet.metadata.num_row_groups):
-                table = parquet.read_row_group(rowGroupIndex, use_threads=False)
+            _validateSchema(parquet, source)
+            for batch in parquet.iter_batches(batch_size=_ROW_GROUP_SIZE, use_threads=False):
+                table = pa.Table.from_batches([batch])
                 frame = cast(pl.DataFrame, pl.from_arrow(table))
                 if frame["period"].null_count() or frame["rceptNo"].null_count():
                     raise PanelArtifactLayoutError(f"기존 panel period 또는 rceptNo가 null입니다: source={source}")
-                frame = frame.filter(~pl.col("rceptNo").is_in(sorted(self._changedReceipts)))
+                frame = frame.filter(~pl.col("rceptNo").is_in(changedReceipts))
                 if not frame.is_empty():
                     for partition in frame.partition_by(
                         ["period", "rceptNo"],
@@ -373,6 +384,7 @@ class PanelArtifactAssembler:
                         )
                 del frame
                 del table
+                del batch
                 pa.default_memory_pool().release_unused()
 
     @staticmethod

@@ -2,6 +2,8 @@ name: Data Audit
 
 # ──────────────────────────────────────────────────────────────
 # 데이터 파이프라인 정기 및 완료 이벤트 감사. 모든 실패 Issue 자동 알림(단발은 auto-rerun 병행).
+# 추가로 DART panel 신선도(공시목록의 정기 rcept 가 HF panel 에 들어왔는가)를 매번 재서, run 이
+# 전부 초록이어도 데이터가 멈춘 경우를 잡는다(2026-08 사고 재발 방지).
 #
 # 감사 대상 = scheduled(cron) 데이터/자동화 파이프라인 전체 (목록 SSOT = monitorPipeline.py
 #          MONITORED_WORKFLOWS): Original SSOT Sync · Data Sync · DART New Stocks · Data Prebuild ·
@@ -47,12 +49,15 @@ permissions:
 
 concurrency:
   group: data-audit
-  cancel-in-progress: true
+  # false: 신선도 감사(약 5 분)가 도는 동안 다른 workflow_run 완료가 들어와도 진행 중 run 을 끊지 않는다.
+  # 뒤따르는 트리거는 pending 1 개로 접히므로 중복 실행은 어차피 생기지 않는다.
+  cancel-in-progress: false
 
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 10 -> 20. 신선도 감사(공시목록 1회 + 종목당 HF rceptNo range read 수천 건, 8 스레드)가 약 5 분 든다.
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v6
@@ -67,6 +72,12 @@ jobs:
         run: uv sync
 
       - name: Pipeline health check
-        run: uv run python .github/scripts/ops/monitorPipeline.py
+        # run 결론 감시 + DART panel 신선도 감사(공시목록 vs HF panel rceptNo). 후자는 DART_API_KEYS 가 필요하고,
+        # 없으면 건너뛰고 그 사실을 로그에 남긴다.
+        run: uv run python -X utf8 .github/scripts/ops/monitorPipeline.py
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # 신선도 감사는 일일 cron·수동·panel 생산자(Original SSOT Sync) 완료 때만. 그 밖의 workflow_run 은 run 감시만.
+          DARTLAB_FRESHNESS_AUDIT: ${{ (github.event_name != 'workflow_run' || github.event.workflow_run.name == 'Original SSOT Sync') && '1' || '0' }}
