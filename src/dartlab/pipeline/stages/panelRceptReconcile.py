@@ -12,6 +12,7 @@ forward ``dartZip`` 은 7일 전진 윈도만 본다. 그 윈도 안에 run 실�
 from __future__ import annotations
 
 import os
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -273,30 +274,44 @@ def runPanelRceptReconcile(
     if not missingByCode:
         return res
 
-    # heal — 누락 rcept zip 만 fetch (full 이력 아님).
+    # heal. 누락 rcept 를 _HEAL_CHUNK 종목씩 "zip fetch, 원본 tar, panel" 순으로 닫는다. 분기 마감 뒤에는 누락이
+    # 수천 종목이라 한 덩어리로 돌리면 (a) 첫 체크포인트가 수천 zip 의 일괄 fetch 뒤에야 나와 DART 가 느린 날엔
+    # timeout 까지 아무것도 남지 않고(2026-08-22 실측: 탐지 뒤 2시간 24분 fetch 무응답, 취소) (b) 전 종목 tar
+    # 이력 + panel seed 가 러너 디스크에 동시에 쌓인다. chunk 마다 tar 를 먼저 올려 원본 SSOT 를 panel 보다
+    # 앞세우고, 번들이 끝난 역사 zip(디스크의 대부분)은 지워 그 몫을 chunk 크기로 묶는다.
     docsBase = Path(cfg.dataDir) / "original" / "dart" / "docs"
-    workers = int(os.environ.get("PANEL_WORKERS") or "4")
-    targets = [(sc, rc) for sc, rcs in missingByCode.items() for rc in sorted(rcs)]
-    newZipsByCode: dict[str, list[Path]] = {}
-    for sc, rc, ok, _n in iterZipsParallel(client, targets, outDir=docsBase, workers=workers):
-        if ok:
-            newZipsByCode.setdefault(sc, []).append(docsBase / sc / f"{rc}.zip")
-    fetched = sum(len(v) for v in newZipsByCode.values())
-    print(f"[pipeline] panelRceptReconcile: 누락 zip fetch {fetched}/{len(targets)}", flush=True)
-
-    healCodes = sorted(newZipsByCode)
-    if not healCodes:
-        res.report.fail = 1
-        res.report.failures.append(f"panelRceptReconcile: zip fetch 0/{len(targets)} (다음 run 재시도)")
-        return res
-
-    # heal 은 _HEAL_CHUNK 종목씩 끊어 "원본 tar, 그다음 panel" 순으로 닫는다. 분기 마감 뒤에는 누락이 수천
-    # 종목이라 한 덩어리로 돌리면 (a) job timeout 에 업로드 직전에서 잘려 다음 run 이 처음부터 반복하고
-    # (b) 전 종목 tar 이력 + panel seed 가 러너 디스크에 동시에 쌓인다. chunk 마다 tar 를 먼저 올려 원본
-    # SSOT 를 panel 보다 앞세우고, 번들이 끝난 역사 zip(디스크의 대부분)은 지워 그 몫을 chunk 크기로 묶는다.
+    fetchWorkers = int(os.environ.get("DART_FETCH_WORKERS") or "4")
+    codes = sorted(missingByCode)
+    totalTargets = sum(len(v) for v in missingByCode.values())
+    fetchedTotal = 0
     built: list[str] = []
-    for offset in range(0, len(healCodes), _HEAL_CHUNK):
-        chunk = healCodes[offset : offset + _HEAL_CHUNK]
+    for offset in range(0, len(codes), _HEAL_CHUNK):
+        chunkCodes = codes[offset : offset + _HEAL_CHUNK]
+        label = f"chunk {offset + len(chunkCodes)}/{len(codes)}종목"
+        targets = [(sc, rc) for sc in chunkCodes for rc in sorted(missingByCode[sc])]
+        newZipsByCode: dict[str, list[Path]] = {}
+        startedAt = time.monotonic()
+        for index, (sc, rc, ok, _n) in enumerate(
+            iterZipsParallel(client, targets, outDir=docsBase, workers=fetchWorkers), start=1
+        ):
+            if ok:
+                newZipsByCode.setdefault(sc, []).append(docsBase / sc / f"{rc}.zip")
+            if index % 100 == 0:  # 진행 로그. 긴 fetch 가 멈춘 것인지 느린 것인지 로그만으로 가른다.
+                print(
+                    f"[pipeline] panelRceptReconcile: {label} zip fetch {index}/{len(targets)} "
+                    f"({time.monotonic() - startedAt:.0f}s)",
+                    flush=True,
+                )
+        fetched = sum(len(v) for v in newZipsByCode.values())
+        fetchedTotal += fetched
+        print(
+            f"[pipeline] panelRceptReconcile: {label} zip fetch {fetched}/{len(targets)} "
+            f"({time.monotonic() - startedAt:.0f}s)",
+            flush=True,
+        )
+        chunk = sorted(newZipsByCode)
+        if not chunk:
+            continue
         if upload:
             # 원본 tar: full 이력 복원(_seedChangedFromHf) 후 superset 재번들(부분이력 truncation 가드).
             try:
@@ -313,10 +328,13 @@ def runPanelRceptReconcile(
                 chunk, newZipsByCode, res, token=token, uploadEvery=_forward._PANEL_UPLOAD_EVERY if upload else None
             )
         )
-        print(
-            f"[pipeline] panelRceptReconcile: chunk {offset + len(chunk)}/{len(healCodes)}종목 · 누적 재빌드 {len(built)}",
-            flush=True,
-        )
+        print(f"[pipeline] panelRceptReconcile: {label} · 누적 재빌드 {len(built)}", flush=True)
+    if totalTargets and fetchedTotal == 0:
+        res.report.fail = 1
+        res.report.failures.append(f"panelRceptReconcile: zip fetch 0/{totalTargets} (다음 run 재시도)")
     res.changedFiles = built
-    print(f"[pipeline] panelRceptReconcile: panel 재빌드 {len(built)}/{len(healCodes)}종목", flush=True)
+    print(
+        f"[pipeline] panelRceptReconcile: panel 재빌드 {len(built)}/{len(codes)}종목 · zip fetch {fetchedTotal}/{totalTargets}",
+        flush=True,
+    )
     return res

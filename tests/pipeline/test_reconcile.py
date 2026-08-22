@@ -207,7 +207,7 @@ def _wireReconcile(
     from dartlab.pipeline import hfUpload as upmod
     from dartlab.pipeline.stages import dartZip, panelRceptReconcile
 
-    calls: dict = {"build": None, "fetch": [], "panelUpload": None, "bundle": None, "seq": []}
+    calls: dict = {"build": None, "fetch": [], "fetchCalls": [], "panelUpload": None, "bundle": None, "seq": []}
 
     monkeypatch.setattr("dartlab.gather.dart.client.DartClient", lambda *a, **k: object())
     monkeypatch.setattr(
@@ -220,7 +220,9 @@ def _wireReconcile(
     monkeypatch.setattr(upmod, "_resolveHfToken", lambda token=None: None)
 
     def _iter(client, targets, *, outDir, workers=4):
-        calls["fetch"] = list(targets)
+        calls["fetch"].extend(list(targets))  # chunk 마다 호출되므로 누적
+        calls["fetchCalls"].append(list(targets))
+        calls["seq"].append(("fetch", sorted({sc for sc, _rc in targets})))
         for sc, rc in targets:
             yield sc, rc, True, 1000
 
@@ -406,15 +408,40 @@ def test_panel_rcept_reconcile_heals_in_chunks_tar_before_panel(monkeypatch) -> 
 
     res = panelRceptReconcile.runPanelRceptReconcile(upload=True)
 
+    # zip fetch 도 chunk 안에서 일어난다. 첫 체크포인트가 전체 fetch 뒤로 밀리지 않는다(2026-08-22 실측 가드).
     assert calls["seq"] == [
+        ("fetch", ["000A"]),
         ("bundle", ["000A"]),
         ("build", ["000A"]),
+        ("fetch", ["000B"]),
         ("bundle", ["000B"]),
         ("build", ["000B"]),
     ]
+    assert calls["fetchCalls"] == [[("000A", "20260814000001")], [("000B", "20260814000002")]]
     assert res.changedFiles == ["000A", "000B"]
     assert res.uploaded == 2  # chunk 별 tar 업로드 수 누적
     assert res.report.ok == 1
+
+
+def test_panel_rcept_reconcile_reports_total_fetch_failure(monkeypatch) -> None:
+    """모든 chunk 에서 zip fetch 가 0 이면 fail 로 보고하고 빌드는 호출되지 않는다(다음 run 재시도)."""
+    from dartlab.gather.dart import disclosure
+    from dartlab.pipeline.stages import panelRceptReconcile
+
+    monkeypatch.setattr(disclosure, "listFilings", _stubFilings([("000A", "20260814000001", "반기보고서 (2026.06)")]))
+    calls = _wireReconcile(monkeypatch, panelHave={"000A": set()}, built=["000A"])
+
+    def _iterFail(client, targets, *, outDir, workers=4):
+        for sc, rc in targets:
+            yield sc, rc, False, 0
+
+    monkeypatch.setattr("dartlab.gather.dart.document.iterZipsParallel", _iterFail)
+
+    res = panelRceptReconcile.runPanelRceptReconcile(upload=True)
+
+    assert res.report.fail == 1 and any("zip fetch 0/1" in f for f in res.report.failures)
+    assert calls["build"] is None and calls["bundle"] is None
+    assert res.changedFiles == []
 
 
 # ── seed spurious-404 데이터손실 가드 (_seedPanelFromHf / _seedChangedFromHf) ──────
