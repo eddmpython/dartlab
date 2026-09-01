@@ -40,9 +40,12 @@ jobs:
         run: uv sync
       - name: Fill allFilings content (forward + backfill → HF)
         run: |
+          # 예산 60 분 + 최장 하루치(2026-08-31 실측 53.5 분, 여유 55 분) < job 상한 120 분. 예산이 끝나면
+          # 새 날짜를 시작하지 않고 success 로 끝난다(timeout cancelled 가 감시에 실패로 잡히던 것을 없앤다).
           uv run python -X utf8 .github/scripts/sync/fillEdgarAllFilingsContent.py \
             --max-days "${{ github.event.inputs.maxDays || '20' }}" \
-            --forward-days "${{ github.event.inputs.forwardDays || '3' }}"
+            --forward-days "${{ github.event.inputs.forwardDays || '3' }}" \
+            --budget-minutes 60
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_DATA_DIR: ${{ github.workspace }}/data
