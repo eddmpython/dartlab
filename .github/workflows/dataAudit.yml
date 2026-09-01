@@ -7,8 +7,9 @@ name: Data Audit
 #
 # 감사 대상 = scheduled(cron) 데이터/자동화 파이프라인 전체 (목록 SSOT = monitorPipeline.py
 #          MONITORED_WORKFLOWS): Original SSOT Sync · Data Sync · DART New Stocks · Data Prebuild ·
-#          EDGAR · Gov(가격/지수) · Macro · News Archive · Valuation Snapshot · Search Index(delta/main) ·
-#          Quant Audit · Update KindList. 새 scheduled 워크플로우 추가 시 그 목록에도 등록.
+#          EDGAR(bulk/filings/content/proxy/prices) · Gov(가격/지수) · Macro · News Archive · Brokerage ·
+#          Valuation Snapshot · Search Index · Quant Audit · Update KindList · Notify(watch/earnings) ·
+#          Expectation Cycle · Lens Product Build. 새 scheduled 워크플로우 추가 시 그 목록에도 등록.
 #
 # 수동 (workflow_dispatch):
 #   - 즉시 감사 실행 (실패 Issue 갱신 포함)
@@ -39,6 +40,14 @@ on:
       - Update KindList
       - Intent Model Pipeline
       - Notify Watch
+      - Brokerage Research Sync
+      - EDGAR Filings Sync (submissions bulk)
+      - EDGAR Filings Content Sync (allFilings content_raw)
+      - EDGAR Proxy Sync (governance 3-table)
+      - EDGAR Prices Daily (Polygon increment)
+      - Notify Watch Earnings
+      - Expectation Cycle
+      - Lens Product Build
     types: [completed]
   workflow_dispatch:
 

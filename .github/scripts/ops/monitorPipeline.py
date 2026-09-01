@@ -43,6 +43,15 @@ MONITORED_WORKFLOWS = [
     "Update KindList",
     "Intent Model Pipeline",  # 공시 Q&A 라우팅 모델 빌드+회귀게이트+HF 업로드 (cron 0 20 일요일)
     "Notify Watch",  # 공개 왓처 토픽(IPO 신규상장·신규수주) 발송 (cron 0 8 평일) — 조용한 발송실패 가드
+    # 2026-09-01 점검에서 아래 8 개는 scheduled 인데 미등록이라 실패해도 아무도 몰랐다.
+    "Brokerage Research Sync",  # 증권사 리포트 (cron 0 23 · 0 10)
+    "EDGAR Filings Sync (submissions bulk)",  # US 공시 메타 recent/allFilings (cron 0 8)
+    "EDGAR Filings Content Sync (allFilings content_raw)",  # US 공시 본문 per-day (cron 30 3, 시간 예산형)
+    "EDGAR Proxy Sync (governance 3-table)",  # US 지배구조 3 표 (cron 0 10 화)
+    "EDGAR Prices Daily (Polygon increment)",  # US 주가 증분 (cron 0 23)
+    "Notify Watch Earnings",  # 어닝 왓처 발송 (매시 평일)
+    "Expectation Cycle",  # 거시 기대 발행+채점 (매월 5 일)
+    "Lens Product Build",  # lens 제품 빌드 (cron 30 17 일)
 ]
 
 FAILURE_LABEL = "pipeline-failure"
@@ -192,6 +201,15 @@ STALE_AFTER_HOURS: dict[str, float] = {
     "AllFilings Backfill": 42,  # 매일 05:30 UTC.
     "Data Prebuild (DART)": 42,  # Data Sync 완료 트리거 + 주간 full.
     "DART New Stocks Sync": 80,  # 평일(1-5) 01:00 UTC. 금->월 주말 갭 72h 초과분만 잡는다.
+    # 2026-09-01 등록분. 값 = 정상 최대 간격 + 여유(createdAt 기준).
+    "Brokerage Research Sync": 30,  # 매일 2 회(23:00·10:00 UTC).
+    "EDGAR Filings Sync (submissions bulk)": 30,  # 매일 08:00 UTC.
+    "EDGAR Filings Content Sync (allFilings content_raw)": 30,  # 매일 03:30 UTC.
+    "EDGAR Prices Daily (Polygon increment)": 30,  # 매일 23:00 UTC.
+    "Notify Watch Earnings": 60,  # 평일 매시. 금 23:00 -> 월 00:00 주말 갭 49h 초과분만.
+    "EDGAR Proxy Sync (governance 3-table)": 180,  # 매주 화 10:00 UTC. 7 일 + 12h.
+    "Lens Product Build": 180,  # 매주 일 17:30 UTC. 7 일 + 12h.
+    "Expectation Cycle": 792,  # 매월 5 일 21:00 UTC. 31 일 + 2 일.
 }
 
 # 실패 원인 분류 시그니처 (gh run view 출력 = 잡 목록 + ANNOTATIONS, 소문자 매칭).
@@ -236,7 +254,7 @@ def _recentRuns(workflowName: str, n: int = RECENT_N) -> list[dict]:
             "--limit",
             str(n),
             "--json",
-            "conclusion,status,databaseId,url,createdAt,displayTitle",
+            "conclusion,status,databaseId,url,createdAt,displayTitle,attempt",
         ],
         check=False,
     )
@@ -252,10 +270,20 @@ def _recentRuns(workflowName: str, n: int = RECENT_N) -> list[dict]:
 QUEUE_EVICTED = "concurrency 큐 축출 (미실행)"
 
 
-def _runJobCount(runId: int) -> int | None:
-    """run 이 실제로 띄운 job 수. 조회 실패는 None (판정 보류)."""
+def _runStartedJobCount(runId: int) -> int | None:
+    """run 에서 step 을 하나라도 시작한 job 수. 조회 실패는 None (판정 보류).
+
+    워크플로 레벨 concurrency 시절의 축출 run 은 job 자체가 0 개였다. job 레벨 concurrency 로 바꾼 뒤에는
+    축출 run 에도 job 이 생기지만 step 은 0 개인 채 cancelled 로 남는다(2026-09-01 실측: Data Sync 한 run 이
+    이 모양으로 20 attempt). 두 시절을 한 기준으로 가르는 것이 "step 을 시작한 job 수" 다.
+    """
     raw = _gh(
-        ["api", f"repos/{{owner}}/{{repo}}/actions/runs/{runId}/jobs", "--jq", ".total_count"],
+        [
+            "api",
+            f"repos/{{owner}}/{{repo}}/actions/runs/{runId}/jobs",
+            "--jq",
+            "[.jobs[] | select((.steps | length) > 0)] | length",
+        ],
         check=False,
     )
     try:
@@ -268,12 +296,12 @@ def _isQueueEvicted(runId: int, conclusion: str) -> bool:
     """concurrency 큐에서 밀려나 job 을 하나도 시작하지 못한 run 인지.
 
     GitHub 은 concurrency group 당 pending 을 1 개만 유지한다. 새 트리거가 오면 기존 pending 은
-    cancel-in-progress 설정과 무관하게 취소된다. 이때 run 은 cancelled 로 남지만 job 은 0 개다.
-    파이프라인 코드 실패가 아니므로 원인 분류와 재실행 판단을 분리해야 한다 (2026-08 실측 8 건).
+    cancel-in-progress 설정과 무관하게 취소된다. 이때 run 은 cancelled 로 남지만 step 을 시작한 job 이
+    없다. 파이프라인 코드 실패가 아니므로 원인 분류와 재실행 판단을 분리해야 한다 (2026-08 실측 8 건).
     """
     if conclusion != "cancelled":
         return False
-    return _runJobCount(runId) == 0
+    return _runStartedJobCount(runId) == 0
 
 
 def _classifyFailure(runId: int, conclusion: str = "") -> str:
@@ -344,15 +372,21 @@ def _classifyFailureWindow(runs: list[dict]) -> dict:
     return {"classification": classification, "causeHistory": history}
 
 
-def _shouldRerun(conclusion: str, classification: str) -> bool:
-    """단발 실패를 자동 재실행할지(순수 함수). 큐 축출과 startup_failure 는 rerun 이 아무것도 못 고치므로 뺀다.
+def _shouldRerun(conclusion: str, classification: str, attempt: int = 1) -> bool:
+    """단발 실패를 자동 재실행할지(순수 함수). 큐 축출·startup_failure·이미 재실행된 run 은 뺀다.
 
     startup_failure 는 job 이 하나도 안 뜬 GitHub 측 실패(워크플로 파일 또는 인프라)라 rerun 해도 같은 자리에서
     즉시 다시 실패한다. 2026-08-22 실측: 감사가 돌 때마다 rerun 을 걸어 한 run 이 19 attempt 까지 늘었다.
 
+    attempt 가 2 이상이면 이 run 은 이미 한 번 재실행됐고 그 재실행도 실패한 것이다. 재실행은 같은 run id 로
+    남아 최근 목록의 이전 run(성공)이 바뀌지 않으므로, 이 가드가 없으면 감사가 돌 때마다 "단발" 로 보고 다시
+    건다. 2026-09-01 실측: Data Audit 이 workflow_run 완료마다 깨어나 30 분 동안 80 회 돌며 Data Sync 를
+    20 회 재실행했다(재실행 완료가 다시 감사를 깨우는 되먹임).
+
     Args:
         conclusion: run 의 conclusion.
         classification: 실패 원인 분류 라벨.
+        attempt: run 의 run_attempt (gh run list 의 ``attempt``). 1 이 최초 실행.
 
     Returns:
         rerun 을 걸어도 되는지.
@@ -363,8 +397,12 @@ def _shouldRerun(conclusion: str, classification: str) -> bool:
     Example:
         >>> _shouldRerun("startup_failure", "code/기타"), _shouldRerun("failure", "code/기타")
         (False, True)
+        >>> _shouldRerun("failure", "code/기타", attempt=2)
+        False
     """
     if conclusion == "startup_failure":
+        return False
+    if attempt >= 2:
         return False
     return not str(classification).startswith(QUEUE_EVICTED)
 
@@ -470,14 +508,18 @@ def _triage(runs: list[dict], *, maxGapHours: float | None = None, now: datetime
         return {"state": "ok", "conclusion": conclusion, "url": url, "runId": runId}
 
     # 최신 실패. 직전 실행도 실패면 persistent, 아니면 첫 실패(transient).
+    # 재실행(attempt 2+)의 실패도 연속 실패다. 재실행은 같은 run 을 덮어써 목록에 새 줄이 안 생기므로
+    # 이전 줄(성공)만 보면 영원히 "첫 실패" 다(2026-09-01 재실행 되먹임 사고).
+    attempt = int(latest.get("attempt") or 1)
     prevConclusion = runs[1].get("conclusion") if len(runs) > 1 else "success"
     prevFailed = prevConclusion not in (*_OK_CONCLUSIONS, "", None)
-    state = "persistent" if prevFailed else "transient"
+    state = "persistent" if (prevFailed or attempt >= 2) else "transient"
     result = {
         "state": state,
-        "conclusion": conclusion,
+        "conclusion": conclusion if attempt < 2 else f"{conclusion} (재실행 {attempt}회째)",
         "url": url,
         "runId": runId,
+        "attempt": attempt,
         "lastSuccessAgeHours": lastSuccessAge,
     }
     # 실패가 이어지는 동안 데이터가 실제로 멈춰 있는지를 별도 신호로 남긴다.
@@ -569,7 +611,11 @@ def main():
             # 시도하지 않고, 데이터가 실제로 밀리면 staleness 축이 재트리거를 맡는다.
             evicted = str(entry.get("classification", "")).startswith(QUEUE_EVICTED)
             entry["evicted"] = evicted
-            canRerun = _shouldRerun(str(triage.get("conclusion") or ""), str(entry.get("classification", "")))
+            canRerun = _shouldRerun(
+                str(triage.get("conclusion") or ""),
+                str(entry.get("classification", "")),
+                int(triage.get("attempt") or 1),
+            )
             entry["reran"] = _rerunFailed(triage["runId"]) if (canRerun and triage["runId"]) else False
             retried.append(entry)
             icon = "queue-evict" if evicted else ("retry" if entry["reran"] else "FAIL×1")

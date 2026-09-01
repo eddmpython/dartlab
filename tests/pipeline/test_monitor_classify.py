@@ -263,6 +263,15 @@ def test_monitored_covers_core_scheduled_pipelines():
         "Search Index Build",
         "Quant Audit",
         "Update KindList",
+        # 2026-09-01 점검: scheduled 인데 미등록이던 수집·발송 축.
+        "Brokerage Research Sync",
+        "EDGAR Filings Sync (submissions bulk)",
+        "EDGAR Filings Content Sync (allFilings content_raw)",
+        "EDGAR Proxy Sync (governance 3-table)",
+        "EDGAR Prices Daily (Polygon increment)",
+        "Notify Watch Earnings",
+        "Expectation Cycle",
+        "Lens Product Build",
     }
     missing = required - set(mod.MONITORED_WORKFLOWS)
     assert not missing, f"감시목록 누락(조용한 실패 위험): {missing}"
@@ -275,6 +284,28 @@ def test_data_audit_rechecks_after_monitored_workflow_completion():
     assert "types: [completed]" in workflow
     for name in ("EDGAR Data Sync (Bulk)", "Gov Price Sync (Bulk)", "Macro Data Sync (Bulk)"):
         assert f"- {name}" in workflow
+
+
+def test_every_monitored_workflow_wakes_data_audit_on_completion():
+    """감시 목록과 workflow_run 트리거 목록이 같은 집합이다. 한쪽만 늘리면 재판정이 하루 늦는다."""
+    mod = _loadMonitor()
+    workflow = (ROOT / ".github" / "workflows" / "dataAudit.yml").read_text(encoding="utf-8")
+    triggers = workflow.split("workflow_run:", 1)[1].split("types:", 1)[0]
+    listed = {line.strip()[2:] for line in triggers.splitlines() if line.strip().startswith("- ")}
+    assert listed == set(mod.MONITORED_WORKFLOWS)
+
+
+def test_monitored_workflow_names_match_workflow_files():
+    """감시 이름은 gh run list --workflow 의 키다. 파일의 name 과 한 글자라도 다르면 조용한 no_runs 다."""
+    mod = _loadMonitor()
+    names = set()
+    for path in (ROOT / ".github" / "workflows").glob("*.yml"):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("name:"):
+                names.add(line[5:].strip().strip("'\""))
+                break
+    unknown = set(mod.MONITORED_WORKFLOWS) - names
+    assert not unknown, f"워크플로 파일에 없는 감시 이름: {unknown}"
 
 
 # ─── concurrency 큐 축출 + 데이터 정지 (2026-08 사고 회귀 가드) ───────────
@@ -381,3 +412,54 @@ def test_should_rerun_skips_startup_failure_and_queue_eviction():
     assert mod._shouldRerun("failure", mod.QUEUE_EVICTED) is False
     assert mod._shouldRerun("failure", "code/기타") is True
     assert mod._shouldRerun("cancelled", "job timeout (실행시간 초과)") is True
+
+
+# ─── 재실행 되먹임 차단 (2026-09-01: Data Audit 30 분 80 회 · Data Sync 20 attempt) ───
+
+
+def test_triage_rerun_attempt_failure_is_persistent():
+    """재실행(attempt 2+)이 또 실패하면 직전 줄이 성공이어도 연속 실패로 본다."""
+    mod = _loadMonitor()
+    runs = [
+        {"conclusion": "cancelled", "status": "completed", "databaseId": 1, "url": "u1", "attempt": 2},
+        {"conclusion": "success", "status": "completed", "databaseId": 2, "url": "u2", "attempt": 1},
+    ]
+    got = mod._triage(runs)
+    assert got["state"] == "persistent"
+    assert got["attempt"] == 2
+    assert "재실행" in got["conclusion"]
+
+
+def test_triage_first_attempt_failure_stays_transient():
+    """최초 실행(attempt 1)의 첫 실패는 그대로 단발이다."""
+    mod = _loadMonitor()
+    runs = [
+        {"conclusion": "failure", "status": "completed", "databaseId": 1, "url": "u1", "attempt": 1},
+        {"conclusion": "success", "status": "completed", "databaseId": 2, "url": "u2", "attempt": 1},
+    ]
+    got = mod._triage(runs)
+    assert got["state"] == "transient"
+    assert got["attempt"] == 1
+
+
+def test_should_rerun_blocks_second_attempt():
+    """이미 재실행된 run 은 어떤 분류든 다시 걸지 않는다."""
+    mod = _loadMonitor()
+    assert mod._shouldRerun("failure", "code/기타", attempt=1) is True
+    assert mod._shouldRerun("failure", "code/기타", attempt=2) is False
+    assert mod._shouldRerun("cancelled", "timeout/cancelled", attempt=3) is False
+
+
+def test_queue_eviction_counts_jobs_that_started_steps(monkeypatch):
+    """job 레벨 concurrency 축출은 job 은 있고 step 이 0 개다. jq 가 step 을 시작한 job 만 센다."""
+    mod = _loadMonitor()
+    calls: list[list[str]] = []
+
+    def fakeGh(args, **_kwargs):
+        calls.append(args)
+        return "0" if args[0] == "api" else "The operation was canceled."
+
+    monkeypatch.setattr(mod, "_gh", fakeGh)
+    assert mod._isQueueEvicted(123, "cancelled") is True
+    jq = calls[0][calls[0].index("--jq") + 1]
+    assert "steps" in jq and "length" in jq
