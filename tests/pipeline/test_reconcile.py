@@ -525,3 +525,75 @@ def test_seed_changed_spurious_404_excluded(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", _dl)
     _n, safe = dartZip._seedChangedFromHf(["000A"], token=None)
     assert safe == set()
+
+
+# ─── footer 통계 기반 rcept 집합 복원 (2026-09-01: 종목당 7~29 초 컬럼 read 를 footer 1 회로) ───
+
+
+def _writePanelLike(path, groups, *, statistics=True):
+    """row group 마다 주어진 rceptNo 목록으로 panel 모양 parquet 을 쓴다."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    schema = pa.schema([("rceptNo", pa.string()), ("body", pa.string())])
+    writer = pq.ParquetWriter(path, schema, write_statistics=statistics)
+    try:
+        for rcepts in groups:
+            writer.write_table(pa.table({"rceptNo": rcepts, "body": ["x"] * len(rcepts)}, schema=schema))
+    finally:
+        writer.close()
+
+
+def test_rcepts_from_parquet_uses_footer_statistics_only(tmp_path, monkeypatch):
+    """row group 이 rcept 하나씩이면 컬럼을 한 번도 읽지 않고 통계만으로 집합이 나온다."""
+    import pyarrow.parquet as pq
+
+    from dartlab.pipeline.stages import panelRceptReconcile as mod
+
+    path = tmp_path / "p.parquet"
+    _writePanelLike(path, [["20240101000001"] * 3, ["20240501000002"] * 2, ["20240801000003"]])
+    parquet = pq.ParquetFile(path)
+    monkeypatch.setattr(parquet, "read_row_group", lambda *a, **k: pytest.fail("통계로 충분한데 컬럼을 읽었다"))
+    assert mod._rceptsFromParquet(parquet) == {"20240101000001", "20240501000002", "20240801000003"}
+
+
+def test_rcepts_from_parquet_reads_mixed_and_statless_groups(tmp_path):
+    """한 row group 에 rcept 가 섞였거나 통계가 없으면 그 group 만 실제로 읽어 정확성을 지킨다."""
+    import pyarrow.parquet as pq
+
+    from dartlab.pipeline.stages import panelRceptReconcile as mod
+
+    mixed = tmp_path / "mixed.parquet"
+    _writePanelLike(mixed, [["20240101000001", "20240501000002"], ["20240801000003"]])
+    assert mod._rceptsFromParquet(pq.ParquetFile(mixed)) == {
+        "20240101000001",
+        "20240501000002",
+        "20240801000003",
+    }
+
+    statless = tmp_path / "statless.parquet"
+    _writePanelLike(statless, [["20240101000001"], ["20240501000002"]], statistics=False)
+    assert mod._rceptsFromParquet(pq.ParquetFile(statless)) == {"20240101000001", "20240501000002"}
+
+
+def test_rcepts_from_parquet_without_rcept_column_is_empty(tmp_path):
+    """rceptNo 컬럼이 없는 parquet 은 보유 0 으로 본다."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from dartlab.pipeline.stages import panelRceptReconcile as mod
+
+    path = tmp_path / "other.parquet"
+    pq.write_table(pa.table({"foo": ["a"]}), path)
+    assert mod._rceptsFromParquet(pq.ParquetFile(path)) == set()
+
+
+def test_rcepts_from_parquet_ignores_empty_string_groups(tmp_path):
+    """row group 전체가 빈 문자열이면 통계 min==max=="" 인데, 컬럼 경로처럼 보유로 세지 않는다."""
+    import pyarrow.parquet as pq
+
+    from dartlab.pipeline.stages import panelRceptReconcile as mod
+
+    path = tmp_path / "empty.parquet"
+    _writePanelLike(path, [["", ""], ["20240101000001"]])
+    assert mod._rceptsFromParquet(pq.ParquetFile(path)) == {"20240101000001"}

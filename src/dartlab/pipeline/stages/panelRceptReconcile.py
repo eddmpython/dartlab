@@ -59,12 +59,54 @@ def _pruneHistoryZips(docsBase: Path, codes: list[str], *, keep: dict[str, list[
 _PERIODIC_RE = r"^(?:\[(?:기재정정|첨부정정|첨부추가)\]\s*)*(사업보고서|반기보고서|분기보고서)"
 
 
-def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) -> set[str] | None:
-    """HF panel parquet 의 ``rceptNo`` 컬럼만 range-read → 보유 rcept 집합 (full download 회피).
+def _rceptsFromParquet(parquet) -> set[str]:
+    """열린 panel parquet 의 보유 rcept 집합. footer 통계만으로 복원하고, 못 믿는 row group 만 실제로 읽는다.
 
-    ``HfFileSystem`` 파일핸들 위에서 pyarrow 컬럼 projection → footer + ``rceptNo`` 컬럼 청크만
-    HTTP Range 로 읽는다(회사 panel 이 수만 row·MB 라도 수백 KB 만 전송). reconcile 탐지(수천 종목)
-    를 싸게 만드는 핵심.
+    panel 작성기(``artifactWriter``)는 rcept 단위 stage 를 row group 으로 이어 붙이므로 한 row group 은
+    한 rcept 의 행만 담고, ``write_statistics=True`` 라 footer 에 ``rceptNo`` min/max 가 실린다. 그래서
+    footer 한 번(HTTP range 1~2 회)으로 집합이 정확히 나온다. 통계가 없거나 min 과 max 가 다른 row group 은
+    그 group 의 ``rceptNo`` 컬럼만 읽어 보탠다. 2026-09-01 실측: 12 종목 738 row group 전부 통계와
+    실제 컬럼이 일치했고, 컬럼 range-read 는 종목당 7~29 초였던 것이 footer 만 읽으면 1.7 초다.
+
+    Args:
+        parquet: ``pyarrow.parquet.ParquetFile``.
+
+    Returns:
+        보유 rcept 집합.
+
+    Raises:
+        없음 (pyarrow 예외는 호출자가 격리).
+
+    Example:
+        >>> import pyarrow.parquet as pq  # doctest: +SKIP
+        >>> _rceptsFromParquet(pq.ParquetFile("005930.parquet"))  # doctest: +SKIP
+        {'20240514001234', ...}
+    """
+    metadata = parquet.metadata
+    columnIndex = next((i for i in range(metadata.num_columns) if metadata.schema.column(i).name == "rceptNo"), None)
+    if columnIndex is None:
+        return set()
+    owned: set[str] = set()
+    fallbackGroups: list[int] = []
+    for groupIndex in range(metadata.num_row_groups):
+        stats = metadata.row_group(groupIndex).column(columnIndex).statistics
+        if stats is None or not stats.has_min_max or stats.min != stats.max:
+            fallbackGroups.append(groupIndex)
+            continue
+        if stats.min:  # 빈 문자열 group 은 컬럼 경로와 같이 보유로 세지 않는다
+            owned.add(str(stats.min))
+    for groupIndex in fallbackGroups:
+        column = parquet.read_row_group(groupIndex, columns=["rceptNo"]).column("rceptNo")
+        owned.update(str(x) for x in column.to_pylist() if x)
+    return owned
+
+
+def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) -> set[str] | None:
+    """HF panel parquet 의 보유 rcept 집합 (full download 회피).
+
+    ``HfFileSystem`` 파일핸들 위에서 footer 만 HTTP Range 로 읽고 ``_rceptsFromParquet`` 로 집합을
+    복원한다. reconcile 탐지(수천 종목)와 신선도 감사(정기보고서 마감 주 2,700 종목)를 예산 안에서
+    전수로 끝내는 핵심.
 
     Args:
         repo: HF dataset repo id (``repoFor("panel")``).
@@ -77,7 +119,7 @@ def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) 
         판정되어 heal 대상), 일시 실패는 ``None`` (탐지 대상 제외 = 안전 skip).
 
     Raises:
-        없음 (모든 예외 None 으로 격리 — 한 종목 실패가 reconcile 전체를 막지 않음).
+        없음. 모든 예외를 None 으로 격리해 한 종목 실패가 reconcile 전체를 막지 않는다.
 
     Example:
         >>> _panelRceptsFromHf("eddmpython/dartlab-data", "dart/panel", "005930", token=None)  # doctest: +SKIP
@@ -90,7 +132,7 @@ def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) 
     try:
         fs = HfFileSystem(token=token)
         with fs.open(path, "rb") as fh:
-            tbl = pq.read_table(fh, columns=["rceptNo"])
+            return _rceptsFromParquet(pq.ParquetFile(fh))
     except FileNotFoundError:
         # panel 미존재 = 보유 rcept 0. None(=skip) 으로 두면 "panel 이 한 번도 없던 종목" 은
         # 영구히 heal 대상 밖이라 신규 상장·과거 누락분이 절대 복구되지 않는다(실측: 178600·185190).
@@ -101,7 +143,6 @@ def _panelRceptsFromHf(repo: str, relDir: str, code: str, *, token: str | None) 
     except Exception as exc:  # noqa: BLE001
         print(f"[pipeline] dartZip panel rcept 조회 실패: {type(exc).__name__}: {exc}", flush=True)
         return None
-    return {str(x) for x in tbl.column("rceptNo").to_pylist() if x}
 
 
 def _fullPeriodicRcepts(client, code: str) -> set[str]:
