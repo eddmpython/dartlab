@@ -482,7 +482,7 @@ GATES: dict[str, Gate] = {
     "guard-full-census": Gate(
         name="guard-full-census",
         tier="nightly",
-        deps=PYTEST_PARALLEL,
+        deps=(*PYTEST_PARALLEL, "networkx"),  # tests/audit/cycleScan.py 가 cycle 탐지에 networkx 를 쓴다
         install_pkg="editable",
         env={"DARTLAB_PROVIDER_SCOPE": "dart,edgar"},
         cmd=("python -X utf8 tests/audit/dartlabGuard.py full --baseline tests/audit/_baselines/dartlabGuard.json"),
