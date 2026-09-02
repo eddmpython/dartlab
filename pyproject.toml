@@ -82,7 +82,7 @@ dependencies = [
     "rich>=14.3.3,<16; sys_platform != 'emscripten'",
     "rich; sys_platform == 'emscripten'",
     # ai providers (pyodide 불필요)
-    "openai>=1.0.0,<3; sys_platform != 'emscripten'",
+    "openai>=1.0.0,<4; sys_platform != 'emscripten'",
     # server (pyodide 불필요)
     "fastapi>=0.135.1,<1; sys_platform != 'emscripten'",
     "uvicorn[standard]>=0.30.0,<1; sys_platform != 'emscripten'",
