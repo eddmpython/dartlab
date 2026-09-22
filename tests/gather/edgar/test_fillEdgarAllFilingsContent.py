@@ -84,3 +84,90 @@ def test_workflow_passes_budget_below_job_timeout():
     budget = float(re.search(r"--budget-minutes\s+(\d+)", workflow).group(1))
     longestDayMinutes = 55  # 2026-08-31 run 실측 최장 53.5 분(20251202) + 여유
     assert budget + longestDayMinutes < timeout, f"예산 {budget} + 하루치 {longestDayMinutes} >= timeout {timeout}"
+
+
+# ─── HF 429 내성 (2026-09-22: resolver 한도 429 한 번에 run 이 죽고 모니터 재실행도 같은 창에서 실패) ───
+
+
+class _FakeResponse:
+    """HfHubHTTPError 가 요구하는 최소 응답. huggingface_hub 0.x(requests)·1.x(httpx) 양쪽에서 생성된다."""
+
+    headers: dict[str, str] = {}
+    request = None
+    text = ""
+    url = "https://huggingface.co/x"
+
+    def __init__(self, status: int) -> None:
+        self.status_code = status
+
+
+def _hfError(status: int):
+    from huggingface_hub.errors import HfHubHTTPError
+
+    return HfHubHTTPError(f"{status} Client Error", response=_FakeResponse(status))
+
+
+class _Entry:
+    def __init__(self, path: str) -> None:
+        self.path = path
+
+
+class _FakeApi:
+    """list_repo_tree 결과를 차례로 돌려준다. 값이 예외면 던진다."""
+
+    def __init__(self, *results) -> None:
+        self._results = list(results)
+        self.calls = 0
+
+    def list_repo_tree(self, *_args, **_kwargs):
+        self.calls += 1
+        result = self._results.pop(0)
+        if isinstance(result, BaseException):
+            raise result
+        return iter(result)
+
+
+def test_done_days_is_empty_only_when_directory_is_missing(monkeypatch):
+    """404(최초 실행)만 빈 집합. 429 가 끝내 풀리지 않으면 빈 집합으로 속이지 않고 실패한다."""
+    mod = _module()
+    monkeypatch.setattr("dartlab.core.hfRetry.time.sleep", lambda _s: None)
+    monkeypatch.setenv("DARTLAB_HF_RETRY_ATTEMPTS", "2")
+
+    assert mod._doneDays(_FakeApi(_hfError(404))) == set()
+
+    with pytest.raises(Exception) as caught:
+        mod._doneDays(_FakeApi(_hfError(429), _hfError(429)))
+    assert getattr(caught.value.response, "status_code", None) == 429
+
+    recovered = _FakeApi(_hfError(429), [_Entry("edgar/allFilingsContent/20260101.parquet"), _Entry("x/readme.md")])
+    assert mod._doneDays(recovered) == {"20260101"}
+    assert recovered.calls == 2
+
+
+def test_main_survives_one_429_on_metadata_download(monkeypatch, tmp_path):
+    """메타 다운로드가 429 를 한 번 받아도 재시도로 넘어간다(이슈 #156 의 실패 지점)."""
+    import huggingface_hub
+    import polars as pl
+
+    mod = _module()
+    monkeypatch.setattr("dartlab.core.hfRetry.time.sleep", lambda _s: None)
+    monkeypatch.setenv("DARTLAB_HF_RETRY_ATTEMPTS", "3")
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    metaPath = tmp_path / "recent.parquet"
+    pl.DataFrame(
+        {"accessionNo": ["a1"], "stockCode": ["AAPL"], "filingDate": ["20260101"], "url": ["https://sec.gov/x"]}
+    ).write_parquet(metaPath)
+    downloads: list[str] = []
+
+    def fakeDownload(*_args, **_kwargs):
+        downloads.append("call")
+        if len(downloads) == 1:
+            raise _hfError(429)
+        return str(metaPath)
+
+    api = _FakeApi([_Entry("edgar/allFilingsContent/20260101.parquet")])
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fakeDownload)
+    monkeypatch.setattr(huggingface_hub, "HfApi", lambda token=None: api)
+
+    assert mod.main([]) == 0
+    assert len(downloads) == 2

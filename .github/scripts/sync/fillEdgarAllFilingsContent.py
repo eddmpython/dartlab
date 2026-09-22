@@ -36,15 +36,21 @@ _CONTENT_DIR = "edgar/allFilingsContent"
 
 
 def _doneDays(api) -> set[str]:
-    """이미 발행된 content per-day 파일의 날짜 집합(YYYYMMDD)."""
+    """이미 발행된 content per-day 파일의 날짜 집합(YYYYMMDD).
+
+    디렉터리 부재(404, 최초 실행)만 빈 집합이다. 429 같은 일시 실패는 ``retryHfCall`` 로 기다렸다 다시
+    묻고, 그래도 안 되면 예외를 올린다. 예전에는 모든 예외를 빈 집합으로 바꿔, 목록 조회가 한 번 막히면
+    이미 발행한 날짜까지 SEC 에서 다시 받아 덮어썼다.
+    """
+    from huggingface_hub.errors import HfHubHTTPError
+
     try:
-        return {
-            p.path.split("/")[-1].replace(".parquet", "")
-            for p in api.list_repo_tree(_REPO, _CONTENT_DIR, repo_type="dataset")
-            if p.path.endswith(".parquet")
-        }
-    except Exception:  # noqa: BLE001 (디렉터리 부재 = 최초 실행)
-        return set()
+        entries = retryHfCall(lambda: list(api.list_repo_tree(_REPO, _CONTENT_DIR, repo_type="dataset")))
+    except HfHubHTTPError as exc:
+        if getattr(getattr(exc, "response", None), "status_code", None) == 404:
+            return set()
+        raise
+    return {p.path.split("/")[-1].replace(".parquet", "") for p in entries if p.path.endswith(".parquet")}
 
 
 def selectDays(allDays: list[str], done: set[str], *, maxDays: int, forwardDays: int) -> list[str]:
@@ -94,7 +100,7 @@ def fillDays(
     return done
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     """recent.parquet 메타 → 미충전 일자 선정 → fillContentDay + HF 발행 (예산만큼)."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-days", type=int, default=20, help="이번 run 처리할 일 수 상한")
@@ -105,7 +111,10 @@ def main() -> int:
         default=60.0,
         help="이 시간이 지나면 새 날짜를 시작하지 않는다(분). workflow timeout 보다 최장 하루치만큼 작게",
     )
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
+    # 예산은 스크립트 시작부터 잰다. 시작 시 HF 재시도(429 는 최대 6분 대기)까지 예산에 넣어야
+    # "예산 + 최장 하루치 < job timeout" 이 재시도가 붙은 날에도 성립한다.
+    scriptStartedAt = time.monotonic()
 
     tok = os.environ.get("HF_TOKEN", "").strip()
     if not tok:
@@ -114,7 +123,8 @@ def main() -> int:
     from huggingface_hub import HfApi, hf_hub_download
 
     api = HfApi(token=tok)
-    metaFp = hf_hub_download(_REPO, _META, repo_type="dataset", token=tok)
+    # 2026-09-22: HF resolver 한도(5분당 5000, 계정 단위)에 걸린 429 한 번으로 run 이 죽었다. 재시도한다.
+    metaFp = retryHfCall(hf_hub_download, _REPO, _META, repo_type="dataset", token=tok)
     meta = pl.read_parquet(metaFp, columns=["accessionNo", "stockCode", "filingDate", "url"])
     allDays = sorted(meta["filingDate"].unique().to_list())
     done = _doneDays(api)
@@ -145,7 +155,8 @@ def main() -> int:
         )
         print(f"  발행 {day} ({(time.monotonic() - startedAt) / 60:.1f}분)", flush=True)
 
-    finished = fillDays(todo, fillDay, budgetSeconds=args.budget_minutes * 60.0)
+    remaining = max(0.0, args.budget_minutes * 60.0 - (time.monotonic() - scriptStartedAt))
+    finished = fillDays(todo, fillDay, budgetSeconds=remaining)
     skipped = len(todo) - len(finished)
     print(
         f"[content] {len(finished)}일 완료 · 남은 {unfilled - len(finished)}일"
