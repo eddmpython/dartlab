@@ -4,6 +4,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+from anyio.from_thread import BlockingPortal, start_blocking_portal
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -115,10 +116,37 @@ def testResultWireRoundTripPreservesReceipt() -> None:
     assert restored.materializationReceipt == original.materializationReceipt
 
 
+class SyncAsgiTransport(httpx.BaseTransport):
+    """sync httpx 클라이언트를 ASGI 앱에 직접 붙인다.
+
+    starlette ``TestClient`` 는 ``httpx2`` 가 설치돼 있으면 그쪽 transport 를 만든다(starlette 1.3).
+    openai 3.x 가 httpx2 를 끌고 오면 ``TestClient._transport`` 가 httpx2 계열이 되어, httpx 로 만든
+    ``DataHubClient`` 안에서 ``isinstance(response.stream, SyncByteStream)`` 단언이 깨졌다. 여기서는
+    dartlab 이 실제로 쓰는 httpx 의 ``ASGITransport`` 만 쓰고, sync 호출은 anyio 포털로 넘긴다.
+    """
+
+    def __init__(self, application: FastAPI, portal: BlockingPortal) -> None:
+        self._inner = httpx.ASGITransport(app=application)
+        self._portal = portal
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        body = request.read()
+
+        async def send() -> tuple[int, httpx.Headers, bytes]:
+            forwarded = httpx.Request(request.method, request.url, headers=request.headers, content=body)
+            response = await self._inner.handle_async_request(forwarded)
+            raw = b"".join([chunk async for chunk in response.aiter_raw()])
+            await response.aclose()
+            return response.status_code, response.headers, raw
+
+        status, headers, raw = self._portal.call(send)
+        return httpx.Response(status, headers=headers, content=raw, request=request)
+
+
 def testRemoteClientAndDistributedWorkerCompleteJob(tmp_path: Path) -> None:
     application = app(tmp_path)
-    with TestClient(application) as server:
-        transport = server._transport
+    with start_blocking_portal() as portal:
+        transport = SyncAsgiTransport(application, portal)
         client = DataHubClient(
             "http://testserver",
             CLIENT_TOKEN,
