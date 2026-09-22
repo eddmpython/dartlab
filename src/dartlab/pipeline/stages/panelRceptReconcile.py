@@ -325,18 +325,26 @@ def runPanelRceptReconcile(
     codes = sorted(missingByCode)
     totalTargets = sum(len(v) for v in missingByCode.values())
     fetchedTotal = 0
+    retryTotal = 0
+    noBody: list[str] = []
     built: list[str] = []
     for offset in range(0, len(codes), _HEAL_CHUNK):
         chunkCodes = codes[offset : offset + _HEAL_CHUNK]
         label = f"chunk {offset + len(chunkCodes)}/{len(codes)}종목"
         targets = [(sc, rc) for sc in chunkCodes for rc in sorted(missingByCode[sc])]
         newZipsByCode: dict[str, list[Path]] = {}
+        chunkNoBody = 0
         startedAt = time.monotonic()
-        for index, (sc, rc, ok, _n) in enumerate(
+        for index, (sc, rc, status, _n) in enumerate(
             iterZipsParallel(client, targets, outDir=docsBase, workers=fetchWorkers), start=1
         ):
-            if ok:
+            if status == "ok":
                 newZipsByCode.setdefault(sc, []).append(docsBase / sc / f"{rc}.zip")
+            elif status == "no_body":  # DART 014/013 확정. 재시도해도 같으므로 실패로 세지 않는다.
+                noBody.append(f"{sc}:{rc}")
+                chunkNoBody += 1
+            else:
+                retryTotal += 1
             if index % 100 == 0:  # 진행 로그. 긴 fetch 가 멈춘 것인지 느린 것인지 로그만으로 가른다.
                 print(
                     f"[pipeline] panelRceptReconcile: {label} zip fetch {index}/{len(targets)} "
@@ -347,7 +355,7 @@ def runPanelRceptReconcile(
         fetchedTotal += fetched
         print(
             f"[pipeline] panelRceptReconcile: {label} zip fetch {fetched}/{len(targets)} "
-            f"({time.monotonic() - startedAt:.0f}s)",
+            f"· 본문부재 {chunkNoBody} ({time.monotonic() - startedAt:.0f}s)",
             flush=True,
         )
         chunk = sorted(newZipsByCode)
@@ -370,12 +378,22 @@ def runPanelRceptReconcile(
             )
         )
         print(f"[pipeline] panelRceptReconcile: {label} · 누적 재빌드 {len(built)}", flush=True)
-    if totalTargets and fetchedTotal == 0:
+    # 재시도 대상 실패가 있는데 한 건도 못 받았으면 DART 경로가 막힌 것이다. 본문부재만 남은 날은 정상이다.
+    # (2026-09-15~21 매일 실패: 남은 누락이 전부 014 라 fetch 0/N 이 되어 job 이 빨갛게 끝났다.)
+    if retryTotal and fetchedTotal == 0:
         res.report.fail = 1
-        res.report.failures.append(f"panelRceptReconcile: zip fetch 0/{totalTargets} (다음 run 재시도)")
+        res.report.failures.append(
+            f"panelRceptReconcile: zip fetch 0/{totalTargets} · 재시도 대상 {retryTotal} (다음 run 재시도)"
+        )
+    if noBody:
+        print(
+            f"[pipeline] panelRceptReconcile: 본문부재(DART 014/013) {len(noBody)}rcept: {', '.join(noBody[:20])}",
+            flush=True,
+        )
     res.changedFiles = built
     print(
-        f"[pipeline] panelRceptReconcile: panel 재빌드 {len(built)}/{len(codes)}종목 · zip fetch {fetchedTotal}/{totalTargets}",
+        f"[pipeline] panelRceptReconcile: panel 재빌드 {len(built)}/{len(codes)}종목 · zip fetch "
+        f"{fetchedTotal}/{totalTargets} · 본문부재 {len(noBody)} · 재시도 대상 {retryTotal}",
         flush=True,
     )
     return res

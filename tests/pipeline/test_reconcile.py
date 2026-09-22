@@ -224,7 +224,7 @@ def _wireReconcile(
         calls["fetchCalls"].append(list(targets))
         calls["seq"].append(("fetch", sorted({sc for sc, _rc in targets})))
         for sc, rc in targets:
-            yield sc, rc, True, 1000
+            yield sc, rc, "ok", 1000
 
     monkeypatch.setattr("dartlab.gather.dart.document.iterZipsParallel", _iter)
 
@@ -433,7 +433,7 @@ def test_panel_rcept_reconcile_reports_total_fetch_failure(monkeypatch) -> None:
 
     def _iterFail(client, targets, *, outDir, workers=4):
         for sc, rc in targets:
-            yield sc, rc, False, 0
+            yield sc, rc, "error", 0
 
     monkeypatch.setattr("dartlab.gather.dart.document.iterZipsParallel", _iterFail)
 
@@ -442,6 +442,49 @@ def test_panel_rcept_reconcile_reports_total_fetch_failure(monkeypatch) -> None:
     assert res.report.fail == 1 and any("zip fetch 0/1" in f for f in res.report.failures)
     assert calls["build"] is None and calls["bundle"] is None
     assert res.changedFiles == []
+
+
+def _reconcileWithFetchStatuses(monkeypatch, statuses: dict[str, str]):
+    """누락 rcept 마다 iterZipsParallel 이 돌려줄 status 를 정해 reconcile 을 한 번 돌린다."""
+    from dartlab.gather.dart import disclosure
+    from dartlab.pipeline.stages import panelRceptReconcile
+
+    monkeypatch.setattr(
+        disclosure,
+        "listFilings",
+        _stubFilings([("000A", rc, "[첨부정정]사업보고서 (2025.12)") for rc in statuses]),
+    )
+    calls = _wireReconcile(monkeypatch, panelHave={"000A": {"20250101000001"}}, built=["000A"])
+
+    def _iterStatuses(client, targets, *, outDir, workers=4):
+        for sc, rc in targets:
+            status = statuses[rc]
+            yield sc, rc, status, 1000 if status == "ok" else 0
+
+    monkeypatch.setattr("dartlab.gather.dart.document.iterZipsParallel", _iterStatuses)
+    return panelRceptReconcile.runPanelRceptReconcile(upload=True), calls
+
+
+def test_panel_rcept_reconcile_final_no_body_is_not_failure(monkeypatch) -> None:
+    """남은 누락이 전부 DART 014/013(본문부재 확정)이면 job 을 실패시키지 않는다.
+
+    2026-09-15~21 dart-reconcile 은 [첨부정정] 등 014 rcept 19~20건만 남자 매일 fetch 0/N 으로
+    exit 1 했다. 재시도해도 바뀌지 않는 판정이라 실패로 세면 파이프라인이 영구히 빨갛다.
+    """
+    res, calls = _reconcileWithFetchStatuses(monkeypatch, {"20260730000361": "no_body", "20260730000551": "no_body"})
+
+    assert res.report.fail == 0 and res.report.ok == 1
+    assert res.report.failures == []
+    assert calls["build"] is None and calls["bundle"] is None
+    assert res.changedFiles == []
+
+
+def test_panel_rcept_reconcile_no_body_does_not_mask_retryable_failure(monkeypatch) -> None:
+    """본문부재가 섞여 있어도 재시도 대상 실패가 있고 한 건도 못 받았으면 여전히 실패다."""
+    res, _calls = _reconcileWithFetchStatuses(monkeypatch, {"20260730000361": "no_body", "20260814000001": "error"})
+
+    assert res.report.fail == 1
+    assert any("zip fetch 0/2" in f and "재시도 대상 1" in f for f in res.report.failures)
 
 
 # ── seed spurious-404 데이터손실 가드 (_seedPanelFromHf / _seedChangedFromHf) ──────

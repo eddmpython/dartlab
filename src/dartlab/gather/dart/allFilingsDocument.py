@@ -93,8 +93,12 @@ def parseDocumentResponse(raw: bytes | None) -> DocumentResult:
                     return (None, "error")
                 largest = max(names, key=lambda name: archive.getinfo(name).file_size)
                 content = archive.read(largest)
-        except zipfile.BadZipFile as exc:
-            _log.debug("document.xml ZIP 손상으로 error 판정: %s", exc)
+        # 원격 ZIP 해석 실패는 종류를 가리지 않고 재시도 가능한 error 다(이 함수의 "Raises: 없음" 계약).
+        # BadZipFile 만 잡던 시절에는 암호화(RuntimeError), 미지원 압축(NotImplementedError), 깨진
+        # deflate(zlib.error), bzip2(OSError), lzma(LZMAError), 파일명 디코딩(UnicodeDecodeError)이
+        # 새어 reconcile 과 fillContent 루프를 죽였다. 타입 나열로는 닫히지 않아 구간 전체를 받는다.
+        except Exception as exc:  # noqa: BLE001 (원격 응답 손상 격리, 아래에서 error 로 보고)
+            _log.debug("document.xml ZIP 을 읽지 못해 error 판정: %s: %s", type(exc).__name__, exc)
             return (None, "error")
 
         rawContent: str | None = None

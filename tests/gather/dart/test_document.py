@@ -58,3 +58,58 @@ def test_build_targets_empty_codes_no_network() -> None:
     # client=None 이어도 빈 codes 는 루프 0 회 → listFilings 호출 없이 빈 list.
     out = buildTargetsFromFilingList(None, [])  # type: ignore[arg-type]
     assert out == []
+
+
+class _FakeDocClient:
+    """document.xml 응답을 rcept 별로 돌려주는 무네트워크 client. 값이 예외면 그대로 던진다."""
+
+    _slots = [object()]
+
+    def __init__(self, responses: dict[str, object]) -> None:
+        self._responses = responses
+
+    def getBytes(self, endpoint: str, params: dict[str, str]) -> bytes:
+        value = self._responses[params["rcept_no"]]
+        if isinstance(value, BaseException):
+            raise value
+        return value  # type: ignore[return-value]
+
+
+def test_iter_zips_separates_final_no_body_from_retryable_errors(tmp_path: Path) -> None:
+    """DART 014/013 XML 본문은 no_body, 나머지 실패는 error 로 갈라야 reconcile 이 재시도 실패만 센다.
+
+    2026-09-15~21 Original SSOT Sync dart-reconcile 은 남은 누락 rcept 가 전부 014(정정 공시 등)라
+    매일 zip fetch 0/N 으로 실패했다. 이 테스트는 그 판정 경계를 잠근다.
+    """
+    from dartlab.core.dartClient import DartApiError
+    from dartlab.gather.dart.document import iterZipsParallel
+
+    xml014 = (
+        b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        b"<result><status>014</status><message>file missing</message></result>"
+    )
+    xml013 = b"<result><status>013</status><message>bad rcept</message></result>"
+    zipBody = b"PK\x03\x04" + b"z" * 2000
+    client = _FakeDocClient(
+        {
+            "r014": xml014,
+            "r013": xml013,
+            "rOther": b"<result><status>800</status></result>",
+            "rBigHtml": b"<html>" + b"x" * 2000,
+            "rKeys": DartApiError("020", "all keys cooling down"),
+            "rOk": zipBody,
+        }
+    )
+    targets = [("000001", rc) for rc in ("r014", "r013", "rOther", "rBigHtml", "rKeys", "rOk")]
+
+    out = {rc: (status, n) for _sc, rc, status, n in iterZipsParallel(client, targets, outDir=tmp_path, workers=2)}
+
+    assert out == {
+        "r014": ("no_body", 0),
+        "r013": ("no_body", 0),
+        "rOther": ("error", 0),
+        "rBigHtml": ("error", 0),
+        "rKeys": ("error", 0),
+        "rOk": ("ok", len(zipBody)),
+    }
+    assert sorted(path.name for path in (tmp_path / "000001").iterdir()) == ["rOk.zip"]

@@ -33,9 +33,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import dartlab.config as _cfg
+from dartlab.gather.dart.allFilingsDocument import FetchStatus, parseDocumentResponse
 from dartlab.gather.dart.client import DartClient
 
 _MIN_VALID_BYTES = 1000
+_ZIP_MAGIC = b"PK\x03\x04"
 _ORIGINAL_DOCS_DIR_REL = "original/dart/docs"
 # panel 전 이력 커버리지 시작 (rcept 매니페스트 — listFilings corp 지정 시 전 기간 조회 가능).
 _PANEL_HISTORY_START = "20110101"
@@ -209,8 +211,14 @@ def iterZipsParallel(
     *,
     outDir: Path,
     workers: int | None = None,
-) -> "Iterator[tuple[str, str, bool, int]]":
-    """``fetchZipsParallel`` 의 streaming pair — 결과 row 1 개씩 yield.
+) -> "Iterator[tuple[str, str, FetchStatus, int]]":
+    """``fetchZipsParallel`` 의 streaming pair. 결과 row 를 1 개씩 yield 한다.
+
+    실패는 두 갈래다. DART 가 document.xml 대신 XML 상태 본문(013 접수번호 오류, 014 파일 없음)을
+    주면 ``no_body`` 다. 재요청해도 바뀌지 않는 최종 판정이라 호출측이 재시도 실패로 세면 안 된다
+    (2026-09-22 실측: 정정 공시와 전이력 rcept 19건이 매일 014 를 받았다). 그 밖의 비ZIP 응답, 너무 작은 응답,
+    네트워크 오류와 키 소진은 ``error`` 이고 다음 run 에서 재시도한다. 판정 규칙은
+    ``allFilingsDocument.parseDocumentResponse`` 를 그대로 쓴다.
 
     Args:
         client: ``DartClient``.
@@ -219,13 +227,14 @@ def iterZipsParallel(
         workers: ThreadPoolExecutor 워커 수.
 
     Yields:
-        ``(stockCode, rceptNo, ok, bytesWritten)`` — ok=True 면 저장 성공.
+        ``(stockCode, rceptNo, status, bytesWritten)``. status 는 ``"ok"`` (저장 또는 기존 유효 파일),
+        ``"no_body"`` (DART 가 본문 부재 확정), ``"error"`` (재시도 대상).
 
     Raises:
-        없음 — 개별 fetch 실패는 ok=False.
+        없음. 개별 fetch 실패는 status 로 돌려준다.
 
     Example:
-        >>> for code, rcept, ok, n in iterZipsParallel(client, targets, outDir=Path("/tmp")):
+        >>> for code, rcept, status, n in iterZipsParallel(client, targets, outDir=Path("/tmp")):
         ...     pass  # doctest: +SKIP
     """
     if not targets:
@@ -234,19 +243,23 @@ def iterZipsParallel(
         workers = len(client._slots)
     outDir.mkdir(parents=True, exist_ok=True)
 
-    def _fetchAndReport(code: str, rceptNo: str) -> tuple[str, str, bool, int]:
+    def _fetchAndReport(code: str, rceptNo: str) -> tuple[str, str, FetchStatus, int]:
         outCode = outDir / code
         outPath = outCode / f"{rceptNo}.zip"
         if outPath.exists() and outPath.stat().st_size > _MIN_VALID_BYTES:
-            return code, rceptNo, True, outPath.stat().st_size
+            return code, rceptNo, "ok", outPath.stat().st_size
         try:
             raw = client.getBytes("document.xml", {"rcept_no": rceptNo})
-            if not raw or len(raw) < _MIN_VALID_BYTES:
-                return code, rceptNo, False, 0
+        except Exception:  # noqa: BLE001 (DartApiError 키 소진과 httpx 전송 오류도 한 건의 실패로 격리)
+            return code, rceptNo, "error", 0
+        if not raw or len(raw) < _MIN_VALID_BYTES or raw[:4] != _ZIP_MAGIC:
+            _content, status = parseDocumentResponse(raw)
+            return code, rceptNo, ("no_body" if status == "no_body" else "error"), 0
+        try:
             safeWriteBytes(outPath, raw)
-            return code, rceptNo, True, len(raw)
-        except (OSError, RuntimeError, ValueError):
-            return code, rceptNo, False, 0
+        except OSError:
+            return code, rceptNo, "error", 0
+        return code, rceptNo, "ok", len(raw)
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = [ex.submit(_fetchAndReport, code, rceptNo) for code, rceptNo in targets]
