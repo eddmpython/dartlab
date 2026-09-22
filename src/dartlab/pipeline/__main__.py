@@ -6,10 +6,23 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 from dartlab.pipeline.orchestrator import describeStages, runPipeline, runStage
 from dartlab.pipeline.types import StageResult
+
+
+def _writeStepOutput(result: StageResult) -> None:
+    """단일 stage 의 ``skipped`` 를 GitHub Actions step output 으로 남긴다.
+
+    워크플로는 ``steps.<id>.outputs.skipped == 'true'`` 로 "할 일 없음" 을 알고 뒤 단계를 건너뛴다
+    (예: allFilings 백필이 floor 에 닿은 날의 버킷 빌드). Actions 밖에서는 아무것도 하지 않는다.
+    """
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        with open(path, "a", encoding="utf-8") as stream:
+            stream.write(f"skipped={'true' if result.skipped else 'false'}\n")
 
 
 def _printSummary(results: dict[str, StageResult]) -> bool:
@@ -62,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
         results = runPipeline(mode=args.mode, upload=upload)
     else:
         results = {args.stage: runStage(args.stage, mode=args.mode, upload=upload)}
+        _writeStepOutput(results[args.stage])
     return 1 if _printSummary(results) else 0
 
 

@@ -628,6 +628,27 @@ def test_run_allfilings_backfill_noop_at_floor(monkeypatch) -> None:
 
     res = allFilings.runAllFilingsBackfill(upload=False)
     assert res.report.ok == 1 and res.rows == 0 and res.uploaded == 0
+    # 할 일 없음 선언. 워크플로가 이 값으로 버킷 빌드를 건너뛴다(2026-09 floor 도달 뒤 5연속 실패 가드).
+    assert res.skipped is True
+
+
+def test_run_allfilings_backfill_empty_listing_is_not_noop(monkeypatch) -> None:
+    """로컬·HF 기존 일자가 0 이면 선행 조건 이상이다. "할 일 없음"(skipped) 으로 초록 처리하지 않는다.
+
+    HF 목록이 비는 레이아웃 변경 같은 사고가 워크플로의 skipped 건너뛰기로 조용히 묻히면 안 된다.
+    """
+    from dartlab.gather.dart import allFilingsCollector as coll
+    from dartlab.gather.dart import allFilingsSync as sync
+    from dartlab.pipeline.stages import allFilings
+
+    monkeypatch.setattr(coll, "collectedDates", lambda: [])
+    monkeypatch.setattr(sync, "_remoteDates", lambda token=None: set())
+
+    res = allFilings.runAllFilingsBackfill(upload=False)
+
+    assert res.skipped is False
+    assert res.report.skip == 1 and res.report.err == 0 and res.report.fail == 0
+    assert any("기존 일자 0" in f for f in res.report.failures)
 
 
 def test_run_allfilings_backfill_anchor_failure_is_nonblocking(monkeypatch) -> None:
@@ -642,6 +663,7 @@ def test_run_allfilings_backfill_anchor_failure_is_nonblocking(monkeypatch) -> N
     res = allFilings.runAllFilingsBackfill()
     assert res.report.skip == 1 and res.report.err == 0 and res.report.fail == 0
     assert any("backfill" in f for f in res.report.failures)
+    assert res.skipped is False  # 장애 격리는 "할 일 없음" 이 아니다. 뒤 단계가 빈 입력으로 드러내야 한다.
 
 
 def test_run_allfilings_backfill_month_failure_is_nonblocking(monkeypatch) -> None:
@@ -679,6 +701,24 @@ def test_run_allfilings_backfill_month_failure_is_nonblocking(monkeypatch) -> No
     assert res.rows == 1
     assert pushed == []  # 실패한 월은 부분 push 하지 않고 다음 run 에서 재시도
     assert any("TimeoutError" in f for f in res.report.failures)
+    assert res.skipped is False
+
+
+def test_pipeline_cli_writes_skipped_step_output(monkeypatch, tmp_path) -> None:
+    """단일 stage CLI 는 skipped 를 GITHUB_OUTPUT 에 남긴다. 백필 워크플로의 건너뛰기 조건이 이 값이다."""
+    from dartlab.pipeline import __main__ as cli
+    from dartlab.pipeline.types import StageResult
+
+    output = tmp_path / "githubOutput.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    results = iter(
+        [StageResult(category="allFilingsBackfill", skipped=True), StageResult(category="allFilingsBackfill")]
+    )
+    monkeypatch.setattr(cli, "runStage", lambda *a, **k: next(results))
+
+    assert cli.main(["allFilingsBackfill", "--no-upload"]) == 0
+    assert cli.main(["allFilingsBackfill", "--no-upload"]) == 0
+    assert output.read_text(encoding="utf-8").splitlines() == ["skipped=true", "skipped=false"]
 
 
 def test_allfilings_backfill_registered() -> None:

@@ -285,7 +285,8 @@ def runAllFilingsBackfill(
         token: HF 토큰. None 이면 env ``HF_TOKEN``.
 
     Returns:
-        StageResult (rows=수집 본문 행수, uploaded=push 한 일자수). 커버리지 달성 시 0/0.
+        StageResult (rows=수집 본문 행수, uploaded=push 한 일자수). 커버리지 달성 시 0/0 이고
+        ``skipped=True`` (할 일 없음). 장애 격리(skip)는 ``skipped`` 를 켜지 않는다.
 
     Raises:
         없음 (앵커 조회/수집/업로드 예외는 StageResult 로 격리).
@@ -313,13 +314,19 @@ def runAllFilingsBackfill(
         return res
 
     if not existing:
-        res.skipped = True
-        print("[pipeline] allFilings backfill: 기존 일자 0 — forward seed 선행 필요, skip", flush=True)
+        # 선행 조건 이상이지 "할 일 없음" 이 아니다. HF 목록이 비는 레이아웃 변경 같은 사고를 초록으로
+        # 덮지 않게 skipped 를 켜지 않는다. 뒤 버킷 단계가 빈 입력으로 실패해 드러난다.
+        res.report.skip = 1
+        res.report.failures.append("allFilings backfill: 로컬·HF 기존 일자 0 (forward seed 선행 필요)")
+        print("[pipeline] allFilings backfill: 기존 일자 0, forward seed 선행 필요", flush=True)
         return res
 
     earliestYm = min(existing)[:6]
     targetMonths = _prevMonths(earliestYm, months, floorYm)
     if not targetMonths:
+        # 할 일이 없다는 선언. 워크플로는 이 값을 보고 버킷 빌드와 카탈로그를 건너뛴다. 수집 장애로 0일을
+        # 모은 경우는 skipped 가 아니므로 뒤 단계가 빈 입력으로 실패해 장애가 드러난다.
+        res.skipped = True
         res.report.ok = 1
         print(
             f"[pipeline] allFilings backfill: 앵커 월 {earliestYm} ≤ floor {floorYm} — 커버리지 달성, no-op",

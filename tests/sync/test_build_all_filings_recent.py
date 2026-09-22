@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 _SCRIPT = Path(__file__).resolve().parents[2] / ".github" / "scripts" / "sync" / "buildAllFilingsRecent.py"
 
@@ -88,3 +89,18 @@ def test_incremental_build_reads_only_touched_remote_bucket(monkeypatch, tmp_pat
     assert manifest["partitionCount"] == 2
     assert manifest["totalRows"] == 9
     assert set(pl.read_parquet(result.feedPath)["rcept_no"].to_list()) == {"new-00", "feed-03"}
+
+
+def test_empty_input_with_published_manifest_fails(monkeypatch, tmp_path: Path) -> None:
+    """로컬 일자 파일이 없으면 manifest 가 있어도 실패한다.
+
+    백필 워크플로는 floor 도달(skipped)일 때만 이 단계를 건너뛴다. 수집 장애로 0일을 모은 날은
+    이 실패가 장애를 드러내는 유일한 신호라 조용한 no-op 으로 바뀌면 안 된다.
+    """
+    mod = _loadModule()
+    monkeypatch.setattr(mod, "_allFilingsDir", lambda: tmp_path)
+    monkeypatch.setattr(mod, "_localFrame", mod._emptyFrame)
+    monkeypatch.setattr(mod, "_remoteManifest", lambda: {"formatVersion": 1, "partitions": []})
+
+    with pytest.raises(SystemExit, match="모두 없음"):
+        mod.build()

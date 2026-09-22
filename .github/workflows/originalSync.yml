@@ -237,8 +237,9 @@ jobs:
       - name: Smoke import
         run: uv run python -c "import dartlab"
       - name: allFilings 과거 백필 (2개월/run, floor 2015-01)
-        # HF 최오래 일자 직전 달부터 과거로 2개월 collect+push. floor 201501 도달 시 no-op.
+        # HF 최오래 일자 직전 달부터 과거로 2개월 collect+push. floor 201501 도달 시 no-op(skipped=true).
         # ephemeral 안전: _remoteDates 스코프 목록만 읽고 신규 일자만 수집(전이력 pull 없음).
+        id: backfill
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -248,13 +249,15 @@ jobs:
           DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: '120'
         run: uv run python -X utf8 -m dartlab.pipeline allFilingsBackfill
       - name: 비정기공시 코드 버킷 증분 갱신 + HF 원자 push (백필 slab 반영)
-        # 방금 수집한 과거 slab의 종목코드 버킷만 원격 파티션과 merge한다.
+        # 방금 수집한 과거 slab의 종목코드 버킷만 원격 파티션과 merge한다. 백필이 할 일 없음이면 건너뛴다.
+        if: steps.backfill.outputs.skipped != 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_HF_RETRY_ATTEMPTS: '3'
           DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: '120'
         run: uv run python -X utf8 .github/scripts/sync/buildAllFilingsRecent.py
       - name: allFilings search source manifest + catalog
+        if: steps.backfill.outputs.skipped != 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SEARCH_CATALOG_BOOTSTRAP: ${{ github.event.inputs.search_catalog_bootstrap == 'true' && '1' || '0' }}
