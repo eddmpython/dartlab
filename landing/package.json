@@ -48,7 +48,7 @@
 		"@dartlab/ui-format": "*",
 		"@dartlab/ui-runtime": "*",
 		"@dartlab/ui-surfaces": "*",
-		"@huggingface/transformers": "^4.2.0",
+		"@huggingface/transformers": "^4.3.0",
 		"@lezer/highlight": "^1.2.3",
 		"@mlc-ai/web-llm": "^0.2.84",
 		"@types/d3-hierarchy": "^3.1.7",
