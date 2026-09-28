@@ -1,0 +1,6 @@
+name: dartlab CodeQL config
+
+# 테스트 코드(tests/**)는 제품 코드가 아니라서 스캔에서 뺀다. src/, .github/scripts/ 등 나머지는 그대로 스캔하고,
+# 쿼리 묶음은 workflow 의 `queries: +security-extended` 를 따른다.
+paths-ignore:
+  - tests/**

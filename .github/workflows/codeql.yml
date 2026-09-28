@@ -25,6 +25,7 @@ jobs:
         with:
           languages: python
           queries: +security-extended
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

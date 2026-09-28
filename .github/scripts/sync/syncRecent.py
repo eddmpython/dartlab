@@ -219,7 +219,9 @@ def _discoverNewFilings(keys: str, lookbackDays: int, dataDir: str) -> tuple[set
     keyList = [k.strip() for k in keys.split(",") if k.strip()]
     filings = None
 
-    for apiKey in keyList:
+    # 로그에는 키 순번만 남긴다. GitHub Actions 는 secret 전체 문자열만 마스킹하므로 앞 8 자 같은 부분 문자열은
+    # 공개 로그에 그대로 찍힌다.
+    for keyIndex, apiKey in enumerate(keyList, start=1):
         try:
             client = DartClient(apiKey=apiKey)
             filings = listFilings(
@@ -233,7 +235,7 @@ def _discoverNewFilings(keys: str, lookbackDays: int, dataDir: str) -> tuple[set
             break  # 성공
         except DartApiError as e:
             if "020" in str(e):
-                print(f"[syncRecent] API 한도 초과 (키 {apiKey[:8]}...), 다음 키 시도")
+                print(f"[syncRecent] API 한도 초과 (키 #{keyIndex}), 다음 키 시도")
                 continue
             raise
 
