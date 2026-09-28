@@ -198,6 +198,12 @@ def test_macro_json_v20_structure():
 # ──────────────────────────────────────────────────────────────────────────
 
 
+def _writtenBuild(outDir):
+    """빌더 대역. 디렉터리만 만들고 '기록 완료' 요약을 돌려준다."""
+    outDir.mkdir(parents=True, exist_ok=True)
+    return {"written": True, "reason": ""}
+
+
 @pytest.mark.unit
 def test_macro_data_no_push_when_upload_false(monkeypatch, tmp_path):
     """upload=False → uploadCategoryToHf 미호출(push 0·crash 0)."""
@@ -205,7 +211,7 @@ def test_macro_data_no_push_when_upload_false(monkeypatch, tmp_path):
 
     calls: list = []
     monkeypatch.setattr(macroMod, "uploadCategoryToHf", lambda *a, **k: calls.append((a, k)))
-    monkeypatch.setattr(macroMod, "_buildFred", lambda outDir: outDir.mkdir(parents=True, exist_ok=True))
+    monkeypatch.setattr(macroMod, "_buildFred", _writtenBuild)
     monkeypatch.setenv("DARTLAB_DATA_DIR", str(tmp_path))
     res = macroMod.runMacroData(source="fred", upload=False, token=None)
     assert res.report.ok == 1
@@ -221,7 +227,8 @@ def test_macro_data_push_failure_isolated(monkeypatch, tmp_path):
         raise ValueError("HF_TOKEN 필요 — 인자/env/.env 어디에도 없음")
 
     monkeypatch.setattr(macroMod, "uploadCategoryToHf", _raiseNoToken)
-    monkeypatch.setattr(macroMod, "_buildFred", lambda outDir: outDir.mkdir(parents=True, exist_ok=True))
+    monkeypatch.setattr(macroMod, "_buildFred", _writtenBuild)
+    monkeypatch.setattr(macroMod, "_seedMacroBase", lambda *a, **k: None)
     monkeypatch.setenv("DARTLAB_DATA_DIR", str(tmp_path))
     res = macroMod.runMacroData(source="fred", upload=True, token=None)
     assert res.report.ok == 1  # 빌드는 성공
@@ -239,7 +246,8 @@ def test_macro_data_push_uses_full_folder(monkeypatch, tmp_path):
 
     seen: list = []
     monkeypatch.setattr(macroMod, "uploadCategoryToHf", lambda cat, **k: seen.append((cat, k)))
-    monkeypatch.setattr(macroMod, "_buildFred", lambda outDir: outDir.mkdir(parents=True, exist_ok=True))
+    monkeypatch.setattr(macroMod, "_buildFred", _writtenBuild)
+    monkeypatch.setattr(macroMod, "_seedMacroBase", lambda *a, **k: None)
     monkeypatch.setenv("DARTLAB_DATA_DIR", str(tmp_path))
     macroMod.runMacroData(source="fred", upload=True, token="tok")
     assert seen, "upload=True 인데 push 미발생"
@@ -349,3 +357,185 @@ def test_macro_json_registered():
     assert reg["macroJson"].online is False, "macroJson 은 offline stage 여야 함"
     # macro stage 는 그대로 유지(uploadCategories).
     assert reg["macro"].uploadCategories == ("macroFred", "macroEcos", "macroCustoms")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# 전송 장애 격리 + 공개본 보호 (2026-09-19·09-26 Macro Data Sync 120분 취소, 캐시 miss 빈 관측 기록)
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def _entries(*ids):
+    import types
+
+    return [types.SimpleNamespace(id=i, label=i, group="g", frequency="M", unit="u", description="d") for i in ids]
+
+
+def _series(value: float):
+    from datetime import date
+
+    import polars as pl
+
+    return pl.DataFrame({"date": [date(2026, 8, 1)], "value": [value]})
+
+
+def _writeBase(outDir, seriesIds):
+    """기존 관측(기준본) 대역을 outDir 에 쓴다."""
+    from datetime import date
+
+    import polars as pl
+
+    outDir.mkdir(parents=True, exist_ok=True)
+    pl.DataFrame(
+        {"seriesId": list(seriesIds), "date": [date(2026, 1, 1)] * len(seriesIds), "value": [0.5] * len(seriesIds)}
+    ).write_parquet(outDir / "observations.parquet")
+
+
+def _transportError(message: str = "ECOS 요청 실패 (최대 재시도 초과)") -> Exception:
+    import httpx
+
+    try:
+        try:
+            raise httpx.ConnectTimeout("timed out")
+        except httpx.ConnectTimeout as inner:
+            raise RuntimeError(message) from inner
+    except RuntimeError as exc:
+        return exc
+
+
+@pytest.mark.unit
+def test_macro_source_trips_after_consecutive_transport_failures(tmp_path):
+    """전송 장애가 연달아 3회면 남은 시리즈는 호출하지 않고 기준본으로 넘기며, 새 시리즈 0 이면 기록하지 않는다."""
+    import polars as pl
+
+    import dartlab.pipeline.stages.macro as macroMod
+
+    outDir = tmp_path / "macro" / "ecos"
+    _writeBase(outDir, ["A", "B", "C", "D", "E"])
+    before = (outDir / "observations.parquet").read_bytes()
+    calls: list[str] = []
+
+    def _fetch(seriesId):
+        calls.append(seriesId)
+        raise _transportError()
+
+    summary = macroMod._collectSource("ecos", _entries("A", "B", "C", "D", "E", "F"), _fetch, outDir)
+
+    assert calls == ["A", "B", "C"]  # 4번째부터 호출 없음 (시리즈당 재시도 소진 반복 차단)
+    assert summary["fresh"] == 0 and summary["written"] is False
+    assert summary["stale"] == 5 and summary["error"] == 1  # F 는 기준본에도 없음
+    assert (outDir / "observations.parquet").read_bytes() == before  # 공개본 기준을 덮지 않음
+    assert not (outDir / "manifest.parquet").exists()
+    assert pl.read_parquet(outDir / "observations.parquet").height == 5
+
+
+@pytest.mark.unit
+def test_macro_source_non_transport_failure_does_not_trip(tmp_path):
+    """전송 장애가 아닌 시리즈 단위 오류는 연속 횟수에 들지 않고, 성공이 끼면 연속 횟수가 다시 0 이 된다."""
+    import dartlab.pipeline.stages.macro as macroMod
+
+    outDir = tmp_path / "macro" / "fred"
+    _writeBase(outDir, ["A", "B", "C", "D", "E"])
+    calls: list[str] = []
+
+    def _fetch(seriesId):
+        calls.append(seriesId)
+        if seriesId in ("A", "B"):
+            raise _transportError("FRED API 요청 실패")
+        if seriesId == "C":
+            return _series(1.0)
+        raise ValueError(f"시리즈를 찾을 수 없습니다: {seriesId}")
+
+    summary = macroMod._collectSource("fred", _entries("A", "B", "C", "D", "E"), _fetch, outDir)
+
+    assert calls == ["A", "B", "C", "D", "E"]
+    assert summary["fresh"] == 1 and summary["stale"] == 4 and summary["written"] is True
+    assert (outDir / "manifest.parquet").exists()
+
+
+@pytest.mark.unit
+def test_macro_source_without_base_holds_partial_result(tmp_path):
+    """기준본 없이 실패 시리즈가 있으면 기록하지 않는다. 발행하면 그 시리즈가 공개본에서 빠진다."""
+    import dartlab.pipeline.stages.macro as macroMod
+
+    outDir = tmp_path / "macro" / "customs"
+
+    def _fetch(seriesId):
+        if seriesId == "B":
+            raise ValueError("관세청 resultCode 99")
+        return _series(2.0)
+
+    summary = macroMod._collectSource("customs", _entries("A", "B", "C"), _fetch, outDir)
+
+    assert summary["fresh"] == 2 and summary["error"] == 1
+    assert summary["written"] is False and "기준본 없이" in summary["reason"]
+    assert not (outDir / "observations.parquet").exists()
+
+
+@pytest.mark.unit
+def test_macro_source_with_base_keeps_failed_series_stale(tmp_path):
+    """기준본이 있으면 실패 시리즈는 이전 관측으로 남고 결과를 기록한다 (공개본에서 사라지지 않음)."""
+    import polars as pl
+
+    import dartlab.pipeline.stages.macro as macroMod
+
+    outDir = tmp_path / "macro" / "ecos"
+    _writeBase(outDir, ["A", "B", "C"])
+
+    def _fetch(seriesId):
+        if seriesId == "B":
+            raise _transportError()
+        return _series(9.0)
+
+    summary = macroMod._collectSource("ecos", _entries("A", "B", "C"), _fetch, outDir)
+
+    assert summary["written"] is True and summary["stale"] == 1
+    obs = pl.read_parquet(outDir / "observations.parquet")
+    assert sorted(obs["seriesId"].unique().to_list()) == ["A", "B", "C"]
+    assert obs.filter(pl.col("seriesId") == "B")["value"].to_list() == [0.5]  # 기준본 값 유지
+    manifest = pl.read_parquet(outDir / "manifest.parquet")
+    assert dict(zip(manifest["seriesId"], manifest["status"])) == {"A": "ok", "B": "stale", "C": "ok"}
+
+
+@pytest.mark.unit
+def test_macro_data_upload_skips_held_source(monkeypatch, tmp_path):
+    """기록을 보류한 소스는 올리지 않고 report.fail 로 드러낸다. 나머지 소스는 그대로 발행한다."""
+    import dartlab.pipeline.stages.macro as macroMod
+
+    uploaded: list[str] = []
+    monkeypatch.setattr(macroMod, "uploadCategoryToHf", lambda cat, **k: uploaded.append(cat))
+    monkeypatch.setattr(macroMod, "_seedMacroBase", lambda *a, **k: None)
+    monkeypatch.setattr(macroMod, "_buildFred", _writtenBuild)
+    monkeypatch.setattr(macroMod, "_buildEcos", lambda outDir: {"written": False, "reason": "새로 받은 시리즈 0"})
+    monkeypatch.setattr(macroMod, "_buildCustoms", _writtenBuild)
+    monkeypatch.setenv("DARTLAB_DATA_DIR", str(tmp_path))
+
+    res = macroMod.runMacroData(source="all", upload=True, token="tok")
+
+    assert uploaded == ["macroFred", "macroCustoms"]
+    assert res.report.ok == 1 and res.report.fail == 1
+    assert any("macroEcos 발행 보류" in failure for failure in res.report.failures)
+
+
+@pytest.mark.unit
+def test_macro_seed_base_only_when_local_observations_missing(monkeypatch, tmp_path):
+    """캐시 miss 로 로컬 관측이 없을 때만 HF 공개본(observations+manifest) 을 기준본으로 받는다."""
+    import dartlab.pipeline.seed as seedMod
+    import dartlab.pipeline.stages.macro as macroMod
+
+    calls: list = []
+    monkeypatch.setattr(
+        seedMod,
+        "downloadCategoryFiles",
+        lambda category, relPaths, **k: calls.append((category, list(relPaths), k.get("dataDir"))) or (2, 0),
+    )
+    outDir = tmp_path / "data" / "macro" / "ecos"
+
+    macroMod._seedMacroBase("macroEcos", outDir, "tok")
+
+    assert calls == [
+        ("macroEcos", ["macro/ecos/observations.parquet", "macro/ecos/manifest.parquet"], str(tmp_path / "data"))
+    ]
+
+    _writeBase(outDir, ["A"])
+    macroMod._seedMacroBase("macroEcos", outDir, "tok")
+    assert len(calls) == 1  # 로컬 기준본이 있으면 받지 않음

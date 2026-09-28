@@ -16,13 +16,20 @@ from __future__ import annotations
 import json
 import os
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from dartlab.pipeline.hfUpload import _resolveHfToken, uploadCategoryToHf
 from dartlab.pipeline.types import PipelineMode, StageResult
 
 _REPO_ID = "eddmpython/dartlab-data"
+
+# 전송 장애(연결·타임아웃·DNS)가 이 횟수만큼 연달아 나면 그 소스의 남은 시리즈는 호출하지 않고 기존 관측으로
+# 넘긴다. 시리즈마다 재시도를 다 소진하면(ECOS 약 97초, 관세청 약 183초) 불통 한 번에 job 120분을 넘겨
+# 취소되고 hf-dataset-push 잠금을 2시간 붙잡았다(2026-09-19·09-26 Macro Data Sync).
+_TRANSPORT_TRIP_AFTER = 3
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -102,155 +109,165 @@ def _write(outDir: Path, observations: list, manifestRows: list[dict]) -> None:
     print(f"[macro] wrote {outDir} observations={obs.height} series={manifest.height}", flush=True)
 
 
-def _buildFred(outDir: Path) -> None:
+def _isTransportFailure(exc: BaseException) -> bool:
+    """예외 사슬(__cause__/__context__)에 전송 계층 장애(연결·타임아웃·DNS)가 있으면 True.
+
+    FRED/ECOS/관세청 client 는 재시도를 다 쓰면 httpx 예외를 원인으로 달아 자기 예외로 다시 던진다.
+    """
+    import httpx
+
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, (httpx.TransportError, TimeoutError, ConnectionError)):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
+def _collectSource(source: str, entries: list, fetchSeries: Callable[[str], Any], outDir: Path) -> dict:
+    """카탈로그 시리즈를 받아 발행해도 될 때만 기록하고 소스 요약을 돌려준다.
+
+    시리즈 단위 실패는 기존 관측(fallback)으로 넘겨 전체를 멈추지 않는다. 전송 장애가
+    ``_TRANSPORT_TRIP_AFTER`` 회 연달아 나면 남은 시리즈는 호출하지 않고 fallback 으로 처리해 불통 한
+    번이 job 시간을 다 쓰지 않게 한다. 기록(=HF 발행 대상)은 두 경우 보류한다.
+
+    - 새로 받은 시리즈가 0 개. 갱신이 없고, 기준본마저 없으면 빈 결과가 공개본을 덮는다
+      (2026-09-19 캐시 miss + ECOS 53 시리즈 전송 실패로 observations 0 행이 기록됐다).
+    - 기준본(기존 관측) 없이 실패 시리즈가 있음. 그 시리즈가 공개본에서 사라진다.
+
+    Args:
+        source: "fred" | "ecos" | "customs".
+        entries: 카탈로그 항목 목록 (``id``/``label``/``group``/``frequency``/``unit``/``description``).
+        fetchSeries: 시리즈 ID → DataFrame(date, value) 수집 함수.
+        outDir: ``data/macro/<source>`` 출력 디렉터리.
+
+    Returns:
+        dict: {source: str, fresh: int (새로 받은 시리즈), stale: int, error: int, written: bool,
+        reason: str (보류 사유, 기록했으면 "")}.
+    """
     import polars as pl
 
+    existingObs, _ = _readExisting(outDir)
+    baseAvailable = not existingObs.is_empty()
+    updatedAt = _utcNow()
+    observations: list = []
+    manifestRows: list[dict] = []
+    transportStreak = 0
+    trippedReason = ""
+
+    for entry in entries:
+        status = "ok"
+        err = ""
+        if trippedReason:
+            df = _fallbackSeries(existingObs, entry.id)
+            status = "stale" if not df.is_empty() else "error"
+            err = trippedReason
+        else:
+            try:
+                df = fetchSeries(entry.id)
+                df = df.with_columns(pl.lit(entry.id).alias("seriesId")).select("seriesId", "date", "value")
+                transportStreak = 0
+            except Exception as exc:  # noqa: BLE001 (시리즈 단위 실패는 fallback(stale), 전체 중단 0)
+                fallback = _fallbackSeries(existingObs, entry.id)
+                df = fallback
+                status = "stale" if not fallback.is_empty() else "error"
+                err = f"{type(exc).__name__}: {exc}"
+                print(f"[{source}] {entry.id}: {status} ({err})", flush=True)
+                transportStreak = transportStreak + 1 if _isTransportFailure(exc) else 0
+                if transportStreak >= _TRANSPORT_TRIP_AFTER:
+                    trippedReason = f"전송 장애 {transportStreak}회 연속으로 남은 시리즈 수집 중단 ({err})"
+                    print(f"[{source}] {trippedReason}", flush=True)
+        observations.append(df)
+        st = _stats(df)
+        status, err = _gradeStatus(status, err, int(st["rowCount"] or 0), source, entry.id)
+        manifestRows.append(
+            {
+                "source": source,
+                "seriesId": entry.id,
+                "label": entry.label,
+                "group": entry.group,
+                "frequency": entry.frequency,
+                "unit": entry.unit,
+                "description": entry.description,
+                "rowCount": st["rowCount"],
+                "startDate": st["startDate"],
+                "latestDate": st["latestDate"],
+                "providerUpdatedAt": None,
+                "updatedAtUtc": updatedAt,
+                "status": status,
+                "error": err,
+            }
+        )
+
+    statuses = [row["status"] for row in manifestRows]
+    fresh, stale, errors = statuses.count("ok"), statuses.count("stale"), statuses.count("error")
+    reason = ""
+    if fresh == 0:
+        reason = f"새로 받은 시리즈 0 (stale {stale}, error {errors})"
+    elif errors and not baseAvailable:
+        reason = f"기준본 없이 실패 시리즈 {errors}개 (발행하면 공개본에서 빠짐)"
+    if reason:
+        print(f"[{source}] 기록·발행 보류: {reason}", flush=True)
+    else:
+        _write(outDir, observations, manifestRows)
+    return {"source": source, "fresh": fresh, "stale": stale, "error": errors, "written": not reason, "reason": reason}
+
+
+def _seedMacroBase(category: str, outDir: Path, token: str | None) -> None:
+    """로컬 기존 관측이 없으면(Actions 캐시 miss) HF 공개본을 fallback 기준본으로 받아 둔다.
+
+    실패 시리즈는 기존 관측으로 넘기는데, 캐시가 비면 기준본이 없어 실패분이 빠진 결과가 공개본을
+    덮을 수 있다. 공개본을 기준본으로 두면 실패 시리즈는 stale 로 남는다. seed 가 실패하면 기준본 없이
+    진행하고 ``_collectSource`` 의 발행 보류 규칙이 공개본을 지킨다.
+    """
+    if (outDir / "observations.parquet").exists():
+        return
+    from dartlab.core.dataConfig import DATA_RELEASES
+    from dartlab.pipeline.seed import downloadCategoryFiles
+
+    dirPath = DATA_RELEASES[category]["dir"]
+    relPaths = [f"{dirPath}/observations.parquet", f"{dirPath}/manifest.parquet"]
+    try:
+        got, missing = downloadCategoryFiles(category, relPaths, dataDir=str(outDir.parents[1]), token=token)
+        print(f"[macro] {category} HF 기준본 seed: {got}개 (없음 {missing})", flush=True)
+    except Exception as exc:  # noqa: BLE001 (seed 실패는 기준본 없이 진행, 발행 보류 규칙이 막음)
+        print(f"[macro] {category} HF 기준본 seed 실패: {type(exc).__name__}: {exc}", flush=True)
+
+
+def _buildFred(outDir: Path) -> dict:
     from dartlab.gather.fred import Fred
     from dartlab.gather.fred.catalog import getAllEntries
 
-    key = _requireEnv("FRED_API_KEY")
-    fred = Fred(apiKey=key)
-    existingObs, _ = _readExisting(outDir)
-    updatedAt = _utcNow()
-    observations: list = []
-    manifestRows: list[dict] = []
-
-    for entry in getAllEntries():
-        status = "ok"
-        err = ""
-        try:
-            df = fred.series(entry.id)
-            df = df.with_columns(pl.lit(entry.id).alias("seriesId")).select("seriesId", "date", "value")
-        except Exception as exc:  # noqa: BLE001 — 시리즈 단위 실패는 fallback(stale)·전체 중단 0
-            fallback = _fallbackSeries(existingObs, entry.id)
-            df = fallback
-            status = "stale" if not fallback.is_empty() else "error"
-            err = f"{type(exc).__name__}: {exc}"
-            print(f"[fred] {entry.id}: {status} ({err})", flush=True)
-        observations.append(df)
-        st = _stats(df)
-        status, err = _gradeStatus(status, err, int(st["rowCount"] or 0), "fred", entry.id)
-        manifestRows.append(
-            {
-                "source": "fred",
-                "seriesId": entry.id,
-                "label": entry.label,
-                "group": entry.group,
-                "frequency": entry.frequency,
-                "unit": entry.unit,
-                "description": entry.description,
-                "rowCount": st["rowCount"],
-                "startDate": st["startDate"],
-                "latestDate": st["latestDate"],
-                "providerUpdatedAt": None,
-                "updatedAtUtc": updatedAt,
-                "status": status,
-                "error": err,
-            }
-        )
-    fred.close()
-    _write(outDir, observations, manifestRows)
+    fred = Fred(apiKey=_requireEnv("FRED_API_KEY"))
+    try:
+        return _collectSource("fred", list(getAllEntries()), fred.series, outDir)
+    finally:
+        fred.close()
 
 
-def _buildEcos(outDir: Path) -> None:
-    import polars as pl
-
+def _buildEcos(outDir: Path) -> dict:
     from dartlab.gather.ecos import Ecos
     from dartlab.gather.ecos.catalog import getAllIds, getEntry
 
-    key = _requireEnv("ECOS_API_KEY")
-    ecos = Ecos(apiKey=key)
-    existingObs, _ = _readExisting(outDir)
-    updatedAt = _utcNow()
-    observations: list = []
-    manifestRows: list[dict] = []
-
-    for seriesId in getAllIds():
-        entry = getEntry(seriesId)
-        if entry is None:
-            continue
-        status = "ok"
-        err = ""
-        try:
-            df = ecos.series(seriesId)
-            df = df.with_columns(pl.lit(seriesId).alias("seriesId")).select("seriesId", "date", "value")
-        except Exception as exc:  # noqa: BLE001 — 시리즈 단위 실패는 fallback(stale)·전체 중단 0
-            fallback = _fallbackSeries(existingObs, seriesId)
-            df = fallback
-            status = "stale" if not fallback.is_empty() else "error"
-            err = f"{type(exc).__name__}: {exc}"
-            print(f"[ecos] {seriesId}: {status} ({err})", flush=True)
-        observations.append(df)
-        st = _stats(df)
-        status, err = _gradeStatus(status, err, int(st["rowCount"] or 0), "ecos", entry.id)
-        manifestRows.append(
-            {
-                "source": "ecos",
-                "seriesId": entry.id,
-                "label": entry.label,
-                "group": entry.group,
-                "frequency": entry.frequency,
-                "unit": entry.unit,
-                "description": entry.description,
-                "rowCount": st["rowCount"],
-                "startDate": st["startDate"],
-                "latestDate": st["latestDate"],
-                "providerUpdatedAt": None,
-                "updatedAtUtc": updatedAt,
-                "status": status,
-                "error": err,
-            }
-        )
-    ecos.close()
-    _write(outDir, observations, manifestRows)
+    ecos = Ecos(apiKey=_requireEnv("ECOS_API_KEY"))
+    entries = [entry for entry in (getEntry(seriesId) for seriesId in getAllIds()) if entry is not None]
+    try:
+        return _collectSource("ecos", entries, ecos.series, outDir)
+    finally:
+        ecos.close()
 
 
-def _buildCustoms(outDir: Path) -> None:
-    import polars as pl
-
+def _buildCustoms(outDir: Path) -> dict:
     from dartlab.gather.customs import Customs, getAllEntries
 
     customs = Customs()  # DATA_GO_KR_KEY 자동 해석 (credentials 레지스트리)
-    existingObs, _ = _readExisting(outDir)
-    updatedAt = _utcNow()
-    observations: list = []
-    manifestRows: list[dict] = []
-
-    for entry in getAllEntries():
-        status = "ok"
-        err = ""
-        try:
-            df = customs.series(entry.id)  # 월별 수출액(expDlr) 전체 이력
-            df = df.with_columns(pl.lit(entry.id).alias("seriesId")).select("seriesId", "date", "value")
-        except Exception as exc:  # noqa: BLE001 — 시리즈 단위 실패는 fallback(stale)·전체 중단 0
-            fallback = _fallbackSeries(existingObs, entry.id)
-            df = fallback
-            status = "stale" if not fallback.is_empty() else "error"
-            err = f"{type(exc).__name__}: {exc}"
-            print(f"[customs] {entry.id}: {status} ({err})", flush=True)
-        observations.append(df)
-        st = _stats(df)
-        status, err = _gradeStatus(status, err, int(st["rowCount"] or 0), "customs", entry.id)
-        manifestRows.append(
-            {
-                "source": "customs",
-                "seriesId": entry.id,
-                "label": entry.label,
-                "group": entry.group,
-                "frequency": entry.frequency,
-                "unit": entry.unit,
-                "description": entry.description,
-                "rowCount": st["rowCount"],
-                "startDate": st["startDate"],
-                "latestDate": st["latestDate"],
-                "providerUpdatedAt": None,
-                "updatedAtUtc": updatedAt,
-                "status": status,
-                "error": err,
-            }
-        )
-    customs.close()
-    _write(outDir, observations, manifestRows)
+    try:
+        # 월별 수출액(expDlr) 전체 이력
+        return _collectSource("customs", list(getAllEntries()), customs.series, outDir)
+    finally:
+        customs.close()
 
 
 def runMacroData(*, source: str = "all", upload: bool = True, token: str | None = None) -> StageResult:
@@ -267,7 +284,7 @@ def runMacroData(*, source: str = "all", upload: bool = True, token: str | None 
         token: HF 토큰(인자>env>.env). None+upload 시 ``_resolveHfToken`` 해석.
 
     Returns:
-        StageResult (report.ok=빌드 성공, report.err=빌드 실패, report.fail=push 실패).
+        StageResult (report.ok=빌드 성공, report.err=빌드 실패, report.fail=push 실패 또는 소스 발행 보류).
 
     Raises:
         없음 (빌드/업로드 예외는 StageResult 로 격리).
@@ -278,13 +295,19 @@ def runMacroData(*, source: str = "all", upload: bool = True, token: str | None 
     """
     res = StageResult(category="macroData")
     outRoot = Path(os.environ.get("DARTLAB_DATA_DIR", "data")) / "macro"
+    builds: dict[str, dict] = {}
     try:
-        if source in ("fred", "all"):
-            _buildFred(outRoot / "fred")
-        if source in ("ecos", "all"):
-            _buildEcos(outRoot / "ecos")
-        if source in ("customs", "all"):
-            _buildCustoms(outRoot / "customs")
+        for name, category, build in (
+            ("fred", "macroFred", _buildFred),
+            ("ecos", "macroEcos", _buildEcos),
+            ("customs", "macroCustoms", _buildCustoms),
+        ):
+            if source not in (name, "all"):
+                continue
+            outDir = outRoot / name
+            if upload:
+                _seedMacroBase(category, outDir, token)
+            builds[category] = build(outDir)
         res.report.ok = 1
     except Exception as exc:  # noqa: BLE001 — 빌드 실패 격리(다음 sync 자연 회복)
         res.report.err = 1
@@ -292,14 +315,14 @@ def runMacroData(*, source: str = "all", upload: bool = True, token: str | None 
         print(f"[pipeline] macroData 빌드 실패(격리): {exc}", flush=True)
         return res
 
+    # 기록을 보류한 소스는 공개본을 건드리지 않고 실패로 드러낸다(조용한 stale·빈 덮어쓰기 차단).
+    for category, build in builds.items():
+        if not build.get("written"):
+            res.report.fail = 1
+            res.report.failures.append(f"{category} 발행 보류: {build.get('reason') or '사유 미상'}")
+
     if upload:
-        cats = []
-        if source in ("fred", "all"):
-            cats.append("macroFred")
-        if source in ("ecos", "all"):
-            cats.append("macroEcos")
-        if source in ("customs", "all"):
-            cats.append("macroCustoms")
+        cats = [category for category, build in builds.items() if build.get("written")]
         try:
             for cat in cats:
                 uploadCategoryToHf(cat, token=token, fullUpload=True)
