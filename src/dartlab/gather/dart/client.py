@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+import os
+import random
 import threading
 import time
 from dataclasses import dataclass, field
@@ -17,18 +19,67 @@ import httpx
 import polars as pl
 
 from dartlab.core.dartClient import DartApiError, registerDartFetchProvider
+from dartlab.core.logger import getLogger
 from dartlab.gather.dart.keys import resolveDartKeys
+
+_log = getLogger(__name__)
 
 BASE_URL = "https://opendart.fss.or.kr/api"
 
 # 키 020 (rate limit) 시 cooldown — DART 분당 580 rpm 회복 대기.
 _COOLDOWN_SEC = 60.0
 
-# 전송 계층 일시 장애(연결 끊김·read/connect 타임아웃·일시 5xx) 한정 재시도 횟수·백오프(지수, 초).
+# 전송 계층 일시 장애(연결 끊김·read 타임아웃·일시 5xx) 한정 재시도 횟수·백오프(지수, 초).
 # DART 가 응답 없이 끊거나(RemoteProtocolError) 일시 5xx 를 낼 때 단발 실패가 파이프라인 잡 전체를
 # 죽이던 갭 방어(Original SSOT Sync dart-reconcile). status(013/020) cooldown 은 호출자 루프가 담당.
+# 연결 단계 실패(ConnectTimeout·ConnectError)는 이 경로로 세지 않고 아래 _CONNECT_* 경로가 따로 맡는다.
 _TRANSIENT_RETRIES = 3
 _TRANSIENT_BACKOFF_SEC = 0.5
+
+# 연결 단계(TCP connect) 타임아웃 상한(초). 예전에는 connect 타임아웃이 요청 전체 timeout(30/60초)과
+# 같아서 불통 구간에서는 시도 한 번이 60초씩 걸렸고, 재시도 3회가 같은 불통 구간 안에서 다 소진됐다
+# (KindList "Fetch OpenDART CORPCODE.xml" 182초 = connect 60초 x 3). 연결 단계만 줄여 불통을 빨리
+# 감지하고, read·write·pool 은 호출자가 준 timeout 을 그대로 쓴다.
+_CONNECT_TIMEOUT_SEC = 10.0
+
+# 연결 단계 실패 전용 백오프(초, 끝값 반복)와 jitter 비율(±20%). 요청이 송신되기 전 실패라 재시도가
+# 안전하다. OpenDART 는 단일 A 레코드라 TCP 연결이 수 분(실측 3~7분) 막히는 구간이 있어 0.5초·1초
+# 백오프로는 그 구간을 넘기지 못한다. 시도 횟수는 env DARTLAB_DART_CONNECT_RETRY_ATTEMPTS 로 정한다.
+# 기본 3 은 대화형 사용자가 수 분씩 멈추지 않게 하려는 값이고(최소 1, 정수가 아니면 기본값),
+# CI 워크플로는 6 으로 올려 약 4분 20초 구간을 버틴다(connect 10초 x 6 + 대기 5+15+30+60+90초,
+# jitter 별도).
+_CONNECT_BACKOFF_SEC = (5.0, 15.0, 30.0, 60.0, 90.0)
+_CONNECT_BACKOFF_JITTER = 0.2
+_CONNECT_RETRY_ENV = "DARTLAB_DART_CONNECT_RETRY_ATTEMPTS"
+_CONNECT_RETRY_DEFAULT = 3
+
+
+def _connectRetryAttempts() -> int:
+    """연결 단계 실패 최대 시도 횟수를 env 에서 읽는다.
+
+    Returns:
+        int: ``DARTLAB_DART_CONNECT_RETRY_ATTEMPTS`` 값(최소 1). 미설정이거나 정수가 아니면 기본 3.
+    """
+    try:
+        return max(1, int(os.environ.get(_CONNECT_RETRY_ENV, str(_CONNECT_RETRY_DEFAULT))))
+    except ValueError:
+        return _CONNECT_RETRY_DEFAULT
+
+
+def _connectBackoffWait(failureIndex: int) -> float:
+    """연결 단계 실패 뒤 대기 초를 돌려준다.
+
+    ``_CONNECT_BACKOFF_SEC`` 순서대로 쓰고 끝값을 반복하며, ±20% jitter 를 곱해 병렬 워커와
+    재실행이 같은 순간에 몰려 다시 붙지 않게 흩는다.
+
+    Args:
+        failureIndex: 0 부터 세는 연결 실패 순번.
+
+    Returns:
+        float: 대기 초.
+    """
+    base = _CONNECT_BACKOFF_SEC[min(failureIndex, len(_CONNECT_BACKOFF_SEC) - 1)]
+    return base * random.uniform(1.0 - _CONNECT_BACKOFF_JITTER, 1.0 + _CONNECT_BACKOFF_JITTER)
 
 
 @dataclass
@@ -177,35 +228,72 @@ class DartClient:
             return all(s.coolDownUntil > now for s in self._slots)
 
     def _getWithTransientRetry(self, url: str, params: dict[str, Any], timeout: float) -> httpx.Response:
-        """전송 계층 일시 장애(연결 끊김·타임아웃·일시 5xx)에 한정 재시도하는 GET.
+        """전송 계층 일시 장애에 한정 재시도하는 GET. 연결 단계 실패는 긴 백오프로 따로 재시도한다.
 
-        DART 서버는 드물게 응답 없이 연결을 끊거나(``httpx.RemoteProtocolError``) 일시 5xx 를
-        반환한다 — 애플리케이션 status(013/020 등) 와 무관한 전송 계층 단발 장애로, 이전엔 재시도
-        없이 그대로 propagate 돼 한 번의 끊김이 파이프라인 잡 전체를 죽였다(Original SSOT Sync
-        dart-reconcile). 이 계층에서만 짧게 재시도하고(슬롯·키 로테이션·020 cooldown 은 호출자 루프
-        유지), 소진 시 마지막 예외를 그대로 올린다. 4xx·정상 응답은 즉시 반환해 호출자가 status 판정.
+        애플리케이션 status(013/020 등)와 무관한 전송 계층 장애만 이 계층에서 흡수한다. 슬롯·키
+        로테이션·020 cooldown 은 호출자 루프가 그대로 맡고, 4xx·정상 응답은 즉시 반환해 호출자가
+        status 를 판정한다. 실패는 두 갈래로 나눠 시도 횟수를 따로 센다.
+
+        1. 연결 단계 실패(``httpx.ConnectTimeout``·``httpx.ConnectError``). 요청이 송신되기 전이라
+           재시도가 안전하다. OpenDART 는 단일 A 레코드라 TCP 연결이 수 분(실측 3~7분) 막히는 구간이
+           있는데, 예전에는 connect 타임아웃이 요청 전체 timeout 과 같고 백오프가 0.5초·1초라 3회가
+           모두 같은 불통 구간 안에서 소진돼 잡이 죽었다. 이제 connect 타임아웃은
+           ``min(timeout, 10)`` 초로 줄여 불통을 빨리 감지하고, ``_CONNECT_BACKOFF_SEC``
+           (5·15·30·60·90초, 끝값 반복, ±20% jitter)만큼 기다린 뒤 다시 붙는다. 시도 횟수는 env
+           ``DARTLAB_DART_CONNECT_RETRY_ATTEMPTS`` (기본 3, 최소 1, 정수가 아니면 3)로 정한다.
+        2. 그 밖의 전송 장애(``httpx.RemoteProtocolError``·``httpx.ReadTimeout`` 등)와 일시 5xx.
+           DART 가 드물게 응답 없이 끊거나 일시 5xx 를 내던 단발 장애로, 예전엔 재시도 없이
+           propagate 돼 한 번의 끊김이 파이프라인 잡 전체를 죽였다(Original SSOT Sync
+           dart-reconcile). ``_TRANSIENT_RETRIES`` 회까지 ``_TRANSIENT_BACKOFF_SEC`` 지수
+           백오프(0.5초, 1초)로 짧게 재시도한다.
+
+        어느 한 갈래라도 시도 횟수를 다 쓰면 그 갈래의 마지막 예외를 그대로 올린다.
 
         Args:
             url: 요청 URL.
             params: 쿼리 파라미터 (crtfc_key 포함).
-            timeout: 요청 타임아웃 (초).
+            timeout: 요청 타임아웃 (초). read·write·pool 에 그대로 쓰고 connect 만
+                ``min(timeout, 10)`` 초로 줄인다.
 
         Returns:
-            httpx.Response — 전송 성공 응답 (status_code < 500 보장, 2xx 는 비보장).
+            httpx.Response: 전송 성공 응답 (status_code < 500 보장, 2xx 는 비보장).
             raise_for_status / status 판정은 호출자 책임.
 
         Raises:
-            httpx.TransportError | httpx.HTTPStatusError: 재시도 소진 후 마지막 예외.
+            httpx.ConnectTimeout | httpx.ConnectError: 연결 단계 재시도 소진 후 마지막 예외.
+            httpx.TransportError | httpx.HTTPStatusError: 그 밖의 전송 장애·5xx 재시도 소진 후 마지막 예외.
 
         Example:
             >>> callable(DartClient._getWithTransientRetry)
             True
         """
-        lastExc: Exception | None = None
-        for attempt in range(_TRANSIENT_RETRIES):
+        requestTimeout = httpx.Timeout(timeout, connect=min(timeout, _CONNECT_TIMEOUT_SEC))
+        connectAttempts = _connectRetryAttempts()
+        connectFailures = 0
+        transientFailures = 0
+        lastExc: Exception
+        while True:
             try:
-                resp = self._session.get(url, params=params, timeout=timeout)
-            except httpx.TransportError as exc:  # 연결 끊김·read/connect 타임아웃 등 전송 계층 장애
+                resp = self._session.get(url, params=params, timeout=requestTimeout)
+            except (httpx.ConnectTimeout, httpx.ConnectError) as exc:
+                # 연결 단계 실패. 요청 미송신이라 재시도가 안전하고, 긴 백오프로 불통 구간을 넘긴다.
+                connectFailures += 1
+                if connectFailures >= connectAttempts:
+                    raise
+                wait = _connectBackoffWait(connectFailures - 1)
+                # url 은 BASE_URL/endpoint 뿐이다(crtfc_key 는 params 라 로그에 남지 않는다).
+                _log.warning(
+                    "DART 연결 실패 %s: %s, %.1f초 후 재시도 (%d/%d) url=%s",
+                    type(exc).__name__,
+                    exc,
+                    wait,
+                    connectFailures,
+                    connectAttempts - 1,
+                    url,
+                )
+                time.sleep(wait)
+                continue
+            except httpx.TransportError as exc:  # 연결 끊김·read 타임아웃 등 그 밖의 전송 계층 장애
                 lastExc = exc
             else:
                 if resp.status_code < 500:
@@ -213,10 +301,10 @@ class DartClient:
                 lastExc = httpx.HTTPStatusError(
                     f"DART 일시 서버 오류 {resp.status_code}", request=resp.request, response=resp
                 )
-            if attempt < _TRANSIENT_RETRIES - 1:
-                time.sleep(_TRANSIENT_BACKOFF_SEC * (2**attempt))
-        assert lastExc is not None  # 루프가 최소 1회 실행되므로 항상 설정됨
-        raise lastExc
+            transientFailures += 1
+            if transientFailures >= _TRANSIENT_RETRIES:
+                raise lastExc
+            time.sleep(_TRANSIENT_BACKOFF_SEC * (2 ** (transientFailures - 1)))
 
     def getJson(
         self,

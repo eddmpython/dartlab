@@ -51,7 +51,11 @@ _KIND_HEADERS = {
     )
 }
 _KIND_RETRIES = 3
-_KIND_BACKOFF_SEC = 2.0
+# 재시도 대기 = _KIND_BACKOFF_SEC x 3^attempt (5초, 15초). 예전 2초·4초보다 일시 오류 페이지·연결 장애가
+# 풀릴 시간을 조금 더 준다(실패 시에만 드는 비용이라 정상 경로 지연은 없다).
+_KIND_BACKOFF_SEC = 5.0
+# 표 없는 응답 경고에 남길 본문 앞부분 길이(자).
+_KIND_LOG_HEAD_CHARS = 120
 
 _memory: pl.DataFrame | None = None
 _memoryTs: float = 0.0
@@ -192,7 +196,9 @@ def _fetchKind() -> pl.DataFrame:
     """KRX KIND API에서 상장법인 목록 HTML 수집 → DataFrame 변환.
 
     SPAC·리츠 제외, 6자리 종목코드만 포함. 전송 계층 일시 장애(연결 끊김·타임아웃·비-테이블
-    응답)는 짧게 재시도하고, 소진 시 빈 DataFrame 반환(소비자 비크래시 계약).
+    응답)는 5초·15초 간격으로 재시도하고, 소진 시 빈 DataFrame 반환(소비자 비크래시 계약).
+    HTTP 는 응답했는데 표가 없으면(파싱 행 2개 미만) 상태 코드·응답 길이·본문 앞 120자를 한 줄
+    경고로 남겨, 재시도가 소진된 뒤에도 무엇 때문에 비었는지 로그에서 보이게 한다.
 
     Returns
     -------
@@ -216,12 +222,24 @@ def _fetchKind() -> pl.DataFrame:
             if len(parser._rows) >= 2:
                 rows = parser._rows
                 break
+            # HTTP 는 응답했는데 표가 없다(WAF 차단·점검·오류 페이지 등). 예전에는 말없이 재시도해서
+            # 소진 뒤 원인이 남지 않았다(2026-08-09·08-28 KindList). 상태 코드·길이·앞부분을 한 줄로 남긴다.
+            head = " ".join(html[: _KIND_LOG_HEAD_CHARS * 4].split())[:_KIND_LOG_HEAD_CHARS]
+            _log.warning(
+                "KIND 상장목록 응답에 표가 없음 (%d/%d): status=%s len=%d rows=%d head=%r",
+                attempt + 1,
+                _KIND_RETRIES,
+                r.status_code,
+                len(r.content),
+                len(parser._rows),
+                head,
+            )
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as exc:
             # 전송 계층 일시 장애. 재시도하되 원인은 남긴다. 예전에는 삼켜서 재시도가
             # 소진된 뒤에도 무엇 때문에 비었는지 알 수 없었다.
             _log.warning("KIND 상장목록 조회 실패 (%d/%d): %s: %s", attempt + 1, _KIND_RETRIES, type(exc).__name__, exc)
         if attempt < _KIND_RETRIES - 1:
-            time.sleep(_KIND_BACKOFF_SEC * (attempt + 1))
+            time.sleep(_KIND_BACKOFF_SEC * (3**attempt))
     if len(rows) < 2:
         return empty  # 재시도 소진 — graceful 빈 DataFrame(소비자 비크래시 계약 유지)
 

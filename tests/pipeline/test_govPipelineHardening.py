@@ -30,7 +30,8 @@ def testGovBuildUsesSharedHfRetryForReadAndWrites():
 def testGovWorkflowSeparatesRerunCacheAndBoundsRetries(workflow):
     text = (ROOT / ".github" / "workflows" / workflow).read_text(encoding="utf-8")
     assert "github.run_id }}-${{ github.run_attempt" in text
-    assert 'DARTLAB_GOV_RETRY_ATTEMPTS: "5"' in text
+    # 9회 = 대기 257초(govApi._GOV_BACKOFF_SECONDS) + connect 10초 x 9, 약 6분 불통 구간을 run 한 번이 버틴다.
+    assert 'DARTLAB_GOV_RETRY_ATTEMPTS: "9"' in text
     assert 'DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: "300"' in text
 
 

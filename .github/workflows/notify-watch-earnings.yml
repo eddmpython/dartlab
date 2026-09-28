@@ -46,6 +46,7 @@ jobs:
         run: uv run python -X utf8 .github/scripts/notify/watch.py --topics earningsFlash ${{ github.event.inputs.dryRun == 'true' && '--dry-run' || '' }}
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: "6"  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           DARTLAB_EARNINGS_DATE_FROM: ${{ github.event.inputs.dateFrom }}
           PUSHHUB_URL: ${{ vars.VITE_PUSHHUB_URL }}
           PUSHHUB_SEND_TOKEN: ${{ secrets.PUSHHUB_SEND_TOKEN }}

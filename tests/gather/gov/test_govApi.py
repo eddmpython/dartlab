@@ -230,3 +230,73 @@ def test_get_honors_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert govApi._get({}, apiKey="key", client=client) == {"ok": True}
     assert waits == [7.0]
+
+
+def testGovTimeoutShortensConnectPhaseOnly() -> None:
+    """요청 timeout 은 connect 만 10초로 끊고 read·write·pool 은 30초를 유지한다."""
+    from dartlab.gather.gov import govApi
+
+    assert isinstance(govApi._GOV_TIMEOUT, httpx.Timeout)
+    assert govApi._GOV_TIMEOUT.connect == 10.0
+    assert govApi._GOV_TIMEOUT.read == 30.0
+    assert govApi._GOV_TIMEOUT.write == 30.0
+    assert govApi._GOV_TIMEOUT.pool == 30.0
+
+
+def testGetOwnClientUsesGovTimeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    """client 미주입 시 스스로 만드는 httpx.Client 가 _GOV_TIMEOUT 을 쓰고 끝나면 닫힌다."""
+    from dartlab.gather.gov import govApi
+
+    created: list[dict] = []
+    closed: list[bool] = []
+
+    class _RecordingClient:
+        def __init__(self, **kwargs):
+            created.append(kwargs)
+
+        def get(self, *_args, **_kwargs):
+            return _response(200, {"ok": True})
+
+        def close(self) -> None:
+            closed.append(True)
+
+    monkeypatch.setattr(govApi.httpx, "Client", _RecordingClient)
+
+    assert govApi._get({}, apiKey="key", client=None) == {"ok": True}
+    assert len(created) == 1
+    timeout = created[0]["timeout"]
+    assert isinstance(timeout, httpx.Timeout)
+    assert timeout.connect == 10.0
+    assert timeout.read == 30.0
+    assert closed == [True]
+
+
+def testGetRetryScheduleCoversMultiMinuteOutage(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CI 설정(9회)에서 연결 불통 8회를 늘린 백오프로 기다린 뒤 회복한다."""
+    from dartlab.gather.gov import govApi
+
+    client = _SequenceClient([httpx.ConnectTimeout(f"outage {i}") for i in range(8)] + [_response(200, {"ok": True})])
+    waits: list[float] = []
+    monkeypatch.setattr(govApi.time, "sleep", waits.append)
+    monkeypatch.setenv("DARTLAB_GOV_RETRY_ATTEMPTS", "9")
+    monkeypatch.delenv("DARTLAB_GOV_RETRY_MAX_SINGLE_WAIT_SECONDS", raising=False)  # 기본 한 번 상한 60초
+
+    assert govApi._get({}, apiKey="key", client=client) == {"ok": True}
+    assert client.calls == 9
+    assert waits == [2.0, 5.0, 10.0, 20.0, 40.0, 60.0, 60.0, 60.0]
+    assert sum(waits) == 257.0  # connect 10초 x 9 를 더하면 약 6분
+
+
+def testGetRetryExhaustionReraisesConnectTimeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    """시도 횟수를 다 쓰면 마지막 연결 예외를 그대로 올린다(조용한 삼킴 아님)."""
+    from dartlab.gather.gov import govApi
+
+    client = _SequenceClient([httpx.ConnectTimeout(f"outage {i}") for i in range(3)])
+    waits: list[float] = []
+    monkeypatch.setattr(govApi.time, "sleep", waits.append)
+    monkeypatch.setenv("DARTLAB_GOV_RETRY_ATTEMPTS", "3")
+
+    with pytest.raises(httpx.ConnectTimeout, match="outage 2"):
+        govApi._get({}, apiKey="key", client=client)
+    assert client.calls == 3
+    assert waits == [2.0, 5.0]

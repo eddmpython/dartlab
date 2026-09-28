@@ -150,6 +150,7 @@ jobs:
         # (panelRceptReconcile._HEAL_CHUNK). 분기 마감 뒤 수천 종목 backlog 가 timeout 에 통째로 증발하지 않는다.
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DART_PANEL_RECONCILE_DAYS: '85'  # corp 생략 list.json 3개월(~92일) cap 안쪽 + 현 백로그 커버
           PANEL_WORKERS: '2'
@@ -176,6 +177,7 @@ jobs:
       - name: allFilings forward 증분 + HF push
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SYNC_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '7' }}
           DARTLAB_HF_RETRY_ATTEMPTS: '3'
@@ -242,6 +244,7 @@ jobs:
         id: backfill
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DART_ALLFILINGS_BACKFILL_MONTHS: '2'
           DART_ALLFILINGS_BACKFILL_FLOOR: '201501'

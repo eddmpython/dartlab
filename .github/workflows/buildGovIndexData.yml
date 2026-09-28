@@ -57,7 +57,8 @@ jobs:
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          DARTLAB_GOV_RETRY_ATTEMPTS: "5"
+          # 9회 = 대기 257초(govApi._GOV_BACKOFF_SECONDS) + connect 10초 x 9, 약 6분 연결 불통을 버틴다.
+          DARTLAB_GOV_RETRY_ATTEMPTS: "9"
           DARTLAB_GOV_RETRY_MAX_SINGLE_WAIT_SECONDS: "60"
           DARTLAB_HF_RETRY_ATTEMPTS: "5"
           DARTLAB_HF_RETRY_MAX_SINGLE_WAIT_SECONDS: "300"

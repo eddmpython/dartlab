@@ -115,6 +115,7 @@ jobs:
           python .github/scripts/meta/updateDartList.py
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: "6"  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
 
       - name: Upload DartList to Release
         if: ${{ !hashFiles('dist/SKIP_DARTLIST') }}

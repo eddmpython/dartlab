@@ -113,6 +113,7 @@ jobs:
         run: uv run python -X utf8 -m dartlab.pipeline finance --no-upload
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: "6"  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}  # checkpoint subprocess (uploadData.py) 가 필요
           SYNC_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '14' }}
           SYNC_CATEGORIES: finance,report
@@ -216,6 +217,7 @@ jobs:
         run: uv run python .github/scripts/sync/syncData.py
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: "6"  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           SYNC_CATEGORY: ${{ matrix.category }}
           SYNC_MODE: all
 

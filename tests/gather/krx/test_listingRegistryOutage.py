@@ -95,6 +95,48 @@ def testTransportFailureIsRecordedNotSwallowed(monkeypatch: pytest.MonkeyPatch, 
     assert any("KIND" in record.message for record in caplog.records)
 
 
+def testNonTableResponseIsRecordedWithStatusLengthAndHead(monkeypatch: pytest.MonkeyPatch, caplog) -> None:
+    """HTTP 200 인데 표가 없는 응답도 상태 코드·길이·본문 앞부분을 한 줄 경고로 남긴다.
+
+    예전에는 말없이 재시도해서 2026-08-09·08-28 KindList 실패가 원인 없이 끝났다.
+    빈 DataFrame 을 돌려주는 graceful 계약은 그대로다.
+    """
+
+    body = (
+        "<html>\n<head><title>KIND</title></head>\n<body>\n" + "  <p>서비스 점검 중입니다</p>\n" * 20 + "</body></html>"
+    ).encode("euc-kr")
+    calls: list[int] = []
+
+    class _NoTableResponse:
+        status_code = 200
+        content = body
+
+    def post(*_args: object, **_kwargs: object) -> _NoTableResponse:
+        calls.append(1)
+        return _NoTableResponse()
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(registry.httpx, "post", post, raising=False)
+    monkeypatch.setattr(registry.time, "sleep", sleeps.append)
+
+    with caplog.at_level("WARNING"):
+        result = registry._fetchKind()
+
+    assert result.height == 0
+    assert "종목코드" in result.columns
+    assert len(calls) == registry._KIND_RETRIES
+    records = [record for record in caplog.records if "표가 없음" in record.getMessage()]
+    assert len(records) == registry._KIND_RETRIES
+    message = records[0].getMessage()
+    assert "status=200" in message
+    assert f"len={len(body)}" in message
+    assert "서비스 점검 중입니다" in message
+    assert "\n" not in message
+    head = records[0].args[-1]
+    assert len(head) <= registry._KIND_LOG_HEAD_CHARS
+    assert sleeps == [5.0, 15.0]
+
+
 def testPyodideFailureIsLoggedAndNotPinnedInMemory(monkeypatch: pytest.MonkeyPatch, caplog) -> None:
     """Pyodide HF 장애의 빈 결과는 세션 cache에 고정하지 않고 다음 호출에서 회복한다."""
     from dartlab.core import dataLoaderPyodide

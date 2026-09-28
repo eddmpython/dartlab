@@ -26,7 +26,15 @@ log = logging.getLogger(__name__)
 _GOV_ENDPOINT = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo"
 _GOV_INDEX_ENDPOINT = "https://apis.data.go.kr/1160100/service/GetMarketIndexInfoService/getStockMarketIndex"
 _GOV_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
-_GOV_BACKOFF_SECONDS = (2, 5, 10, 20)
+# 재시도 대기(초, 끝값 반복). 한 번 대기는 env DARTLAB_GOV_RETRY_MAX_SINGLE_WAIT_SECONDS(기본 60)로
+# 한 번 더 자른다. apis.data.go.kr 의 TCP 연결 불통이 (2, 5, 10, 20) 과 5회 시도(약 3분)보다 길어
+# 2026-09-15·09-25 Gov Index/Price Sync 가 1차와 자동 재실행 모두 실패했다(불통 7.5분 이상). 뒤쪽을
+# 40·60초로 늘리고 CI 는 DARTLAB_GOV_RETRY_ATTEMPTS=9 로 올려, 대기 257초(2+5+10+20+40+60+60+60)에
+# connect 10초 x 9 를 더한 약 6분 구간을 run 한 번이 버틴다.
+_GOV_BACKOFF_SECONDS = (2, 5, 10, 20, 40, 60, 60, 60)
+# 요청 timeout. connect 는 10초로 끊어 불통을 빨리 실패로 넘기고 재시도 간격은 _GOV_BACKOFF_SECONDS 가
+# 정한다. read·write·pool 은 기존 30초 유지.
+_GOV_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 
 # gov 응답 컬럼 → 회사 표준 schema.
 GOV_TO_STD = {
@@ -251,7 +259,7 @@ def _get(params: dict, *, apiKey: str, client: httpx.Client | None, endpoint: st
     """단일 gov 호출을 transient 재시도 후 JSON으로 반환한다."""
     query = {"serviceKey": apiKey, "resultType": "json", **params}
     own = client is None
-    cl = client or httpx.Client(timeout=30.0)
+    cl = client or httpx.Client(timeout=_GOV_TIMEOUT)
     try:
         attempts = _retryAttempts()
         for attempt in range(attempts):
