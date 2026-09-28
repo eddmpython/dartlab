@@ -603,7 +603,8 @@ class GatherHttpClient:
                     if attempt < maxRetries - 1:
                         await asyncio.sleep(2**attempt + random.uniform(0.1, 0.5))
 
-        raise SourceUnavailableError(f"{domain} 요청 실패 ({maxRetries}회 재시도): {last_exc}")
+        # 원인(전송 장애 vs HTTP 상태 오류)을 사슬로 남겨 호출자가 네트워크 장애와 URL·차단을 가를 수 있게 한다.
+        raise SourceUnavailableError(f"{domain} 요청 실패 ({maxRetries}회 재시도): {last_exc}") from last_exc
 
     async def post(
         self,
@@ -714,7 +715,7 @@ class GatherHttpClient:
                     if attempt < maxRetries - 1:
                         await asyncio.sleep(2**attempt + random.uniform(0.1, 0.5))
 
-        raise SourceUnavailableError(f"{domain} POST 요청 실패 ({maxRetries}회 재시도): {last_exc}")
+        raise SourceUnavailableError(f"{domain} POST 요청 실패 ({maxRetries}회 재시도): {last_exc}") from last_exc
 
     async def close(self) -> None:
         """HTTP 클라이언트 종료. 내부 httpx.AsyncClient의 커넥션 풀을 정리.

@@ -18,7 +18,7 @@ import polars as pl
 
 from dartlab.gather import getDefaultGather
 from dartlab.gather.sources.brokerage.config import enabledBrokers
-from dartlab.gather.sources.brokerage.fetch import _healthProblems
+from dartlab.gather.sources.brokerage.fetch import _healthProblems, _lastFetchOutcomes, _networkFailures
 from dartlab.gather.sources.brokerage.io import writeMonthly
 from dartlab.pipeline.changed import writeChanged
 from dartlab.pipeline.hfUpload import uploadCategoryToHf
@@ -58,6 +58,7 @@ def _writeStepSummary(
     catCounts: dict[str, dict[str, int]],
     completeness: dict[str, float],
     problems: list[str],
+    networkNotices: list[str] | None = None,
 ) -> None:
     """GitHub Step Summary($GITHUB_STEP_SUMMARY) 에 수율·완전성 표 + 깨짐 사유를 markdown 으로 append.
 
@@ -77,6 +78,9 @@ def _writeStepSummary(
         lines += ["", "### ❌ 깨짐 감지 — 셀렉터/URL 점검 필요", ""] + [f"- {p}" for p in problems]
     else:
         lines += ["", "### ✅ 전 증권사 정상"]
+    if networkNotices:
+        lines += ["", "### ⚠️ 네트워크 장애로 이번 run 에서 못 받은 보드 (깨짐 아님, 다음 run 재수집)", ""]
+        lines += [f"- {notice}" for notice in networkNotices]
     with open(path, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
@@ -107,8 +111,14 @@ def main() -> int:
     completeness = _completeness(df, list(enabledCats))
     print(f"[brokerageReports] 수율: {catCounts}", flush=True)
     print(f"[brokerageReports] 완전성: {{{', '.join(f'{k}={v:.0%}' for k, v in completeness.items())}}}", flush=True)
-    problems = _healthProblems(catCounts, completeness, enabledCats)
-    _writeStepSummary(df, catCounts, completeness, problems)
+    # 카테고리별 요청 결과로 네트워크 장애(DNS·연결·타임아웃) 0 행과 셀렉터 깨짐 0 행을 가른다.
+    # 네트워크 장애는 경고만 남기고(다음 run 재수집), 전 증권사가 0 행이면 원인과 무관하게 깨짐으로 본다.
+    fetchOutcomes = _lastFetchOutcomes()
+    networkNotices = _networkFailures(enabledCats, fetchOutcomes)
+    for notice in networkNotices:
+        print(f"::warning::brokerageReports 네트워크 장애(깨짐 아님): {notice}", flush=True)
+    problems = _healthProblems(catCounts, completeness, enabledCats, fetchOutcomes=fetchOutcomes)
+    _writeStepSummary(df, catCounts, completeness, problems, networkNotices)
     if problems:
         for p in problems:
             print(f"::error::brokerageReports 깨짐 — {p}", flush=True)
