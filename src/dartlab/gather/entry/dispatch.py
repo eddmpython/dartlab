@@ -184,7 +184,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
     "naverTheme": GatherAxisEntry(
         label="네이버 테마 분류 (KR, 로컬 개인용)",
         description=(
-            "네이버 금융 테마 분류 (KR). 기본(target 없음)은 전 테마(약 266)를 개별 수집해 하나의 "
+            "네이버 금융 테마 분류 (KR). 기본(target 없음)은 전 테마(약 264)를 개별 수집해 하나의 "
             "long DataFrame(groupNo/groupName/stockCode/stockName/reason+collectedAt)으로 결합 + "
             "7일 신선도 로컬 저장. 'list'=테마 목록, 테마명/번호=해당만. maxAgeDays·refresh kwarg. "
             "⚠ 네이버 편집저작물 — 로컬 개인 분석은 무방하나 재배포·공개는 DB권(저작권법 제4장)·저작권 문제 가능."
@@ -197,7 +197,7 @@ AXIS_REGISTRY: dict[str, GatherAxisEntry] = {
     "naverIndustry": GatherAxisEntry(
         label="네이버 업종 분류 (KR, 로컬 개인용)",
         description=(
-            "네이버 금융 업종(upjong) 분류 (KR). 테마와 동일 sise_group 구조 — 기본은 전 업종(약 79)을 "
+            "네이버 금융 업종 분류 (KR). 테마와 같은 네이버증권 그룹 API 구조. 기본은 전 업종(약 79)을 "
             "개별 수집해 long DataFrame(groupNo/groupName/stockCode/stockName/reason+collectedAt) 결합 + "
             "7일 신선도 저장. 'list'=업종 목록, 업종명/번호=해당만. 업종은 편입사유(reason) 없음. "
             "⚠ 네이버 편집저작물 — 로컬 개인용, 재배포·공개는 DB권·저작권 문제 가능."

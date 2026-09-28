@@ -74,7 +74,7 @@ def _(dartlab):
 @app.cell
 def _(dartlab):
     # ── 네이버 분류/목록 (로컬 개인용 — 재배포 금지) ──────────────────────
-    # 테마: 기본은 전 테마(약 266)를 개별 수집해 하나의 DataFrame 으로 결합.
+    # 테마: 기본은 전 테마(약 264)를 개별 수집해 하나의 DataFrame 으로 결합.
     # 전수 크롤이 무거워(수 분) 결과를 7일간 로컬 저장 — 같은 호출 재실행은 즉시 직독.
     dartlab.gather("naverTheme")
     return
@@ -92,7 +92,7 @@ def _(dartlab):
 
 @app.cell
 def _(dartlab):
-    # 업종 — 테마와 동일 sise_group 구조 (편입사유는 없음)
+    # 업종: 테마와 같은 네이버증권 그룹 API 구조 (편입사유는 없음)
     dartlab.gather("naverIndustry", "반도체")
     return
 

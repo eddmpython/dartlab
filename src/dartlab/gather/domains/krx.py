@@ -134,7 +134,7 @@ async def fetchIndustryPeers(
     AIContext: industryPeers mixin backend — peer valuation 비교 진입.
     Guide: industryCode 정확 필요 (fetchSectorInfo 가 먼저).
     When: 동종업종 peer ranking 분석 시.
-    How: finance.naver.com/sise/sise_group_detail → list[dict].
+    How: m.stock.naver.com/api/stocks/industry/{code} JSON → list[dict].
 
     Parameters
     ----------
@@ -223,7 +223,7 @@ async def fetchIndustryList(
     AIContext: industry 분석 / sector rotation 의 universe 진입.
     Guide: 호출 비용 큼 — caller 측 caching 권장.
     When: 전체 업종 ranking / sector PER 분포 분석 시.
-    How: finance.naver.com/sise/sise_group → list[dict].
+    How: m.stock.naver.com/api/stocks/industry JSON → list[dict].
 
     Parameters
     ----------

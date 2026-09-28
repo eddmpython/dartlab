@@ -155,7 +155,12 @@ def runAsync(coro):
         try:
             asyncio.get_running_loop()
         except RuntimeError:
-            # loop 없음 — 직접 실행 (persistent loop 사용)
+            loopRunning = False
+        else:
+            loopRunning = True
+        if not loopRunning:
+            # loop 없음. 직접 실행 (persistent loop 사용). loop 확인용 except 블록 밖에서 돌려야
+            # 코루틴 예외 traceback 에 "no running event loop" 문맥이 섞여 원인을 가리지 않는다.
             return ctx.run(_runInThreadLoop, coro)
         # 이미 loop 실행 중 → 별도 스레드의 persistent loop
         return _threadPool.submit(lambda: ctx.run(_runInThreadLoop, coro)).result()

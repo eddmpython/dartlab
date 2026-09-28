@@ -58,6 +58,21 @@ def test_runAsync_no_running_loop_path() -> None:
     assert runAsync(squared()) == 49
 
 
+def test_runAsync_error_traceback_has_no_loop_probe_context() -> None:
+    """코루틴 예외에 loop 확인용 RuntimeError("no running event loop") 문맥이 섞이지 않는다.
+
+    CI Nightly 네이버 수집 실패 로그가 이 문맥 때문에 event loop 문제처럼 보였던 회귀 가드.
+    """
+    from dartlab.gather.infra.http import runAsync
+
+    async def broken():
+        raise ValueError("공급자 응답 해석 실패")
+
+    with pytest.raises(ValueError, match="공급자 응답") as info:
+        runAsync(broken())
+    assert info.value.__context__ is None
+
+
 def test_GatherHttpClient_close_idempotent() -> None:
     """GatherHttpClient.close — 멱등 (여러 번 호출해도 안전)."""
     from dartlab.gather.infra.http import GatherHttpClient

@@ -227,7 +227,7 @@ price 는 target 형태로 시장을 자동 판정한다. `dartlab.gather("price
 
 `naverTheme`·`naverIndustry`·`naverEtf`·`naverEtn` 는 네이버 금융의 분류·상품 목록을 라이브 직독하는 **로컬 개인용** 축이다. 공통 패키지 `gather/sources/naver/` (그룹 `groups`, 상품 `products`).
 
-- **테마·업종 (`naverTheme`/`naverIndustry`)** — `sise_group` 동일 구조의 그룹→편입종목. target 분기:
+- **테마·업종 (`naverTheme`/`naverIndustry`)**: 네이버증권 그룹 JSON API(`m.stock.naver.com/api/stocks/theme|industry`) 동일 구조의 그룹→편입종목. target 분기:
   - 없음/`"all"` : 전 그룹을 개별 수집해 **하나의 long DataFrame 결합** (`groupNo/groupName/stockCode/stockName/reason`). 전수 크롤이 무거워 **freshness 로컬 저장** — `collectedAt` 컬럼 기준 `maxAgeDays`(기본 7) 내면 재크롤 없이 직독, 아니면 재수집. `refresh=True` 로 강제.
   - `"list"` : 그룹 목록만(`groupNo/groupName/url`) — 라이브.
   - 그룹명/번호 : 해당 그룹만 — 라이브. 업종은 편입사유(`reason`) 없음.

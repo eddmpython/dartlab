@@ -1286,7 +1286,7 @@ def handleNaverTheme(
         df = handleNaverTheme(g, "2차전지", market="KR", start=None, end=None, marketExplicit=False)
 
     Requires:
-        Gather 인스턴스 + 네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
+        Gather 인스턴스 + 네트워크 (m.stock.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
 
     See Also:
         main.GatherEntry._run : dispatch caller.
@@ -1308,7 +1308,7 @@ def handleNaverIndustry(
     """naverIndustry axis dispatch — 네이버 금융 업종(upjong) 분류 (KR, 로컬 개인용).
 
     Capabilities: target 분기(None/all=전수 결합·list=목록·업종명/번호=필터) → groups.collectGroup("industry").
-    AIContext: gather("naverIndustry", ...) 본체 — 테마와 동일 sise_group 구조(편입사유는 없음).
+    AIContext: gather("naverIndustry", ...) 본체. 테마와 같은 네이버증권 그룹 API 구조(편입사유는 없음).
     Guide: 업종은 편입사유(reason) 없이 편입종목만. 매칭 0 이면 빈 DataFrame.
     When: GatherEntry._run("naverIndustry", target, ...) lookup 시.
     How: _handleNaverGroup(g, "industry", target) → groups.collectGroup.
@@ -1330,7 +1330,7 @@ def handleNaverIndustry(
         df = handleNaverIndustry(g, "list", market="KR", start=None, end=None, marketExplicit=False)
 
     Requires:
-        Gather 인스턴스 + 네트워크 (finance.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
+        Gather 인스턴스 + 네트워크 (m.stock.naver.com 무인증). 산출물 재배포 금지(DB권/저작권).
 
     See Also:
         main.GatherEntry._run : dispatch caller.
