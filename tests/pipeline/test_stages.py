@@ -249,6 +249,110 @@ def test_edgar_public_upload_fails_closed_without_universe(monkeypatch):
     assert any("상장 universe" in failure for failure in result.report.failures)
 
 
+def _edgarPublishHarness(monkeypatch, tmp_path, *, universe, local, remote):
+    """runEdgar companyfacts 발행 경로를 네트워크 없이 돌리는 대역. 호출 기록 dict 를 돌려준다."""
+    import dartlab.config as cfg
+    import dartlab.pipeline.hfUpload as hfUpload
+    import dartlab.pipeline.seed as seed
+    import dartlab.pipeline.stages.edgar as stage
+    import dartlab.providers.edgar.bulk as bulk
+
+    monkeypatch.chdir(tmp_path)  # writeChanged 의 dist/ 매니페스트를 tmp 로 격리
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    financeDir = tmp_path / "edgar" / "finance"
+    financeDir.mkdir(parents=True)
+    for name in local:
+        (financeDir / name).write_bytes(b"parquet")
+    calls: dict = {"changed": [], "upload": [], "bake": [], "uploadError": None}
+    monkeypatch.setattr(bulk, "downloadCompanyfactsBulk", lambda **_k: str(tmp_path / "edgar" / "_bulk" / "cf.zip"))
+    monkeypatch.setattr(bulk, "convertBulkToParquets", lambda **_k: {"changed": list(calls["changed"])})
+    monkeypatch.setattr(bulk, "discoverLatestQuarter", lambda: None)
+    monkeypatch.setattr(stage, "_universeCiks", lambda: {name.removesuffix(".parquet") for name in universe})
+    monkeypatch.setattr(seed, "listRemoteFiles", lambda category, token=None: {f"edgar/finance/{n}": 1 for n in remote})
+
+    def _upload(category, *, changedFiles=None, token=None, **_k):
+        if calls["uploadError"] is not None:
+            raise calls["uploadError"]
+        calls["upload"].append(list(changedFiles))
+        return len(changedFiles)
+
+    monkeypatch.setattr(hfUpload, "uploadCategoryToHf", _upload)
+    monkeypatch.setattr(stage, "_bakeTerminalFinanceStmt", lambda files, **_k: calls["bake"].append(list(files)) or 0)
+    return stage, calls, tmp_path / "edgar" / "_bulk" / "financeHfPending.txt"
+
+
+def test_edgar_failed_finance_upload_is_retried_by_next_attempt(monkeypatch, tmp_path):
+    """업로드가 실패한 변경분은 원장에 남아, 변환 스탬프가 skip 된 다음 시도에서 다시 올라간다.
+
+    예전에는 attempt 1 이 해시·스탬프를 먼저 남기고 업로드에 실패하면 attempt 2 가 changed=[] 로
+    '성공' 하며 그 변경분을 영구히 잃었다 (2026-07-11 이후 edgar/finance 정체).
+    """
+    stage, calls, ledger = _edgarPublishHarness(
+        monkeypatch, tmp_path, universe=["0000320193.parquet"], local=["0000320193.parquet"], remote=[]
+    )
+    calls["changed"] = ["0000320193.parquet"]
+    calls["uploadError"] = RuntimeError("Bad request for commit endpoint: too many files per directory")
+
+    first = stage.runEdgar(upload=True)
+
+    assert first.report.err == 1
+    assert ledger.read_text(encoding="utf-8").split() == ["0000320193.parquet"]
+    assert calls["bake"] == []
+
+    calls["changed"] = []  # attempt 2: 변환 스탬프가 최신이라 변경 0
+    calls["uploadError"] = None
+    second = stage.runEdgar(upload=True)
+
+    assert second.report.err == 0 and second.report.fail == 0
+    assert calls["upload"] == [["0000320193.parquet"]]
+    assert calls["bake"] == [["0000320193.parquet"]]
+    assert not ledger.exists()
+
+
+def test_edgar_full_hf_directory_publishes_updates_and_holds_new_ciks(monkeypatch, tmp_path):
+    """HF 디렉터리가 한도면 기존 파일 갱신은 발행하고, 신규 CIK 는 원장에 보류한 채 fail 로 드러낸다."""
+    stage, calls, ledger = _edgarPublishHarness(
+        monkeypatch,
+        tmp_path,
+        universe=["0000000001.parquet", "0000000009.parquet"],
+        local=["0000000001.parquet", "0000000009.parquet"],
+        remote=["0000000001.parquet", "0000000002.parquet", "0000000003.parquet"],
+    )
+    monkeypatch.setattr(stage, "_HF_DIR_FILE_LIMIT", 3)
+    calls["changed"] = ["0000000001.parquet", "0000000009.parquet"]
+
+    result = stage.runEdgar(upload=True)
+
+    assert calls["upload"] == [["0000000001.parquet"]]
+    assert calls["bake"] == [["0000000001.parquet"]]
+    assert ledger.read_text(encoding="utf-8").split() == ["0000000009.parquet"]
+    assert result.report.fail == 1
+    assert any("발행 보류" in failure and "3/3" in failure for failure in result.report.failures)
+
+
+def test_edgar_republish_is_capped_per_run_and_carried_over(monkeypatch, tmp_path):
+    """누락분 재발행은 run 당 상한까지만 올리고 나머지는 원장으로 다음 run 에 넘긴다. universe 밖은 버린다."""
+    local = ["0000000001.parquet", "0000000002.parquet", "0000000003.parquet", "0000000099.parquet"]
+    stage, calls, ledger = _edgarPublishHarness(
+        monkeypatch, tmp_path, universe=local[:3], local=local, remote=local[:3]
+    )
+    monkeypatch.setattr(stage, "_MAX_FINANCE_PUBLISH_PER_RUN", 2)
+    monkeypatch.setenv("EDGAR_REPUBLISH_FINANCE", "true")
+
+    first = stage.runEdgar(upload=True)
+
+    assert first.report.err == 0 and first.report.fail == 0
+    assert calls["upload"] == [["0000000001.parquet", "0000000002.parquet"]]
+    assert ledger.read_text(encoding="utf-8").split() == ["0000000003.parquet"]
+
+    monkeypatch.delenv("EDGAR_REPUBLISH_FINANCE")
+    second = stage.runEdgar(upload=True)
+
+    assert second.report.err == 0
+    assert calls["upload"][-1] == ["0000000003.parquet"]
+    assert not ledger.exists()
+
+
 def test_edgar_workflow_does_not_cache_full_panel_tree():
     """약 9GB panel 전체 cache가 bulk와 finance cache를 축출하는 회귀를 막는다."""
     workflow = (Path(__file__).resolve().parents[2] / ".github" / "workflows" / "edgarSync.yml").read_text(

@@ -21,6 +21,10 @@ on:
         description: '10-K/10-Q docs 수집 (전 universe 는 job 180분 안에 끝나지 않음, 증분 누적용)'
         default: 'false'
         type: string
+      republishFinance:
+        description: 'edgar/finance 누락분 재발행 (로컬 universe 전체를 원장에 올려 run 당 상한씩 이월 발행)'
+        default: 'false'
+        type: string
       search_catalog_bootstrap:
         description: '초기 EDGAR panel search source catalog 생성 허용 (true=이전 manifest 없이 높은 하한으로 1회 bootstrap)'
         default: 'false'
@@ -103,6 +107,7 @@ jobs:
           DARTLAB_DATA_DIR: ${{ github.workspace }}/data
           EDGAR_FORCE_COMPANYFACTS: ${{ github.event.inputs.forceCompanyfacts }}
           EDGAR_FORCE_QUARTERLY: ${{ github.event.inputs.forceQuarterly }}
+          EDGAR_REPUBLISH_FINANCE: ${{ github.event.inputs.republishFinance }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: uv run python -X utf8 -m dartlab.pipeline edgar
 
