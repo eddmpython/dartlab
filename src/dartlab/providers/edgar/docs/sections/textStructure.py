@@ -22,11 +22,14 @@ _RE_PAGE_MARKER = re.compile(
     re.IGNORECASE,
 )
 _RE_ALL_CAPS_HEADING = re.compile(r"^[A-Z][A-Z\s,&/\-–—()]{2,58}$")
+# Title Case heading = 단어(W)와 구분자(S)가 번갈아 오는 줄. W 는 영문자로 시작해 영문자/'/® 로 이어지고,
+# S 는 공백/쉼표/&/슬래시/대시류다. 접속사·전치사("and", "of", "the" 등)는 S 뒤의 W 로 이미 받아진다.
+# 예전에는 `\s+(?:and|of|...)` 반복 그룹을 따로 두어 같은 줄을 여러 방식으로 쪼갤 수 있었고
+# "A a a a ... !" 같은 입력에서 지수 backtracking(ReDoS)이 났다. W 와 S 의 문자 집합이 겹치지 않아
+# 분할이 하나뿐이므로 지금은 선형이며, 받아들이는 문자열 집합은 예전과 같다.
 _RE_TITLE_CASE = re.compile(
     r"^(?:[A-Za-z][A-Za-z''®]*"  # 첫 단어 (iPhone, AppleCare 등)
-    r"(?:\s+(?:and|of|the|for|in|to|a|an|or|with|by))*"  # 접속/전치사
     r"(?:[\s,&/\-–—]+[A-Za-z][A-Za-z''®]*"  # 추가 단어
-    r"(?:\s+(?:and|of|the|for|in|to|a|an|or|with|by))*"
     r")*)\s*$"
 )
 _RE_TRAILING_PUNCT = re.compile(r"[.;]\s*$")  # comma 제외 — "Wearables, Home and Accessories"

@@ -329,6 +329,15 @@ def _xmlFloat(node, path: str) -> float | None:
         return None
 
 
+# script / style block (여는 태그부터 끝 태그까지). HTML 토크나이저처럼 태그 이름 뒤에는 공백, "/", ">" 만 온다고
+# 본다. 그래서 "</script >", '</script foo="bar">', "</SCRIPT\t\n bar>" 같은 끝 태그도 블록 끝으로 잡고,
+# "<scripts>"/"<stylesheet>" 처럼 이름이 다른 태그는 블록 시작으로 보지 않는다.
+_RE_SCRIPT_STYLE_BLOCK = re.compile(
+    r"<(?:script|style)(?:[\s/][^>]*)?>.*?</(?:script|style)(?:[\s/][^>]*)?>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
 def _stripHtmlTags(html: str) -> str:
     """HTML 태그 제거 — BeautifulSoup 없이 regex 만으로 plaintext 변환.
 
@@ -344,7 +353,7 @@ def _stripHtmlTags(html: str) -> str:
     if not html or "<" not in html:
         return html
     # script / style block 본문 제거 (그 안 텍스트가 8-K item 처럼 보이는 사고 차단).
-    text = re.sub(r"<(?:script|style)[^>]*>.*?</(?:script|style)>", " ", html, flags=re.IGNORECASE | re.DOTALL)
+    text = _RE_SCRIPT_STYLE_BLOCK.sub(" ", html)
     text = re.sub(r"<[^>]+>", " ", text)
     # HTML entity 간단 decode (& &amp; 등).
     text = text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")

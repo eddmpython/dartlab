@@ -119,7 +119,10 @@ def _resolveRedirect(href: str) -> str:
     if href.startswith("//"):
         href = "https:" + href
     parsed = urlparse(href)
-    if parsed.netloc.endswith("duckduckgo.com") and parsed.path == "/l/":
+    # host 는 duckduckgo.com 자신이거나 점 경계의 하위 도메인만 인정한다. 예전 netloc.endswith("duckduckgo.com")
+    # 는 evilduckduckgo.com 같은 남의 도메인도 redirect 로 풀어 줬다. hostname 은 포트/userinfo 를 떼고 소문자다.
+    host = (parsed.hostname or "").lower()
+    if (host == "duckduckgo.com" or host.endswith(".duckduckgo.com")) and parsed.path == "/l/":
         params = parse_qs(parsed.query)
         target = params.get("uddg", [""])[0]
         if target:
