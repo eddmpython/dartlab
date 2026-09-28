@@ -107,6 +107,18 @@ def _runInThreadLoop(coro):
     return loop.run_until_complete(coro)
 
 
+def _hasRunningLoop() -> bool:
+    """현재 스레드에 실행 중인 event loop 가 있으면 True.
+
+    ``asyncio.get_running_loop()`` 의 RuntimeError 는 실패가 아니라 "loop 없음" 이라는 확인 결과다.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return True
+
+
 def runAsync(coro):
     """코루틴을 동기 컨텍스트에서 안전하게 실행.
 
@@ -152,13 +164,7 @@ def runAsync(coro):
     # (이전: _getThreadLoop / threadPool 실패 시 coro 가 await 안 되어 RuntimeWarning 발생)
     ctx = contextvars.copy_context()
     try:
-        try:
-            asyncio.get_running_loop()
-        except RuntimeError:
-            loopRunning = False
-        else:
-            loopRunning = True
-        if not loopRunning:
+        if not _hasRunningLoop():
             # loop 없음. 직접 실행 (persistent loop 사용). loop 확인용 except 블록 밖에서 돌려야
             # 코루틴 예외 traceback 에 "no running event loop" 문맥이 섞여 원인을 가리지 않는다.
             return ctx.run(_runInThreadLoop, coro)

@@ -115,6 +115,7 @@ def _parseGroupList(groups: list[dict], kind: str) -> list[dict]:
         try:
             groupNo = int(group.get("no"))
         except (TypeError, ValueError):
+            log.debug("Naver %s 그룹 번호를 해석할 수 없어 건너뜀: %r", kind, group.get("no"))
             continue
         groupName = str(group.get("name") or "").strip()
         if groupNo <= 0 or not groupName or groupNo in seen:
