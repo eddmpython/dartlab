@@ -321,6 +321,79 @@ def test_fetch_gdelt_corrupt_zip_raises(monkeypatch: pytest.MonkeyPatch) -> None
         gdelt.fetchGdeltGkg(datetime(2026, 5, 27, 12, 0, tzinfo=timezone.utc))
 
 
+def test_fetch_gdelt_invalid_utf8_keeps_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+    """잘못된 UTF-8 바이트가 섞인 슬롯도 파일 전체를 실패시키지 않는다.
+
+    2026-09 GDELT Sync 는 20260913000000 슬롯의 invalid utf-8 sequence(polars strict 기본 인코딩)로
+    CSV 해석 실패가 나 run 전체를 잃었다. 불량 바이트만 U+FFFD 로 치환되고 행은 남아야 한다.
+    """
+    row_bad = [
+        "rec1",
+        "20260527120000",
+        "WEB",
+        "yna.co.kr",
+        "https://yna.co.kr/article__BAD__",
+        "",
+        "",
+        "",
+        "ECON_RATE,100",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "1.0,1.0,0.0,1.0,1.0,0.0,100",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "ko;ko",
+        "",
+    ]
+    row_ok = row_bad.copy()
+    row_ok[3] = "nytimes.com"
+    row_ok[4] = "https://nytimes.com/b"
+    csvBytes = _gkgCsvBytes([row_bad, row_ok]).replace(b"__BAD__", b"\xff")
+    with pytest.raises(UnicodeDecodeError):
+        csvBytes.decode("utf-8")  # 전제: 입력이 실제로 잘못된 UTF-8
+    zipped = _zipBytes(csvBytes)
+
+    class FakeResp:
+        status_code = 200
+        content = zipped
+
+        def raise_for_status(self):
+            pass
+
+    class FakeClient:
+        def __init__(self, **kw):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def get(self, url):
+            return FakeResp()
+
+    import httpx as _httpx
+
+    monkeypatch.setattr(_httpx, "Client", FakeClient)
+
+    df = gdelt.fetchGdeltGkg(datetime(2026, 5, 27, 12, 0, tzinfo=timezone.utc))
+    assert df.height == 2  # 불량 바이트가 든 행과 정상 행 모두 유지
+    assert set(df["url"].to_list()) == {"https://yna.co.kr/article\ufffd", "https://nytimes.com/b"}
+    assert df.filter(pl.col("market") == "KR")["themes"][0].to_list() == ["ECON_RATE"]  # 나머지 필드 정상 해석
+
+
 # ── GDELT DOC 2.0 (질의 기반 뉴스) — sync 별도빌드에서 gather 로 환원 ────────────────
 
 

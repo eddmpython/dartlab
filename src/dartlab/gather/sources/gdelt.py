@@ -272,6 +272,9 @@ def fetchGdeltGkg(
         raise SourceUnavailableError(f"GDELT GKG ZIP을 해석할 수 없습니다: {tsStr}") from exc
 
     # parse CSV — tab-separated, no header
+    # GKG 원문에 잘못된 UTF-8 바이트가 섞인 슬롯이 있다(2026-09 20260913000000 등). polars 기본
+    # 인코딩(strict utf8)은 파일 전체를 ComputeError 로 실패시키고 ignore_errors 도 인코딩 오류는
+    # 덮지 못한다. utf8-lossy 는 해당 바이트만 U+FFFD 로 치환하고 나머지 행을 그대로 살린다.
     try:
         rawDf = pl.read_csv(
             io.BytesIO(csvBytes),
@@ -280,6 +283,7 @@ def fetchGdeltGkg(
             new_columns=_GKG_COLUMNS,
             truncate_ragged_lines=True,
             ignore_errors=True,
+            encoding="utf8-lossy",
             schema_overrides={c: pl.Utf8 for c in _GKG_COLUMNS},
         )
     except Exception as exc:
