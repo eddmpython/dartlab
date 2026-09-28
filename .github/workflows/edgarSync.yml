@@ -18,7 +18,7 @@ on:
         default: 'false'
         type: string
       collectDocs:
-        description: '10-K/10-Q docs 수집 (시간 오래 걸림)'
+        description: '10-K/10-Q docs 수집 (전 universe 는 job 180분 안에 끝나지 않음, 증분 누적용)'
         default: 'false'
         type: string
       search_catalog_bootstrap:
@@ -106,9 +106,12 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: uv run python -X utf8 -m dartlab.pipeline edgar
 
-      # ── 3. docs (10-K/10-Q HTML) — 선택, 일요일 전체 정산 때만 ──
-      - name: Collect EDGAR docs (optional, weekly full sync only)
-        if: ${{ github.event.schedule == '0 3 * * 0' || github.event.inputs.collectDocs == 'true' }}
+      # ── 3. docs (10-K/10-Q HTML). 선택, 수동 요청(collectDocs=true) 때만 ──
+      # 주간 schedule 에서는 돌리지 않는다. 실측 filing 당 약 1.6 초(worker 가 동기 수집이라 사실상 직렬)
+      # 로 --tier all 7,720 ticker 전 이력은 약 200 시간이라 job 180 분 안에 끝날 수 없다. 예전 주간
+      # 실행은 매주 실패만 남기고 docs 를 한 건도 만들지 못했다(2026-07-30 이후 매 일요일 red).
+      - name: Collect EDGAR docs (optional, manual dispatch only)
+        if: ${{ github.event.inputs.collectDocs == 'true' }}
         run: |
           uv run python -X utf8 -m dartlab collect --tier all -c docs --mode all
         env:
@@ -191,7 +194,7 @@ jobs:
           os.environ.setdefault('DARTLAB_DATA_DIR', '${{ github.workspace }}/data')
           from dartlab.providers.edgar.openapi.deploy import deployEdgarToHF
           cats = ['scan']
-          if '${{ github.event.schedule }}' == '0 3 * * 0' or '${{ github.event.inputs.collectDocs }}' == 'true':
+          if '${{ github.event.inputs.collectDocs }}' == 'true':
               cats.append('docs')
               # plan delegated-prancing-tower PR-E3 — fetchEdgarDocs 가 dual-write 로
               # data/edgar/sections/{ticker}/{period}.parquet 동시 emit. PR-E7 안전

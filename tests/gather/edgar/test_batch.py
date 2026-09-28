@@ -138,3 +138,41 @@ def test_batch_incremental_skip_is_success_not_failure(monkeypatch) -> None:
     )
 
     assert result == {"AAPL": {"finance": 0}}
+
+
+def test_batch_docs_not_applicable_is_skip_not_failure(tmp_path: Path, monkeypatch) -> None:
+    """정기보고서가 없는 ticker(폐쇄형 펀드 등) 는 batch 실패가 아니라 0 행 skip 이다.
+
+    예전에는 7,720 ticker 중 약 500 곳이 "filing 없음" 으로 실패로 집계돼 주간 docs 수집이
+    다른 결함이 없어도 반드시 실패했다.
+    """
+    import dartlab.gather.edgar.batch as batch
+    from dartlab.gather.edgar.docs import fetch
+
+    class _Client:
+        exhausted = False
+
+        async def close(self) -> None:
+            return None
+
+    def _noFilings(ticker, outPath, **kwargs):
+        raise fetch.EdgarDocsNotApplicableError(f"{ticker} EDGAR docs filing 없음 (since 2009)")
+
+    monkeypatch.setattr(batch, "AsyncEdgarClient", _Client)
+    monkeypatch.setattr(batch, "_resolveTickerMap", lambda tickers: {"PDI": {"cik": "0001510599", "title": "PIMCO"}})
+    docsDir = tmp_path / "edgarDocs"
+    docsDir.mkdir()
+    monkeypatch.setattr(batch, "_edgarDataPath", lambda category, key: docsDir / f"{key}.parquet")
+    monkeypatch.setattr(fetch, "fetchEdgarDocs", _noFilings)
+
+    result = batch.batchCollectEdgar(["PDI"], categories=["docs"], maxWorkers=1, showProgress=False)
+
+    assert result == {"PDI": {"docs": 0}}
+    assert list(docsDir.iterdir()) == []  # 임시 산출물 잔존 없음
+
+
+def test_docs_not_applicable_error_stays_value_error() -> None:
+    """기존 ``except ValueError`` 호출자가 계속 잡을 수 있게 ValueError 하위 계약을 지킨다."""
+    from dartlab.gather.edgar.docs.fetch import EdgarDocsNotApplicableError
+
+    assert issubclass(EdgarDocsNotApplicableError, ValueError)

@@ -197,8 +197,11 @@ async def _collectEdgarDocs(
     incremental: bool = True,
     onPeriod=None,
 ) -> _StagedArtifact:
-    """SEC submissions 결과를 검증된 임시 parquet으로 준비."""
-    from dartlab.gather.edgar.docs.fetch import fetchEdgarDocs
+    """SEC submissions 결과를 검증된 임시 parquet으로 준비.
+
+    지원 정기보고서 filing 이 없는 ticker(폐쇄형 펀드 등) 는 실패가 아니라 0 행 skip 이다.
+    """
+    from dartlab.gather.edgar.docs.fetch import EdgarDocsNotApplicableError, fetchEdgarDocs
 
     if not cik:
         raise ValueError(f"EDGAR ticker에 CIK가 없습니다: {ticker}")
@@ -214,7 +217,12 @@ async def _collectEdgarDocs(
 
     tmpPath = path.with_name(f"{path.stem}.tmp-{uuid.uuid4().hex[:8]}{path.suffix}")
     try:
-        fetchEdgarDocs(ticker, tmpPath, showProgress=False)
+        try:
+            fetchEdgarDocs(ticker, tmpPath, showProgress=False)
+        except EdgarDocsNotApplicableError as exc:
+            tmpPath.unlink(missing_ok=True)
+            _log.info("docs 수집 대상 아님 (%s): %s", ticker, exc)
+            return _StagedArtifact("docs", path, None, 0)
         if not tmpPath.exists() or tmpPath.stat().st_size == 0:
             raise ValueError(f"EDGAR docs 임시 산출물이 없습니다: ticker={ticker}")
         df = pl.read_parquet(tmpPath)

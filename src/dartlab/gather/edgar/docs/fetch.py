@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import re
 import signal
+import threading
 import time
 import warnings
 from pathlib import Path
@@ -245,6 +246,15 @@ PART_TABLE_LINE_PATTERN = re.compile(
 )
 
 
+class EdgarDocsNotApplicableError(ValueError):
+    """지원 정기보고서(10-K/10-Q/20-F/40-F) filing 자체가 없는 ticker.
+
+    폐쇄형 펀드(N-CSR), FDIC 제출 은행, unit/warrant/right 처럼 구조적으로 수집 대상이 아닌 경우다.
+    수집 실패가 아니므로 batch 는 0 행 skip 으로 다룬다. 기존 ``except ValueError`` 호출자 호환을 위해
+    ValueError 하위로 둔다.
+    """
+
+
 def fetchEdgarDocs(
     ticker: str,
     outPath: Path,
@@ -272,7 +282,8 @@ def fetchEdgarDocs(
         저장된 parquet Path.
 
     Raises:
-        ValueError: filing 부재 또는 section 추출 실패.
+        EdgarDocsNotApplicableError: 지원 정기보고서 filing 이 없는 ticker (ValueError 하위).
+        ValueError: section 추출 실패 (건너뛴 filing 수와 첫 사유 동행).
 
     Example:
         >>> fetchEdgarDocs("AAPL", Path("data/edgar/docs/AAPL.parquet"))
@@ -283,7 +294,7 @@ def fetchEdgarDocs(
     filings = _findFilings(submissions, sinceYear)
 
     if not filings:
-        raise ValueError(f"{ticker} EDGAR docs filing 없음 (since {sinceYear})")
+        raise EdgarDocsNotApplicableError(f"{ticker} EDGAR docs filing 없음 (since {sinceYear})")
 
     from dartlab.core.messaging import emit
 
@@ -297,6 +308,7 @@ def fetchEdgarDocs(
     panelTableRows: list[dict] = []
     filingIndex: list[dict] = []
     skippedFilings: list[str] = []
+    skipReasons: list[str] = []
     if showProgress:
         _prog, _bar = _makeProgress(len(filings), f"EDGAR 원문 수집 | {ticker}")
         with _prog:
@@ -310,6 +322,7 @@ def fetchEdgarDocs(
                 skippedFilings,
                 panelTableRows=panelTableRows,
                 filingIndex=filingIndex,
+                skipReasons=skipReasons,
             )
     else:
         _collectFilingRows(
@@ -322,10 +335,14 @@ def fetchEdgarDocs(
             skippedFilings,
             panelTableRows=panelTableRows,
             filingIndex=filingIndex,
+            skipReasons=skipReasons,
         )
 
     if not rows:
-        raise ValueError(f"{ticker} EDGAR docs에서 section 추출 실패")
+        # 건너뛴 사유를 함께 남긴다. 사유 없이 "추출 실패" 만 남기면 전 ticker 가 같은 환경 결함
+        # (예: worker thread 의 signal 등록 거부) 으로 실패해도 파서 문제처럼 보인다.
+        detail = f" (건너뛴 filing {len(skipReasons)}/{len(filings)}, 첫 사유: {skipReasons[0]})" if skipReasons else ""
+        raise ValueError(f"{ticker} EDGAR docs에서 section 추출 실패{detail}")
 
     # plan delegated-prancing-tower PR-E7b — 운영자 트리거 게이트.
     # DARTLAB_EDGAR_DOCS_DEPRECATED=1 환경변수 set 시 옛 docs.parquet emit 자동 skip.
@@ -490,12 +507,14 @@ def _collectFilingRows(
     skippedFilings: list[str],
     panelTableRows: list[dict] | None = None,
     filingIndex: list[dict] | None = None,
+    skipReasons: list[str] | None = None,
 ) -> None:
     """filing list 를 순회하면서 옛 rows (docs.parquet) + 신 panelTableRows (sections artifact) 동시 누적.
 
     plan delegated-prancing-tower PR-E2 — dual-write 강행. ``panelTableRows`` 가 None 이면
     옛 path 단독 (back-compat). non-None 이면 buildPanelTableRowsFromFiling 호출해 신
     sections artifact row 도 누적. raw HTML 은 ``html`` 변수에서 두 path 동시 활용.
+    ``skipReasons`` 를 넘기면 건너뛴 filing 마다 "접수번호: 예외형: 메시지" 를 누적한다.
     """
     for filing in filings:
         if bar is not None:
@@ -514,8 +533,10 @@ def _collectFilingRows(
                     items = _split40FSections(filing, text)
                 else:
                     items = _splitItems(text, filing["formType"])
-        except (httpx.HTTPError, TimeoutError, ValueError, AttributeError, KeyError, TypeError):
+        except (httpx.HTTPError, TimeoutError, ValueError, AttributeError, KeyError, TypeError) as exc:
             skippedFilings.append(str(filing["accessionNumber"]))
+            if skipReasons is not None:
+                skipReasons.append(f"{filing['accessionNumber']}: {type(exc).__name__}: {exc}")
             if bar is not None:
                 bar()
             continue
@@ -586,28 +607,30 @@ _HAS_SIGALRM = hasattr(signal, "SIGALRM")
 class _FilingTimeout:
     """크로스 플랫폼 타임아웃 컨텍스트 매니저.
 
-    Unix: signal.SIGALRM 사용 (메인 스레드에서만 동작).
-    Windows: threading.Timer 폴백 (메인 스레드 인터럽트 불가하므로
-    httpx의 timeout 파라미터에 의존하되, 전체 작업 타임아웃은
-    Timer로 _timedOut 플래그 설정).
+    SIGALRM 이 있는 플랫폼의 메인 스레드: signal.SIGALRM 으로 작업을 인터럽트한다.
+    그 외 (Windows, 또는 batch 수집처럼 worker thread 에서 호출될 때): threading.Timer 폴백.
+    메인 스레드 밖에서는 인터럽트할 수 없으므로 httpx 의 timeout 파라미터에 의존하고, 전체 작업
+    타임아웃은 Timer 가 ``timedOut`` 플래그로 알린다.
     """
 
     def __init__(self, seconds: int):
         self.seconds = max(int(seconds), 0)
         self._previousHandler = None
         self._timer = None
+        self._useAlarm = False
         self.timedOut = False
 
     def __enter__(self):
         if self.seconds <= 0:
             return self
-        if _HAS_SIGALRM:
+        # signal.signal 은 메인 스레드 밖에서 ValueError 를 던진다. batchCollectEdgar 는 asyncio 를
+        # worker thread 에서 돌리므로 여기서 가르지 않으면 filing 마다 ValueError 가 나 전부 skip 된다.
+        self._useAlarm = _HAS_SIGALRM and threading.current_thread() is threading.main_thread()
+        if self._useAlarm:
             self._previousHandler = signal.getsignal(signal.SIGALRM)
             signal.signal(signal.SIGALRM, self._handle)
             signal.alarm(self.seconds)
         else:
-            import threading
-
             self._timer = threading.Timer(self.seconds, self._markTimedOut)
             self._timer.daemon = True
             self._timer.start()
@@ -615,7 +638,7 @@ class _FilingTimeout:
 
     def __exit__(self, _excType, exc, tb):
         if self.seconds > 0:
-            if _HAS_SIGALRM:
+            if self._useAlarm:
                 signal.alarm(0)
                 if self._previousHandler is not None:
                     signal.signal(signal.SIGALRM, self._previousHandler)
