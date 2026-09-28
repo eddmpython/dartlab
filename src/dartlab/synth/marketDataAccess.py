@@ -9,6 +9,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from dartlab.core.logger import logSafe
+
 if TYPE_CHECKING:
     import polars as pl
 
@@ -23,7 +25,7 @@ def fetchOhlcv(stockCode: str, **kwargs: Any) -> "pl.DataFrame | None":
         g = GatherEntry()
         return g("price", stockCode, **kwargs)
     except (ImportError, ValueError, TypeError, RuntimeError):
-        log.warning("OHLCV fetch 실패: %s", stockCode)
+        log.warning("OHLCV fetch 실패: %s", logSafe(stockCode))
         return None
 
 
@@ -43,5 +45,5 @@ def fetchBenchmark(market: str = "KR", **kwargs: Any) -> "pl.DataFrame | None":
             **kwargs,
         )
     except (ImportError, ValueError, TypeError, RuntimeError):
-        log.warning("벤치마크 fetch 실패: %s", market)
+        log.warning("벤치마크 fetch 실패: %s", logSafe(market))
         return None

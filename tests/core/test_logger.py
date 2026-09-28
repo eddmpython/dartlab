@@ -124,3 +124,35 @@ def test_cli_output_reExports_getConsole() -> None:
     from dartlab.cli.services.output import getConsole as cliGetConsole
 
     assert cliGetConsole() is _loggerMod.getConsole()
+
+
+def test_logSafe_neutralizesLineBreaksAndControlChars() -> None:
+    """CR/LF·ANSI escape·U+2028 이 공백으로 바뀌어 가짜 로그 줄을 만들 수 없다."""
+    assert _loggerMod.logSafe("005930\r\nFAKE\x1b[31m\u2028x") == "005930 FAKE [31m x"
+
+
+def test_logSafe_neutralizesLoneSeparators() -> None:
+    """단독 CR·TAB·NEL·DEL·U+2029 도 공백으로 바뀐다."""
+    assert _loggerMod.logSafe("a\rb\tc\x85d\x7fe\u2029f") == "a b c d e f"
+
+
+def test_logSafe_truncatesToLimit() -> None:
+    """기본 200자, limit 지정 시 그 길이로 자른다."""
+    assert len(_loggerMod.logSafe("a" * 500)) == 200
+    assert _loggerMod.logSafe("abcdef", limit=3) == "abc"
+
+
+def test_logSafe_stringifiesNonStr() -> None:
+    """None·숫자·예외 객체도 str() 로 바꿔 한 줄 값으로 만든다."""
+    assert _loggerMod.logSafe(None) == "None"
+    assert _loggerMod.logSafe(5930) == "5930"
+    assert _loggerMod.logSafe(ValueError("line1\nline2")) == "line1 line2"
+
+
+def test_logSafe_keepsRecordOnSingleLine(caplog: pytest.LogCaptureFixture) -> None:
+    """logSafe 로 감싼 값은 로그 레코드를 한 줄로 유지한다 (위조 줄 삽입 차단)."""
+    log = _loggerMod.getLogger("test_logSafe")
+    with caplog.at_level(logging.INFO, logger="dartlab.test_logSafe"):
+        log.info("조회 실패: %s", _loggerMod.logSafe("005930\n[dartlab] 관리자 로그인 성공"))
+    messages = [r.getMessage() for r in caplog.records if r.name == "dartlab.test_logSafe"]
+    assert messages == ["조회 실패: 005930 [dartlab] 관리자 로그인 성공"]

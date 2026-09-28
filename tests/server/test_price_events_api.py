@@ -170,3 +170,126 @@ def test_route_validation_stockCode_length(monkeypatch: pytest.MonkeyPatch) -> N
 
     resp = client.get("/api/dartlab/price-events", params={"stockCode": "00593"})
     assert resp.status_code == 422
+
+
+def _patchMarketProbe(monkeypatch: pytest.MonkeyPatch) -> dict[str, list]:
+    """ohlcv/news 로더가 받은 market 을 기록하는 격리 patch."""
+    ohlcv_mod = importlib.import_module("dartlab.quant.screen._dataAccessOhlcv")
+    listing_mod = importlib.import_module("dartlab.gather.krx.listing.registry")
+    news_mod = importlib.import_module("dartlab.gather.bulkData.newsHeadlines")
+    seen: dict[str, list] = {"ohlcv": [], "news": []}
+
+    def _fakeOhlcv(c, **kw):
+        seen["ohlcv"].append(kw.get("market"))
+        return _mk_ohlcv()
+
+    def _fakeNews(s, e, m, *, asof=None):
+        seen["news"].append(m)
+        return pl.DataFrame()
+
+    monkeypatch.setattr(ohlcv_mod, "fetchOhlcv", _fakeOhlcv)
+    monkeypatch.setattr(listing_mod, "codeToName", lambda c: "삼성전자")
+    monkeypatch.setattr(news_mod, "loadNewsArchive", _fakeNews)
+    return seen
+
+
+def test_build_payload_invalid_market() -> None:
+    """market 미지원 (JP) → ValueError. 하위 로더 호출 전에 차단."""
+    pe = importlib.import_module("dartlab.server.api.priceEvents")
+    with pytest.raises(ValueError, match="market must be one of"):
+        pe.buildPriceEventsPayload("005930", "2024-01-01", "2024-01-30", market="JP")
+
+
+def test_build_payload_market_normalized(monkeypatch: pytest.MonkeyPatch) -> None:
+    """' us ' → 'US' 로 정규화되어 응답과 하위 로더 모두 상수 market 을 받는다."""
+    pe = importlib.import_module("dartlab.server.api.priceEvents")
+    seen = _patchMarketProbe(monkeypatch)
+
+    payload = pe.buildPriceEventsPayload(
+        "005930",
+        "2024-01-01",
+        "2024-01-30",
+        market=" us ",
+        sources="news_rss",
+        includeShocks=False,
+        includeRegime=False,
+    )
+    assert payload["market"] == "US"
+    assert seen["ohlcv"] == ["US"]
+    assert seen["news"] == ["US"]
+
+
+def test_build_payload_default_market_kr(monkeypatch: pytest.MonkeyPatch) -> None:
+    """market 미지정 → 기존 기본값 'KR' 그대로."""
+    pe = importlib.import_module("dartlab.server.api.priceEvents")
+    seen = _patchMarketProbe(monkeypatch)
+
+    payload = pe.buildPriceEventsPayload(
+        "005930",
+        "2024-01-01",
+        "2024-01-30",
+        sources="news_rss",
+        includeShocks=False,
+        includeRegime=False,
+    )
+    assert payload["market"] == "KR"
+    assert seen["ohlcv"] == ["KR"]
+    assert seen["news"] == ["KR"]
+
+
+def test_canonical_market_returns_constant() -> None:
+    """정규화 결과는 요청 문자열이 아니라 허용 상수 튜플의 원소 자체."""
+    pe = importlib.import_module("dartlab.server.api.priceEvents")
+    assert pe._canonicalMarket("kr") is pe._VALID_MARKETS[0]
+    assert pe._canonicalMarket(" US ") is pe._VALID_MARKETS[1]
+    for bad in ("", None, "JP", "K R", "KR/../x"):
+        with pytest.raises(ValueError):
+            pe._canonicalMarket(bad)
+
+
+def test_route_invalid_market_400(monkeypatch: pytest.MonkeyPatch) -> None:
+    """route: market=JP → 400 (이전에는 검증 없이 200)."""
+    pe = importlib.import_module("dartlab.server.api.priceEvents")
+    seen = _patchMarketProbe(monkeypatch)
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    app = FastAPI()
+    app.include_router(pe.router)
+    client = TestClient(app)
+
+    resp = client.get(
+        "/api/dartlab/price-events",
+        params={"stockCode": "005930", "market": "JP", "includeShocks": "false", "includeRegime": "false"},
+    )
+    assert resp.status_code == 400
+    assert "market must be one of" in resp.json()["detail"]
+    assert seen["ohlcv"] == []
+    assert seen["news"] == []
+
+
+def test_route_lowercase_market_normalized(monkeypatch: pytest.MonkeyPatch) -> None:
+    """route: market=kr → 200 + 응답 market 'KR'."""
+    pe = importlib.import_module("dartlab.server.api.priceEvents")
+    _patchMarketProbe(monkeypatch)
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    app = FastAPI()
+    app.include_router(pe.router)
+    client = TestClient(app)
+
+    resp = client.get(
+        "/api/dartlab/price-events",
+        params={
+            "stockCode": "005930",
+            "start": "2024-01-01",
+            "end": "2024-01-30",
+            "market": "kr",
+            "sources": "news_rss",
+            "includeShocks": "false",
+            "includeRegime": "false",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["market"] == "KR"

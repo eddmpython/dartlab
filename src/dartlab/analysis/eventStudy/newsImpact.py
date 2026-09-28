@@ -24,6 +24,7 @@ from typing import Callable
 import numpy as np
 import polars as pl
 
+from dartlab.core.logger import logSafe
 from dartlab.core.memory import withMemoryBudget
 
 log = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ def _defaultOhlcv(stockCode: str, market: str) -> pl.DataFrame | None:
 
         return fetchOhlcv(stockCode, market=market)
     except Exception as exc:
-        log.debug("default ohlcv fail %s: %s", stockCode, exc)
+        log.debug("default ohlcv fail %s: %s", logSafe(stockCode), exc)
         return None
 
 

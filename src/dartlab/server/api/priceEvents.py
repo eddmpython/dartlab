@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 import polars as pl
 from fastapi import APIRouter, HTTPException, Query
 
+from dartlab.core.logger import logSafe
 from dartlab.core.memory import BoundedCache, withMemoryBudget
 
 router = APIRouter(prefix="/api/dartlab", tags=["price-events"])
@@ -34,6 +35,16 @@ _log = logging.getLogger(__name__)
 _CACHE = BoundedCache(maxEntries=50, pressureMb=300.0)
 
 _VALID_SOURCES = {"all", "disclosure", "news_rss", "news_gdelt"}
+_VALID_MARKETS = ("KR", "US")
+
+
+def _canonicalMarket(market: str) -> str:
+    """요청 market 을 허용 상수로 치환한다. 요청 문자열 자체는 경로·URL·로그로 흘리지 않는다."""
+    normalized = str(market or "").strip().upper()
+    for known in _VALID_MARKETS:
+        if normalized == known:
+            return known  # 상수 튜플 원소를 돌려줘 요청 문자열과의 데이터 흐름을 끊는다
+    raise ValueError(f"market must be one of {_VALID_MARKETS}")
 
 
 def _toIso(d: str | _date | None) -> str | None:
@@ -125,7 +136,7 @@ def _fetchEvents(
                         }
                     )
         except Exception as exc:
-            _log.debug("disclosure fetch fail %s: %s", stockCode, exc)
+            _log.debug("disclosure fetch fail %s: %s", logSafe(stockCode), exc)
 
     # news (RSS + GDELT) — loadNewsArchive 통합
     if want_rss or want_gdelt:
@@ -183,7 +194,7 @@ def buildPriceEventsPayload(
     Args:
         stockCode: 6자리 종목코드.
         start/end: ISO date 또는 None (None 이면 today-365 ~ today).
-        market: "KR" | "US".
+        market: "KR" | "US". 대소문자·앞뒤 공백은 무시하고 허용 상수로 정규화한다.
         sources: "all" | "disclosure" | "news_rss" | "news_gdelt".
         discType: "all" 또는 특정 disc type ("periodic"/"major"/...).
         keyword: news 필터 키워드 (None 이면 corpName resolve).
@@ -192,9 +203,18 @@ def buildPriceEventsPayload(
 
     Returns:
         dict — stockCode/corpName/market/start/end/ohlc/events/shocks/regime_band.
+
+    Raises:
+        ValueError: sources·market 이 허용 값이 아니거나 start/end 가 ISO date 가 아닐 때.
+
+    Example:
+        >>> payload = buildPriceEventsPayload("005930", market="kr", sources="disclosure")
+        >>> payload["market"]
+        'KR'
     """
     if sources not in _VALID_SOURCES:
         raise ValueError(f"sources must be one of {_VALID_SOURCES}")
+    market = _canonicalMarket(market)
 
     endDate = _date.fromisoformat(_toIso(end)) if end else _date.today()
     startDate = _date.fromisoformat(_toIso(start)) if start else (endDate - timedelta(days=365))
@@ -220,7 +240,7 @@ def buildPriceEventsPayload(
         if df is not None and not df.is_empty():
             ohlc = _ohlcRows(df)
     except Exception as exc:
-        _log.warning("ohlcv fail %s: %s", stockCode, exc)
+        _log.warning("ohlcv fail %s: %s", logSafe(stockCode), exc)
 
     events = _fetchEvents(stockCode, corpName, startDate, endDate, market, sources, keyword)
 
@@ -254,7 +274,7 @@ def buildPriceEventsPayload(
                     for ev in sp["shock_events"]
                 ]
         except Exception as exc:
-            _log.debug("priceShockNews fail %s: %s", stockCode, exc)
+            _log.debug("priceShockNews fail %s: %s", logSafe(stockCode), exc)
 
     regime_band: list[dict] = []
     if includeRegime:
@@ -317,5 +337,5 @@ def getPriceEvents(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        _log.exception("price-events fail %s", stockCode)
+        _log.exception("price-events fail %s", logSafe(stockCode))
         raise HTTPException(status_code=500, detail=f"내부 오류: {exc}") from exc

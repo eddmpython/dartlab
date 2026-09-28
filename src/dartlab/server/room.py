@@ -16,6 +16,8 @@ import secrets
 import time
 from dataclasses import dataclass, field
 
+from dartlab.core.logger import logSafe
+
 logger = logging.getLogger(__name__)
 
 MAX_MEMBERS = 10
@@ -97,7 +99,7 @@ class Room:
             self.members[member.memberId] = member
 
         await self.broadcast("member_join", member.info(), exclude=member.memberId)
-        logger.info("[ROOM] %s 참여 (%s)", name, member.memberId[:4])
+        logger.info("[ROOM] %s 참여 (%s)", logSafe(name), member.memberId[:4])
         return member
 
     async def leave(self, memberId: str) -> None:
@@ -106,7 +108,7 @@ class Room:
             member = self.members.pop(memberId, None)
         if member:
             await self.broadcast("member_leave", {"memberId": member.publicId, "name": member.name})
-            logger.info("[ROOM] %s 퇴장 (%s)", member.name, memberId[:4])
+            logger.info("[ROOM] %s 퇴장 (%s)", logSafe(member.name), memberId[:4])
 
     def heartbeat(self, memberId: str) -> bool:
         """하트비트 갱신. 존재하지 않는 멤버면 False."""
@@ -130,7 +132,7 @@ class Room:
         for mid in dead:
             removed = self.members.pop(mid, None)
             if removed:
-                logger.warning("[ROOM] %s 큐 초과로 제거 (%s)", removed.name, mid[:4])
+                logger.warning("[ROOM] %s 큐 초과로 제거 (%s)", logSafe(removed.name), mid[:4])
 
     def addChat(self, memberId: str, text: str) -> ChatMessage | None:
         """채팅 추가. 멤버가 없으면 None."""

@@ -311,3 +311,47 @@ def logEvent(level: int | str, event: str, /, **fields: object) -> None:
     # event 자체를 message 본문으로, fields 는 extra 로 전달
     # → 표준 logging.Formatter 는 message 만 출력, JSON formatter 는 extra 도 직렬화.
     log.log(levelInt, event, extra={"event": event, "fields": fields} if fields else {"event": event})
+
+
+# ── 외부 입력 로그 값 정화 (log injection 방지) ──────────────
+
+
+# C0 제어문자 + DEL + NEL + 유니코드 줄/문단 구분자를 공백으로. 한 레코드가 여러 줄로 보이는 위조를 막는다.
+_LOG_CONTROL_CHARS = {c: " " for c in (*range(0x00, 0x20), 0x7F, 0x85, 0x2028, 0x2029)}
+
+
+def logSafe(value: object, *, limit: int = 200) -> str:
+    """외부 입력을 로그 한 줄 값으로 만든다 (CR/LF·제어문자 → 공백, 길이 제한). log injection 방지.
+
+    Capabilities:
+        요청 파라미터·사용자 이름처럼 외부에서 온 값을 로그 ``%s`` 인자로 넘기기 전에
+        줄바꿈과 제어문자를 공백으로 바꾸고 길이를 자른다. 가짜 로그 줄 삽입과 ANSI
+        escape 로 터미널 표시를 조작하는 입력을 한 줄 평문으로 무력화한다.
+    Args:
+        value: 로그에 남길 값. ``str()`` 로 변환한다 (None·숫자·예외 객체 허용).
+        limit: 반환 문자열 최대 길이. 기본 200자.
+    Returns:
+        str. CR/LF, C0 제어문자, DEL, NEL, U+2028/U+2029 를 공백으로 바꾸고
+        ``limit`` 자로 자른 문자열.
+    Raises:
+        없음. ``value`` 의 ``__str__`` 이 던지는 예외만 그대로 전파한다.
+    Example:
+        >>> from dartlab.core.logger import logSafe
+        >>> logSafe("005930" + chr(13) + chr(10) + "FAKE log line")
+        '005930 FAKE log line'
+        >>> logSafe("a" * 500, limit=5)
+        'aaaaa'
+    Guide:
+        포맷 문자열은 상수로 두고 외부 값만 ``log.info("조회 실패: %s", logSafe(code))``
+        처럼 감싼다. 경로·URL 검증 용도가 아니다 (그쪽은 허용 목록으로 검증한다).
+    SeeAlso:
+        getLogger: 모듈 로거.
+        logEvent: 구조화 이벤트 로그.
+    Requires:
+        없음. 표준 str 연산만.
+    AIContext:
+        정적 분석 (CodeQL py/log-injection) 은 CR/LF 를 지우는 ``str.replace`` 호출을
+        정화 지점으로 인식한다. 두 replace 호출을 translate 나 re.sub 로 합치지 않는다.
+    """
+    text = str(value).replace("\r\n", " ").replace("\n", " ")  # CodeQL 이 인식하는 정화 지점
+    return text.translate(_LOG_CONTROL_CHARS)[:limit]

@@ -35,6 +35,14 @@ CHANNEL_SPECS: dict[str, dict[str, Any]] = {
 }
 
 
+def _knownPlatform(platform: str) -> str:
+    """요청 platform 을 CHANNEL_SPECS 의 key 상수로 치환한다. 미지원 채널이면 ValueError."""
+    for known in CHANNEL_SPECS:  # dict key 상수를 돌려준다
+        if platform == known:
+            return known
+    raise ValueError(f"지원하지 않는 채널: {platform}")
+
+
 @dataclass
 class ChannelSession:
     """개별 채널 어댑터의 실행 상태."""
@@ -74,14 +82,12 @@ class ChannelRuntimeManager:
 
     def get(self, platform: str) -> dict[str, Any]:
         """특정 채널의 상태를 반환한다."""
-        if platform not in CHANNEL_SPECS:
-            raise ValueError(f"지원하지 않는 채널: {platform}")
+        platform = _knownPlatform(platform)
         return self._basePayload(platform)
 
     def start(self, platform: str, **kwargs) -> dict[str, Any]:
         """채널 어댑터를 백그라운드 스레드로 시작한다."""
-        if platform not in CHANNEL_SPECS:
-            raise ValueError(f"지원하지 않는 채널: {platform}")
+        platform = _knownPlatform(platform)
 
         from dartlab.channel.adapters import createAdapter
 
@@ -117,8 +123,7 @@ class ChannelRuntimeManager:
 
     def stop(self, platform: str) -> dict[str, Any]:
         """채널 어댑터를 정지한다."""
-        if platform not in CHANNEL_SPECS:
-            raise ValueError(f"지원하지 않는 채널: {platform}")
+        platform = _knownPlatform(platform)
 
         session = self._sessions.get(platform)
         if session is None:

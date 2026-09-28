@@ -6,7 +6,10 @@ import asyncio
 
 from fastapi import APIRouter, HTTPException, Query
 
+from dartlab.core.logger import getLogger, logSafe
+
 router = APIRouter()
+_log = getLogger(__name__)
 
 
 def _getFred():
@@ -25,6 +28,20 @@ def _toRecords(df):
     if df.is_empty():
         return []
     return df.to_dicts()
+
+
+def _fredErrorMessage(exc: Exception, *, context: str) -> str:
+    """FRED 예외를 응답용 고정 문구로 바꾼다. 예외 상세 (FRED 응답 본문 포함) 는 서버 로그에만 남긴다."""
+    from dartlab.gather.fred.types import AuthenticationError, RateLimitError, SeriesNotFoundError
+
+    _log.warning("FRED %s 실패 (%s): %s", context, type(exc).__name__, logSafe(exc, limit=500))
+    if isinstance(exc, RateLimitError):
+        return "FRED 요청 한도 초과. 잠시 후 다시 시도하세요."
+    if isinstance(exc, AuthenticationError):
+        return "FRED API 키를 확인하세요."
+    if isinstance(exc, SeriesNotFoundError):
+        return "FRED 시리즈를 찾을 수 없습니다."
+    return "FRED 데이터를 가져오지 못했습니다."
 
 
 # ── 시계열 ──
@@ -159,7 +176,7 @@ async def apiFredCorrelation(
         corr = await asyncio.to_thread(f.correlation, seriesIds, start=start, end=end)
         result["correlation"] = _toRecords(corr)
     except FredError as exc:
-        result["correlation_error"] = str(exc)
+        result["correlation_error"] = _fredErrorMessage(exc, context="correlation")
 
     if leadLag:
         pair = [s.strip() for s in leadLag.split(",") if s.strip()]
@@ -175,6 +192,6 @@ async def apiFredCorrelation(
                 )
                 result["lead_lag"] = _toRecords(ll)
             except FredError as exc:
-                result["lead_lag_error"] = str(exc)
+                result["lead_lag_error"] = _fredErrorMessage(exc, context="leadLag")
 
     return result
