@@ -1496,3 +1496,14 @@ mainPlan UI 플랫폼 리팩토링이 **이 세션 동안** 단계-4b~5-2b로 �
 - **원장의 의미**: 최초 관측 시각은 실제 접수보다 늦을 수는 있어도 이를 수는 없는 보수적 상한이다. 현재 보존 행의 해시가 최초 관측 해시와 같으면 그 시점에 알던 내용과 같다는 증거다. 정정 공시로 사라진 옛 접수의 내용은 원장만으로 복원할 수 없어 그 구간은 conditional 로 남는다. 일일 `dataSync.yml` finance job 에 원장 생성과 업로드 스텝을 `continue-on-error` 로 붙였고 push 뒤부터 쌓인다. 신규 상장 부트스트랩과 full 재빌드 경로에는 아직 붙이지 않았다.
 - **검증**: focused 회귀는 분기 주석 재정렬, 값이 다르면 거부, 4분기 잔차 재정렬, 잔차 불일치 거부, digest 결박, 실제 AAPL 2018-11-06 origin 이다. 재정렬을 끄면 두 양성 fixture 가 원래 오류로 실패하는 kill-test 를 확인했다. `tests/simulate`, `tests/analysis`, `tests/architecture`, EDGAR 관련 dataHub, `tests/skills` 1,704건이 통과했고, 그 뒤 더한 channels node 8건, validateScenarioSpec, 접수 원장 18건을 포함한 59건이 따로 통과했다. ruff, camelCase strict, 신규 파일 docstring strict, folderSize baseline, test coverage gate, Guard Index strict 를 확인했다.
 - **다음 P0**: 상태 변수별 availableAt 또는 eventAt 기준 staleness 로 되감긴 옛 상태가 exact 를 통과하는 경로를 닫는다. 그 다음 AAPL 66 origin 에 realized driver, observed action, actual outcome signed batch 를 붙여 model tournament episode 를 실제 이력으로 조립한다. KR 은 원장이 한 분기 이상 쌓인 뒤 retained finance 를 원장 해시로 검증하는 adapter 를 연다.
+
+## 2026-09-29 P0 되감긴 옛 상태의 exact 통과 차단과 접수 원장 경로 보강
+
+- **판단**: census 중 찾은 잠복 결함을 같은 날 닫는다. 결함의 핵심은 staleness 가 공시일만 본다는 점이다. 옛 분기를 최신 접수가 비교 수치로 다시 실으면 batch `availableAt` 이 최근이 되어, 과거 후보로 되감긴 상태가 신선한 exact 상태처럼 통과한다.
+- **재현**: 2022-12-31 기간의 정상 10-Q 와, 2024-12-31 기간의 흐름이 깨진 최신 10-Q(분기 영업이익 없음, 2022년 네 분기 비교 수치 포함)를 섞었다. 2025-02-01 판단에서 compiler 는 `latestIncompleteFiling:20241231` 경고와 함께 2022-12-31 상태로 되감고, `availableAt=20250130` 이라 수정 전 `compilePointInTimeState(requireExact=True)` 가 exact 를 냈다. 기간은 763일 전이다.
+- **수정**: `stateCompiler` 가 공시일 신선도에 더해 선택한 관측의 `eventAt`, 즉 상태가 묘사하는 기간도 같은 `maxStalenessDays` 안이어야 받아들인다. 벗어나면 `describes a stale period` 로 실패한다. 이 판정은 admission 의미를 바꾸므로 `PIT_STATE_EXECUTABLE_HASH` 를 v2 로 올렸다. v1 이 발급한 상태 receipt 는 되감긴 상태를 받아들였을 수 있어 v2 검증을 통과하지 않는다.
+- **영향 범위**: src 안의 상태 registry 는 EDGAR, DART 재무 feature 와 EDGAR 분기 adapter 셋이고 모두 분기 재무라 한도가 400일이다. 신선한 분기 상태의 기간 지연은 공시 다음 날 기준 38일 이하라 영향이 없다. AAPL census 는 수정 뒤에도 exact 66/69, 모두 신선, 연속 한 분기 쌍 65개 그대로다.
+- **남은 같은 계열 느슨함**: dataHub feature query 의 `FEATURE_OBSERVATION_STALE` 도 `availableAt` 만 본다. 이 경로는 exact 를 발급하지 않고 공개 query 동작이라 이번에는 바꾸지 않았다.
+- **접수 원장 경로 보강**: 신규 상장 부트스트랩(`dartNewStocks.yml`)과 수동 full 재빌드(`dataSync.yml` full-collect, finance 일 때만)에도 원장 스텝을 붙였다. full 재빌드는 카테고리 없는 `dist/changed.txt` 를 쓰므로 CLI 에 `--changed-file` 을 더했다. 세 경로 모두 `continue-on-error` 라 원장 실패가 수집을 막지 않는다.
+- **검증**: 경계 회귀는 2025-02-01 판단에서 400일째 기간 허용, 401일째 거부다. EDGAR 수준 회귀는 위 재현을 그대로 고정했고 수정 전 코드에서 exact 가 나는 것을 먼저 확인했다. `tests/simulate` 전체와 접수 원장 18건을 다시 돌렸다.
+- **다음 P0**: AAPL 66 origin 을 model tournament episode 로 조립하려면 운영 세계 상태(가격, 물량, 단위원가, 설비)가 필요한데 AAPL 공시에는 단위 경제가 없다. 재무 세계(financialWorld) 상태와 capex, 차입, 상환 행동, 다음 분기 재무 결과로 replay episode 를 만드는 쪽이 실제 데이터로 설 수 있는 경로다.
