@@ -2028,9 +2028,10 @@ class Company:
         axis: str = "scenario",
         /,
         *,
-        scenario: str | None = None,
+        scenario: str | dict | None = None,
         horizon: int = 3,
         asOf: str | None = None,
+        overrides: dict | None = None,
     ) -> Any:
         """이 회사에 시나리오 하나를 결정론적으로 돌려 경로·가치를 낸다 (시뮬레이터 엔진).
 
@@ -2043,10 +2044,16 @@ class Company:
 
         Args:
             axis: ``"scenario"`` (기본) 또는 ``"strategies"``.
-            scenario: ``scenario`` 축의 시나리오 id - ``synth.scenario.getPresetScenarios("KR")``
-                의 키. 생략하면 ``"baseline"``. ``strategies`` 축은 모든 프리셋을 비교하므로 받지 않는다.
-            horizon: 예측 연수 (기본 3). 프리셋의 실제 경로 길이를 넘길 수 없다.
+            scenario: ``scenario`` 축의 프리셋 id(``synth.scenario.getPresetScenarios("KR")`` 의 키)
+                또는 사용자 시나리오 dict ``{"name", "base", "gdp", "rate", "fx"}``. 사용자 시나리오는
+                ``base`` 프리셋의 거시 경로 중 준 것만 바꾼다. 생략하면 ``"baseline"``. ``strategies``
+                축은 모든 프리셋을 비교하므로 받지 않는다.
+            horizon: 예측 연수 (기본 3). 프리셋은 프리셋 경로 길이까지, 세 경로를 모두 준 사용자
+                시나리오는 10년까지다.
             asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 기간 단위 PIT이며 접수일 vintage 복원 미지원.
+            overrides: 드라이버 override dict. ``baseWacc``, ``terminalGrowth``, ``baseMargin``,
+                ``revenueToGdp``, ``revenueToFx``, ``marginToGdp``, ``nimToRate`` 중 일부. 적용한
+                값은 ``assumptionLedger`` 에 ``source="user"`` 로 남는다. ``strategies`` 축은 아직 받지 않는다.
 
         Returns:
             ``SimulationResult`` (``scenario`` 축) - 시나리오 경로 + dcf 주당가치 + 노드별 audit +
@@ -2054,14 +2061,17 @@ class Company:
             취약 프리셋, 추천이 닫힌 이유.
 
         Raises:
-            TypeError: scenario 또는 horizon 타입이 잘못됐을 때.
-            ValueError: 축/scenario/horizon/asOf 가 지원 범위 밖이거나 시트 배선이 잘못됐을 때.
+            TypeError: scenario, horizon, overrides 타입이 잘못됐을 때.
+            ValueError: 축/scenario/horizon/overrides/asOf 가 지원 범위 밖이거나 시트 배선이 잘못됐을 때.
 
         Example:
             >>> c = Company("005930")
             >>> r = c.simulate(scenario="baseline")              # doctest: +SKIP
             >>> r.scenarioName, len(r.revenuePath)               # doctest: +SKIP
             ('baseline', 3)
+            >>> shock = c.simulate(scenario={"name": "rateShock", "rate": [5.0, 5.5, 5.5]})  # doctest: +SKIP
+            >>> shock.scenarioKind, shock.macroPaths["rate"]     # doctest: +SKIP
+            ('user', (5.0, 5.5, 5.5))
             >>> c.simulate(scenario="adverse").revenuePath[-1] < r.revenuePath[-1]  # doctest: +SKIP
             True
             >>> c.simulate("strategies").recommendation is None  # doctest: +SKIP
@@ -2109,11 +2119,13 @@ class Company:
             TargetMarkets:
                 - KR (getPresetScenarios("KR") + KR elasticity).
         """
-        from dartlab.simulate.registry import validateScenarioSpec
+        from dartlab.simulate.assumptions import resolveDriverOverrides, resolveScenarioPaths
 
         if axis == "strategies":
             if scenario is not None:
                 raise ValueError("strategies 축은 모든 KR 프리셋을 비교하므로 scenario 를 받지 않습니다")
+            if overrides is not None:
+                raise ValueError("strategies 축은 아직 드라이버 override 를 받지 않습니다")
             from dartlab.simulate.strategies import compareStrategies
 
             return compareStrategies(self, horizon=horizon, asOf=asOf)
@@ -2123,8 +2135,9 @@ class Company:
         from dartlab.simulate.run import runScenario
         from dartlab.story.lensProducts import collectLensProducts
 
-        scenarioId = "baseline" if scenario is None else scenario
-        validateScenarioSpec(scenarioId, horizon)
+        # 사용자 가정은 렌즈 수집보다 먼저 검증한다. 잘못된 입력으로 무거운 fan-out 을 돌리지 않는다.
+        scenarioPaths = resolveScenarioPaths(scenario, horizon)
+        driverOverrides = dict(resolveDriverOverrides(overrides))
         lensBundle = collectLensProducts(
             self,
             engines=("analysis", "credit", "quant", "macro"),
@@ -2132,10 +2145,11 @@ class Company:
         )
         return runScenario(
             self,
-            scenario=scenarioId,
+            scenario=scenarioPaths,
             horizon=horizon,
             asOf=asOf,
             lensBundle=lensBundle,
+            overrides=driverOverrides or None,
         )
 
     @property

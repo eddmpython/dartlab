@@ -22,9 +22,17 @@ Layer: L3.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from dartlab.simulate.assumptions import (
+    applyDriverOverrides,
+    resolveDriverOverrides,
+    resolveScenarioPaths,
+    userAssumptionRows,
+)
+from dartlab.simulate.channels import DRIVER_FX, DRIVER_MACRO, DRIVER_RATE, ScenarioPaths
 from dartlab.simulate.registry import (
     DRIVER_DCF,
     DRIVER_MARGIN,
@@ -35,7 +43,6 @@ from dartlab.simulate.registry import (
     buildScenarioSheet,
     buildSnapshot,
     nodeIdFor,
-    validateScenarioSpec,
 )
 from dartlab.simulate.sheet import NodeValue, evaluateSheet
 
@@ -149,6 +156,9 @@ class SimulationResult:
         warnings      : data limitations and honest-gap reasons.
         dataInputGaps : Data Workbench가 입력과 함께 반환한 completeness/PIT gap.
         dataEvidence  : coverage, asset version, partition seal, quality, receipt 전체 입력 envelope.
+        scenarioKind  : ``"preset"`` 또는 ``"user"``. 사용자 시나리오는 사용자가 바꾼 거시 경로를 쓴다.
+        scenarioBase  : 바꾸지 않은 거시 경로를 가져온 프리셋 id. 프리셋 실행이면 scenarioName 과 같다.
+        macroPaths    : 실행이 실제로 쓴 ``gdp``, ``rate``, ``fx`` 경로.
     """
 
     scenarioName: str
@@ -177,6 +187,9 @@ class SimulationResult:
     dataInputGaps: tuple[str, ...] = field(default_factory=tuple)
     dataEvidence: DataEvidence | None = None
     waccPath: tuple[float | None, ...] | None = None
+    scenarioKind: str = "preset"
+    scenarioBase: str = ""
+    macroPaths: dict[str, tuple[float | None, ...]] = field(default_factory=dict)
 
 
 def _dataEvidence(snapshot: dict) -> DataEvidence | None:
@@ -221,10 +234,11 @@ def _audit(driverId: str, nv: NodeValue) -> NodeAudit:
 def runScenario(
     company: Any,
     *,
-    scenario: str = "baseline",
+    scenario: str | Mapping | ScenarioPaths | None = "baseline",
     horizon: int = 3,
     asOf: str | None = None,
     lensBundle: dict[str, Any] | None = None,
+    overrides: Mapping | None = None,
 ) -> SimulationResult:
     """Run one deterministic scenario on a company, end to end (§3 internal driver).
 
@@ -242,20 +256,26 @@ def runScenario(
     Args:
         company: a `Company` (DART/EDGAR) instance to simulate. Read forward via the L2 finance
             accessors (`_buildFinanceSeries`, `sector`, `sectorParams`).
-        scenario: the scenario id - a key of `synth.scenario.getPresetScenarios("KR")` (e.g.
-            ``"baseline"``, ``"adverse"``, ``"semiconductor_down"``).
-        horizon: number of forecast years. It cannot exceed the selected preset path.
+        scenario: a preset id - a key of `synth.scenario.getPresetScenarios("KR")` (e.g.
+            ``"baseline"``, ``"adverse"``) - or a user scenario mapping ``{"name", "base", "gdp",
+            "rate", "fx"}`` that replaces some macro paths of the ``base`` preset.
+        horizon: number of forecast years. A preset caps it at the preset path; a user scenario
+            that supplies all three paths can go up to 10 years.
         asOf: explicit fiscal period (YYYY or YYYY-Qn). This is period-scoped PIT, not filing
             receipt-date vintage reconstruction.
+        lensBundle: lens products kept as context. They never change DriverSheet inputs.
+        overrides: user driver overrides (``baseWacc``, ``terminalGrowth``, ``baseMargin``,
+            ``revenueToGdp``, ``revenueToFx``, ``marginToGdp``, ``nimToRate``). They replace the
+            snapshot values and are recorded in ``assumptionLedger`` with ``source="user"``.
 
     Returns:
         SimulationResult: the scenario's paths + dcf per-share value + per-node audit + overall
-        quality status (``"ok"`` / ``"partial"``).
+        quality status (``"ok"`` / ``"partial"``) + the macro paths actually used.
 
     Raises:
-        TypeError: if scenario or horizon has the wrong type.
-        ValueError: if scenario, horizon, or asOf is outside its supported domain, or from the
-            executor on malformed wiring.
+        TypeError: if scenario, horizon, or overrides has the wrong type.
+        ValueError: if scenario, horizon, overrides, or asOf is outside its supported domain, or
+            from the executor on malformed wiring.
 
     Example:
         >>> from dartlab.providers.dart.company import Company  # doctest: +SKIP
@@ -303,18 +323,24 @@ def runScenario(
         Dataflow: company -> snapshot -> sheet -> evaluateSheet -> SimulationResult.
         TargetMarkets: KR (getPresetScenarios("KR") + KR elasticity); US needs US presets.
     """
-    validateScenarioSpec(scenario, horizon)
-    snapshot = buildSnapshot(company, asOf=asOf)
-    sheet = buildScenarioSheet(snapshot, scenario=scenario, horizon=horizon)
+    scenarioPaths = resolveScenarioPaths(scenario, horizon)
+    driverOverrides = resolveDriverOverrides(overrides)
+    snapshot = applyDriverOverrides(buildSnapshot(company, asOf=asOf), driverOverrides)
+    sheet = buildScenarioSheet(snapshot, scenario=scenarioPaths, horizon=horizon)
     out = evaluateSheet(sheet)
+    scenarioId = scenarioPaths.name
 
-    revNv = out[nodeIdFor(DRIVER_REV, scenario)]
-    marginNv = out[nodeIdFor(DRIVER_MARGIN, scenario)]
-    waccNv = out[nodeIdFor(DRIVER_WACC, scenario)]
-    proformaNv = out[nodeIdFor(DRIVER_PROFORMA, scenario)]
-    dcfNv = out[nodeIdFor(DRIVER_DCF, scenario)]
+    revNv = out[nodeIdFor(DRIVER_REV, scenarioId)]
+    marginNv = out[nodeIdFor(DRIVER_MARGIN, scenarioId)]
+    waccNv = out[nodeIdFor(DRIVER_WACC, scenarioId)]
+    proformaNv = out[nodeIdFor(DRIVER_PROFORMA, scenarioId)]
+    dcfNv = out[nodeIdFor(DRIVER_DCF, scenarioId)]
+    macroPaths = {
+        variable: tuple(out[nodeIdFor(driverId, scenarioId)].vector or ())
+        for variable, driverId in (("gdp", DRIVER_MACRO), ("rate", DRIVER_RATE), ("fx", DRIVER_FX))
+    }
 
-    nodes = {driverId: _audit(driverId, out[nodeIdFor(driverId, scenario)]) for driverId in SCENARIO_DRIVER_IDS}
+    nodes = {driverId: _audit(driverId, out[nodeIdFor(driverId, scenarioId)]) for driverId in SCENARIO_DRIVER_IDS}
     assumptions = tuple(snapshot.get("assumptions", ()))
     snapshotWarnings = tuple(snapshot.get("warnings", ()))
     dataInputGaps = tuple(snapshot.get("dataInputGaps", ()))
@@ -345,10 +371,12 @@ def runScenario(
     products = lensBundle.get("products") if isinstance(lensBundle, dict) else {}
     if not isinstance(products, dict):
         products = {}
-    assumptionLedger = _assumptionLedger(assumptions, products)
+    assumptionLedger = userAssumptionRows(scenarioPaths, driverOverrides, horizon) + _assumptionLedger(
+        assumptions, products
+    )
 
     return SimulationResult(
-        scenarioName=scenario,
+        scenarioName=scenarioId,
         horizon=horizon,
         revenuePath=revNv.vector,
         marginPath=marginNv.vector,
@@ -374,6 +402,9 @@ def runScenario(
         dataInputGaps=dataInputGaps,
         dataEvidence=dataEvidence,
         waccPath=waccNv.vector,
+        scenarioKind="user" if scenarioPaths.isUser else "preset",
+        scenarioBase=scenarioPaths.base,
+        macroPaths=macroPaths,
     )
 
 

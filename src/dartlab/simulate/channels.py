@@ -19,6 +19,8 @@ Layer: L3. Forward imports: L1.5 (`synth.scenario`), `simulate.sheet`, `simulate
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from dartlab.simulate.sheet import DriverNode, DriverSheet, NodeValue
 from dartlab.synth.scenario import SectorElasticity, getPresetScenarios
 
@@ -35,6 +37,74 @@ DRIVER_WACC = "wacc.path"
 PRESET_MARKET = "KR"
 
 DEFAULT_BASE_MARGIN = 10.0  # legacy fallback when operating margin is unavailable.
+
+SCENARIO_VARIABLES = ("gdp", "rate", "fx")
+
+
+@dataclass(frozen=True)
+class ScenarioPaths:
+    """한 실행이 쓰는 거시 경로 세 개와 그 출처.
+
+    프리셋 실행이면 ``userVariables`` 가 비어 있고 경로는 프리셋 그대로다. 사용자 시나리오면
+    ``userVariables`` 에 사용자가 바꾼 변수가 들어 있고 나머지 경로는 ``base`` 프리셋에서 온다.
+    검증과 해소는 ``simulate.assumptions.resolveScenarioPaths`` 가 맡는다.
+    """
+
+    name: str
+    base: str
+    gdp: tuple[float, ...]
+    rate: tuple[float, ...]
+    fx: tuple[float, ...]
+    userVariables: tuple[str, ...] = ()
+
+    @property
+    def isUser(self) -> bool:
+        """사용자가 바꾼 경로가 하나라도 있는지 알려 준다.
+
+        Returns:
+            ``userVariables`` 가 비어 있지 않으면 True.
+
+        Raises:
+            없음.
+
+        Example:
+            ``ScenarioPaths("baseline", "baseline", (1.0,), (2.5,), (1470.0,)).isUser`` 는 False 다.
+        """
+        return bool(self.userVariables)
+
+    @property
+    def maxHorizon(self) -> int:
+        """세 경로가 모두 값을 가진 최대 연수를 돌려준다.
+
+        Returns:
+            ``gdp``, ``rate``, ``fx`` 경로 길이 중 가장 짧은 값.
+
+        Raises:
+            없음.
+
+        Example:
+            ``ScenarioPaths("s", "baseline", (1.0,) * 5, (2.0,) * 5, (3.0,) * 3).maxHorizon`` 는 3 이다.
+        """
+        return min(len(self.gdp), len(self.rate), len(self.fx))
+
+    def path(self, variable: str) -> tuple[float, ...]:
+        """변수 하나의 경로를 돌려준다.
+
+        Args:
+            variable: ``gdp``, ``rate``, ``fx`` 중 하나.
+
+        Returns:
+            그 변수의 연도별 경로.
+
+        Raises:
+            ValueError: 모르는 변수일 때.
+
+        Example:
+            ``paths.path("rate")`` 는 기준금리 경로다.
+        """
+        if variable not in SCENARIO_VARIABLES:
+            raise ValueError(f"알 수 없는 거시 변수: {variable!r}")
+        return getattr(self, variable)
 
 
 def nodeIdFor(driverId: str, scenarioId: str) -> str:
@@ -140,16 +210,29 @@ def _channelGap(snap: dict) -> str | None:
 
 
 def _presetNode(node: DriverNode, sheet: DriverSheet, variable: str) -> tuple:
-    """프리셋 거시 변수 하나의 경로를 root node 로 낸다. 모르는 시나리오는 KeyError 로 실패한다."""
+    """거시 변수 하나의 경로를 root node 로 낸다. 모르는 프리셋은 KeyError 로 실패한다.
+
+    snapshot 에 사용자 시나리오(``userScenario``)가 있으면 사용자가 바꾼 변수는 그 경로를 쓰고
+    ``source="user"`` 를 frozen input 에 남긴다. 바꾸지 않은 변수는 사용자 시나리오의 base 프리셋
+    경로를 그대로 쓰므로 같은 프리셋 node 와 inputsHash 가 같다.
+    """
     snap = sheet.snapshot
     horizon = snap["horizon"]
-    scenario = getPresetScenarios(PRESET_MARKET)[node.scenarioId]
-    source = {"gdp": scenario.gdpGrowth, "rate": scenario.interestRate, "fx": scenario.krwUsd}[variable]
-    path = [float(value) for value in source[:horizon]]
-    frozen = {"variable": variable, "path": path}
-    refs = (f"synth.scenario:PRESET_SCENARIOS_{PRESET_MARKET}/{scenario.name}#{variable}",)
+    userScenario = snap.get("userScenario")
+    if userScenario is not None and variable in userScenario.userVariables:
+        path = [float(value) for value in userScenario.path(variable)[:horizon]]
+        frozen = {"variable": variable, "path": path, "source": "user"}
+        refs: tuple[str, ...] = (f"user:scenario/{userScenario.name}#{variable}",)
+    else:
+        presetName = node.scenarioId if userScenario is None else userScenario.base
+        scenario = getPresetScenarios(PRESET_MARKET)[presetName]
+        source = {"gdp": scenario.gdpGrowth, "rate": scenario.interestRate, "fx": scenario.krwUsd}[variable]
+        path = [float(value) for value in source[:horizon]]
+        frozen = {"variable": variable, "path": path}
+        refs = (f"synth.scenario:PRESET_SCENARIOS_{PRESET_MARKET}/{scenario.name}#{variable}",)
+    provenance = f"preset:{node.scenarioId}" if userScenario is None else f"user:{node.scenarioId}"
     value = path[-1] if path else None
-    return value, tuple(path), f"preset:{node.scenarioId}", refs, frozen, snap["asOf"], snap["latestAsOf"]
+    return value, tuple(path), provenance, refs, frozen, snap["asOf"], snap["latestAsOf"]
 
 
 def macroPathNode(node: DriverNode, sheet: DriverSheet, depValues: dict) -> tuple:

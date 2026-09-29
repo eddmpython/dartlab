@@ -59,6 +59,27 @@ def test_company_simulate_rejects_invalid_scenario_before_lens_fanout(monkeypatc
 
 
 @pytest.mark.unit
+def test_company_simulate_rejects_bad_user_assumptions_before_lens_fanout(monkeypatch) -> None:
+    """잘못된 사용자 시나리오와 override 는 렌즈 수집 전에 실패하고, strategies 축은 override 를 거부한다."""
+    from types import SimpleNamespace
+
+    from dartlab.providers.dart.company import Company
+    from dartlab.simulate.assumptions import AssumptionInputError
+
+    def unexpectedFanout(*args, **kwargs):
+        raise AssertionError("lens fanout ran before assumption validation")
+
+    monkeypatch.setattr("dartlab.story.lensProducts.collectLensProducts", unexpectedFanout)
+
+    with pytest.raises(AssumptionInputError, match="허용 범위"):
+        Company.simulate(SimpleNamespace(), scenario={"name": "typo", "rate": [45.0, 5.0, 5.0]})
+    with pytest.raises(AssumptionInputError, match="모르는"):
+        Company.simulate(SimpleNamespace(), overrides={"wacc": 9.0})
+    with pytest.raises(ValueError, match="override"):
+        Company.simulate(SimpleNamespace(), "strategies", overrides={"baseWacc": 9.0})
+
+
+@pytest.mark.unit
 def test_simulate_guards_non_kr(monkeypatch: pytest.MonkeyPatch) -> None:
     """KR 외 시장(US → EDGAR)은 매크로 프리셋 부재로 ValueError (네트워크 없이 fake company)."""
     import dartlab
@@ -99,5 +120,18 @@ def test_realData_simulate_verb_005930() -> None:
         assert isinstance(adverse, SimulationResult)
         assert adverse.revenuePath is not None
         assert adverse.revenuePath[-1] < baseline.revenuePath[-1]
+
+        # 사용자 금리 충격은 매출을 그대로 두고 WACC 경로를 올려 주당 DCF 를 낮춘다.
+        shock = c.simulate(scenario={"name": "rateShock", "rate": [5.0, 5.5, 5.5]}, horizon=3)
+        assert (shock.scenarioKind, shock.scenarioBase) == ("user", "baseline")
+        assert shock.macroPaths["rate"] == (5.0, 5.5, 5.5)
+        assert shock.revenuePath == baseline.revenuePath
+        assert all(user > base for user, base in zip(shock.waccPath, baseline.waccPath))
+        assert shock.dcfPerShare < baseline.dcfPerShare
+        overridden = c.simulate(overrides={"baseWacc": 12.0}, horizon=3)
+        assert overridden.waccPath[0] == pytest.approx(12.0)
+        # 렌즈 맥락 행은 id 가 없다. 사용자 행만 골라 본다.
+        userRows = [(row["kind"], row["id"]) for row in overridden.assumptionLedger if row["source"] == "user"]
+        assert userRows == [("driverOverride", "baseWacc")]
     finally:
         del c

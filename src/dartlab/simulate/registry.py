@@ -55,6 +55,7 @@ from dartlab.simulate.channels import (
     DRIVER_RATE,
     DRIVER_REV,
     DRIVER_WACC,
+    ScenarioPaths,
     dependencyValue,
     effectiveBaseMargin,
     gapValue,
@@ -634,8 +635,8 @@ _SHEET_WIRING = (
 SCENARIO_DRIVER_IDS = tuple(row[0] for row in _SHEET_WIRING)
 
 
-def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> DriverSheet:
-    """Wire the deterministic 4-node DriverSheet for one scenario over a frozen snapshot (§5/§6).
+def buildScenarioSheet(snapshot: dict, *, scenario: str | ScenarioPaths, horizon: int) -> DriverSheet:
+    """Wire the deterministic 8-node DriverSheet for one scenario over a frozen snapshot (§5/§6).
 
     Capabilities:
         Builds the 8-node chain (three macro roots, the revenue / margin / WACC channels,
@@ -643,12 +644,14 @@ def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> Driver
         registering each driver fn and adding the nodes with the §6.1 3-coordinate
         ``{driverId}@{scenarioId}#{periodKey}`` ids. The returned sheet is ready for
         `evaluateSheet`; the snapshot (read once by `buildSnapshot`) is attached with the scenario
-        horizon so every node reads from it without reloading data.
+        horizon so every node reads from it without reloading data. A user scenario resolved by
+        ``simulate.assumptions.resolveScenarioPaths`` is attached as ``userScenario`` so the macro
+        roots read the user paths for the variables the user changed.
 
     Args:
         snapshot: the frozen base-metric snapshot from `buildSnapshot`.
-        scenario: the scenario id (e.g. ``"baseline"`` / ``"adverse"``) - selects the macro preset
-            and stamps every node's `scenarioId`.
+        scenario: the preset id (e.g. ``"baseline"`` / ``"adverse"``) or a resolved
+            ``ScenarioPaths``. It selects the macro paths and stamps every node's `scenarioId`.
         horizon: number of forecast years (paths are truncated to this length).
 
     Returns:
@@ -656,8 +659,9 @@ def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> Driver
         `evaluateSheet` to fill each node's `det`.
 
     Raises:
-        None. Wiring validity (cycle / missing dep) is enforced later by `buildOrder` inside
-        `evaluateSheet`.
+        ValueError: if a preset id or horizon is outside its domain, or a user scenario is shorter
+            than the horizon. Wiring validity (cycle / missing dep) is enforced later by
+            `buildOrder` inside `evaluateSheet`.
 
     Example:
         >>> snap = buildSnapshot(Company("005930"))  # doctest: +SKIP
@@ -692,19 +696,31 @@ def buildScenarioSheet(snapshot: dict, *, scenario: str, horizon: int) -> Driver
         Dataflow: snapshot+scenario -> _SHEET_WIRING (register fn + add node per driver) -> sheet.
         TargetMarkets: KR presets (getPresetScenarios("KR")); US needs US presets.
     """
-    validateScenarioSpec(scenario, horizon)
     snap = dict(snapshot)
     snap["horizon"] = horizon
+    if isinstance(scenario, ScenarioPaths):
+        # simulate.assumptions.resolveScenarioPaths 가 해소한 경로. 프리셋이면 이름으로 다시 검증하고,
+        # 사용자 시나리오는 경로 길이를 본 뒤 macro root 가 읽도록 snapshot 에 붙인다.
+        scenarioId = scenario.name
+        if not scenario.isUser:
+            validateScenarioSpec(scenarioId, horizon)
+        elif horizon > scenario.maxHorizon:
+            raise ValueError(f"horizon={horizon} 이 사용자 시나리오 {scenarioId!r} 의 경로 길이를 넘습니다")
+        else:
+            snap["userScenario"] = scenario
+    else:
+        validateScenarioSpec(scenario, horizon)
+        scenarioId = scenario
     sheet = DriverSheet(snapshot=snap)
     for driverId, deps, fnKey, fn in _SHEET_WIRING:
         sheet.registry[fnKey] = fn
         sheet.add(
             DriverNode(
-                nodeIdFor(driverId, scenario),
+                nodeIdFor(driverId, scenarioId),
                 driverId,
-                scenario,
+                scenarioId,
                 "all",
-                tuple(nodeIdFor(dep, scenario) for dep in deps),
+                tuple(nodeIdFor(dep, scenarioId) for dep in deps),
                 fnKey,
             )
         )

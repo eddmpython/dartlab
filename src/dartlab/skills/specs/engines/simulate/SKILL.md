@@ -16,12 +16,15 @@ whenToUse:
   - 조건부 DCF
 inputs:
   - stockCode 또는 회사명
-  - scenario
+  - scenario (프리셋 id 또는 사용자 시나리오 dict)
+  - overrides (드라이버 override dict)
   - horizon
   - asOf
 outputs:
   - SimulationResult
   - scenarioName
+  - scenarioKind와 scenarioBase
+  - macroPaths
   - revenuePath
   - marginPath
   - fcfPath
@@ -54,6 +57,7 @@ expectedOutputs:
   - 기준 재무 기간과 데이터 품질
   - base와 stress의 조건부 경로 차이
   - 노드별 provenance와 gap
+  - 사용자 시나리오가 바꾼 거시 경로와 override, 그 값이 가정 원장에 남았는지
   - strategies 축의 프리셋별 리더, 리더 역전, 취약 프리셋, 추천이 닫힌 이유
 runtimeCompatibility:
   server:
@@ -72,6 +76,8 @@ failureModes:
   - partial 상태의 None을 0으로 바꿈
   - 서로 다른 asOf 실행의 inputsHash를 직접 비교함
   - 시나리오 가정과 실제 관측값을 구분하지 않음
+  - 사용자 시나리오나 override를 프리셋 결과처럼 표현함
+  - 금리를 소수(0.035)로 넣는 등 단위를 틀린 채 범위 오류를 우회하려 함
 forbidden:
   - 조건부 시뮬레이션을 예측 확정값으로 표현하지 않는다.
   - partial과 data gap을 숨기거나 0으로 대체하지 않는다.
@@ -81,11 +87,14 @@ examples:
   - 금리 충격이 매출과 FCF 경로에 미치는 영향
   - 2024년 기준 3년 조건부 DCF 스트레스 테스트
   - 삼성전자 유지, 증설, 부채 축소 전략이 프리셋마다 어떻게 갈리는지 비교
+  - 기준금리를 5%로 올리면 삼성전자 WACC와 주당 DCF가 어떻게 바뀌는지
+  - WACC를 12%로 두고 5년 저성장 경로를 직접 넣어 보기
 procedure:
   - ReadSkill 결과의 simulate 또는 Company.simulate 실행 계약을 선택한다.
   - 단일 회사는 EngineCall의 simulate apiRef에 target, scenario, horizon, asOf를 전달한다.
   - 결과의 quality, gaps, latestAsOf, assumptionLedger, node audit를 먼저 확인한다.
   - 비교 질문은 같은 target과 asOf를 유지하고 scenario만 바꿔 각각 실행한다.
+  - 사용자가 직접 가정을 말하면 프리셋에 끼워 맞추지 않고 scenario dict나 overrides로 넘긴다.
   - 값과 기간마다 valueRef, dateRef, executionRef를 답변 문장에 직접 연결한다.
 linkedSkills:
   - engines.macro
@@ -121,6 +130,29 @@ visualRefs:
 | `dcf` | proforma, WACC | 연도별 시나리오 WACC로 FCFF 할인 |
 
 금리 충격은 WACC 경로를 통해 주당 DCF를 움직인다. 마진 경로는 proforma 영업이익에 충격으로 반영되어 FCF를 움직인다.
+
+## 사용자 가정: 시나리오 경로와 드라이버 override
+
+프리셋 다섯 개 밖의 가정은 사용자가 직접 넣는다. 두 입력 모두 scenario 축에서만 받는다.
+
+- 사용자 시나리오: `scenario`에 dict를 넘긴다. 키는 `name`, `base`, `gdp`, `rate`, `fx`다. `base` 프리셋(기본 `baseline`)의 경로 중 준 변수만 바꾼다. GDP 성장률과 기준금리는 %, 환율은 원달러 수준이다. 세 경로를 모두 주면 프리셋 길이 3년을 넘어 10년까지 펼칠 수 있다.
+- 드라이버 override: `overrides`에 dict를 넘긴다. `baseWacc`, `terminalGrowth`, `baseMargin`은 %, `revenueToGdp`, `revenueToFx`, `marginToGdp`, `nimToRate`는 업종 탄성 단위다. 정한 값이 대신한 기본값 가정은 `assumptions`에서 빠진다.
+- 검증: 모르는 키, 숫자가 아닌 값, 범위 밖 값(금리 0~30%, GDP -30~30%, 환율 100~10,000 등), horizon보다 짧은 경로, 프리셋과 같은 `name`은 실행 전에 `AssumptionInputError`로 실패한다. 조용히 자르거나 보정하지 않는다.
+- 추적: 결과의 `scenarioKind`는 `user`, `scenarioBase`는 바꾸지 않은 경로의 출처 프리셋이다. `macroPaths`는 실제로 쓴 세 경로다. 바꾼 root node는 provenance `user:{name}`, ref `user:scenario/{name}#{variable}`을 남기고, `assumptionLedger`에 `source="user"` 행이 `appliedToDriverSheet=True`로 남는다. 바꾸지 않은 root는 같은 프리셋 node와 inputsHash가 같다.
+
+```python
+shock = dartlab.simulate("005930", scenario={"name": "rateShock", "rate": [5.0, 5.5, 5.5]})
+shock.scenarioKind, shock.macroPaths["rate"], shock.waccPath, shock.dcfPerShare
+
+slow = dartlab.simulate(
+    "005930",
+    scenario={"name": "slowDecade", "gdp": [1.0] * 5, "rate": [3.0] * 5, "fx": [1450.0] * 5},
+    horizon=5,
+    overrides={"baseWacc": 12.0, "terminalGrowth": 2.0},
+)
+```
+
+2026-09-29 삼성전자 실측에서 baseline은 WACC 13%, 주당 DCF 79,783원이었다. 기준금리를 5.0, 5.5, 5.5%로 올린 사용자 시나리오는 매출 경로를 그대로 두고 WACC를 14.25~14.5%로 올려 주당 DCF를 71,240원으로 낮췄다. 모두 가정에 조건부인 계산값이다.
 
 ## strategies 축: 조건부 전략 비교
 
@@ -173,6 +205,20 @@ company_result = c.simulate(scenario="adverse", horizon=3, asOf="2024")
 }
 ```
 
+사용자 가정도 같은 계약에 JSON 객체로 넘긴다.
+
+```json
+{
+  "apiRef": "simulate",
+  "args": {
+    "target": "005930",
+    "scenario": {"name": "rateShock", "base": "baseline", "rate": [5.0, 5.5, 5.5]},
+    "overrides": {"baseWacc": 12.0},
+    "horizon": 3
+  }
+}
+```
+
 ## 호출 동작
 
 1. target을 KR Company로 해소하고 지원하지 않는 시장과 시나리오를 차단한다.
@@ -188,6 +234,9 @@ company_result = c.simulate(scenario="adverse", horizon=3, asOf="2024")
 ```text
 SimulationResult
   scenarioName: str
+  scenarioKind: preset | user
+  scenarioBase: str
+  macroPaths: dict[gdp | rate | fx, list[float]]
   horizon: int
   latestAsOf: str | None
   revenuePath: list[float | None]

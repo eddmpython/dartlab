@@ -56,9 +56,10 @@ def simulate(
     target: str,
     code: str | None = None,
     *,
-    scenario: str | None = None,
+    scenario: str | dict | None = None,
     horizon: int = 3,
     asOf: str | None = None,
+    overrides: dict | None = None,
 ) -> SimulationResult | Any:
     """한 회사에 시나리오 하나를 결정론적으로 돌려 시나리오-조건부 경로·가치를 낸다 (시뮬레이터 엔진).
 
@@ -82,12 +83,19 @@ def simulate(
             축을 생략하면 ``scenario`` 축이다.
         code: ``target`` 이 축일 때의 종목코드("005930") 또는 한글 회사명("삼성전자"). 현재
             KR(DART) 전용 - 미국 ticker 는 `ValueError` (매크로 프리셋이 KR 기준이라 차단).
-        scenario: ``scenario`` 축의 시나리오 id - ``synth.scenario.getPresetScenarios("KR")`` 의 키
-            (예: ``"baseline"``, ``"adverse"``). 생략하면 ``"baseline"``. ``strategies`` 축은 모든
-            프리셋을 비교하므로 받지 않는다.
-        horizon: 예측 연수 (기본 3). 선택한 프리셋의 실제 경로 길이를 넘길 수 없다.
+        scenario: ``scenario`` 축의 프리셋 id(``synth.scenario.getPresetScenarios("KR")`` 의 키, 예:
+            ``"baseline"``, ``"adverse"``) 또는 사용자 시나리오 dict. 사용자 시나리오는
+            ``{"name": "rateShock", "base": "baseline", "rate": [5.0, 5.5, 5.5]}`` 처럼 ``base``
+            프리셋의 ``gdp``, ``rate``, ``fx`` 경로 중 준 것만 바꾼다. 생략하면 ``"baseline"``.
+            ``strategies`` 축은 모든 프리셋을 비교하므로 받지 않는다.
+        horizon: 예측 연수 (기본 3). 프리셋은 프리셋 경로 길이까지, 세 경로를 모두 준 사용자
+            시나리오는 10년까지다.
         asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 현재는 기간 단위 PIT이며 공시 접수일
             vintage 복원은 지원하지 않는다.
+        overrides: 드라이버 override dict. ``baseWacc``, ``terminalGrowth``, ``baseMargin`` (%),
+            ``revenueToGdp``, ``revenueToFx``, ``marginToGdp``, ``nimToRate`` (업종 탄성 단위) 중
+            일부를 바꾼다. 적용한 값은 결과 ``assumptionLedger`` 에 ``source="user"`` 로 남는다.
+            ``strategies`` 축은 아직 받지 않는다.
 
     Returns:
         SimulationResult: ``scenario`` 축. 시나리오 매출·마진·FCF·WACC 경로 + dcf 주당가치 +
@@ -95,9 +103,9 @@ def simulate(
         StrategyComparison: ``strategies`` 축. 필드 상세는 `StrategyComparison`.
 
     Raises:
-        TypeError: scenario 또는 horizon 타입이 잘못됐을 때.
-        ValueError: KR 이 아닌 회사, 코드를 회사로 해소하지 못했거나 축/scenario/horizon/asOf 가
-            지원 범위 밖일 때.
+        TypeError: scenario, horizon, overrides 타입이 잘못됐을 때.
+        ValueError: KR 이 아닌 회사, 코드를 회사로 해소하지 못했거나 축/scenario/horizon/overrides/
+            asOf 가 지원 범위 밖일 때. 사용자 가정 오류는 ``AssumptionInputError`` 다.
 
     Example:
         >>> import dartlab
@@ -110,6 +118,10 @@ def simulate(
         >>> plan = dartlab.simulate("strategies", "005930")  # doctest: +SKIP
         >>> plan.decisionStatus, plan.recommendation  # doctest: +SKIP
         ('conditionalOnly', None)
+        >>> shock = dartlab.simulate("005930", scenario={"name": "rateShock", "rate": [5.0, 5.5, 5.5]})  # doctest: +SKIP
+        >>> shock.scenarioKind, shock.waccPath[-1] > r.waccPath[-1]  # doctest: +SKIP
+        ('user', True)
+        >>> tight = dartlab.simulate("005930", overrides={"baseWacc": 11.0})  # doctest: +SKIP
 
     Guide:
         시나리오 비교는 같은 회사에 시나리오마다 한 번씩 호출한다 (baseline vs adverse 는 매크로
@@ -158,4 +170,4 @@ def simulate(
             f"simulate 는 현재 KR(DART) 전용입니다 - '{code}' (market={market!r}) 은(는) 지원하지 "
             "않습니다. US 매크로 프리셋 합류 전까지 차단."
         )
-    return company.simulate(axis, scenario=scenario, horizon=horizon, asOf=asOf)
+    return company.simulate(axis, scenario=scenario, horizon=horizon, asOf=asOf, overrides=overrides)
