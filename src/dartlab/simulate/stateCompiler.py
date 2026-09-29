@@ -52,7 +52,9 @@ OBSERVATION_BATCH_EXECUTABLE_HASH = sha256(b"dartlab.provider-observation-batch-
 PIT_STATE_RULE_ID = "compiled-point-in-time-state"
 PIT_STATE_RULE_VERSION = "1"
 PIT_STATE_RULE_HASH = sha256(b"dartlab.compiled-point-in-time-state.v1").hexdigest()
-PIT_STATE_EXECUTABLE_HASH = sha256(b"dartlab.point-in-time-state-compiler.v1").hexdigest()
+# v2: 공시일 신선도에 더해 상태가 묘사하는 기간도 staleness 한도 안이어야 한다. v1 이 발급한 상태
+# receipt 는 되감긴 옛 상태를 받아들였을 수 있어 v2 검증을 통과하지 않는다.
+PIT_STATE_EXECUTABLE_HASH = sha256(b"dartlab.point-in-time-state-compiler.v2").hexdigest()
 STATE_SELECTION_RULE_ID = "latest-event-then-revision-v1"
 STATE_CUTOFF_POLICY_ID = "date-only-same-day-conditional-v1"
 PROVIDER_OBSERVATION_BATCH_SCHEMA = "provider-observation-batch-v1"
@@ -593,9 +595,15 @@ def compilePointInTimeState(
         if len({item.observationId for item in tied}) != 1:
             raise StateCompilerError(f"ambiguous state observation revision: {variable.variableId}")
         selected = ordered[-1]
-        age = (_dateValue(decision, "decisionAsOf") - _dateValue(selected.availableAt, "availableAt")).days
+        decisionDate = _dateValue(decision, "decisionAsOf")
+        age = (decisionDate - _dateValue(selected.availableAt, "availableAt")).days
         if age > variable.maxStalenessDays:
             raise StateCompilerError(f"required state observation is stale: {variable.variableId}")
+        # 공시일만 보면 옛 기간을 뒤늦게 다시 실은 증거가 신선해 보인다. 상태는 그 상태가 묘사하는
+        # 기간도 같은 한도 안이어야 현재 상태로 쓴다. 과거 후보로 되감긴 상태가 exact 로 통과하지 않는다.
+        periodAge = (decisionDate - _dateValue(selected.eventAt, "eventAt")).days
+        if periodAge > variable.maxStalenessDays:
+            raise StateCompilerError(f"required state observation describes a stale period: {variable.variableId}")
         number = float(selected.value)
         if variable.lower is not None and number < variable.lower:
             raise StateCompilerError(f"state value is below its bound: {variable.variableId}")

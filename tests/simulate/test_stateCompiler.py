@@ -22,6 +22,7 @@ from dartlab.simulate.stateCompiler import (
     issueProviderObservationBatch,
     makeVariableObservation,
     validateCompiledPointInTimeState,
+    validatePointInTimeStateReceipt,
     validateProviderObservationBatch,
 )
 from dartlab.simulate.stateVariables import StateVariableSpec, buildStateVariableRegistry
@@ -231,6 +232,26 @@ def testMissingStaleAndMeaningDriftFailClosed(tmp_path) -> None:
         _batch((drifted,))
 
 
+def testRefiledOldPeriodIsStaleEvenWhenAvailabilityIsRecent(tmp_path) -> None:
+    """옛 기간을 뒤늦게 다시 실은 증거는 공시일이 최근이어도 현재 상태로 쓰지 않는다.
+
+    2025-02-01 판단에서 한도 400일은 2023-12-29 기간까지 허용하고 하루 전 기간은 거부한다.
+    """
+
+    context = _context(tmp_path)
+    source = _sourceReceipt(context, b"source")
+    registry = buildStateVariableRegistry((_variableSpec(),))
+
+    with pytest.raises(StateCompilerError, match="stale period"):
+        compilePointInTimeState(registry, (_batch((_observation(source, eventAt="20231228"),)),), _compileSpec())
+    boundary = compilePointInTimeState(
+        registry,
+        (_batch((_observation(source, eventAt="20231229"),)),),
+        _compileSpec(),
+    )
+    assert boundary.statePrimitives[0].value == 100.0
+
+
 def testExactCompleteBatchAndStateReceiptRoundTrip(tmp_path) -> None:
     context = _context(tmp_path)
     registryPath, artifacts, privateBytes, trusted = context
@@ -269,6 +290,20 @@ def testExactCompleteBatchAndStateReceiptRoundTrip(tmp_path) -> None:
     assert issued.admissionStatus == "admitted"
     receipt = validateCompiledPointInTimeState(issued, verifier)
     assert receipt.parentReceiptIds == (signedBatch.batchReceiptId,)
+    fields = {
+        "statePrimitives": issued.statePrimitives,
+        "asOf": issued.decisionAsOf,
+        "knowledgeAsOf": issued.knowledgeAsOf,
+        "decisionAsOf": issued.decisionAsOf,
+        "stateCompilationContractHash": issued.stateCompilationContractHash,
+        "stateManifestHash": issued.manifestHash,
+        "stateReceiptId": issued.stateReceiptId,
+        "admissionVerifier": verifier,
+    }
+    # 직접 검증은 manifest 를 현재 규칙으로 다시 컴파일한다. 계약 hash 가 다르면 통과하지 않는다.
+    assert validatePointInTimeStateReceipt(**fields).receiptId == receipt.receiptId
+    with pytest.raises(StateCompilerError):
+        validatePointInTimeStateReceipt(**{**fields, "stateCompilationContractHash": sha256(b"other").hexdigest()})
 
 
 def testWorldStateCanOnlyUseCompiledValuesAndMeaning(tmp_path) -> None:

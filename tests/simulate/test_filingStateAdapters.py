@@ -233,6 +233,58 @@ def testEdgarSameDayFilingCannotBecomeExactEvenWithSourceReceipt(tmp_path) -> No
         )
 
 
+def testRewoundOldPeriodWithRefiledComparativesCannotCompileExact(tmp_path) -> None:
+    """최신 흐름이 깨져 옛 후보로 되감긴 상태는 비교 공시가 최근이어도 exact 가 될 수 없다.
+
+    옛 분기의 흐름을 최신 접수가 비교 수치로 다시 실으면 batch availableAt 은 최근이 된다.
+    공시일만 보는 신선도 검사는 이 상태를 통과시켰다. 상태가 묘사하는 기간이 한도 밖이면 거부한다.
+    """
+
+    context = _context(tmp_path)
+    registryPath, artifacts, privateBytes, trusted = context
+    old = _filing("old", "2023-02-01", "2022-12-31")
+    latest = _filing("latest", "2025-01-30", "2024-12-31").filter(pl.col("tag") != "OperatingIncomeLoss")
+    comparatives = _filing("latest", "2025-01-30", "2022-12-31").filter(pl.col("start").is_not_null())
+    facts = pl.concat([old, latest, comparatives])
+    unsigned = buildEdgarQuarterlyFinancialObservationBatch(facts, entityId="AAPL", decisionAsOf="20250201")
+    assert unsigned.compiled.fiscalThrough == "20221231"
+    assert unsigned.compiled.warnings == ("latestIncompleteFiling:20241231",)
+    assert unsigned.batch.observations[0].availableAt == "20250130"
+    sourceReceipt = issueEdgarQuarterlyFinancialSource(
+        unsigned.sourceArtifact,
+        registryPath,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="source-issuer",
+        issuerKeyId="source-key",
+        issuedAt="20250201T000000Z",
+        trustedIssuers=trusted,
+    )
+    exactBatch = buildEdgarQuarterlyFinancialObservationBatch(
+        facts,
+        entityId="AAPL",
+        decisionAsOf="20250201",
+        sourceReceipt=sourceReceipt,
+    ).batch
+    signedBatch = issueProviderObservationBatch(
+        exactBatch,
+        registryPath,
+        artifacts,
+        privateKey=privateBytes,
+        issuerId="source-issuer",
+        issuerKeyId="source-key",
+        issuedAt="20250201T000000Z",
+        trustedIssuers=trusted,
+    )
+    with pytest.raises(StateCompilerError, match="stale period"):
+        compilePointInTimeState(
+            buildEdgarQuarterlyFinancialStateRegistry(),
+            (signedBatch,),
+            _compileSpec(requireExact=True),
+            admissionVerifier=AdmissionVerifier(registryPath, artifacts, trusted),
+        )
+
+
 def testMismatchedEdgarSourceReceiptIsRejectedBeforeBatchBuild(tmp_path) -> None:
     context = _context(tmp_path)
     registryPath, artifacts, privateBytes, trusted = context
