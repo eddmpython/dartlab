@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`dartlab.simulate("strategies", code)` 조건부 전략 비교.** 한 회사의 현재 재무 상태에서 유지, 증설, 부채 축소 전략을 모든 KR 프리셋의 같은 경로 위에 굴려 프리셋별 리더, 리더가 뒤집히는 프리셋, 결정이 가장 쉽게 뒤집히는 프리셋을 낸다. 전이 계수와 전략이 명시 가정이라 결과는 항상 조건부이고 추천은 없다. 기존 `dartlab.simulate(code, scenario=...)` 호출은 그대로 `scenario` 축이다.
 
+### Fixed
+
+- **EDGAR 과거 시점 재무 상태 컴파일.** 2021년 이전 10-K 의 분기 주석이 분기 매출만 같은 값으로 다시 싣는 filer 에서 과거 cutoff 상태가 접수 불일치로 실패하던 문제를 고쳤다. 값이 같을 때만 매출 증거를 영업이익과 같은 접수 lineage 에서 다시 읽고, 값이 다르면 지금처럼 실패한다. AAPL 정기 공시일 69개 cutoff 중 exact 상태가 22개에서 66개로 늘었다. 선택 규칙이 바뀌어 EDGAR feature normalization hash 가 바뀌므로 이전 규칙으로 만든 로컬 generation 은 다시 만들어진다.
+
 ## [0.11.0] - 2026-08-11
 
 공개 호출계약을 고정하는 것을 목표로 한다. 새 기능을 얹기보다 표면을 확정하고 그 표면이 실제로 도는지 증명하는 데 무게를 둔다. 계약은 `dartlab.{engine}("{axis}", ...)` 와 `Company` 파사드 둘뿐이다.

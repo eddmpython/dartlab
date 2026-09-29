@@ -158,6 +158,15 @@ _OPERATING_PROFIT_TAGS = ("OperatingIncomeLoss",)
 _GROSS_PROFIT_TAGS = ("GrossProfit",)
 _OPERATING_EXPENSE_TAGS = ("OperatingExpenses",)
 _TOTAL_COSTS_TAGS = ("CostsAndExpenses",)
+# 4분기 잔차 유도 두 경로의 근거 문장이다. 잔차 evidence 의 derivation 에 그대로 남고,
+# lineage 재정렬이 유도 입력을 "첫 항에서 나머지를 뺀다" 로 해석해도 되는지 판정하는 기준이다.
+_Q4_FROM_YEAR_TO_DATE = "annual minus nine-month year-to-date flow"
+_Q4_FROM_FIRST_THREE_QUARTERS = "annual minus first three standalone fiscal quarters"
+_Q4_RESIDUAL_DERIVATIONS = frozenset({_Q4_FROM_YEAR_TO_DATE, _Q4_FROM_FIRST_THREE_QUARTERS})
+# 개념별 최신 선택이 서로 다른 filing 을 가리킬 때의 재정렬 규칙 identity 다. 같은 개념 태그군,
+# 같은 기간, 같은 값일 때만 상대 개념의 filing lineage 에서 다시 읽는다. 선택 결과를 바꾸는
+# 규칙이므로 selection digest 에 결박한다.
+_FLOW_LINEAGE_ALIGNMENT_RULE = "sameConceptSamePeriodSameValue-v1"
 
 
 def _tagRuleDigest(payload: object) -> str:
@@ -173,7 +182,10 @@ def flowSelectionRuleDigest() -> str:
         매출과 영업이익 태그 우선순위를 계약 identity로 노출한다.
 
     Returns:
-        태그 목록과 순서를 결박한 SHA-256 hex digest.
+        태그 목록과 순서, lineage 재정렬 규칙을 결박한 SHA-256 hex digest.
+
+    Raises:
+        없음. 모듈 상수만 직렬화한다.
 
     Example:
         ``digest = flowSelectionRuleDigest()``.
@@ -197,6 +209,7 @@ def flowSelectionRuleDigest() -> str:
                 "operatingExpenses": list(_OPERATING_EXPENSE_TAGS),
                 "totalCosts": list(_TOTAL_COSTS_TAGS),
             },
+            "lineageAlignment": _FLOW_LINEAGE_ALIGNMENT_RULE,
         }
     )
 
@@ -209,6 +222,9 @@ def stateSelectionRuleDigest() -> str:
 
     Returns:
         stock과 flow 태그 규칙 전체를 결박한 SHA-256 hex digest.
+
+    Raises:
+        없음. 모듈 상수만 직렬화한다.
 
     Example:
         ``digest = stateSelectionRuleDigest()``.
@@ -233,6 +249,7 @@ def stateSelectionRuleDigest() -> str:
                     "operatingExpenses": list(_OPERATING_EXPENSE_TAGS),
                     "totalCosts": list(_TOTAL_COSTS_TAGS),
                 },
+                "lineageAlignment": _FLOW_LINEAGE_ALIGNMENT_RULE,
             },
             "stock": {key: list(value) for key, value in _STOCK_TAGS.items()},
             "stockAnchors": list(_STOCK_ANCHOR_CONCEPTS),
@@ -870,7 +887,7 @@ def _q4FromYearToDate(
         form=annual.form,
         tag=f"{annual.tag}:Q4Residual",
         status="derived",
-        derivation="annual minus nine-month year-to-date flow",
+        derivation=_Q4_FROM_YEAR_TO_DATE,
         derivationInputs=tuple(
             f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in (annual, ytd)
         ),
@@ -925,7 +942,7 @@ def _q4FromFirstThreeQuarters(
         form=annual.form,
         tag=f"{annual.tag}:Q4Residual",
         status="derived",
-        derivation="annual minus first three standalone fiscal quarters",
+        derivation=_Q4_FROM_FIRST_THREE_QUARTERS,
         derivationInputs=tuple(
             f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}" for item in (annual, *firstThree)
         ),
@@ -943,6 +960,156 @@ def _lineageAccessions(item: FactEvidence) -> tuple[str, ...]:
     if not item.derivationInputs:
         return (item.accession,)
     return tuple(sorted({entry.split("|", 1)[0] for entry in item.derivationInputs}))
+
+
+def _anchorComponents(anchor: FactEvidence) -> tuple[tuple[str, str, str], ...] | None:
+    """기준 관측이 기대는 (접수, 회계 시작, 회계 끝) 구성요소를 순서대로 돌려준다.
+
+    Args:
+        anchor: lineage 를 빌려 줄 분기 흐름 관측.
+
+    Returns:
+        첫 항이 피감수이고 나머지가 감수인 구성요소 목록. 관측값과 한 접수 안의 구성요소
+        유도값은 자기 분기 하나만 가진다. 해석할 수 없으면 ``None``.
+
+    Raises:
+        없음. 해석할 수 없는 유도 입력은 ``None`` 으로 거절한다.
+
+    Example:
+        ``_anchorComponents(operatingItem)`` 이 4분기 잔차면 연간과 누계 두 구성요소를 준다.
+    """
+
+    if anchor.derivation not in _Q4_RESIDUAL_DERIVATIONS:
+        if anchor.fiscalStart is None:
+            return None
+        return ((anchor.accession, anchor.fiscalStart, anchor.fiscalEnd),)
+    components = []
+    for entry in anchor.derivationInputs:
+        parts = entry.split("|")
+        if len(parts) != 4 or parts[2] in ("", "None"):
+            return None
+        components.append((parts[0], parts[2], parts[3]))
+    return tuple(components) if len(components) >= 2 else None
+
+
+def _flowConceptTags(conceptId: str) -> tuple[str, ...] | None:
+    """분기 흐름 개념 id 의 우선순위 태그 목록을 돌려준다. 재정렬 대상이 아니면 ``None``."""
+
+    if conceptId == "revenueQuarter":
+        return _REVENUE_TAGS
+    if conceptId == "operatingProfitQuarter":
+        return _OPERATING_PROFIT_TAGS
+    return None
+
+
+def _realignFlowEvidence(pit: pl.DataFrame, target: FactEvidence, anchor: FactEvidence) -> FactEvidence | None:
+    """target 개념을 anchor 의 filing lineage 에서 다시 읽고 값이 같을 때만 돌려준다.
+
+    Args:
+        pit: 지식 시점으로 절단한 정규화 facts.
+        target: 개념별 최신 선택으로 고른 관측. 값의 기준이다.
+        anchor: 같은 분기의 상대 개념 관측. lineage 의 기준이다.
+
+    Returns:
+        anchor 와 같은 접수 집합에 기대는 target 개념 관측. 구성요소마다 그 접수 안의 최우선
+        태그가 한 값으로 있고, 합성한 값이 최신 선택과 같을 때만 돌려준다. 아니면 ``None``.
+
+    Raises:
+        없음. 조건이 하나라도 어긋나면 ``None`` 을 돌려 호출자의 기존 검증이 실패시킨다.
+
+    Example:
+        ``_realignFlowEvidence(pit, revenueItem, operatingItem)``.
+
+    Guide:
+        10-K 분기 주석처럼 한 개념만 다시 보고한 filing 이 개념별 최신 선택을 서로 다른 접수로
+        갈라놓는 경우를 푼다. 주석이 더 높은 우선순위 태그로 다시 보고해도 같은 개념이다.
+        구성요소별 태그 선택은 기존 4분기 잔차 유도와 같은 규약이다. 값은 최신 선택과 같아야
+        하므로 상태 값은 바뀌지 않고 증거의 접수 귀속만 한 lineage 로 모인다. 값이 다르면 실제
+        개정이라 재정렬하지 않는다. 최우선 태그 값이 다르면 하위 태그에서 맞는 값을 찾지 않는다.
+    """
+
+    tags = _flowConceptTags(target.conceptId)
+    if tags is None or "-" in target.tag:
+        return None
+    components = _anchorComponents(anchor)
+    if components is None:
+        return None
+    rows: list[dict] = []
+    for accession, start, end in components:
+        frame = pit.filter(
+            pl.col("tag").is_in(list(tags))
+            & (pl.col("accn") == accession)
+            & (pl.col("__start") == start)
+            & (pl.col("__end") == end)
+            & (pl.col("unit") == target.unit)
+        )
+        present = set(frame["tag"].to_list())
+        tag = next((candidate for candidate in tags if candidate in present), None)
+        if tag is None:
+            return None
+        tagged = frame.filter(pl.col("tag") == tag)
+        if tagged["__value"].n_unique() != 1:
+            return None
+        rows.append(tagged.row(0, named=True))
+    value = float(rows[0]["__value"]) - sum(float(row["__value"]) for row in rows[1:])
+    if not math.isclose(value, target.value, rel_tol=0.0, abs_tol=0.5):
+        return None
+    if len(rows) == 1:
+        return _rawEvidence(target.conceptId, rows[0], kind="flowQuarter")
+    return FactEvidence(
+        conceptId=target.conceptId,
+        value=value,
+        unit=target.unit,
+        currency=target.currency,
+        kind="flowQuarter",
+        fiscalStart=anchor.fiscalStart,
+        fiscalEnd=anchor.fiscalEnd,
+        filedAt=anchor.filedAt,
+        accession=anchor.accession,
+        form=anchor.form,
+        tag=f"{rows[0]['tag']}:Q4Residual",
+        status="derived",
+        derivation=anchor.derivation,
+        derivationInputs=tuple(f"{row['accn']}|{row['tag']}|{row['__start']}|{row['__end']}" for row in rows),
+    )
+
+
+def _coherentFlowPair(
+    pit: pl.DataFrame,
+    revenueItem: FactEvidence,
+    operatingItem: FactEvidence,
+) -> tuple[FactEvidence, FactEvidence]:
+    """개념별 최신 선택이 다른 filing 으로 갈라지면 값이 같은 한 lineage 로 다시 맞춘다.
+
+    Args:
+        pit: 지식 시점으로 절단한 정규화 facts.
+        revenueItem: 분기 매출 최신 선택.
+        operatingItem: 같은 분기 영업이익 최신 선택.
+
+    Returns:
+        같은 접수와 같은 lineage 를 공유하는 매출과 영업이익 쌍. 맞출 수 없으면 입력 그대로다.
+
+    Raises:
+        없음. 맞추지 못한 쌍은 호출자의 accession, lineage 검증이 그대로 실패시킨다.
+
+    Example:
+        ``revenueItem, operatingItem = _coherentFlowPair(pit, revenue[end], operating[end])``.
+
+    Requires:
+        재정렬 결과의 값은 최신 선택과 같아야 한다. 동일 accession lineage 요구는 낮추지 않는다.
+    """
+
+    if revenueItem.accession == operatingItem.accession and _lineageAccessions(revenueItem) == _lineageAccessions(
+        operatingItem
+    ):
+        return revenueItem, operatingItem
+    realignedRevenue = _realignFlowEvidence(pit, revenueItem, operatingItem)
+    if realignedRevenue is not None:
+        return realignedRevenue, operatingItem
+    realignedOperating = _realignFlowEvidence(pit, operatingItem, revenueItem)
+    if realignedOperating is not None:
+        return revenueItem, realignedOperating
+    return revenueItem, operatingItem
 
 
 def _componentDerivedOperatingProfit(
@@ -1115,8 +1282,7 @@ def _compileQuarterWindow(pit: pl.DataFrame, fiscalThrough: str) -> tuple[Quarte
         raise EdgarStateError("TTM quarters do not form one fiscal year")
     flows: list[QuarterFlow] = []
     for end in reversed(commonEnds):
-        revenueItem = revenue[end]
-        operatingItem = operating[end]
+        revenueItem, operatingItem = _coherentFlowPair(pit, revenue[end], operating[end])
         if revenueItem.accession != operatingItem.accession:
             raise EdgarStateError(f"quarter flow concepts do not share one accession: {end}")
         if revenueItem.fiscalStart != operatingItem.fiscalStart:

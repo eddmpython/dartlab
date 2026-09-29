@@ -364,6 +364,17 @@ def testSelectionRuleDigestIsOrderSensitive(monkeypatch: pytest.MonkeyPatch) -> 
     assert edgarPitState.flowSelectionRuleDigest() != baseline
 
 
+def testSelectionRuleDigestBindsLineageAlignmentRule(monkeypatch: pytest.MonkeyPatch) -> None:
+    """lineage 재정렬 규칙도 선택 결과를 바꾸므로 두 계약 identity 에 결박된다."""
+
+    baselineFlow = edgarPitState.flowSelectionRuleDigest()
+    baselineState = edgarPitState.stateSelectionRuleDigest()
+    monkeypatch.setattr(edgarPitState, "_FLOW_LINEAGE_ALIGNMENT_RULE", "noRealignment")
+
+    assert edgarPitState.flowSelectionRuleDigest() != baselineFlow
+    assert edgarPitState.stateSelectionRuleDigest() != baselineState
+
+
 def testFlowAndStateNormalizationHashesAreDistinct() -> None:
     """흐름 전용 계약과 전체 재무상태 계약을 같은 identity로 섞지 않는다."""
 

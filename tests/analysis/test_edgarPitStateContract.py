@@ -168,6 +168,118 @@ def testFlowCompilerFallsBackOnlyToLatestCoherentFourQuarterWindow() -> None:
         )
 
 
+def _flowRow(tag: str, value: float, *, start: str, end: str, accn: str, filed: str, form: str = "10-Q") -> dict:
+    """분기 흐름 fact 한 행을 만든다."""
+
+    return {
+        "namespace": "us-gaap",
+        "tag": tag,
+        "unit": "USD",
+        "val": value,
+        "form": form,
+        "filed": filed,
+        "start": start,
+        "end": end,
+        "accn": accn,
+    }
+
+
+def _revenueNote(base: pl.DataFrame, *, alteredEnd: str | None = None) -> pl.DataFrame:
+    """10-Q 분기 매출만 같은 기간으로 다시 싣는 뒤늦은 10-K 주석을 만든다."""
+
+    note = base.filter(
+        pl.col("start").is_not_null() & (pl.col("tag") == "RevenueFromContractWithCustomerExcludingAssessedTax")
+    ).with_columns(
+        pl.lit("annual-note").alias("accn"),
+        pl.lit("10-K").alias("form"),
+        pl.lit("2025-02-20").alias("filed"),
+    )
+    if alteredEnd is not None:
+        note = note.with_columns(
+            pl.when(pl.col("end") == alteredEnd).then(pl.lit(110.0)).otherwise(pl.col("val")).alias("val")
+        )
+    return note
+
+
+def testFlowLineageRealignsWhenLaterFilingRepeatsOnlyRevenue() -> None:
+    """10-K 주석이 분기 매출만 같은 값으로 다시 실어도 영업이익과 같은 접수로 컴파일한다."""
+
+    base = makeFiling().filter(pl.col("start").is_not_null())
+    compiled = owner.compileEdgarQuarterlyFlowState(
+        pl.concat([base, _revenueNote(base)]),
+        knowledgeAsOf="20250228",
+    )
+    reference = owner.compileEdgarQuarterlyFlowState(base, knowledgeAsOf="20250228")
+
+    assert compiled.ttmRevenue == reference.ttmRevenue == 400.0
+    assert {flow.revenue.accession for flow in compiled.quarters} == {"fixed"}
+    assert compiled.stateHash == reference.stateHash
+
+
+def testFlowLineageRefusesRealignmentWhenRepeatedValueDiffers() -> None:
+    """뒤늦은 주석 값이 다르면 실제 개정이다. 섞지 않고 기존 accession 검증으로 실패한다."""
+
+    base = makeFiling().filter(pl.col("start").is_not_null())
+    facts = pl.concat([base, _revenueNote(base, alteredEnd="2024-10-01")])
+
+    with pytest.raises(owner.EdgarStateError, match="share one accession: 20241001"):
+        owner.compileEdgarQuarterlyFlowState(facts, knowledgeAsOf="20250228", fiscalThrough="20241231")
+
+
+def makeFiscalYearWithAnnualNote(*, noteFourthQuarterRevenue: float = 100.0) -> pl.DataFrame:
+    """10-Q 세 개와 분기 매출 주석이 붙은 10-K 로 한 회계연도를 만든다.
+
+    10-K 는 연간 값과 분기 매출만 싣고 분기 영업이익은 싣지 않는다. 10-K 는 10-Q 보다 높은
+    우선순위 태그 ``Revenues`` 를 쓴다. 4분기 영업이익은 연간에서 9개월 누계를 빼서 유도된다.
+    """
+
+    quarters = (("2024-01-01", "2024-03-31"), ("2024-04-01", "2024-06-30"), ("2024-07-01", "2024-09-30"))
+    rows = []
+    for index, (start, end) in enumerate(quarters, start=1):
+        filing = {"accn": f"q{index}", "filed": (date.fromisoformat(end) + timedelta(days=30)).isoformat()}
+        rows.append(_flowRow("SalesRevenueNet", 100.0, start=start, end=end, **filing))
+        rows.append(_flowRow("OperatingIncomeLoss", 20.0, start=start, end=end, **filing))
+        if index == 3:
+            rows.append(_flowRow("SalesRevenueNet", 300.0, start="2024-01-01", end=end, **filing))
+            rows.append(_flowRow("OperatingIncomeLoss", 60.0, start="2024-01-01", end=end, **filing))
+    annual = {"accn": "annual", "filed": "2025-02-20", "form": "10-K"}
+    rows.append(_flowRow("Revenues", 400.0, start="2024-01-01", end="2024-12-31", **annual))
+    rows.append(_flowRow("OperatingIncomeLoss", 80.0, start="2024-01-01", end="2024-12-31", **annual))
+    for start, end in quarters:
+        rows.append(_flowRow("Revenues", 100.0, start=start, end=end, **annual))
+    rows.append(_flowRow("Revenues", noteFourthQuarterRevenue, start="2024-10-01", end="2024-12-31", **annual))
+    return pl.DataFrame(rows)
+
+
+def testFlowLineageRealignsNoteRevenueToDerivedFourthQuarterLineage() -> None:
+    """주석의 4분기 매출은 영업이익 잔차와 같은 연간과 누계 접수로 다시 유도된다."""
+
+    compiled = owner.compileEdgarQuarterlyFlowState(makeFiscalYearWithAnnualNote(), knowledgeAsOf="20250228")
+
+    assert compiled.fiscalThrough == "20241231"
+    assert compiled.ttmRevenue == 400.0
+    assert compiled.ttmOperatingProfit == 80.0
+    assert [flow.revenue.accession for flow in compiled.quarters[:3]] == ["q1", "q2", "q3"]
+    fourth = compiled.quarters[-1]
+    assert fourth.revenue.status == "derived"
+    assert fourth.revenue.derivation == fourth.operatingProfit.derivation == "annual minus nine-month year-to-date flow"
+    assert fourth.revenue.derivationInputs == (
+        "annual|Revenues|20240101|20241231",
+        "q3|SalesRevenueNet|20240101|20240930",
+    )
+    for flow in compiled.quarters:
+        assert owner._lineageAccessions(flow.revenue) == owner._lineageAccessions(flow.operatingProfit)
+
+
+def testFlowLineageRefusesDerivedRealignmentWhenResidualDiffers() -> None:
+    """연간에서 누계를 뺀 값이 주석 4분기 매출과 다르면 유도 lineage 로 맞추지 않는다."""
+
+    facts = makeFiscalYearWithAnnualNote(noteFourthQuarterRevenue=105.0)
+
+    with pytest.raises(owner.EdgarStateError, match="share one filing lineage: 20241231"):
+        owner.compileEdgarQuarterlyFlowState(facts, knowledgeAsOf="20250228", fiscalThrough="20241231")
+
+
 def testOwnerCompilerOutputMatchesCanonicalGolden() -> None:
     """최적화된 selector가 직렬화 evidence 필드와 순서를 모두 보존해야 한다."""
 

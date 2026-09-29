@@ -337,3 +337,21 @@ def testRealAaplAdapterBuildsQuarterlyStateWhenStoreIsInstalled() -> None:
     assert observations["financial.cash"].value == 45_572_000_000.0
     assert observations["financial.revenue"].availableAt <= "20260713"
     assert result.sourceArtifact.rowCount > len(result.compiled.evidence)
+
+
+def testRealAaplHistoricalOriginKeepsLatestQuarterDespiteAnnualNote() -> None:
+    """FY2018 10-K 분기 주석이 매출만 다시 실어도 과거 origin 이 최신 분기를 유지한다."""
+
+    path = Path("data/edgar/finance/0000320193.parquet")
+    if not path.exists():
+        pytest.skip("AAPL companyfacts store is not installed")
+    result = buildEdgarQuarterlyFinancialObservationBatch(
+        pl.read_parquet(path),
+        entityId="AAPL",
+        decisionAsOf="20181106",
+    )
+    observations = {item.signalId: item for item in result.batch.observations}
+    assert result.compiled.fiscalThrough == "20180929"
+    assert result.compiled.warnings == ()
+    assert observations["financial.revenue"].value == 62_900_000_000.0
+    assert observations["financial.revenue"].availableAt == "20181105"
