@@ -29,6 +29,7 @@ outputs:
   - dcfPerShare
   - node audit와 inputsHash
   - quality와 data gaps
+  - StrategyComparison (strategies 축)
 capabilityRefs:
   - simulate
   - Company.simulate
@@ -53,6 +54,7 @@ expectedOutputs:
   - 기준 재무 기간과 데이터 품질
   - base와 stress의 조건부 경로 차이
   - 노드별 provenance와 gap
+  - strategies 축의 프리셋별 리더, 리더 역전, 취약 프리셋, 추천이 닫힌 이유
 runtimeCompatibility:
   server:
     status: supported
@@ -66,6 +68,7 @@ runtimeCompatibility:
     status: limited
 failureModes:
   - dcfPerShare를 목표주가나 미래 보장으로 표현함
+  - strategies 축의 프리셋 리더를 투자 추천이나 경영 권고로 표현함
   - partial 상태의 None을 0으로 바꿈
   - 서로 다른 asOf 실행의 inputsHash를 직접 비교함
   - 시나리오 가정과 실제 관측값을 구분하지 않음
@@ -77,6 +80,7 @@ examples:
   - 삼성전자 baseline과 adverse 시나리오 비교
   - 금리 충격이 매출과 FCF 경로에 미치는 영향
   - 2024년 기준 3년 조건부 DCF 스트레스 테스트
+  - 삼성전자 유지, 증설, 부채 축소 전략이 프리셋마다 어떻게 갈리는지 비교
 procedure:
   - ReadSkill 결과의 simulate 또는 Company.simulate 실행 계약을 선택한다.
   - 단일 회사는 EngineCall의 simulate apiRef에 target, scenario, horizon, asOf를 전달한다.
@@ -117,6 +121,21 @@ visualRefs:
 | `dcf` | proforma, WACC | 연도별 시나리오 WACC로 FCFF 할인 |
 
 금리 충격은 WACC 경로를 통해 주당 DCF를 움직인다. 마진 경로는 proforma 영업이익에 충격으로 반영되어 FCF를 움직인다.
+
+## strategies 축: 조건부 전략 비교
+
+`dartlab.simulate("strategies", code)` 또는 `Company.simulate("strategies")`는 회사의 현재 재무 상태에서 전략 세 개를 모든 KR 프리셋의 같은 경로 위에 굴려 비교한다.
+
+- 전략: `hold`(감가상각만큼 유지 투자), `expand`(유지 투자의 1.5배), `deleverage`(현재 부채의 절반을 기간에 나눠 상환). 모두 명시 가정이다.
+- 경로: 프리셋의 GDP, 금리, 환율을 시나리오 축과 같은 업종 탄성으로 연간 수요, 마진, 차입금리 충격으로 옮긴다.
+- 실행: 감사된 재무 세계 실행기가 매년 회계 항등식을 닫으며 전개한다. 현금 음수와 부채 한도는 제약 위반으로 기록한다.
+- 판정: 프리셋마다 마지막 해 순현금이 가장 큰 실행 가능 전략을 리더로 두고, 2위와의 격차, 순현금과 부채의 Pareto 집합을 함께 낸다. `leaderReversal`, `reversalCases`, `fragileCase`가 리더가 뒤집히는 곳과 결정이 가장 쉽게 뒤집히는 프리셋을 가리킨다.
+- 한계: 결과는 항상 `conditionalOnly`, `recommendation`은 None이다. 전이 계수와 전략이 명시 가정이고 정책 평가 인증서가 없기 때문이며 `blockedReasons`에 그대로 남는다. AI 런타임 EngineCall 연결은 아직 없고 Python과 Company 경로에서 먼저 연다.
+
+```python
+comparison = dartlab.simulate("strategies", "005930", horizon=3)
+comparison.leaderByCase, comparison.fragileCase, comparison.blockedReasons
+```
 
 ## 공개 호출 방식
 

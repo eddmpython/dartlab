@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **시뮬레이터 금리·마진 채널 실연결.** `dartlab.simulate` 드라이버 시트가 GDP·금리·환율 노드와 매출·마진·WACC 채널 노드로 나뉘었다. 금리 충격은 연도별 WACC 경로로 주당 DCF를 움직이고, 마진 경로는 proforma 영업이익에 충격으로 반영된다. 결과에 `waccPath` 가 추가됐다.
 
+### Added
+
+- **`dartlab.simulate("strategies", code)` 조건부 전략 비교.** 한 회사의 현재 재무 상태에서 유지, 증설, 부채 축소 전략을 모든 KR 프리셋의 같은 경로 위에 굴려 프리셋별 리더, 리더가 뒤집히는 프리셋, 결정이 가장 쉽게 뒤집히는 프리셋을 낸다. 전이 계수와 전략이 명시 가정이라 결과는 항상 조건부이고 추천은 없다. 기존 `dartlab.simulate(code, scenario=...)` 호출은 그대로 `scenario` 축이다.
+
 ## [0.11.0] - 2026-08-11
 
 공개 호출계약을 고정하는 것을 목표로 한다. 새 기능을 얹기보다 표면을 확정하고 그 표면이 실제로 도는지 증명하는 데 무게를 둔다. 계약은 `dartlab.{engine}("{axis}", ...)` 와 `Company` 파사드 둘뿐이다.

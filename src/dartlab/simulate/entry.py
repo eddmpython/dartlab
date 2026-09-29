@@ -1,33 +1,65 @@
 """Callable `simulate` wrapper over `Company.simulate` (L3).
 
-`dartlab.simulate(code, scenario=..., horizon=..., asOf=...)` is the callable entry for
-the deterministic scenario-simulator core. It resolves the code to a `Company`, guards the
-KR-only macro presets, and delegates to the internal `simulate.run.runScenario` driver - mirroring
-how `dartlab.compare` wraps `panel.compare` (top-level verb, outside the Company facade).
+`dartlab.simulate` is the callable entry for the simulator. It has two axes:
 
-This is the deterministic subset only (`scenario` + `horizon` + `asOf`). The current
-Company surface attaches representative lens products as explicit context while keeping the
-DriverSheet deterministic. Multi-driver overrides and Play replay remain separate work.
+- ``scenario`` (default): ``dartlab.simulate(code, scenario=..., horizon=..., asOf=...)`` or
+  ``dartlab.simulate("scenario", code, ...)`` evaluates the deterministic driver sheet for one preset.
+- ``strategies``: ``dartlab.simulate("strategies", code, horizon=...)`` compares a fixed set of
+  financial strategies on the company's current state across every KR preset, conditionally.
+
+It resolves the code to a `Company`, guards the KR-only macro presets, and delegates to
+`Company.simulate(axis, ...)` - mirroring how `dartlab.compare` wraps `panel.compare`.
 
 Layer: L3. Imports forward only - constructs the root `Company` facade (L1) and calls the L3
-`run` driver. The legacy `analysis/forecast/simulation.py` flow is never touched (born-clean).
+drivers. The legacy `analysis/forecast/simulation.py` flow is never touched (born-clean).
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from dartlab.simulate.run import SimulationResult
 
+SIMULATE_AXES = ("scenario", "strategies")
+
+
+def resolveSimulateCall(target: str, code: str | None) -> tuple[str, str]:
+    """Split a simulate call into its axis and company code.
+
+    Args:
+        target: the axis name, or the company code when ``code`` is None (the scenario shortcut).
+        code: the company code when ``target`` names an axis.
+
+    Returns:
+        tuple[str, str]: ``(axis, code)``.
+
+    Raises:
+        ValueError: if an axis is named without a company, or ``target`` is not a known axis.
+
+    Example:
+        >>> resolveSimulateCall("005930", None)
+        ('scenario', '005930')
+        >>> resolveSimulateCall("strategies", "005930")
+        ('strategies', '005930')
+    """
+    if code is None:
+        if target in SIMULATE_AXES:
+            raise ValueError(f"simulate('{target}', ...) 는 종목코드가 필요합니다. 예: simulate('{target}', '005930')")
+        return "scenario", target
+    if target not in SIMULATE_AXES:
+        raise ValueError(f"알 수 없는 simulate 축: {target!r}; 유효값: {', '.join(SIMULATE_AXES)}")
+    return target, code
+
 
 def simulate(
-    code: str,
+    target: str,
+    code: str | None = None,
     *,
-    scenario: str = "baseline",
+    scenario: str | None = None,
     horizon: int = 3,
     asOf: str | None = None,
-) -> SimulationResult:
+) -> SimulationResult | Any:
     """한 회사에 시나리오 하나를 결정론적으로 돌려 시나리오-조건부 경로·가치를 낸다 (시뮬레이터 엔진).
 
     Capabilities:
@@ -40,23 +72,31 @@ def simulate(
           두고 노드 품질을 ``partial`` 로 낮춘다.
         - 결정론: 같은 회사·시나리오·asOf 를 다시 돌리면 노드별 ``inputsHash`` 가 byte 단위 동일
           (이 경로에 난수 없음).
+        - ``strategies`` 축은 회사의 현재 재무 상태에서 유지·증설·부채 축소 전략을 모든 KR
+          프리셋의 같은 경로 위에서 비교해 프리셋별 리더, 리더가 뒤집히는 프리셋, 결정이 가장
+          쉽게 뒤집히는 프리셋을 담은 `StrategyComparison` 을 낸다. 항상 조건부 비교이며 추천은
+          없다.
 
     Args:
-        code: 종목코드("005930") 또는 한글 회사명("삼성전자"). 현재 KR(DART) 전용 - 미국 ticker
-            는 `ValueError` (매크로 프리셋이 KR 기준이라 US 프리셋 합류 전까지 차단).
-        scenario: 시나리오 id - ``synth.scenario.getPresetScenarios("KR")`` 의 키
-            (예: ``"baseline"``, ``"adverse"``, ``"severelyAdverse"``).
+        target: 축 이름(``"scenario"``, ``"strategies"``) 또는 축을 생략할 때의 종목코드.
+            축을 생략하면 ``scenario`` 축이다.
+        code: ``target`` 이 축일 때의 종목코드("005930") 또는 한글 회사명("삼성전자"). 현재
+            KR(DART) 전용 - 미국 ticker 는 `ValueError` (매크로 프리셋이 KR 기준이라 차단).
+        scenario: ``scenario`` 축의 시나리오 id - ``synth.scenario.getPresetScenarios("KR")`` 의 키
+            (예: ``"baseline"``, ``"adverse"``). 생략하면 ``"baseline"``. ``strategies`` 축은 모든
+            프리셋을 비교하므로 받지 않는다.
         horizon: 예측 연수 (기본 3). 선택한 프리셋의 실제 경로 길이를 넘길 수 없다.
         asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 현재는 기간 단위 PIT이며 공시 접수일
             vintage 복원은 지원하지 않는다.
 
     Returns:
-        SimulationResult: 시나리오 매출·마진·FCF 경로 + dcf 주당가치 + 노드별 audit + 전체 품질
-        상태(``"ok"`` / ``"partial"``). 필드 상세는 `SimulationResult` docstring.
+        SimulationResult: ``scenario`` 축. 시나리오 매출·마진·FCF·WACC 경로 + dcf 주당가치 +
+        노드별 audit + 전체 품질 상태(``"ok"`` / ``"partial"``). 필드 상세는 `SimulationResult`.
+        StrategyComparison: ``strategies`` 축. 필드 상세는 `StrategyComparison`.
 
     Raises:
         TypeError: scenario 또는 horizon 타입이 잘못됐을 때.
-        ValueError: KR 이 아닌 회사, 코드를 회사로 해소하지 못했거나 scenario/horizon/asOf 가
+        ValueError: KR 이 아닌 회사, 코드를 회사로 해소하지 못했거나 축/scenario/horizon/asOf 가
             지원 범위 밖일 때.
 
     Example:
@@ -67,6 +107,9 @@ def simulate(
         >>> adverse = dartlab.simulate("005930", scenario="adverse")  # doctest: +SKIP
         >>> adverse.revenuePath[-1] < r.revenuePath[-1]  # 경기침체가 매출 경로를 낮춤  # doctest: +SKIP
         True
+        >>> plan = dartlab.simulate("strategies", "005930")  # doctest: +SKIP
+        >>> plan.decisionStatus, plan.recommendation  # doctest: +SKIP
+        ('conditionalOnly', None)
 
     Guide:
         시나리오 비교는 같은 회사에 시나리오마다 한 번씩 호출한다 (baseline vs adverse 는 매크로
@@ -105,6 +148,7 @@ def simulate(
     """
     import dartlab
 
+    axis, code = resolveSimulateCall(target, code)
     company = getattr(dartlab, "Company")(code)
     # KR 전용 가드 - 매크로 프리셋이 KR 기준이라 비-KR(US → EDGAR)은 차단한다. DART/EDGAR Company
     # 둘 다 .stockCode 를 노출하므로(EDGAR 는 ticker 를 stockCode 로 미러) market 을 식별자로 쓴다.
@@ -114,4 +158,4 @@ def simulate(
             f"simulate 는 현재 KR(DART) 전용입니다 - '{code}' (market={market!r}) 은(는) 지원하지 "
             "않습니다. US 매크로 프리셋 합류 전까지 차단."
         )
-    return company.simulate(scenario=scenario, horizon=horizon, asOf=asOf)
+    return company.simulate(axis, scenario=scenario, horizon=horizon, asOf=asOf)

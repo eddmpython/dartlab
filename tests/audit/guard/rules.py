@@ -42,6 +42,26 @@ SIMULATE_CONTRACT_CLOSURE = {
     "dartlab.simulate.run",
     "dartlab.simulate.sheet",
     "dartlab.simulate.transfer",
+    # 2026-09-29 계약 검토: `strategies` 축(한 회사 조건부 전략 비교)을 공개하면서 감사된
+    # 재무 세계 실행기와 그 전이 폐쇄를 올렸다. 추천을 막는 인증 경계(admissionRegistry,
+    # policyEvaluation, stateCompiler)가 실행기 안에 있어 함께 들어온다. scenarioComposition,
+    # hindcast, driver 보정, 판독 엔진은 여전히 계약 밖이다.
+    "dartlab.simulate.strategies",
+    "dartlab.simulate.financialBridge",
+    "dartlab.simulate.financialWorld",
+    "dartlab.simulate.world",
+    "dartlab.simulate.worldContracts",
+    "dartlab.simulate.worldInputs",
+    "dartlab.simulate.worldModel",
+    "dartlab.simulate.worldScoring",
+    "dartlab.simulate.worldTypes",
+    "dartlab.simulate.admissionRegistry",
+    "dartlab.simulate.parameterDraws",
+    "dartlab.simulate.policyEvaluation",
+    "dartlab.simulate.stateCompiler",
+    "dartlab.simulate.stateSupport",
+    "dartlab.simulate.stateVariables",
+    "dartlab.simulate.vintage",
 }
 # 계약 밖 승인된 운영 표면: `.github/scripts/sync/buildExpectations.py` 월간 cron 이
 # 소비하는 기대격자 체인(handbook architecture/analysisProducts.md 가 제품 구조로 기술).

@@ -1,7 +1,7 @@
 """simulate 공개 계약 폐쇄의 얇은 Guard Index 접점.
 
 공개 호출계약 강행규칙(CLAUDE.md)의 simulate 판: 계약 표면은 frozen manifest
-(guard.rules.SIMULATE_CONTRACT_CLOSURE) 6모듈로 고정되고, 나머지 스택은
+(guard.rules.SIMULATE_CONTRACT_CLOSURE) 22모듈로 고정되고, 나머지 스택은
 scenario-simulator initiative 자산이라 import 한 줄로도 공개 표면이 될 수 없다.
 승격·삭제는 manifest 수정(=의도적 계약 검토)으로만 한다.
 """
@@ -30,9 +30,24 @@ def test_simulate_contract_closure_is_fixed_point() -> None:
 
 
 def test_manifests_are_disjoint_and_minimal() -> None:
-    """계약 폐쇄와 운영 표면은 겹치지 않고, 폐쇄는 실측된 6모듈 그대로여야 한다."""
+    """계약 폐쇄와 운영 표면은 겹치지 않고, 폐쇄는 실측된 22모듈 그대로여야 한다.
+
+    결정론 시나리오 코어 6모듈 + strategies 축과 그 재무 세계 실행기 전이 폐쇄 16모듈.
+    """
     assert SIMULATE_CONTRACT_CLOSURE.isdisjoint(SIMULATE_OPERATIONAL_SURFACE)
-    assert len(SIMULATE_CONTRACT_CLOSURE) == 6
+    assert len(SIMULATE_CONTRACT_CLOSURE) == 22
+
+
+def test_strategy_axis_closure_keeps_research_stack_out() -> None:
+    """strategies 축을 올려도 연구 스택(조합기, hindcast, 보정, 판독)은 계약 밖에 남는다."""
+    for module in (
+        "dartlab.simulate.scenarioComposition",
+        "dartlab.simulate.hindcast",
+        "dartlab.simulate.driverCalibration",
+        "dartlab.simulate.readingCycle",
+        "dartlab.simulate.operatingWorld",
+    ):
+        assert module not in SIMULATE_CONTRACT_CLOSURE
 
 
 def test_operational_surface_matches_cron_script_imports() -> None:

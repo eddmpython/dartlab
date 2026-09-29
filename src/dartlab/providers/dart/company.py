@@ -2025,32 +2025,37 @@ class Company:
 
     def simulate(
         self,
+        axis: str = "scenario",
+        /,
         *,
-        scenario: str = "baseline",
+        scenario: str | None = None,
         horizon: int = 3,
         asOf: str | None = None,
     ) -> Any:
         """이 회사에 시나리오 하나를 결정론적으로 돌려 경로·가치를 낸다 (시뮬레이터 엔진).
 
-        매크로 프리셋(baseline/adverse/...) 하나로 ``macro.path -> rev.path -> proforma -> dcf``
-        결정론 드라이버 시트를 평가해 시나리오-조건부 매출·마진·FCF 경로 + dcf 주당가치 +
-        노드별 근거(provenance/refs/품질/asOf)를 담은 `SimulationResult` 를 낸다. honest-gap:
-        결손 leaf·부재 base 지표는 0 이 아니라 None 으로 두고 노드 품질을 ``partial`` 로
-        낮춘다. 결정론: 같은 시나리오·asOf 재실행 시 inputsHash 동일.
+        ``scenario`` 축(기본)은 매크로 프리셋 하나로 GDP·금리·환율 노드와 매출·마진·WACC 채널,
+        proforma, dcf 로 이어지는 결정론 드라이버 시트를 평가해 시나리오-조건부 경로 + dcf
+        주당가치 + 노드별 근거를 담은 `SimulationResult` 를 낸다. honest-gap: 결손 leaf·부재 base
+        지표는 0 이 아니라 None 으로 두고 노드 품질을 ``partial`` 로 낮춘다. 결정론: 같은
+        시나리오·asOf 재실행 시 inputsHash 동일. ``strategies`` 축은 유지·증설·부채 축소 전략을
+        모든 KR 프리셋에서 비교한 `StrategyComparison` 을 낸다. 항상 조건부이며 추천은 없다.
 
         Args:
-            scenario: 시나리오 id - ``synth.scenario.getPresetScenarios("KR")`` 의 키
-                (``"baseline"`` / ``"adverse"`` / ``"severelyAdverse"`` 등).
+            axis: ``"scenario"`` (기본) 또는 ``"strategies"``.
+            scenario: ``scenario`` 축의 시나리오 id - ``synth.scenario.getPresetScenarios("KR")``
+                의 키. 생략하면 ``"baseline"``. ``strategies`` 축은 모든 프리셋을 비교하므로 받지 않는다.
             horizon: 예측 연수 (기본 3). 프리셋의 실제 경로 길이를 넘길 수 없다.
             asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 기간 단위 PIT이며 접수일 vintage 복원 미지원.
 
         Returns:
-            ``SimulationResult`` - 시나리오 경로 + dcf 주당가치 + 노드별 audit + 전체 품질
-            (``"ok"`` / ``"partial"``).
+            ``SimulationResult`` (``scenario`` 축) - 시나리오 경로 + dcf 주당가치 + 노드별 audit +
+            전체 품질. ``StrategyComparison`` (``strategies`` 축) - 프리셋별 리더, 리더 역전,
+            취약 프리셋, 추천이 닫힌 이유.
 
         Raises:
             TypeError: scenario 또는 horizon 타입이 잘못됐을 때.
-            ValueError: scenario/horizon/asOf 가 지원 범위 밖이거나 시트 배선이 잘못됐을 때.
+            ValueError: 축/scenario/horizon/asOf 가 지원 범위 밖이거나 시트 배선이 잘못됐을 때.
 
         Example:
             >>> c = Company("005930")
@@ -2058,6 +2063,8 @@ class Company:
             >>> r.scenarioName, len(r.revenuePath)               # doctest: +SKIP
             ('baseline', 3)
             >>> c.simulate(scenario="adverse").revenuePath[-1] < r.revenuePath[-1]  # doctest: +SKIP
+            True
+            >>> c.simulate("strategies").recommendation is None  # doctest: +SKIP
             True
 
         SeeAlso:
@@ -2084,7 +2091,8 @@ class Company:
             - 한 회사의 시나리오-조건부 경로·가치가 Company 흐름에서 필요할 때.
 
         How:
-            - self → simulate.run.runScenario(self, scenario, horizon, asOf).
+            - scenario 축: self → simulate.run.runScenario(self, scenario, horizon, asOf).
+            - strategies 축: self → simulate.strategies.compareStrategies(self, horizon, asOf).
 
         LLM Specifications:
             AntiPatterns:
@@ -2102,10 +2110,21 @@ class Company:
                 - KR (getPresetScenarios("KR") + KR elasticity).
         """
         from dartlab.simulate.registry import validateScenarioSpec
+
+        if axis == "strategies":
+            if scenario is not None:
+                raise ValueError("strategies 축은 모든 KR 프리셋을 비교하므로 scenario 를 받지 않습니다")
+            from dartlab.simulate.strategies import compareStrategies
+
+            return compareStrategies(self, horizon=horizon, asOf=asOf)
+        if axis != "scenario":
+            raise ValueError(f"알 수 없는 simulate 축: {axis!r}; 유효값: scenario, strategies")
+
         from dartlab.simulate.run import runScenario
         from dartlab.story.lensProducts import collectLensProducts
 
-        validateScenarioSpec(scenario, horizon)
+        scenarioId = "baseline" if scenario is None else scenario
+        validateScenarioSpec(scenarioId, horizon)
         lensBundle = collectLensProducts(
             self,
             engines=("analysis", "credit", "quant", "macro"),
@@ -2113,7 +2132,7 @@ class Company:
         )
         return runScenario(
             self,
-            scenario=scenario,
+            scenario=scenarioId,
             horizon=horizon,
             asOf=asOf,
             lensBundle=lensBundle,
