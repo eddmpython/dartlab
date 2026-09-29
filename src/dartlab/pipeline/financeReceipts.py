@@ -458,8 +458,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", default=None, help="run 식별자 (기본 GITHUB_RUN_ID-ATTEMPT 또는 local)")
     parser.add_argument("--observed-at", default=None, help="관측 UTC 시각 YYYYMMDDTHHMMSSZ (기본 지금)")
     parser.add_argument("--upload", action="store_true", help="쓴 원장을 HF dart/financeReceipts/ 에 새 파일로 올린다")
+    parser.add_argument(
+        "--changed-file",
+        default=None,
+        help="변경 매니페스트 경로 (기본 dist/changed_finance.txt). full 재빌드는 dist/changed.txt 를 쓴다",
+    )
     args = parser.parse_args(argv)
-    changed = readChanged("finance")
+    if args.changed_file:
+        manifest = Path(args.changed_file)
+        text = manifest.read_text(encoding="utf-8") if manifest.exists() else ""
+        changed = [line.strip() for line in text.splitlines() if line.strip()]
+    else:
+        changed = readChanged("finance")
     if not changed:
         print("[financeReceipts] 변경 없음. 원장을 만들지 않는다.", flush=True)
         return 0

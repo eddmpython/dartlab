@@ -271,6 +271,25 @@ def testMainWritesOneLedgerFromTheChangedManifest(tmp_path: Path, monkeypatch: p
     assert [path.name for path in written] == ["20260929T060000Z_777-2.parquet"]
     assert pl.read_parquet(written[0]).height == 2
 
+    # full 재빌드 job 은 카테고리 없는 dist/changed.txt 를 쓴다. 명시한 매니페스트를 그대로 읽는다.
+    (tmp_path / "dist" / "changed.txt").write_text("005930.parquet\n", encoding="utf-8")
+    fullCode = receipts.main(
+        [
+            "--finance-dir",
+            str(financeDir),
+            "--out-dir",
+            "dist/financeReceipts",
+            "--run-id",
+            "778-1",
+            "--observed-at",
+            "20260930T060000Z",
+            "--changed-file",
+            "dist/changed.txt",
+        ]
+    )
+    assert fullCode == 0
+    assert (tmp_path / "dist" / "financeReceipts" / "20260930T060000Z_778-1.parquet").exists()
+
 
 class _FakeHfApi:
     """file_exists 와 upload_file 호출만 기록하는 HfApi 대역."""
