@@ -85,6 +85,15 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SYNC_CATEGORY: finance
 
+      # 접수 원장: 신규 상장 부트스트랩도 공시 내용을 처음 본 시각이다. 일일 동기화와 같은 스텝이고
+      # 원장 실패가 업로드와 캐시 저장을 막지 않도록 격리한다.
+      - name: Build and upload finance receipt ledger
+        if: hashFiles('dist/changed_finance.txt') != ''
+        continue-on-error: true
+        run: uv run python -X utf8 -m dartlab.pipeline.financeReceipts --out-dir dist/financeReceipts --upload
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
       - name: Upload to HuggingFace (report)
         if: hashFiles('dist/changed_report.txt') != ''
         run: |

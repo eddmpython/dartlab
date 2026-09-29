@@ -250,4 +250,13 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SYNC_CATEGORY: ${{ matrix.category }}
 
+      # 접수 원장: full 재빌드는 카테고리 없는 dist/changed.txt 에 변경 목록을 쓴다. finance 일 때만
+      # 같은 원장을 만들고, 실패해도 수집과 업로드를 막지 않는다.
+      - name: Build and upload finance receipt ledger
+        if: ${{ matrix.category == 'finance' && hashFiles('dist/changed.txt') != '' }}
+        continue-on-error: true
+        run: uv run python -X utf8 -m dartlab.pipeline.financeReceipts --changed-file dist/changed.txt --out-dir dist/financeReceipts --upload
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
       # GitHub Releases 업로드 폐지 (2026-04-08): HF만 유지.
