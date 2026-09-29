@@ -37,14 +37,25 @@ import pytest
 # 테스트는 monkeypatch.delenv("DARTLAB_NO_REFRESH") 로 명시적으로 다시 연다.
 os.environ.setdefault("DARTLAB_NO_REFRESH", "1")
 
+# 테스트 도구 캐시는 루트 `.cache/` 한 곳에 모은다. pytest 와 ruff 는 pyproject 가 옮기고,
+# 설정 파일을 읽지 않는 두 도구는 여기서 옮긴다. Hypothesis 는 명시 경로가 없으면 현재
+# 폴더에 `.hypothesis/` 를 만들고, 이 환경변수가 있으면 그 경로를 쓴다.
+_CACHE_ROOT = Path(__file__).resolve().parents[1] / ".cache"
+os.environ.setdefault("HYPOTHESIS_STORAGE_DIRECTORY", str(_CACHE_ROOT / "hypothesis"))
+# pytest-benchmark 는 저장을 안 하는 실행에서도 기본 저장소 `./.benchmarks` 를 만든다.
+_BENCHMARK_DEFAULT_STORAGE = "file://./.benchmarks"
+
 from dartlab.core.dataLoader import _dataDir  # noqa: E402
 from dartlab.core.memory import PRESSURE_CRITICAL_MB, getMemoryMb  # noqa: E402
 
 
 def pytest_configure(config):
     """테스트 시작 전 안전 검사."""
+    # pytest-benchmark 의 pytest_configure 는 trylast 라 이 훅이 먼저 돈다. 명시 지정이 없을 때만 옮긴다.
+    if getattr(config.option, "benchmark_storage", None) == _BENCHMARK_DEFAULT_STORAGE:
+        config.option.benchmark_storage = "file://" + (_CACHE_ROOT / "benchmarks").as_posix()
     # test-lock.sh 없이 직접 pytest를 호출한 경우 경고
-    lock_marker = Path(".pytest_cache/dartlab-test.locked")
+    lock_marker = _CACHE_ROOT / "dartlab-test.locked"
     if not os.environ.get("DARTLAB_TEST_LOCKED") and not lock_marker.exists():
         import warnings
 

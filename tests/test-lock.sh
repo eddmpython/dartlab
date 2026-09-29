@@ -8,7 +8,7 @@
 
 LOCK_DIR="/tmp/dartlab-test.lock"
 PID_FILE="$LOCK_DIR/pid"
-REPO_LOCK_MARKER=".pytest_cache/dartlab-test.locked"
+REPO_LOCK_MARKER=".cache/dartlab-test.locked"
 MAX_WAIT=300
 WAIT=0
 

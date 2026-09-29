@@ -1,0 +1,13 @@
+{
+  "$schema": "https://eddmpython.github.io/cinch/schemas/cinch.schema.json",
+  "schemaVersion": 2,
+  "lint": {
+    "camelCase": true
+  },
+  "write": {
+    "emDash": false
+  },
+  "work": {
+    "scratchDirs": false
+  }
+}

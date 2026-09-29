@@ -39,6 +39,7 @@ STALE_DAYS = 7
 ALLOWED_ROOT = frozenset(
     {
         # git 추적 (git ls-tree HEAD 기준)
+        ".cinch.json",
         ".env.example",
         ".githooks",
         "AGENTS.md",
@@ -77,24 +78,25 @@ ALLOWED_ROOT = frozenset(
         "uv.lock",
         # 로컬 전용 인프라 (gitignore 대상, 존재 자체는 정상)
         ".agents",
-        ".benchmarks",
+        # 도구 캐시 한 곳. pytest, ruff, hypothesis, pytest-benchmark, import-linter 가 여기에 쓴다.
+        # 옛 루트 캐시 이름(.pytest_cache, .ruff_cache, .hypothesis, .benchmarks, .import_linter_cache)은
+        # 허용하지 않는다. 다시 생기면 설정을 거치지 않은 실행의 잔재이니 지운다.
+        ".cache",
         ".claude",
         ".codex",
         ".dartlab",
         ".env",
         ".git",
         ".gitignore.local",
-        ".hypothesis",
-        ".import_linter_cache",
         ".mcp.json",
         ".playwright-cli",
-        ".pytest_cache",
-        ".ruff_cache",
         ".tmp",
         ".venv",
         ".vscode",
         "data",
         "dist",
+        # cinch 가 이 기계에서만 참인 것(환경 영수증, 설치 기록)을 두는 곳. .gitignore 의 /local/
+        "local",
         "node_modules",
         "sns",
         # 도구 표준 transient (junk 아님)

@@ -187,6 +187,8 @@ exclude = [
 target-version = "py312"
 line-length = 120
 exclude = ["experiments", "*/_reference"]
+# 도구 캐시는 루트 `.cache/` 한 곳에 모은다. 도구마다 루트에 제 폴더를 만들던 것이 루트 잡동사니의 원인이었다.
+cache-dir = ".cache/ruff"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
@@ -206,6 +208,8 @@ python_files = ["test_*.py", "test*.py", "bench_*.py", "bench*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*", "test*"]
 addopts = "-v --tb=short --import-mode=importlib"
+# 루트 `.pytest_cache/` 대신 도구 캐시 폴더 `.cache/` 아래에 둔다 (ruff cache-dir 과 같은 이유).
+cache_dir = ".cache/pytest"
 asyncio_mode = "auto"
 # Hypothesis ghostwriter draft 폴더는 자동 수집 제외 - 명시 호출 시에만 실행.
 # (`tests/_drafts/` 안 fuzz draft 는 사용자 review 후 정식 위치로 이동.)
