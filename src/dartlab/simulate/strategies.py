@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from dartlab.analysis.financial.proforma import extractHistoricalRatios
+from dartlab.simulate.channels import PRESET_MARKET
 from dartlab.simulate.financialBridge import bridgeFinancialPaths, buildFinancialBridgeLaw
 from dartlab.simulate.financialWorld import (
     FinancialWorldInputs,
@@ -41,8 +42,6 @@ from dartlab.simulate.world import ScenarioPath, SimulationBlocked, SimulationRu
 from dartlab.synth.scenario import BASELINE_FX, BASELINE_RATE, getPresetScenarios
 
 STRATEGY_COMPARISON_VERSION = "company-strategy-comparison-v1"
-# The presets and elasticities are KR baselines, and the public verb is KR-only.
-_PRESET_MARKET = "KR"
 # Explicit capacity slack over observed revenue. Without it latent demand could never exceed capacity.
 _CAPACITY_HEADROOM = 0.20
 # The expansion strategy invests this multiple of maintenance capex.
@@ -147,7 +146,7 @@ def _dedupe(values: list[str]) -> tuple[str, ...]:
 
 def _macroShockPath(name: str, horizon: int) -> ScenarioPath:
     """프리셋 하나를 연간 거시 혁신 경로로 바꾼다. 금리는 변화분과 기준 대비 편차를 함께 싣는다."""
-    preset = getPresetScenarios(_PRESET_MARKET)[name]
+    preset = getPresetScenarios(PRESET_MARKET)[name]
     steps: list[dict[str, float]] = []
     previousRate = float(BASELINE_RATE)
     for year in range(horizon):
@@ -162,7 +161,7 @@ def _macroShockPath(name: str, horizon: int) -> ScenarioPath:
             }
         )
         previousRate = rate
-    refs = (f"synth.scenario:PRESET_SCENARIOS_{_PRESET_MARKET}/{preset.name}",)
+    refs = (f"synth.scenario:PRESET_SCENARIOS_{PRESET_MARKET}/{preset.name}",)
     return ScenarioPath(name, tuple(steps), refs=refs, frequency="year")
 
 
@@ -371,7 +370,7 @@ def compareStrategies(company: Any, *, horizon: int = 3, asOf: str | None = None
         Never present a case leader as advice. Quote the preset, the assumptions and the blocked
         reasons with it, and treat an empty ``cases`` as an honest gap, not as zero.
     """
-    names = tuple(sorted(getPresetScenarios(_PRESET_MARKET)))
+    names = tuple(sorted(getPresetScenarios(PRESET_MARKET)))
     for name in names:
         validateScenarioSpec(name, horizon)
     snapshot = buildSnapshot(company, asOf=asOf)

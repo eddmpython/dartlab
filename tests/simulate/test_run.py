@@ -94,6 +94,23 @@ def _snapshot(
 # wiring + evaluation over a synthetic snapshot
 # ──────────────────────────────────────────────────────────────────────
 @pytest.mark.unit
+def test_validateScenarioSpec_accepts_only_real_presets_and_paths() -> None:
+    from dartlab.simulate.registry import validateScenarioSpec
+
+    assert validateScenarioSpec("baseline", 3) is None
+    with pytest.raises(ValueError, match="알 수 없는 scenario"):
+        validateScenarioSpec("severe", 3)
+    with pytest.raises(TypeError):
+        validateScenarioSpec(None, 3)  # type: ignore[arg-type]
+    with pytest.raises(TypeError):
+        validateScenarioSpec("baseline", True)
+    with pytest.raises(ValueError, match="1 이상"):
+        validateScenarioSpec("baseline", 0)
+    with pytest.raises(ValueError, match="초과"):
+        validateScenarioSpec("baseline", 99)
+
+
+@pytest.mark.unit
 def test_buildScenarioSheet_wires_one_node_per_macro_input_and_channel() -> None:
     sheet = buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="baseline", horizon=3)
     deps = {node.driverId: {sheet.nodes[dep].driverId for dep in node.deps} for node in sheet.nodes.values()}

@@ -1,11 +1,12 @@
 """Deterministic driver node definitions for the L3 scenario engine.
 
-This module holds the deterministic (lens=None) driver nodes and the function that builds a
+This module holds the snapshot builder, the L2 leaf nodes and the one wiring table that builds a
 `DriverSheet` for one scenario. Each node is one of two kinds:
 
-- a thin call into an L2 leaf (`proforma` -> `analysis.financial.proforma.buildProforma`), or
-- the single owned macro->fundamentals edge (`rev.path` -> `simulate.transfer`), plus the preset
-  pass-through (`macro.path`) and a minimal FCFF discount off the proforma path (`dcf`).
+- a thin call into an L2 leaf (`proforma` -> `analysis.financial.proforma.buildProforma`) or a
+  minimal FCFF discount off the proforma path (`dcf`), both defined here, or
+- a macro root or transfer channel (`macro.*`, `rev.path`, `margin.path`, `wacc.path`) defined in
+  `simulate.channels`, which calls the single owned macro->fundamentals edge in `simulate.transfer`.
 
 Node graph (deterministic minimum set, §5). Every macro variable and every transfer channel is its
 own node, so the audit shows which input moves which number and a rate shock reaches the value:
@@ -47,10 +48,27 @@ from dartlab.analysis.financial._valuationInputs import _resolveSectorKey
 from dartlab.analysis.financial.dataAssets import _periodKey
 from dartlab.analysis.financial.proforma import buildProforma
 from dartlab.core.utils.extract import getLatest, getTTM
-from dartlab.simulate.sheet import DriverNode, DriverSheet, NodeValue
+from dartlab.simulate.channels import (
+    DRIVER_FX,
+    DRIVER_MACRO,
+    DRIVER_MARGIN,
+    DRIVER_RATE,
+    DRIVER_REV,
+    DRIVER_WACC,
+    dependencyValue,
+    effectiveBaseMargin,
+    gapValue,
+    macroFxNode,
+    macroPathNode,
+    macroRateNode,
+    marginPathNode,
+    nodeIdFor,
+    revenuePathNode,
+    waccPathNode,
+)
+from dartlab.simulate.sheet import DriverNode, DriverSheet
 from dartlab.synth.scenario import (
     DEFAULT_ELASTICITY,
-    SectorElasticity,
     getElasticity,
     getPresetScenarios,
 )
@@ -65,22 +83,11 @@ _FN_WACC = "simulate.waccPath"
 _FN_PROFORMA = "simulate.proforma"
 _FN_DCF = "simulate.dcf"
 
-# Driver ids (§5 node table).
-DRIVER_MACRO = "macro.path"
-DRIVER_RATE = "macro.rate"
-DRIVER_FX = "macro.fx"
-DRIVER_REV = "rev.path"
-DRIVER_MARGIN = "margin.path"
-DRIVER_WACC = "wacc.path"
+# Driver ids of the L2 leaf nodes. The macro root and channel ids live in `simulate.channels`.
 DRIVER_PROFORMA = "proforma"
 DRIVER_DCF = "dcf"
 
-# The public verb is KR-only (entry.py blocks other markets). The presets and elasticities are KR
-# baselines; a US run needs US presets and elasticities first, so this is the one place it is fixed.
-_PRESET_MARKET = "KR"
-
 _DEFAULT_BASE_WACC = 10.0  # legacy baseWacc default when sectorParams.discountRate is absent.
-_DEFAULT_MARGIN = 10.0  # legacy fallback when operating margin is unavailable.
 _TAX_RATE = 0.22  # legacy KR corporate effective-rate default for the FCFF proxy.
 _TERMINAL_GROWTH_CAP = 3.0  # legacy terminal growth cap.
 
@@ -429,241 +436,9 @@ def validateScenarioSpec(scenario: str, horizon: int, *, market: str = "KR") -> 
 
 
 # ──────────────────────────────────────────────────────────────────────
-# §5 deterministic node fns. Each matches the evaluateSheet 7-tuple contract
+# §5 L2 leaf node fns. Each matches the evaluateSheet 7-tuple contract. The macro roots and the
+# transfer channels are in `simulate.channels`.
 # ──────────────────────────────────────────────────────────────────────
-
-
-def nodeIdFor(driverId: str, scenarioId: str) -> str:
-    """Return the §6.1 node id of one driver in one scenario.
-
-    Args:
-        driverId: a driver id such as ``DRIVER_REV``.
-        scenarioId: the scenario id such as ``"baseline"``.
-
-    Returns:
-        str: ``"{driverId}@{scenarioId}#all"``. The deterministic core folds the period coordinate
-        into the node vector, so the period key is always ``all``.
-
-    Raises:
-        None.
-
-    Example:
-        >>> nodeIdFor("rev.path", "baseline")
-        'rev.path@baseline#all'
-    """
-    return f"{driverId}@{scenarioId}#all"
-
-
-def _depValue(depValues: dict, driverId: str, node: DriverNode) -> NodeValue:
-    """같은 시나리오의 상류 node 값을 driver id 로 찾는다. 배선이 틀리면 기본값 없이 실패한다."""
-    key = nodeIdFor(driverId, node.scenarioId)
-    if key not in depValues:
-        raise ValueError(f"{node.nodeId} needs its {driverId} dependency")
-    return depValues[key]
-
-
-def _depVector(depValues: dict, driverId: str, node: DriverNode) -> list[float]:
-    """상류 거시 경로 벡터를 꺼낸다. 프리셋 경로에 결손이 있으면 0 으로 메우지 않고 실패한다."""
-    vector = _depValue(depValues, driverId, node).vector
-    if vector is None or any(value is None for value in vector):
-        raise ValueError(f"{node.nodeId} got an incomplete {driverId} path")
-    return [float(value) for value in vector]
-
-
-def _gapValue(prefix: str, reason: str, snap: dict):
-    """정직한 결손 node 값. 값과 벡터는 None 이고 사유가 provenance 와 frozen input 에 남는다."""
-    return None, None, f"{prefix}:gap({reason})", (), {"gap": reason}, snap["asOf"], snap["latestAsOf"]
-
-
-def _channelGap(snap: dict) -> str | None:
-    """매출·마진 채널을 계산할 수 없는 사유. 과거 시점은 파라미터 vintage 가 없어 기권한다."""
-    if snap.get("parameterVintageStatus", "available") != "available":
-        return "historical_parameter_vintage_absent"
-    if snap["baseRevenue"] is None:
-        return "baseRevenue_absent"
-    return None
-
-
-def _effectiveBaseMargin(snap: dict) -> float:
-    """전달 채널의 기준 영업이익률. 결손이면 기본값을 쓰고 buildSnapshot 이 가정으로 남긴다."""
-    return float(snap["baseMargin"]) if snap["baseMargin"] is not None else _DEFAULT_MARGIN
-
-
-def _presetNode(node: DriverNode, sheet: DriverSheet, variable: str):
-    """프리셋 거시 변수 하나의 경로를 root node 로 낸다. 모르는 시나리오는 KeyError 로 실패한다."""
-    snap = sheet.snapshot
-    horizon = snap["horizon"]
-    scenario = getPresetScenarios(_PRESET_MARKET)[node.scenarioId]
-    source = {"gdp": scenario.gdpGrowth, "rate": scenario.interestRate, "fx": scenario.krwUsd}[variable]
-    path = [float(value) for value in source[:horizon]]
-    frozen = {"variable": variable, "path": path}
-    refs = (f"synth.scenario:PRESET_SCENARIOS_{_PRESET_MARKET}/{scenario.name}#{variable}",)
-    value = path[-1] if path else None
-    return value, tuple(path), f"preset:{node.scenarioId}", refs, frozen, snap["asOf"], snap["latestAsOf"]
-
-
-def _fnMacroPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`macro.path` node: the preset GDP path for the node's scenario (§5).
-
-    Capabilities:
-        Emits the preset GDP path for the scenario named by ``node.scenarioId`` from
-        `synth.scenario.getPresetScenarios` (KR), truncated to the snapshot horizon. The
-        representative value is terminal-year GDP and the vector is the GDP path. The rate and
-        FX paths are their own root nodes (`macro.rate`, `macro.fx`), so every downstream channel
-        reads its macro inputs through dependencies rather than re-reading the preset.
-
-    Args:
-        node: the macro.path DriverNode (its `scenarioId` selects the preset).
-        sheet: the DriverSheet (its `snapshot["horizon"]` truncates the path).
-        depValues: empty (macro.path is a root node).
-
-    Returns:
-        tuple: ``(gdpTerminal, gdpVector, provenance, refs, frozenInputs, asOf, latestAsOf)``
-        with ``provenance = "preset:{scenarioId}"`` and ``frozenInputs = {"variable", "path"}``.
-
-    Raises:
-        KeyError: if validation was bypassed and the scenario id is unknown.
-
-    Example:
-        >>> # wired by buildScenarioSheet; not called directly.
-
-    Requires:
-        ``synth.scenario.getPresetScenarios`` and the snapshot's ``horizon`` / ``asOf``.
-    """
-    return _presetNode(node, sheet, "gdp")
-
-
-def _fnMacroRate(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`macro.rate` node: the preset policy-rate path for the node's scenario (root node)."""
-    return _presetNode(node, sheet, "rate")
-
-
-def _fnMacroFx(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`macro.fx` node: the preset KRW/USD path for the node's scenario (root node)."""
-    return _presetNode(node, sheet, "fx")
-
-
-def _fnRevPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`rev.path` node: the revenue channel of the owned macro->fundamentals edge (§2/§5).
-
-    Capabilities:
-        Chains `simulate.transfer.transferRevenueChannel` over the GDP and FX dependency paths onto
-        base revenue + sector elasticity, producing the scenario's absolute revenue vector. The
-        margin and WACC channels are separate nodes. honest-gap: if base revenue is absent the
-        node value is None (never 0).
-
-    Args:
-        node: the rev.path DriverNode (depends on the scenario's macro.path and macro.fx).
-        sheet: the DriverSheet whose snapshot holds base revenue and elasticity.
-        depValues: the GDP and FX NodeValues of the same scenario.
-
-    Returns:
-        tuple: ``(revTerminal, revVector, provenance, refs, frozenInputs, asOf, latestAsOf)`` with
-        ``provenance`` describing the transfer; value/vector are None when base revenue is absent.
-
-    Raises:
-        ValueError: if the GDP or FX dependency is missing or incomplete.
-
-    Example:
-        >>> # wired by buildScenarioSheet; not called directly.
-
-    Requires:
-        The macro.path and macro.fx dependency vectors and the snapshot base metrics.
-    """
-    from dartlab.simulate.transfer import transferRevenueChannel
-
-    snap = sheet.snapshot
-    gap = _channelGap(snap)
-    if gap is not None:
-        # honest-gap: no base revenue or no parameter vintage -> no scenario path.
-        return _gapValue("transfer", gap, snap)
-
-    elasticity: SectorElasticity = snap["elasticity"]
-    gdp = _depVector(depValues, DRIVER_MACRO, node)
-    fx = _depVector(depValues, DRIVER_FX, node)
-    revPath = transferRevenueChannel(snap["baseRevenue"], gdp, fx, elasticity)
-    frozen = {"baseRevenue": snap["baseRevenue"], "rev": revPath}
-    prov = "transfer:rev*(1+bgdp*gdp+bfx*fxDelta)"
-    refs = ("simulate.transfer:transferRevenueChannel",)
-    value = revPath[-1] if revPath else None
-    return value, tuple(revPath), prov, refs, frozen, snap["asOf"], snap["latestAsOf"]
-
-
-def _fnMarginPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`margin.path` node: the operating-margin channel of the transfer (GDP, rate for financials).
-
-    Capabilities:
-        Carries the base operating margin over the horizon with the sector's GDP margin shock and
-        the rate NIM shock (non-zero only for financials), floored at -50 each year. The proforma
-        node applies this path as a margin shock on top of its own projection, so the channel
-        moves operating profit and FCF instead of being display-only.
-
-    Args:
-        node: the margin.path DriverNode (depends on macro.path and macro.rate).
-        sheet: the DriverSheet whose snapshot holds base margin and elasticity.
-        depValues: the GDP and policy-rate NodeValues of the same scenario.
-
-    Returns:
-        tuple: ``(terminalMargin, marginVector, provenance, refs, frozenInputs, asOf, latestAsOf)``;
-        value and vector are None on an honest gap.
-
-    Raises:
-        ValueError: if the GDP or rate dependency is missing or incomplete.
-
-    Example:
-        >>> # wired by buildScenarioSheet; not called directly.
-    """
-    from dartlab.simulate.transfer import transferMarginChannel
-
-    snap = sheet.snapshot
-    gap = _channelGap(snap)
-    if gap is not None:
-        return _gapValue("transfer", gap, snap)
-    baseMargin = _effectiveBaseMargin(snap)
-    gdp = _depVector(depValues, DRIVER_MACRO, node)
-    rate = _depVector(depValues, DRIVER_RATE, node)
-    marginPath = transferMarginChannel(baseMargin, gdp, rate, snap["elasticity"])
-    frozen = {"baseMargin": baseMargin, "margin": marginPath}
-    prov = "transfer:margin+bm*gdp+nim*rateDelta"
-    refs = ("simulate.transfer:transferMarginChannel",)
-    value = marginPath[-1] if marginPath else None
-    return value, tuple(marginPath), prov, refs, frozen, snap["asOf"], snap["latestAsOf"]
-
-
-def _fnWaccPath(node: DriverNode, sheet: DriverSheet, depValues: dict):
-    """`wacc.path` node: the discount-rate channel of the transfer (half the rate change).
-
-    Capabilities:
-        Maps the scenario's policy-rate path onto a per-year WACC path around the snapshot base
-        WACC. The dcf node discounts each year at this path, so a rate shock changes the value.
-
-    Args:
-        node: the wacc.path DriverNode (depends on macro.rate).
-        sheet: the DriverSheet whose snapshot holds the base WACC.
-        depValues: the policy-rate NodeValue of the same scenario.
-
-    Returns:
-        tuple: ``(terminalWacc, waccVector, provenance, refs, frozenInputs, asOf, latestAsOf)``;
-        value and vector are None when the parameter vintage is unavailable.
-
-    Raises:
-        ValueError: if the rate dependency is missing or incomplete.
-
-    Example:
-        >>> # wired by buildScenarioSheet; not called directly.
-    """
-    from dartlab.simulate.transfer import transferWaccChannel
-
-    snap = sheet.snapshot
-    if snap.get("parameterVintageStatus", "available") != "available":
-        return _gapValue("transfer", "historical_parameter_vintage_absent", snap)
-    rate = _depVector(depValues, DRIVER_RATE, node)
-    waccPath = transferWaccChannel(float(snap["baseWacc"]), rate)
-    frozen = {"baseWacc": float(snap["baseWacc"]), "wacc": waccPath}
-    prov = "transfer:wacc+0.5*rateDelta"
-    refs = ("simulate.transfer:transferWaccChannel",)
-    value = waccPath[-1] if waccPath else None
-    return value, tuple(waccPath), prov, refs, frozen, snap["asOf"], snap["latestAsOf"]
 
 
 def _fnProforma(node: DriverNode, sheet: DriverSheet, depValues: dict):
@@ -696,14 +471,14 @@ def _fnProforma(node: DriverNode, sheet: DriverSheet, depValues: dict):
         The L2 leaf ``buildProforma`` and the snapshot ``series`` / ``baseRevenue``.
     """
     snap = sheet.snapshot
-    revNv = _depValue(depValues, DRIVER_REV, node)
-    marginNv = _depValue(depValues, DRIVER_MARGIN, node)
+    revNv = dependencyValue(depValues, DRIVER_REV, node)
+    marginNv = dependencyValue(depValues, DRIVER_MARGIN, node)
     series = snap.get("series")
     base = snap["baseRevenue"]
     if revNv.vector is None or not revNv.vector or series is None or base is None:
-        return _gapValue("proforma", "revPath_or_series_absent", snap)
+        return gapValue("proforma", "revPath_or_series_absent", snap)
     if marginNv.vector is None or len(marginNv.vector) != len(revNv.vector):
-        return _gapValue("proforma", "marginPath_absent", snap)
+        return gapValue("proforma", "marginPath_absent", snap)
 
     revPath = list(revNv.vector)
     growthPath: list[float] = []
@@ -714,7 +489,7 @@ def _fnProforma(node: DriverNode, sheet: DriverSheet, depValues: dict):
     # The transfer margin path is base margin plus the carried macro shock. The leaf keeps its own
     # ratio-based margin projection and receives only the shock, so the scenario moves operating
     # profit without replacing the historical cost structure.
-    baseMargin = _effectiveBaseMargin(snap)
+    baseMargin = effectiveBaseMargin(snap)
     marginShockPath = [float(margin) - baseMargin for margin in marginNv.vector]
 
     pf = buildProforma(
@@ -775,14 +550,14 @@ def _fnDcf(node: DriverNode, sheet: DriverSheet, depValues: dict):
         The proforma dep's FCF vector + frozen ``wacc`` and the snapshot ``netDebt`` / ``shares``.
     """
     snap = sheet.snapshot
-    pfNv = _depValue(depValues, DRIVER_PROFORMA, node)
-    waccNv = _depValue(depValues, DRIVER_WACC, node)
+    pfNv = dependencyValue(depValues, DRIVER_PROFORMA, node)
+    waccNv = dependencyValue(depValues, DRIVER_WACC, node)
     if pfNv.vector is None or not pfNv.vector:
-        return _gapValue("dcf", "fcfPath_absent", snap)
+        return gapValue("dcf", "fcfPath_absent", snap)
     if any(value is None for value in pfNv.vector):
-        return _gapValue("dcf", "fcfPath_incomplete", snap)
+        return gapValue("dcf", "fcfPath_incomplete", snap)
     if waccNv.vector is None or len(waccNv.vector) != len(pfNv.vector) or any(value is None for value in waccNv.vector):
-        return _gapValue("dcf", "waccPath_absent", snap)
+        return gapValue("dcf", "waccPath_absent", snap)
     fcfPath = [float(x) for x in pfNv.vector]
     # WACC: the scenario's per-year path (base WACC plus half the rate change). Discounting year by
     # year at that path is what lets a rate shock move the value; a flat path reproduces the
@@ -847,12 +622,12 @@ def _fnDcf(node: DriverNode, sheet: DriverSheet, depValues: dict):
 # (driverId, dependency driverIds, registry fn key, fn). The one wiring table; buildScenarioSheet
 # and the result assembly both read it, so a new channel cannot be wired without being audited.
 _SHEET_WIRING = (
-    (DRIVER_MACRO, (), _FN_MACRO, _fnMacroPath),
-    (DRIVER_RATE, (), _FN_MACRO_RATE, _fnMacroRate),
-    (DRIVER_FX, (), _FN_MACRO_FX, _fnMacroFx),
-    (DRIVER_REV, (DRIVER_MACRO, DRIVER_FX), _FN_REV, _fnRevPath),
-    (DRIVER_MARGIN, (DRIVER_MACRO, DRIVER_RATE), _FN_MARGIN, _fnMarginPath),
-    (DRIVER_WACC, (DRIVER_RATE,), _FN_WACC, _fnWaccPath),
+    (DRIVER_MACRO, (), _FN_MACRO, macroPathNode),
+    (DRIVER_RATE, (), _FN_MACRO_RATE, macroRateNode),
+    (DRIVER_FX, (), _FN_MACRO_FX, macroFxNode),
+    (DRIVER_REV, (DRIVER_MACRO, DRIVER_FX), _FN_REV, revenuePathNode),
+    (DRIVER_MARGIN, (DRIVER_MACRO, DRIVER_RATE), _FN_MARGIN, marginPathNode),
+    (DRIVER_WACC, (DRIVER_RATE,), _FN_WACC, waccPathNode),
     (DRIVER_PROFORMA, (DRIVER_REV, DRIVER_MARGIN), _FN_PROFORMA, _fnProforma),
     (DRIVER_DCF, (DRIVER_PROFORMA, DRIVER_WACC), _FN_DCF, _fnDcf),
 )

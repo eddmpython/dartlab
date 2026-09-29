@@ -1,7 +1,7 @@
 """simulate 공개 계약 폐쇄의 얇은 Guard Index 접점.
 
 공개 호출계약 강행규칙(CLAUDE.md)의 simulate 판: 계약 표면은 frozen manifest
-(guard.rules.SIMULATE_CONTRACT_CLOSURE) 22모듈로 고정되고, 나머지 스택은
+(guard.rules.SIMULATE_CONTRACT_CLOSURE) 23모듈로 고정되고, 나머지 스택은
 scenario-simulator initiative 자산이라 import 한 줄로도 공개 표면이 될 수 없다.
 승격·삭제는 manifest 수정(=의도적 계약 검토)으로만 한다.
 """
@@ -25,17 +25,18 @@ from guard.rules import (  # noqa: E402
 
 
 def test_simulate_contract_closure_is_fixed_point() -> None:
-    """계약 6모듈 밖 simulate 하위 모듈은 어떤 src 경로에서도 도달할 수 없어야 한다."""
+    """계약 폐쇄 밖 simulate 하위 모듈은 어떤 src 경로에서도 도달할 수 없어야 한다."""
     assert checkSimulateContractClosure(buildIndex(REPO_ROOT)) == []
 
 
 def test_manifests_are_disjoint_and_minimal() -> None:
-    """계약 폐쇄와 운영 표면은 겹치지 않고, 폐쇄는 실측된 22모듈 그대로여야 한다.
+    """계약 폐쇄와 운영 표면은 겹치지 않고, 폐쇄는 실측된 23모듈 그대로여야 한다.
 
-    결정론 시나리오 코어 6모듈 + strategies 축과 그 재무 세계 실행기 전이 폐쇄 16모듈.
+    결정론 시나리오 코어 7모듈(registry 와 channels 로 나뉜 sheet 포함) + strategies 축과 그
+    재무 세계 실행기 전이 폐쇄 16모듈.
     """
     assert SIMULATE_CONTRACT_CLOSURE.isdisjoint(SIMULATE_OPERATIONAL_SURFACE)
-    assert len(SIMULATE_CONTRACT_CLOSURE) == 22
+    assert len(SIMULATE_CONTRACT_CLOSURE) == 23
 
 
 def test_strategy_axis_closure_keeps_research_stack_out() -> None:

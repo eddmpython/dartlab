@@ -39,6 +39,9 @@ SIMULATE_CONTRACT_CLOSURE = {
     "dartlab.simulate",
     "dartlab.simulate.entry",
     "dartlab.simulate.registry",
+    # 2026-09-29: registry 가 800줄 분할 임계를 넘어 거시 root 와 전달 채널 node 를 옮겼다.
+    # 새 표면이 아니라 같은 결정론 코어를 두 파일로 나눈 것이다.
+    "dartlab.simulate.channels",
     "dartlab.simulate.run",
     "dartlab.simulate.sheet",
     "dartlab.simulate.transfer",
