@@ -31,10 +31,11 @@ def simulate(
     """한 회사에 시나리오 하나를 결정론적으로 돌려 시나리오-조건부 경로·가치를 낸다 (시뮬레이터 엔진).
 
     Capabilities:
-        - 매크로 프리셋(baseline/adverse/...) 하나를 골라 ``macro.path -> rev.path -> proforma ->
-          dcf`` 결정론 드라이버 시트를 한 번에 평가한다. 결과는 시나리오-조건부 매출·마진·FCF
-          경로 + dcf 주당가치 + 노드별 근거(provenance/refs/품질 상태/asOf)를 담은
-          `SimulationResult`.
+        - 매크로 프리셋(baseline/adverse/...) 하나를 골라 GDP·금리·환율 노드에서 매출·마진·WACC
+          채널을 거쳐 proforma 와 dcf 까지 가는 결정론 드라이버 시트를 한 번에 평가한다. 금리는
+          WACC 경로(과 금융업 마진)로, GDP 는 매출과 마진으로, 환율은 매출로 전달된다. 결과는
+          시나리오-조건부 매출·마진·FCF·WACC 경로 + dcf 주당가치 + 노드별 근거(provenance/refs/
+          품질 상태/asOf)를 담은 `SimulationResult`.
         - honest-gap: 결손 leaf 나 부재한 base 지표는 0 으로 채우지 않고 해당 필드를 None 으로
           두고 노드 품질을 ``partial`` 로 낮춘다.
         - 결정론: 같은 회사·시나리오·asOf 를 다시 돌리면 노드별 ``inputsHash`` 가 byte 단위 동일

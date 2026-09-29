@@ -7,10 +7,10 @@ Every node is a thin call into an L2 leaf except the single owned macro→fundam
 - `sheet`: the node contract (`NodeValue` / `DriverNode` / `DriverSheet`) plus the topological
   deterministic executor (`buildOrder` / `evaluateSheet`) and the memoization-key hash
   (`computeInputsHash`).
-- `transfer`: the macro→fundamentals edge (`transferMacroToFundamentals` and the horizon carry
-  `transferRevenuePath`).
+- `transfer`: the macro→fundamentals edge (`transferMacroToFundamentals`, the horizon carry
+  `transferRevenuePath`, and its revenue / margin / WACC channel projections).
 - `registry`: the deterministic driver node definitions (`buildSnapshot` / `buildScenarioSheet`)
-  for the `macro.path -> rev.path -> proforma -> dcf` chain.
+  for the GDP / rate / FX roots, the revenue / margin / WACC channels, `proforma` and `dcf`.
 - `run`: the internal end-to-end driver (`runScenario`) and its result types
   (`SimulationResult` / `NodeAudit`).
 

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import functools
+import math
 from typing import TYPE_CHECKING
 
 from dartlab.analysis.financial._proformaWacc import (
@@ -317,6 +318,37 @@ def _extractBaseYear(series: dict) -> dict[str, float]:
     }
 
 
+def _validatedMarginShocks(path: list[float] | None, horizon: int) -> tuple[float, ...] | None:
+    """영업이익률 충격 경로를 검증한다. 길이 불일치나 유한하지 않은 값은 계산 전에 막는다."""
+    if path is None:
+        return None
+    shocks = tuple(float(value) for value in path)
+    if len(shocks) != horizon:
+        raise ValueError("operatingMarginShockPath 길이는 revenueGrowthPath 와 같아야 합니다")
+    if not all(math.isfinite(value) for value in shocks):
+        raise ValueError("operatingMarginShockPath 에 유한하지 않은 값이 있습니다")
+    return shocks
+
+
+def _absorbMarginShock(yr, shockPct: float) -> float:
+    """영업이익률 %p 충격을 판관비, 그다음 매출원가로 흡수하고 흡수하지 못한 금액을 돌려준다.
+
+    이익률을 내리는 충격(음수)은 판관비를 늘린다. 올리는 충격(양수)은 판관비를 먼저 줄이고
+    모자라면 매출원가를 줄인다. 비용은 0 밑으로 내리지 않으므로 그 한도를 넘는 상승분만
+    미흡수로 남아 경고로 드러난다.
+    """
+    shift = yr.revenue * shockPct / 100
+    if shift <= 0:
+        yr.sga -= shift
+        return 0.0
+    fromSga = min(shift, yr.sga)
+    yr.sga -= fromSga
+    remainder = shift - fromSga
+    fromCogs = min(remainder, yr.cogs)
+    yr.cogs -= fromCogs
+    return remainder - fromCogs
+
+
 def buildProforma(
     series: dict,
     revenueGrowthPath: list[float],
@@ -327,6 +359,7 @@ def buildProforma(
     scenarioName: str = "base",
     overrides: dict[str, float] | None = None,
     revenueLevelPath: list[float] | None = None,
+    operatingMarginShockPath: list[float] | None = None,
 ) -> ProFormaResult:
     """3-statement pro-forma 생성.
 
@@ -341,6 +374,10 @@ def buildProforma(
         revenueLevelPath: 절대 매출레벨 경로 (원). 주어지면 base 상대성장 대신 이 레벨을
             매출로 직접 사용 (봉인 매출기대 앵커링, 06 D2 해소). BS 기초잔액은 base(TTM)
             유지, IS 첫 줄만 절대 앵커. 길이 = revenueGrowthPath 와 동일해야 함.
+        operatingMarginShockPath: 연도별 영업이익률 이동 (%p). 과거 비율로 추정한 영업이익률
+            위에 시나리오 충격을 얹는다. 판관비가 흡수해 매출총이익 - 판관비 = 영업이익
+            항등식을 유지하고, 판관비가 바닥나면 나머지를 매출원가가 흡수한다. 길이 =
+            revenueGrowthPath 와 동일해야 함.
 
     Capabilities:
         - 과거 비율 + 성장 경로 + WACC 로 IS/BS/CF 3-statement 추정.
@@ -370,6 +407,7 @@ def buildProforma(
     from dartlab.analysis.financial.proforma import ProFormaResult, ProFormaYear  # noqa: F401
 
     warnings: list[str] = []
+    marginShocks = _validatedMarginShocks(operatingMarginShockPath, len(revenueGrowthPath))
 
     # 1. 과거 비율 추출
     ratios = extractHistoricalRatios(series)
@@ -457,6 +495,10 @@ def buildProforma(
         else:
             yr.cogs = yr.revenue * (1 - yr_gm / 100)
             yr.sga = yr.revenue * yr_sga / 100
+        if marginShocks is not None:
+            unabsorbed = _absorbMarginShock(yr, marginShocks[i])
+            if unabsorbed:
+                warnings.append(f"+{yr.year_offset}년: 영업이익률 충격 일부 미흡수 {unabsorbed / 1e8:.0f}억")
         yr.gross_profit = yr.revenue - yr.cogs
         yr.depreciation = yr.revenue * yr_dep / 100
 

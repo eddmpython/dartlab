@@ -94,10 +94,78 @@ def _snapshot(
 # wiring + evaluation over a synthetic snapshot
 # ──────────────────────────────────────────────────────────────────────
 @pytest.mark.unit
-def test_buildScenarioSheet_has_four_nodes() -> None:
+def test_buildScenarioSheet_wires_one_node_per_macro_input_and_channel() -> None:
     sheet = buildScenarioSheet(_snapshot(baseRevenue=300.0), scenario="baseline", horizon=3)
-    assert len(sheet.nodes) == 4
-    assert {n.driverId for n in sheet.nodes.values()} == {"macro.path", "rev.path", "proforma", "dcf"}
+    deps = {node.driverId: {sheet.nodes[dep].driverId for dep in node.deps} for node in sheet.nodes.values()}
+    assert deps == {
+        "macro.path": set(),
+        "macro.rate": set(),
+        "macro.fx": set(),
+        "rev.path": {"macro.path", "macro.fx"},
+        "margin.path": {"macro.path", "macro.rate"},
+        "wacc.path": {"macro.rate"},
+        "proforma": {"rev.path", "margin.path"},
+        "dcf": {"proforma", "wacc.path"},
+    }
+
+
+def _sheetWithRatePath(snapshot: dict, rates: list[float]):
+    """baseline 시트의 금리 root 만 바꾼다. 다른 입력이 같으므로 금리 채널만 격리된다."""
+    from dartlab.simulate.registry import _FN_MACRO_RATE
+
+    sheet = buildScenarioSheet(snapshot, scenario="baseline", horizon=3)
+    snap = sheet.snapshot
+
+    def ratePath(node, sht, deps):
+        return rates[-1], tuple(rates), "preset:baseline", (), {"path": rates}, snap["asOf"], snap["latestAsOf"]
+
+    sheet.registry[_FN_MACRO_RATE] = ratePath
+    return sheet
+
+
+@pytest.mark.unit
+def test_rate_shock_reaches_wacc_and_dcf_but_not_revenue() -> None:
+    """금리만 올린 경로는 매출을 건드리지 않고 WACC 경로를 올려 기업가치를 낮춘다."""
+    from dartlab.synth.scenario import BASELINE_RATE
+
+    flat = evaluateSheet(_sheetWithRatePath(_snapshot(baseRevenue=300.0), [BASELINE_RATE] * 3))
+    shocked = evaluateSheet(_sheetWithRatePath(_snapshot(baseRevenue=300.0), [BASELINE_RATE + 2.0] * 3))
+
+    assert shocked["rev.path@baseline#all"].vector == flat["rev.path@baseline#all"].vector
+    assert flat["wacc.path@baseline#all"].vector == (10.0, 10.0, 10.0)
+    assert shocked["wacc.path@baseline#all"].vector == (11.0, 11.0, 11.0)
+    assert shocked["dcf@baseline#all"].vector[0] < flat["dcf@baseline#all"].vector[0]
+    assert shocked["dcf@baseline#all"].inputsHash != flat["dcf@baseline#all"].inputsHash
+
+
+@pytest.mark.unit
+def test_margin_channel_reaches_proforma_fcf() -> None:
+    """마진만 움직이는 탄성(매출 GDP 탄성 0)에서도 GDP 경로가 FCF 를 바꾼다. 표시용 경로가 아니다."""
+    snapshot = _snapshot(baseRevenue=300.0)
+    snapshot["elasticity"] = SectorElasticity(0.0, 0.0, 50, 0, "high")
+    baseline = evaluateSheet(buildScenarioSheet(snapshot, scenario="baseline", horizon=3))
+    adverse = evaluateSheet(buildScenarioSheet(snapshot, scenario="adverse", horizon=3))
+
+    assert adverse["margin.path@adverse#all"].vector != baseline["margin.path@baseline#all"].vector
+    assert adverse["proforma@adverse#all"].vector != baseline["proforma@baseline#all"].vector
+
+
+@pytest.mark.unit
+def test_transfer_channels_match_combined_transfer_byte_for_byte() -> None:
+    from dartlab.simulate.transfer import (
+        transferMarginChannel,
+        transferRevenueChannel,
+        transferRevenuePath,
+        transferWaccChannel,
+    )
+
+    financials = SectorElasticity(0.4, -0.2, 20, 35, "moderate")
+    for elasticity in (_SEMI, financials):
+        gdp, rate, fx = [-3.0, 0.5, 2.2], [1.0, 3.5, 2.0], [1600, 1420, 1510]
+        revenue, margin, wacc = transferRevenuePath(100.0, -49.0, gdp, rate, fx, elasticity, 9.0)
+        assert transferRevenueChannel(100.0, gdp, fx, elasticity) == revenue
+        assert transferMarginChannel(-49.0, gdp, rate, elasticity) == margin
+        assert transferWaccChannel(9.0, rate) == wacc
 
 
 @pytest.mark.unit
@@ -111,7 +179,7 @@ def test_evaluate_synthetic_dag_macro_to_proforma() -> None:
     assert macro.vector is not None and len(macro.vector) == 3
     assert rev.vector is not None and len(rev.vector) == 3
     assert rev.provenance.startswith("transfer:")
-    assert rev.refs == ("simulate.transfer:transferRevenuePath",)
+    assert rev.refs == ("simulate.transfer:transferRevenueChannel",)
     # the L2 leaf produced projections (per-year FCF vector) + terminal revenue value.
     assert pf.value is not None
     assert pf.vector is not None and len(pf.vector) > 0
@@ -158,24 +226,36 @@ def test_dcf_node_honest_gap_when_net_debt_absent() -> None:
     assert "netDebt_absent" in dcf.provenance
 
 
+def _dcfNode():
+    from dartlab.simulate.sheet import DriverNode
+
+    return DriverNode(
+        "dcf@baseline#all",
+        "dcf",
+        "baseline",
+        "all",
+        ("proforma@baseline#all", "wacc.path@baseline#all"),
+        "simulate.dcf",
+    )
+
+
+def _dcfDeps(fcf: tuple, wacc: tuple) -> dict:
+    from dartlab.simulate.sheet import NodeValue
+
+    return {
+        "proforma@baseline#all": NodeValue(100.0, fcf, "test", (), "a" * 64, "2024Q4", "2024Q4"),
+        "wacc.path@baseline#all": NodeValue(wacc[-1], wacc, "test", (), "b" * 64, "2024Q4", "2024Q4"),
+    }
+
+
 @pytest.mark.unit
 def test_dcf_node_blocks_incomplete_fcf_without_time_compaction() -> None:
     from dartlab.simulate.registry import _fnDcf
-    from dartlab.simulate.sheet import DriverSheet, NodeValue
+    from dartlab.simulate.sheet import DriverSheet
 
-    snapshot = _snapshot(baseRevenue=300.0)
-    sheet = DriverSheet(snapshot=snapshot)
-    partial = NodeValue(
-        value=100.0,
-        vector=(100.0, None, 100.0),
-        provenance="test",
-        refs=(),
-        inputsHash="a" * 64,
-        asOf="2024Q4",
-        latestAsOf="2024Q4",
-    )
+    sheet = DriverSheet(snapshot=_snapshot(baseRevenue=300.0))
 
-    value, vector, provenance, *_ = _fnDcf(object(), sheet, {"proforma": partial})
+    value, vector, provenance, *_ = _fnDcf(_dcfNode(), sheet, _dcfDeps((100.0, None, 100.0), (10.0, 10.0, 10.0)))
 
     assert value is None
     assert vector is None
@@ -185,18 +265,46 @@ def test_dcf_node_blocks_incomplete_fcf_without_time_compaction() -> None:
 @pytest.mark.unit
 def test_dcf_node_blocks_invalid_terminal_growth_contract() -> None:
     from dartlab.simulate.registry import _fnDcf
-    from dartlab.simulate.sheet import DriverSheet, NodeValue
+    from dartlab.simulate.sheet import DriverSheet
 
     snapshot = _snapshot(baseRevenue=300.0)
-    snapshot.update(baseWacc=3.0, terminalGrowth=3.0)
+    snapshot.update(terminalGrowth=3.0)
     sheet = DriverSheet(snapshot=snapshot)
-    complete = NodeValue(100.0, (100.0, 100.0), "test", (), "a" * 64, "2024Q4", "2024Q4")
 
-    value, vector, provenance, *_ = _fnDcf(object(), sheet, {"proforma": complete})
+    value, vector, provenance, *_ = _fnDcf(_dcfNode(), sheet, _dcfDeps((100.0, 100.0), (4.0, 3.0)))
 
     assert value is None
     assert vector is None
     assert provenance == "dcf:gap(terminalGrowth_not_below_wacc)"
+
+
+@pytest.mark.unit
+def test_dcf_node_flat_wacc_path_reproduces_constant_rate_formula() -> None:
+    from dartlab.simulate.registry import _fnDcf
+    from dartlab.simulate.sheet import DriverSheet
+
+    snapshot = _snapshot(baseRevenue=300.0, netDebt=0.0)
+    sheet = DriverSheet(snapshot=snapshot)
+    fcf = (100.0, 110.0, 120.0)
+
+    _value, vector, *_ = _fnDcf(_dcfNode(), sheet, _dcfDeps(fcf, (10.0, 10.0, 10.0)))
+
+    pv = sum(cash / 1.1 ** (year + 1) for year, cash in enumerate(fcf))
+    terminal = 120.0 * 1.03 / (0.10 - 0.03) / 1.1**3
+    assert vector[0] == pytest.approx(round(pv + terminal, 2))
+
+
+@pytest.mark.unit
+def test_dcf_node_requires_wacc_dependency_instead_of_falling_back() -> None:
+    from dartlab.simulate.registry import _fnDcf
+    from dartlab.simulate.sheet import DriverSheet
+
+    sheet = DriverSheet(snapshot=_snapshot(baseRevenue=300.0))
+    deps = _dcfDeps((100.0, 100.0), (10.0, 10.0))
+    deps.pop("wacc.path@baseline#all")
+
+    with pytest.raises(ValueError, match="wacc.path"):
+        _fnDcf(_dcfNode(), sheet, deps)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -550,7 +658,7 @@ def test_realData_runScenario_005930() -> None:
         assert len(baseline.revenuePath) == 3
         assert baseline.proformaYears > 0
         assert baseline.fcfPath is not None
-        assert baseline.nodes[DRIVER_REV].refs == ("simulate.transfer:transferRevenuePath",)
+        assert baseline.nodes[DRIVER_REV].refs == ("simulate.transfer:transferRevenueChannel",)
         assert baseline.nodes[DRIVER_PROFORMA].provenance.startswith("proforma:cashplug")
         assert baseline.nodes[DRIVER_DCF].provenance.startswith("dcf:fcff")
 

@@ -18,6 +18,7 @@ from __future__ import annotations
 from dartlab.synth.scenario import (
     BASELINE_FX,
     BASELINE_RATE,
+    DEFAULT_ELASTICITY,
     SectorElasticity,
 )
 
@@ -227,3 +228,116 @@ def transferRevenuePath(
         prevRev = adjRev
         prevMargin = adjMargin
     return revPath, marginPath, waccPath
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Per-channel projections of the single transfer (driver sheet nodes)
+# ──────────────────────────────────────────────────────────────────────
+# The driver sheet keeps one node per channel so the audit shows which macro input moves which
+# fundamental: revenue reads GDP and FX, margin reads GDP and the rate, WACC reads the rate. Each
+# channel is a projection of `transferMacroToFundamentals`, the one formula SSOT, so the channel
+# paths are byte-identical to `transferRevenuePath` by construction. The inputs a channel does not
+# read are fed with neutral values that the formula provably ignores for that output.
+
+
+def transferRevenueChannel(
+    baseRevenue: float,
+    gdpPath: list[float],
+    fxPath: list[float],
+    elasticity: SectorElasticity,
+) -> list[float]:
+    """Carry the revenue channel of the macro transfer over a horizon (GDP and FX only).
+
+    Args:
+        baseRevenue: base-year revenue level, in currency units.
+        gdpPath: per-year GDP growth, in percent.
+        fxPath: per-year FX level (e.g. KRW/USD), measured against `BASELINE_FX`.
+        elasticity: the sector's `SectorElasticity`.
+
+    Returns:
+        list[float]: per-year revenue, each year compounding on the previous year, of length
+        ``min(len(gdpPath), len(fxPath))``. Identical to the revenue path of `transferRevenuePath`.
+
+    Raises:
+        None.
+
+    Example:
+        >>> from dartlab.synth.scenario import SectorElasticity
+        >>> e = SectorElasticity(1.8, 0.8, 50, 0, "high")
+        >>> [round(v, 4) for v in transferRevenueChannel(100.0, [-3.0], [1600], e)]
+        [95.3075]
+    """
+    path: list[float] = []
+    previous = baseRevenue
+    for gdp, fx in zip(gdpPath, fxPath):
+        # rate and margin do not enter the revenue formula, so neutral inputs are exact here.
+        revenue, _margin, _wacc = transferMacroToFundamentals(previous, 0.0, gdp, BASELINE_RATE, fx, elasticity, 0.0)
+        path.append(revenue)
+        previous = revenue
+    return path
+
+
+def transferMarginChannel(
+    baseMargin: float,
+    gdpPath: list[float],
+    ratePath: list[float],
+    elasticity: SectorElasticity,
+) -> list[float]:
+    """Carry the operating-margin channel of the macro transfer (GDP, and the rate for financials).
+
+    Args:
+        baseMargin: base-year operating margin, in percent.
+        gdpPath: per-year GDP growth, in percent.
+        ratePath: per-year policy rate, in percent, measured against `BASELINE_RATE`.
+        elasticity: the sector's `SectorElasticity` (``marginToGdp`` and ``nimToRate``).
+
+    Returns:
+        list[float]: per-year operating margin in percent, floored at -50 each year and carried
+        forward, of length ``min(len(gdpPath), len(ratePath))``. Identical to the margin path of
+        `transferRevenuePath`.
+
+    Raises:
+        None.
+
+    Example:
+        >>> from dartlab.synth.scenario import SectorElasticity
+        >>> e = SectorElasticity(1.8, 0.8, 50, 0, "high")
+        >>> transferMarginChannel(10.0, [-3.0], [1.0], e)
+        [8.5]
+    """
+    path: list[float] = []
+    previous = baseMargin
+    for gdp, rate in zip(gdpPath, ratePath):
+        # revenue and FX do not enter the margin formula, so neutral inputs are exact here.
+        _revenue, margin, _wacc = transferMacroToFundamentals(1.0, previous, gdp, rate, BASELINE_FX, elasticity, 0.0)
+        path.append(margin)
+        previous = margin
+    return path
+
+
+def transferWaccChannel(baseWacc: float, ratePath: list[float]) -> list[float]:
+    """Map the policy-rate path onto a per-year WACC path (half pass-through, no carry).
+
+    Args:
+        baseWacc: base discount rate, in percent.
+        ratePath: per-year policy rate, in percent, measured against `BASELINE_RATE`.
+
+    Returns:
+        list[float]: per-year WACC in percent, one entry per rate. Identical to the WACC path of
+        `transferRevenuePath`.
+
+    Raises:
+        None.
+
+    Example:
+        >>> transferWaccChannel(10.0, [BASELINE_RATE + 1.0])
+        [10.5]
+    """
+    path: list[float] = []
+    for rate in ratePath:
+        # only the rate change enters the WACC formula; the elasticity argument is not read for it.
+        _revenue, _margin, wacc = transferMacroToFundamentals(
+            1.0, 0.0, 0.0, rate, BASELINE_FX, DEFAULT_ELASTICITY, baseWacc
+        )
+        path.append(wacc)
+    return path

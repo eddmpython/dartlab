@@ -5,7 +5,7 @@ A simulate result is always a set of node values carrying
 the born-clean foundation into one run:
 
     buildSnapshot(company)             # read base metrics ONCE (§13b-5)
-      -> buildScenarioSheet(snapshot)  # macro -> rev -> proforma -> dcf (registry §5)
+      -> buildScenarioSheet(snapshot)  # macro roots -> rev/margin/wacc -> proforma -> dcf (§5)
         -> evaluateSheet(sheet)        # deterministic topo executor (§6.2)
           -> SimulationResult          # ref + quality status + provenance + asOf (§3)
 
@@ -27,11 +27,14 @@ from typing import Any
 
 from dartlab.simulate.registry import (
     DRIVER_DCF,
-    DRIVER_MACRO,
+    DRIVER_MARGIN,
     DRIVER_PROFORMA,
     DRIVER_REV,
+    DRIVER_WACC,
+    SCENARIO_DRIVER_IDS,
     buildScenarioSheet,
     buildSnapshot,
+    nodeIdFor,
     validateScenarioSpec,
 )
 from dartlab.simulate.sheet import NodeValue, evaluateSheet
@@ -129,8 +132,10 @@ class SimulationResult:
         scenarioName  : the scenario id this run used.
         horizon       : number of forecast years.
         revenuePath   : per-year absolute revenue (None when base revenue absent).
-        marginPath    : per-year operating margin (%) - carried from the transfer node frozen input.
+        marginPath    : per-year operating margin (%) from the margin.path node. The proforma node
+                        applies it as a shock over its own margin projection, so it moves FCF.
         fcfPath       : per-year proforma FCF (None on a proforma gap).
+        waccPath      : per-year discount rate (%) from the wacc.path node, used by the dcf node.
         proformaYears : number of ProFormaYear projections the L2 leaf produced.
         terminalRevenue : the proforma terminal-year revenue (the proforma node value).
         dcfPerShare   : the dcf node's per-share value (None when shares / FCF absent).
@@ -171,6 +176,7 @@ class SimulationResult:
     dataExecutionReceipts: tuple[str, ...] = field(default_factory=tuple)
     dataInputGaps: tuple[str, ...] = field(default_factory=tuple)
     dataEvidence: DataEvidence | None = None
+    waccPath: tuple[float | None, ...] | None = None
 
 
 def _dataEvidence(snapshot: dict) -> DataEvidence | None:
@@ -224,7 +230,8 @@ def runScenario(
 
     Capabilities:
         Reads the company's base metrics ONCE into a frozen snapshot, wires the deterministic
-        ``macro.path -> rev.path -> proforma -> dcf`` DriverSheet for the named scenario, evaluates
+        8-node DriverSheet (GDP / rate / FX roots, revenue / margin / WACC channels, proforma, dcf)
+        for the named scenario, evaluates
         it with the topological executor, and assembles a `SimulationResult` carrying the
         revenue / margin / FCF paths, the dcf per-share value, and a per-node audit
         (provenance / refs / quality status / inputsHash / asOf). honest-gap: a missing leaf or
@@ -268,7 +275,7 @@ def runScenario(
 
     How:
         buildSnapshot (read once) -> buildScenarioSheet -> evaluateSheet -> assemble
-        SimulationResult from the four node values.
+        SimulationResult from the node values (one audit per wired driver).
 
     SeeAlso:
         - ``dartlab.simulate.registry.buildScenarioSheet``: the node wiring.
@@ -301,26 +308,13 @@ def runScenario(
     sheet = buildScenarioSheet(snapshot, scenario=scenario, horizon=horizon)
     out = evaluateSheet(sheet)
 
-    macroId = f"{DRIVER_MACRO}@{scenario}#all"
-    revId = f"{DRIVER_REV}@{scenario}#all"
-    proformaId = f"{DRIVER_PROFORMA}@{scenario}#all"
-    dcfId = f"{DRIVER_DCF}@{scenario}#all"
+    revNv = out[nodeIdFor(DRIVER_REV, scenario)]
+    marginNv = out[nodeIdFor(DRIVER_MARGIN, scenario)]
+    waccNv = out[nodeIdFor(DRIVER_WACC, scenario)]
+    proformaNv = out[nodeIdFor(DRIVER_PROFORMA, scenario)]
+    dcfNv = out[nodeIdFor(DRIVER_DCF, scenario)]
 
-    revNv = out[revId]
-    proformaNv = out[proformaId]
-    dcfNv = out[dcfId]
-
-    # margin path rides in the rev node's frozen input, which is not surfaced on the NodeValue;
-    # recompute it deterministically from the same snapshot transfer for the result (the audit
-    # node still carries the authoritative provenance/refs/hash).
-    marginPath = _marginPathFromSnapshot(snapshot, scenario, horizon)
-
-    nodes = {
-        DRIVER_MACRO: _audit(DRIVER_MACRO, out[macroId]),
-        DRIVER_REV: _audit(DRIVER_REV, revNv),
-        DRIVER_PROFORMA: _audit(DRIVER_PROFORMA, proformaNv),
-        DRIVER_DCF: _audit(DRIVER_DCF, dcfNv),
-    }
+    nodes = {driverId: _audit(driverId, out[nodeIdFor(driverId, scenario)]) for driverId in SCENARIO_DRIVER_IDS}
     assumptions = tuple(snapshot.get("assumptions", ()))
     snapshotWarnings = tuple(snapshot.get("warnings", ()))
     dataInputGaps = tuple(snapshot.get("dataInputGaps", ()))
@@ -357,7 +351,7 @@ def runScenario(
         scenarioName=scenario,
         horizon=horizon,
         revenuePath=revNv.vector,
-        marginPath=marginPath,
+        marginPath=marginNv.vector,
         fcfPath=proformaNv.vector,
         proformaYears=len(proformaNv.vector) if proformaNv.vector else 0,
         terminalRevenue=proformaNv.value,
@@ -379,6 +373,7 @@ def runScenario(
         dataExecutionReceipts=tuple(snapshot.get("dataExecutionReceipts", ())),
         dataInputGaps=dataInputGaps,
         dataEvidence=dataEvidence,
+        waccPath=waccNv.vector,
     )
 
 
@@ -424,32 +419,3 @@ def _assumptionLedger(
                     }
                 )
     return tuple(rows)
-
-
-def _marginPathFromSnapshot(snapshot: dict, scenario: str, horizon: int) -> tuple[float, ...] | None:
-    """Deterministically recompute the margin path for the result (same transfer as the rev node).
-
-    The rev node carries the margin path in its frozen input (hashed, audited), but the executor
-    does not surface frozen inputs on `NodeValue`. The result recomputes it from the same snapshot
-    + preset via the same transfer, so the number shown matches the audited node byte-for-byte.
-    Returns None on an honest base-revenue gap.
-    """
-    from dartlab.simulate.transfer import transferRevenuePath
-    from dartlab.synth.scenario import getPresetScenarios
-
-    baseRevenue = snapshot.get("baseRevenue")
-    if baseRevenue is None or snapshot.get("parameterVintageStatus", "available") != "available":
-        return None
-    baseMargin = snapshot["baseMargin"] if snapshot.get("baseMargin") is not None else 10.0
-    presets = getPresetScenarios("KR")
-    sc = presets[scenario]
-    _rev, marginPath, _wacc = transferRevenuePath(
-        baseRevenue,
-        baseMargin,
-        list(sc.gdpGrowth[:horizon]),
-        list(sc.interestRate[:horizon]),
-        list(sc.krwUsd[:horizon]),
-        snapshot["elasticity"],
-        snapshot["baseWacc"],
-    )
-    return tuple(marginPath)

@@ -25,6 +25,7 @@ outputs:
   - revenuePath
   - marginPath
   - fcfPath
+  - waccPath
   - dcfPerShare
   - node audit와 inputsHash
   - quality와 data gaps
@@ -90,7 +91,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-08-03'
+lastUpdated: '2026-09-29'
 testUniverse:
   market: KR
   stockCodes:
@@ -102,7 +103,20 @@ visualRefs:
 
 ## 엔진 역할
 
-`simulate`는 회사 원자료와 매크로 시나리오를 `macro.path -> rev.path -> proforma -> dcf` 결정론 드라이버 시트로 연결하는 L3 엔진이다. 난수를 쓰지 않으며 같은 target, scenario, asOf는 같은 노드별 `inputsHash`를 만든다. 결과는 미래 확정치가 아니라 입력 가정에 조건부인 변환 결과다.
+`simulate`는 회사 원자료와 매크로 시나리오를 결정론 드라이버 시트로 연결하는 L3 엔진이다. 난수를 쓰지 않으며 같은 target, scenario, asOf는 같은 노드별 `inputsHash`를 만든다. 결과는 미래 확정치가 아니라 입력 가정에 조건부인 변환 결과다.
+
+드라이버 시트는 매크로 변수와 전달 채널마다 노드 하나를 둔다. 노드 감사에서 어느 입력이 어느 숫자를 움직였는지 그대로 읽힌다.
+
+| 노드 | 의존 | 역할 |
+|---|---|---|
+| `macro.path`, `macro.rate`, `macro.fx` | 없음 | 프리셋 GDP, 기준금리, 원달러 경로 |
+| `rev.path` | GDP, 환율 | 매출 채널 |
+| `margin.path` | GDP, 금리 | 영업이익률 채널 (금리는 금융업 NIM만) |
+| `wacc.path` | 금리 | 할인율 채널 (금리 변화의 절반) |
+| `proforma` | 매출, 마진 | 성장 경로와 영업이익률 충격으로 3표 추정 |
+| `dcf` | proforma, WACC | 연도별 시나리오 WACC로 FCFF 할인 |
+
+금리 충격은 WACC 경로를 통해 주당 DCF를 움직인다. 마진 경로는 proforma 영업이익에 충격으로 반영되어 FCF를 움직인다.
 
 ## 공개 호출 방식
 
@@ -144,7 +158,7 @@ company_result = c.simulate(scenario="adverse", horizon=3, asOf="2024")
 
 1. target을 KR Company로 해소하고 지원하지 않는 시장과 시나리오를 차단한다.
 2. 회사 snapshot과 매크로 preset을 같은 asOf 경계에 고정한다.
-3. DriverSheet를 위상 순서로 평가해 매출, 마진, proforma, FCF, DCF 노드를 계산한다.
+3. DriverSheet를 위상 순서로 평가해 매크로, 매출, 마진, WACC, proforma, DCF 노드를 계산한다.
 4. 각 노드에 provenance, refs, inputsHash, 품질 상태와 gap을 남긴다.
 5. base와 stress 비교는 target, horizon, asOf를 동일하게 유지하고 scenario만 변경한다.
 
@@ -160,6 +174,7 @@ SimulationResult
   revenuePath: list[float | None]
   marginPath: list[float | None]
   fcfPath: list[float | None]
+  waccPath: list[float | None]
   dcfPerShare: float | None
   quality: ok | partial
   gaps: list

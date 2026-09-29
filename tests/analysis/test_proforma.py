@@ -317,6 +317,35 @@ class TestBuildProforma:
         assert [round(p.revenue, 4) for p in r.projections] == levels
 
     @pytest.mark.unit
+    def test_operating_margin_shock_moves_operating_income_and_keeps_identities(self):
+        """영업이익률 %p 충격은 판관비가 흡수해 영업이익을 매출 x 충격만큼 옮기고 항등식을 지킨다."""
+        base = buildProforma(SERIES, revenueGrowthPath=[5.0, 4.0])
+        shocked = buildProforma(SERIES, revenueGrowthPath=[5.0, 4.0], operatingMarginShockPath=[-2.0, -3.0])
+        for before, after, shock in zip(base.projections, shocked.projections, (-2.0, -3.0)):
+            assert after.revenue == pytest.approx(before.revenue)
+            assert after.operating_income - before.operating_income == pytest.approx(after.revenue * shock / 100)
+            assert after.gross_profit == pytest.approx(after.revenue - after.cogs)
+            assert after.ebitda == pytest.approx(after.operating_income + after.depreciation)
+            assert after.bs_balanced
+        assert shocked.projections[0].fcf < base.projections[0].fcf
+
+    @pytest.mark.unit
+    def test_operating_margin_shock_rejects_misaligned_or_non_finite_path(self):
+        with pytest.raises(ValueError, match="길이"):
+            buildProforma(SERIES, revenueGrowthPath=[5.0, 4.0], operatingMarginShockPath=[1.0])
+        with pytest.raises(ValueError, match="유한"):
+            buildProforma(SERIES, revenueGrowthPath=[5.0], operatingMarginShockPath=[float("nan")])
+
+    @pytest.mark.unit
+    def test_operating_margin_shock_beyond_cost_base_is_reported_not_hidden(self):
+        """비용을 0 밑으로 내릴 만큼 큰 상승 충격은 흡수 한도까지만 반영하고 경고로 남긴다."""
+        result = buildProforma(SERIES, revenueGrowthPath=[0.0], operatingMarginShockPath=[500.0])
+        p = result.projections[0]
+        assert p.sga == pytest.approx(0.0)
+        assert p.cogs == pytest.approx(0.0)
+        assert any("미흡수" in w for w in result.warnings)
+
+    @pytest.mark.unit
     def test_wacc_in_result(self):
         result = buildProforma(SERIES, revenueGrowthPath=[5.0])
         assert 5.0 <= result.wacc <= 20.0
