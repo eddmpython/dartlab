@@ -138,6 +138,17 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SYNC_CATEGORY: finance
 
+      # 접수 원장: 이번 run 에 바뀐 종목 parquet 의 공시별 내용 해시와 관측 시각을 불변 파일로 쌓는다.
+      # finance 는 제자리 덮어쓰기라 과거 시점 내용을 증명할 수 없고, 이 시각은 소급해서 만들 수 없다.
+      # HF dart/financeReceipts/ 에 run 마다 새 파일만 올리며 같은 경로가 있으면 실패한다.
+      # 원장 실패가 수집, 업로드, 캐시 저장을 막지 않도록 격리한다.
+      - name: Build and upload finance receipt ledger
+        if: hashFiles('dist/changed_finance.txt') != ''
+        continue-on-error: true
+        run: uv run python -X utf8 -m dartlab.pipeline.financeReceipts --out-dir dist/financeReceipts --upload
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
       - name: Upload to HuggingFace (report)
         if: hashFiles('dist/changed_report.txt') != ''
         run: |
