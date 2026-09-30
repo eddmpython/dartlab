@@ -227,7 +227,19 @@ def captureRichOutput(fn, *, width: int = 120, color: bool = False) -> str:
 
     _loggerMod.installRichHandler()
     buf = io.StringIO()
-    newConsole = Console(file=buf, record=True, force_terminal=True, width=width, color_system="truecolor")
+    # 실제 터미널의 TERM=dumb 또는 Windows legacy 탐지가 snapshot 폭과
+    # 진행률 프레임을 바꾸지 않도록 캡처용 터미널만 같은 조건으로 고정한다.
+    newConsole = Console(
+        file=buf,
+        record=True,
+        force_terminal=True,
+        force_interactive=True,
+        force_jupyter=False,
+        legacy_windows=False,
+        width=width,
+        color_system="truecolor",
+        _environ={"TERM": "xterm-256color"},
+    )
     savedConsole = _loggerMod._console
     savedProgress = _loggerMod._progress
     _loggerMod._console = newConsole
