@@ -11,11 +11,31 @@ permissions:
   attestations: write
 
 jobs:
+  release-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Enforce published patch transition
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python -X utf8 tests/audit/releasePolicy.py --tag "$RELEASE_TAG"
+
   # CI Full 강제 게이트 — tag push 시점에 ci-full.yml 의 모든 잡 (test-full +
   # fixture-integration + cross-os-smoke + realdata-suite) 통과 후에만 publish 진행.
   # 2026-04-26 사고 (v0.9.25 ci-full fail 인데 PyPI 업로드됨) 재발 방지.
   ci-full:
+    needs: release-policy
     uses: ./.github/workflows/ci-full.yml
+
+  ci-nightly:
+    needs: release-policy
+    uses: ./.github/workflows/ci-nightly.yml
+    secrets: inherit
 
   # Wheel packaging 게이트 — PyPI publish 전 반드시 통과해야 하는 필수 검증.
   # 2026-04-19 사고 (0.9.15 wheel 에 parserMappings 누락) 같은 사고가 다시는
@@ -23,7 +43,7 @@ jobs:
   # 리소스 + sections 런타임 초기화를 검증한다. 실패 시 publish 전체 중단.
   wheel-smoke:
     runs-on: ubuntu-latest
-    needs: ci-full
+    needs: [ci-full, ci-nightly]
     steps:
       - uses: actions/checkout@v6
 
@@ -40,7 +60,7 @@ jobs:
 
   build:
     name: Build package
-    needs: [ci-full, wheel-smoke]
+    needs: [ci-full, ci-nightly, wheel-smoke]
     runs-on: ubuntu-latest
 
     steps:

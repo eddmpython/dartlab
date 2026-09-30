@@ -91,6 +91,12 @@ testUniverse:
 
 ## 실행 순서
 
+`preflight`는 fast 필수 게이트 전체다. 전체 제품 검증 요청이나 릴리즈 완료를 이것만으로
+판정하지 않는다. `tier full/nightly`는 로컬 Python과 OS에서 실데이터 shard를 모두 실행한다.
+다른 Python/OS 조합은 CI matrix 증거가 필요하다. `tier`는 선택한 non-blocking 검사도 실패하면
+실패로 보고하며, CI의 개별 `gate`는 non-blocking 실패를 경고로 남긴다. skip과 dry-run은 동작
+검증 성공이 아니다. 릴리즈의 최종 필수 범위는 `operation.contributionWorkflow`를 따른다.
+
 - 1. 핵심 원칙: 4 개로 간다 기준을 확인한다.
 - 2. 3-Tier CI 구조 기준을 확인한다.
 - Tier 1: `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.
@@ -199,6 +205,8 @@ Unit marker 테스트는 fixture setup 이전부터 strict offline guard를 적�
 | 스크립트 | 룰 |
 |---|---|
 | `tests/audit/qualityGate.py` | radon 복잡도 + vulture 죽은 코드 자동 검사 |
+| `tests/audit/releasePolicy.py` | PyPI 발행 버전 기준 patch 한 단계, staged/lock/tag 일치. Git hook과 배포 공통 |
+| `tests/audit/commitPolicy.py` | 커밋 메시지와 공개 산출물 작성 규칙. 추적되는 Git hook에서 실행 |
 | `tests/audit/coreBoundary.py` | core 경계 lint. `src/dartlab/core/`의 거주 자격은 `operation.architecture`를 따른다. |
 | `tests/audit/overSplitInventory.py` | 과분할 폴더 인벤토리 (operation.code 룰 1) |
 | `tests/audit/staleImports.py` | stale top-level import lint: `from dartlab import X` / `import dartlab as Y` 잔존 검출 |

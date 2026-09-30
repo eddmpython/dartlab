@@ -7486,7 +7486,8 @@
         "기여 작업 흐름",
         "커밋 규칙",
         "코드 변경 전 운영 규칙 확인",
-        "공개 산출물 작성 규칙"
+        "공개 산출물 작성 규칙",
+        "릴리즈 버전과 태그 발행"
       ],
       "inputs": [
         "변경 목적",
@@ -7526,7 +7527,8 @@
         "변경은 한 논리 단위로 묶고, unrelated dirty worktree는 되돌리지 않는다.",
         "검증은 변경 범위에 맞게 최소 충분하게 실행하고 결과를 남긴다.",
         "검증한 본인 변경을 명시 경로로 커밋하고 한국어 메시지로 남긴다.",
-        "전체 미푸시 범위를 검토한 뒤 일반 push까지 완료하며 별도 확인을 다시 요청하지 않는다."
+        "전체 미푸시 범위를 검토한 뒤 일반 push까지 완료하며 별도 확인을 다시 요청하지 않는다.",
+        "릴리즈 지시가 있으면 PyPI 발행 완료 버전에서 patch 한 단계만 올리고 필수 배포 검증을 마친다."
       ],
       "recipeSteps": [],
       "requiredEvidence": [
@@ -7553,7 +7555,8 @@
         "`git add .` 또는 `git add -A` 로 넓게 staging하지 않는다.",
         "unrelated 변경을 되돌리거나 같은 커밋에 섞지 않는다.",
         "커밋 메시지와 공개 문서에 assistant identity, 모델명, vendor명, generated-by 표식을 쓰지 않는다.",
-        "실패한 검증을 통과한 것처럼 적지 않는다."
+        "실패한 검증을 통과한 것처럼 적지 않는다.",
+        "운영자의 정확한 목표 버전 지시 없이 major 또는 minor를 올리지 않는다."
       ],
       "examples": [
         "코드 변경 전 operation.code와 operation.testing을 확인한다.",
@@ -10092,7 +10095,7 @@
     },
     {
       "id": "operation.testing",
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n- 1. 핵심 원칙: 4 개로 간다 기준을 확인한다.\n- 2. 3-Tier CI 구조 기준을 확인한다.\n- Tier 1: `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.\n- Tier 2: `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.\n- Tier 3: `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.\n- **module scope 권장**: 파일 단위 로드·해제.\n- **session scope 지양**: Company 여러 개 로드 누적 시 OOM.\n- **function scope**: 필요하면 사용, `gc.collect()` 권장.\n- root `dartlab` logger 에 stderr `StreamHandler` 자동 부착 (최초 1 회).\n\n## L0~L1.5 완료 게이트\n\ncore/gather/providers(dart,edgar)/scan/frame/synth/reference 경계 변경은 Guard strict 명령을\n통과해야 완료다. `edinet` 은 API 통신 불가 deferred provider 로 provider strict scope 에서 제외한다.\n\n```bash\npython -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dart,edgar\n```\n\nGuard strict 는 cycle scan, architecture pytest, provider mirror, gather gate, provider gate, public API smoke 를 순서대로 실행하고 `externalGates[]` 에 원 명령과 결과를 남긴다. CI Fast 의 `architecture-l0-l15` job 은 이 gate 를 warning 이 아니라 failure 로 다룬다.\n\n## Guard Index 회귀 방지 체계\n\npytest 는 회귀를 실패시키는 표면이고, 전수조사는 AST/import graph/baseline scanner 가 맡는다. 전체 `pytest tests/ -v` 실행은 메모리·시간 비용이 커서 품질 증명의 기본값으로 쓰지 않는다.\n\n공식 gate 는 3 단계다.\n\n- `quick`: 변경 파일과 reverse dependency 영향 테스트만 실행한다. 목표 5~15 초. 개발 중 기본 확인.\n- `strict-l0-l15`: L0~L1.5 architecture/provider/gather/public API gate. ",
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## 실행 순서\n\n`preflight`는 fast 필수 게이트 전체다. 전체 제품 검증 요청이나 릴리즈 완료를 이것만으로\n판정하지 않는다. `tier full/nightly`는 로컬 Python과 OS에서 실데이터 shard를 모두 실행한다.\n다른 Python/OS 조합은 CI matrix 증거가 필요하다. `tier`는 선택한 non-blocking 검사도 실패하면\n실패로 보고하며, CI의 개별 `gate`는 non-blocking 실패를 경고로 남긴다. skip과 dry-run은 동작\n검증 성공이 아니다. 릴리즈의 최종 필수 범위는 `operation.contributionWorkflow`를 따른다.\n\n- 1. 핵심 원칙: 4 개로 간다 기준을 확인한다.\n- 2. 3-Tier CI 구조 기준을 확인한다.\n- Tier 1: `ci-fast.yml` (PR + master push, 목표 ≤ 3 분) 기준을 확인한다.\n- Tier 2: `ci-full.yml` (master push only, 목표 ≤ 10 분) 기준을 확인한다.\n- Tier 3: `ci-nightly.yml` (cron 15:00 UTC = KST 00:00, 목표 ≤ 45 분) 기준을 확인한다.\n- **module scope 권장**: 파일 단위 로드·해제.\n- **session scope 지양**: Company 여러 개 로드 누적 시 OOM.\n- **function scope**: 필요하면 사용, `gc.collect()` 권장.\n- root `dartlab` logger 에 stderr `StreamHandler` 자동 부착 (최초 1 회).\n\n## L0~L1.5 완료 게이트\n\ncore/gather/providers(dart,edgar)/scan/frame/synth/reference 경계 변경은 Guard strict 명령을\n통과해야 완료다. `edinet` 은 API 통신 불가 deferred provider 로 provider strict scope 에서 제외한다.\n\n```bash\npython -X utf8 tests/audit/dartlabGuard.py strict --scope l0-l15 --providers dart,edgar\n```\n\nGuard strict 는 cycle scan, architecture pytest, provider mirror, gather gate, provider gate, public API smoke 를 순서대로 실행하고 `externalGates[]` 에 원 명령과 결과를 남긴다. CI Fast 의 `architecture-l0-l15` job 은 이 gate 를 warning 이 아니라 failure",
       "title": "dartlab 테스트 · CI 운영 규칙",
       "category": "operation",
       "categoryTitle": "Operation",

@@ -11,6 +11,7 @@ whenToUse:
   - 커밋 규칙
   - 코드 변경 전 운영 규칙 확인
   - 공개 산출물 작성 규칙
+  - 릴리즈 버전과 태그 발행
 inputs:
   - 변경 목적
   - 변경 대상 파일
@@ -38,6 +39,7 @@ procedure:
   - 검증은 변경 범위에 맞게 최소 충분하게 실행하고 결과를 남긴다.
   - 검증한 본인 변경을 명시 경로로 커밋하고 한국어 메시지로 남긴다.
   - 전체 미푸시 범위를 검토한 뒤 일반 push까지 완료하며 별도 확인을 다시 요청하지 않는다.
+  - 릴리즈 지시가 있으면 PyPI 발행 완료 버전에서 patch 한 단계만 올리고 필수 배포 검증을 마친다.
 requiredEvidence:
   - skillRef
   - testRef
@@ -72,6 +74,7 @@ forbidden:
   - unrelated 변경을 되돌리거나 같은 커밋에 섞지 않는다.
   - 커밋 메시지와 공개 문서에 assistant identity, 모델명, vendor명, generated-by 표식을 쓰지 않는다.
   - 실패한 검증을 통과한 것처럼 적지 않는다.
+  - 운영자의 정확한 목표 버전 지시 없이 major 또는 minor를 올리지 않는다.
 examples:
   - 코드 변경 전 operation.code와 operation.testing을 확인한다.
   - "문서 변경 커밋은 `문서: README Skill OS 안내 정리`처럼 범주와 내용을 함께 적는다."
@@ -79,7 +82,7 @@ examples:
 source:
   type: skill_os
   format: markdown
-lastUpdated: '2026-09-30'
+lastUpdated: '2026-10-01'
 testUniverse:
   market: KR
   stockCodes:
@@ -142,7 +145,34 @@ testUniverse:
 일반 push는 현재 커밋뿐 아니라 모든 미푸시 조상 커밋을 함께 올린다. 소유권이나 검증이 불명확한
 변경을 섞지 않고, 해결할 수 있는 문제는 작업 안에서 해결한 뒤 push까지 이어간다.
 
-## 공개 산출물 규칙
+## 릴리즈 버전과 완료 강행 규칙
+
+릴리즈는 운영자의 발행 지시가 있을 때만 한다. 일반 commit과 push의 기본 위임은 발행 위임이 아니다.
+발행 지시가 있어도 별도의 정확한 목표 버전 지시가 없으면 **PyPI에 발행 완료된 버전의 patch만
+정확히 1 올린다.** 현재 `0.12.0` 다음은 `0.12.1`, 그다음은 `0.12.2`다. 기능 추가, 변경 규모,
+SemVer의 일반 원칙은 minor(가운데) 또는 major(첫 번째)를 올릴 권한이 아니다.
+
+- minor/major 변경은 운영자가 정확한 목표 버전을 직접 지시한 경우에만 별도 정책 변경으로 다룬다.
+  `releasePolicy.py`에는 이를 추정해서 허용하는 플래그나 환경변수를 두지 않는다.
+- 문제를 먼저 해결하고 검증을 완료한 뒤 버전을 한 번 확정한다. 발행 중인 버전을 건너뛰거나
+  수정 라운드마다 번호를 올리지 않는다. 공개한 태그를 이동하거나 삭제하지 않는다.
+- 검사 정본은 `tests/audit/releasePolicy.py`다. staged `pyproject.toml`과 `uv.lock`, 실제 push ref,
+  배포 태그를 각각 읽는다. PyPI 발행 버전을 확인할 수 없으면 성공으로 추정하지 않는다.
+- Git hook 정본은 `.githooks` 한 곳이다. `bash tests/installHooks.sh`로 설치하고
+  `git config --get core.hooksPath`가 `.githooks`인지 확인한다. 이전 `tests/hooks` 경로는 사용하지 않는다.
+- pre-commit은 버전과 공개 산출물, pre-push는 버전과 `tests/run.py preflight` 전체를 검사한다.
+  skip 환경변수, `--no-verify`, 종료코드 손실로 검증을 우회하지 않는다.
+- 배포는 버전 검사, CI Full, CI Nightly의 전체 실데이터 shard, wheel 설치·번들·런타임 검증이
+  끝나야 진행된다. 발행 후에는 PyPI 새 환경 설치, 실제 공개 호출, GitHub 첨부를 확인한다.
+- `preflight`는 fast 필수 게이트이며 전체 제품 검증의 동의어가 아니다. 전체 검증 요청에는
+  full/nightly matrix와 실제 사용까지 대조하고, 실패·skip·자격증명 부재·미검증 범위를 따로 보고한다.
+  non-blocking 검사 실패나 테스트가 수집되지 않은 결과를 정상 동작의 증거로 세지 않는다.
+
+로컬 Git hook은 Git의 `--no-verify` 자체를 제거할 수 없다. 원격 배포에서도 같은 버전 검사를
+실행해 로컬 hook 미설치가 발행 권한으로 바뀌지 않게 한다. 정책 코드 자체의 변경도 운영자의
+명시 지시에 종속되며, 에이전트가 검사 통과를 위해 승인 사실을 만들어서는 안 된다.
+
+## 공개 산출물 작성
 
 README, Skill OS, landing page, blog, JSON index는 사용자가 직접 읽는 공개 산출물이다. 표현은 주체 중립적으로 쓴다.
 

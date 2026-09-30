@@ -35,6 +35,7 @@
 | 작업 | 먼저 읽을 정본 |
 |---|---|
 | 기여, 브랜치, commit, push | `operation.contributionWorkflow` |
+| 버전 변경, 태그, 릴리즈, 배포 완료 | `operation.contributionWorkflow`의 릴리즈 버전과 완료 강행 규칙 |
 | 코드 구조와 구현 규칙 | `operation.code`, `operation.architecture` |
 | 공개 API 변경 | `operation.apiContract` |
 | 테스트, Guard Index | `operation.testing` |

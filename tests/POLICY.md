@@ -157,7 +157,7 @@ $env:DARTLAB_TEST_LOCKED="1"; uv run python -X utf8 -m pytest tests/cli/test_out
 
 **신규 게이트 추가**: `tests/run.py` 의 `GATES` dict 항목 + `.github/workflows/ci-{fast,full,nightly}.yml` 의 `matrix.include` 항목 양쪽을 한 PR 에서 동시 추가. 한쪽만 추가하면 [tests/audit/test_runEntrypoint.py](audit/test_runEntrypoint.py) 가 fail.
 
-**git push 자동 검증 (선택)**: `bash tests/installHooks.sh` 한 번 실행하면 `core.hooksPath = tests/hooks` 설정. 이후 `git push` 마다 [tests/hooks/pre-push](hooks/pre-push) 가 `tests/run.py preflight` 자동 호출 → fast 차단 게이트 통과 못 하면 push 중단. 일회 우회: `DARTLAB_SKIP_PREPUSH=1 git push`. 비활성화: `git config --unset core.hooksPath`.
+**git push 필수 검증**: `bash tests/installHooks.sh`는 `core.hooksPath = .githooks`를 설정한다. pre-commit의 버전 검사와 pre-push의 `tests/run.py preflight`가 실패하면 중단한다. `tests/hooks`와 skip 환경변수 경로는 폐기했다. 버전 및 배포 완료 계약은 `operation.contributionWorkflow`를 따른다.
 
 ---
 

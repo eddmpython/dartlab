@@ -4,6 +4,7 @@ name: CI Nightly
 # 명령 SSOT = tests/run.py GATES. realdata 20 shard 도 tests/run.py 의 REALDATA_SHARDS.
 
 on:
+  workflow_call:
   schedule:
     - cron: "0 15 * * *"
   workflow_dispatch:

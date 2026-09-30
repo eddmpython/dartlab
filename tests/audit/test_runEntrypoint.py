@@ -138,8 +138,16 @@ def testPublishWorkflowUsesCanonicalCiFullGate():
 
     assert "uses: ./.github/workflows/ci-full.yml" in text
     assert not re.search(r"(?m)^\s*run:\s*(?:python\s+-\S+\s+-m\s+)?pytest\s+tests/", text)
-    assert re.search(r"(?ms)^  wheel-smoke:\s*.*?^    needs: ci-full\s*$", text)
-    assert re.search(r"(?ms)^  build:\s*.*?^    needs: \[ci-full, wheel-smoke\]\s*$", text)
+    import yaml
+
+    jobs = yaml.safe_load(text)["jobs"]
+    assert jobs["ci-full"]["needs"] == "release-policy"
+    assert jobs["ci-nightly"]["needs"] == "release-policy"
+    assert jobs["ci-nightly"]["uses"] == "./.github/workflows/ci-nightly.yml"
+    assert set(jobs["wheel-smoke"]["needs"]) == {"ci-full", "ci-nightly"}
+    assert set(jobs["build"]["needs"]) == {"ci-full", "ci-nightly", "wheel-smoke"}
+    policy = jobs["release-policy"]["steps"]
+    assert any("releasePolicy.py --tag" in step.get("run", "") for step in policy)
 
 
 @pytest.mark.unit
@@ -158,6 +166,71 @@ def testPublishPreservesDownloadedArtifactsAndRequiresReleaseAssets():
     release = next(step for step in steps if step.get("uses", "").startswith("softprops/action-gh-release@"))
     assert release["with"]["fail_on_unmatched_files"] is True
     assert set(release["with"]["files"].splitlines()) == {"dist/*.whl", "dist/*.tar.gz", "sbom/dartlab-sbom.json"}
+
+
+@pytest.mark.unit
+def testTierRunsEveryRealdataShardAndReportsFailure(monkeypatch, capsys):
+    from tests import run as entrypoint
+
+    calls = []
+
+    def fakeGate(name, *, dry_run, mp, strict=False):
+        calls.append((name, mp, strict))
+        return 1 if mp.get("test") == "test_gatherAxes.py" else 0
+
+    monkeypatch.setattr(entrypoint, "runGate", fakeGate)
+    assert entrypoint.runTier("nightly", blocking_only=True, dry_run=False) == 1
+    shards = [mp["test"] for name, mp, strict in calls if name == "realdata-suite-full"]
+    assert shards == list(REALDATA_SHARDS)
+    assert all(strict for _, _, strict in calls)
+    assert "test_gatherAxes.py" in capsys.readouterr().err
+
+
+@pytest.mark.unit
+def testDryRunDoesNotClaimPassed(monkeypatch, capsys):
+    from tests import run as entrypoint
+
+    monkeypatch.setattr(entrypoint, "runGate", lambda *args, **kwargs: 0)
+    assert entrypoint.runTier("fast", blocking_only=True, dry_run=True) == 0
+    output = capsys.readouterr().out
+    assert "PLANNED" in output
+    assert "PASSED" not in output
+
+
+@pytest.mark.unit
+def testStrictGatePreservesNonBlockingFailure(monkeypatch, capsys):
+    from types import SimpleNamespace
+
+    from tests import run as entrypoint
+
+    monkeypatch.setattr(entrypoint, "_shellInvocation", lambda command: ((["test-gate"],), {}))
+    monkeypatch.setattr(entrypoint.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=23))
+    assert entrypoint.runGate("typecheck", dry_run=False, mp={}, strict=True) == 23
+    assert entrypoint.runGate("typecheck", dry_run=False, mp={}) == 0
+    assert "FAILED (non-blocking, exit=23)" in capsys.readouterr().err
+
+
+@pytest.mark.unit
+def testPreflightIsolatesOutputsAndRestoresEnvironment(monkeypatch, tmp_path):
+    from tests import run as entrypoint
+
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    monkeypatch.setenv("DARTLAB_GATE_OUTPUT_DIR", "existing-output")
+    created = []
+
+    def failingTier(*args, **kwargs):
+        output = Path(os.environ["DARTLAB_GATE_OUTPUT_DIR"])
+        assert output.is_dir()
+        assert output.parent == tmp_path / "dev-workspace"
+        (output / "product-smoke-quick.json").write_text("task-owned", encoding="utf-8")
+        created.append(output)
+        raise RuntimeError("failed gate")
+
+    monkeypatch.setattr(entrypoint, "runTier", failingTier)
+    with pytest.raises(RuntimeError, match="failed gate"):
+        entrypoint.main(["preflight"])
+    assert os.environ["DARTLAB_GATE_OUTPUT_DIR"] == "existing-output"
+    assert created and not created[0].exists()
 
 
 @pytest.mark.unit

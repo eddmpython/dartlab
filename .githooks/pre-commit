@@ -1,5 +1,7 @@
 #!/bin/sh
-if [ -x .venv/bin/python ]; then
+if [ -x .venv/Scripts/python.exe ]; then
+  PYTHON=.venv/Scripts/python.exe
+elif [ -x .venv/bin/python ]; then
   PYTHON=.venv/bin/python
 elif command -v python3 >/dev/null 2>&1; then
   PYTHON=$(command -v python3)
@@ -10,8 +12,11 @@ else
   exit 1
 fi
 
-# 1) AI 마커 차단
-"$PYTHON" .claude/hooks/check_no_ai_markers.py --check-staged || exit $?
+# 패키지 버전은 실제 index에서 검사한다. unstaged 내용으로 통과할 수 없다.
+"$PYTHON" -X utf8 tests/audit/releasePolicy.py --staged || exit $?
+
+# 1) 공개 산출물과 커밋의 작성 표식 차단
+"$PYTHON" -X utf8 tests/audit/commitPolicy.py --check-staged || exit $?
 
 # 2) 블로그 미디어는 HF 콘텐츠 주소 객체만 허용
 "$PYTHON" -X utf8 blog/_scripts/blogMediaGate.py --staged || exit $?

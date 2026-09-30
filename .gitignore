@@ -143,8 +143,6 @@ htmlcov/
 /examples/*
 !/examples/plugin-example/
 
-# Local git hooks (제공자별 셋업 - 추적 안 함)
-/.githooks/
 
 # Backup directories (landing 로컬 작업 백업)
 landing/_backup/

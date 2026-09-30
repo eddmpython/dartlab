@@ -46,6 +46,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -135,6 +136,7 @@ GATES: dict[str, Gate] = {
         fetch_depth=2,
         cmd=(
             "ruff check src/dartlab/ tests/ --exclude tests/_attempts && "
+            "python -X utf8 tests/audit/releasePolicy.py --ref HEAD && "
             "python -X utf8 tests/audit/noScriptsDir.py && "
             "python -X utf8 blog/_scripts/blogMediaGate.py --ref HEAD && "
             "python -X utf8 tests/audit/workspaceHygiene.py && "
@@ -217,7 +219,7 @@ GATES: dict[str, Gate] = {
             "python -X utf8 tests/audit/publicApiCoverage.py && "
             "python -X utf8 tests/audit/memoryBudgetAudit.py && "
             "python -X utf8 tests/audit/productSmoke.py --suite quick --data-mode fixtures "
-            "--import-mode source --json-out product-smoke-quick.json"
+            '--import-mode source --json-out "${DARTLAB_GATE_OUTPUT_DIR:-.}/product-smoke-quick.json"'
         ),
     ),
     "test-fast": Gate(
@@ -732,8 +734,8 @@ def resolveGateEnv(raw: dict[str, str], base: dict[str, str] | None = None) -> d
     return out
 
 
-def runGate(name: str, *, dry_run: bool, mp: dict[str, str]) -> int:
-    """단일 게이트 실행. blocking=False 면 exit code 무관하게 0 반환."""
+def runGate(name: str, *, dry_run: bool, mp: dict[str, str], strict: bool = False) -> int:
+    """단일 게이트 실행. strict 검증에서는 정보용 게이트도 실제 실패 코드를 반환한다."""
     if name not in GATES:
         print(f"[run.py] unknown gate: {name}", file=sys.stderr)
         print(f"  available: {', '.join(sorted(GATES))}", file=sys.stderr)
@@ -764,8 +766,11 @@ def runGate(name: str, *, dry_run: bool, mp: dict[str, str]) -> int:
     proc = subprocess.run(  # noqa: S603 - CI dispatcher; cmd 는 본 파일 내부 dict 에서만 옴
         *runArgs, env=full_env, cwd=REPO_ROOT, **runKwargs
     )
-    if proc.returncode != 0 and not gate.blocking:
-        print(f"[run.py] {gate.name} fail (blocking=False) → 통과로 처리", file=sys.stderr)
+    if proc.returncode != 0 and not gate.blocking and not strict:
+        print(
+            f"[run.py] {gate.name} FAILED (non-blocking, exit={proc.returncode}); 필수 게이트 차단만 생략",
+            file=sys.stderr,
+        )
         return 0
     return proc.returncode
 
@@ -861,25 +866,29 @@ def runImpactedPytest(*, pythonVersion: str, base: str | None, forceFull: bool) 
 
 
 def runTier(tier: Tier, *, blocking_only: bool, dry_run: bool) -> int:
-    """tier 의 게이트들을 순차 실행. matrix-driven 게이트는 첫 항목만 (로컬 검증용)."""
+    """로컬 tier의 모든 shard를 실행하며 선택한 검사 실패를 성공으로 바꾸지 않는다."""
     gates = [g for g in GATES.values() if g.tier == tier]
     if blocking_only:
         gates = [g for g in gates if g.blocking]
     failed: list[str] = []
+    executions = 0
+    print(f"[run.py] local Python={sys.version.split()[0]}, OS={sys.platform}; 다른 Python/OS는 CI matrix에서 검증")
     for gate in gates:
-        mp: dict[str, str] = {}
-        if gate.matrix_param == "python":
-            mp = {"python": "3.12"}
-        elif gate.matrix_param == "test":
-            mp = {"test": REALDATA_SHARDS[0]}
-        # matrix_param="os" 는 로컬 OS 그대로 (placeholder 없음)
-        rc = runGate(gate.name, dry_run=dry_run, mp=mp)
-        if rc != 0:
-            failed.append(gate.name)
+        matrix = [{}]
+        if gate.matrix_param == "test":
+            matrix = [{"test": shard} for shard in REALDATA_SHARDS]
+        elif gate.matrix_param == "python":
+            matrix = [{"python": f"{sys.version_info.major}.{sys.version_info.minor}"}]
+        for mp in matrix:
+            executions += 1
+            rc = runGate(gate.name, dry_run=dry_run, mp=mp, strict=True)
+            if rc != 0:
+                failed.append(f"{gate.name}{mp or ''}")
     if failed:
         print(f"\n[run.py] FAILED: {', '.join(failed)}", file=sys.stderr)
         return 1
-    print(f"\n[run.py] tier {tier} ({len(gates)} gates) PASSED")
+    result = "PLANNED (실행하지 않음)" if dry_run else "PASSED"
+    print(f"\n[run.py] local tier {tier} ({len(gates)} gates, {executions} executions) {result}")
     return 0
 
 
@@ -1047,7 +1056,18 @@ def main(argv: list[str] | None = None) -> int:
         # 로컬 preflight 는 준비된 venv 를 신뢰: dartlab 재설치 세그먼트 기본 생략.
         # CI(GITHUB_ACTIONS)는 _skipPkgInstall 이 무조건 False 라 영향 없음.
         os.environ.setdefault("DARTLAB_SKIP_PKG_INSTALL", "1")
-        return runTier("fast", blocking_only=True, dry_run=False)
+        executionRoot = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / ".local/share"))) / "dev-workspace"
+        executionRoot.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="dartlabPreflight-", dir=executionRoot) as output:
+            previousOutput = os.environ.get("DARTLAB_GATE_OUTPUT_DIR")
+            os.environ["DARTLAB_GATE_OUTPUT_DIR"] = output.replace("\\", "/")
+            try:
+                return runTier("fast", blocking_only=True, dry_run=False)
+            finally:
+                if previousOutput is None:
+                    os.environ.pop("DARTLAB_GATE_OUTPUT_DIR", None)
+                else:
+                    os.environ["DARTLAB_GATE_OUTPUT_DIR"] = previousOutput
     if args.command == "list":
         return cmdList()
     if args.command == "audit-self":
