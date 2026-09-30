@@ -11,6 +11,7 @@ import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
+from functools import partial
 from typing import Any
 
 import polars as pl
@@ -85,6 +86,49 @@ def capturePartition(partition: Any, refs: list[Ref], *, status: str) -> dict[st
     return captureTable(frame, refs, coverage=f"dataHub_{status}_partition")
 
 
+def _loadSourceTables(database: sqlite3.Connection, sources: dict[str, QuerySource]) -> None:
+    """확인된 세션 표만 제한된 메모리 DB로 복사한다."""
+    database.execute("PRAGMA temp_store=MEMORY")
+    database.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, _MAX_TABLE_BYTES)
+    database.setlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH, 16_000)
+    database.setlimit(sqlite3.SQLITE_LIMIT_COLUMN, 160)
+    database.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 0)
+    for alias, source in sources.items():
+        names = [str(name).replace('"', '""') for name in source.frame.columns]
+        columns = ",".join(f'"{name}"' for name in names)
+        database.execute(f'CREATE TABLE "{alias}" ({columns})')
+        placeholders = ",".join("?" for _ in names)
+        database.executemany(f'INSERT INTO "{alias}" VALUES ({placeholders})', source.frame.iter_rows())
+    database.commit()
+    database.execute("PRAGMA query_only=ON")
+
+
+def _authorizeQuery(action: int, first: str | None, second: str | None, *unused: Any, sources: dict) -> int:
+    """등록된 메모리 표 읽기와 허용 함수만 실행한다."""
+    if action == sqlite3.SQLITE_SELECT:
+        return sqlite3.SQLITE_OK
+    if action == sqlite3.SQLITE_READ and first in sources:
+        return sqlite3.SQLITE_OK
+    if action == sqlite3.SQLITE_FUNCTION and str(second).lower() in _SQL_FUNCTIONS:
+        return sqlite3.SQLITE_OK
+    return sqlite3.SQLITE_DENY
+
+
+def _querySources(active: BoundedCache, tables: dict[str, str]) -> dict[str, QuerySource] | ToolResult:
+    """SQL 식별자를 검증하고 현재 세션에 남아 있는 원표만 선택한다."""
+    sources: dict[str, QuerySource] = {}
+    for alias, tableId in tables.items():
+        if not isinstance(alias, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,31}", alias):
+            return ToolResult(False, "표 alias는 영문자로 시작하는 짧은 식별자입니다.", error="invalid_alias")
+        source = active.get(tableId) if isinstance(tableId, str) else None
+        if source is None:
+            return ToolResult(
+                False, "표가 만료되었거나 현재 세션에 없습니다. 원자료를 다시 조회하세요.", error="table_not_found"
+            )
+        sources[alias] = source
+    return sources
+
+
 def queryTable(tables: dict[str, str], sql: str, *, limit: int = 100) -> ToolResult:
     """SQL SELECT로 조회 표의 필터·비율·순위·시계열·join을 계산한다.
 
@@ -100,45 +144,16 @@ def queryTable(tables: dict[str, str], sql: str, *, limit: int = 100) -> ToolRes
         return ToolResult(False, "tables는 alias: tableId 1~4개입니다.", error="invalid_tables")
     if type(limit) is not int or not 1 <= limit <= 500 or not isinstance(sql, str) or len(sql) > 16_000:
         return ToolResult(False, "limit은 1~500, SQL은 16000자 이하여야 합니다.", error="invalid_query")
-    sources: dict[str, QuerySource] = {}
-    for alias, tableId in tables.items():
-        if not isinstance(alias, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,31}", alias):
-            return ToolResult(False, "표 alias는 영문자로 시작하는 짧은 식별자입니다.", error="invalid_alias")
-        source = active.get(tableId) if isinstance(tableId, str) else None
-        if source is None:
-            return ToolResult(
-                False, "표가 만료되었거나 현재 세션에 없습니다. 원자료를 다시 조회하세요.", error="table_not_found"
-            )
-        sources[alias] = source
+    sources = _querySources(active, tables)
+    if isinstance(sources, ToolResult):
+        return sources
     database = sqlite3.connect(":memory:")
     try:
-        database.execute("PRAGMA temp_store=MEMORY")
-        database.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, _MAX_TABLE_BYTES)
-        database.setlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH, 16_000)
-        database.setlimit(sqlite3.SQLITE_LIMIT_COLUMN, 160)
-        database.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 0)
-        for alias, source in sources.items():
-            names = [str(name).replace('"', '""') for name in source.frame.columns]
-            columns = ",".join(f'"{name}"' for name in names)
-            database.execute(f'CREATE TABLE "{alias}" ({columns})')
-            placeholders = ",".join("?" for _ in names)
-            database.executemany(f'INSERT INTO "{alias}" VALUES ({placeholders})', source.frame.iter_rows())
-        database.commit()
-        database.execute("PRAGMA query_only=ON")
+        _loadSourceTables(database, sources)
         deadline = time.monotonic() + 3.0
         database.set_progress_handler(lambda: int(time.monotonic() >= deadline), 1000)
 
-        def authorize(action: int, first: str | None, second: str | None, *unused: Any) -> int:
-            """등록된 메모리 표 읽기와 허용 함수만 실행한다."""
-            if action == sqlite3.SQLITE_SELECT:
-                return sqlite3.SQLITE_OK
-            if action == sqlite3.SQLITE_READ and first in sources:
-                return sqlite3.SQLITE_OK
-            if action == sqlite3.SQLITE_FUNCTION and str(second).lower() in _SQL_FUNCTIONS:
-                return sqlite3.SQLITE_OK
-            return sqlite3.SQLITE_DENY
-
-        database.set_authorizer(authorize)
+        database.set_authorizer(partial(_authorizeQuery, sources=sources))
         cursor = database.execute(sql)
         if cursor.description is None:
             raise ValueError("SELECT 결과가 필요합니다")

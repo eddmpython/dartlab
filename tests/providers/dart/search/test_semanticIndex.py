@@ -12,6 +12,33 @@ from dartlab.providers.dart.search.catalog import normalizeCatalogRows
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.parametrize("fails", [False, True])
+@pytest.mark.parametrize("memoryMb", [300.0, 1900.0])
+def testSearchReleasesModelsUnderPressureAlsoAfterFailure(tmp_path, monkeypatch, fails, memoryMb):
+    """후속 재무 계산에 검색 모델이 남지 않으며 검색 실패도 같은 회수 경계를 따른다."""
+    from dartlab.core.memory import BoundedCache
+
+    models = BoundedCache(maxEntries=2, memorySampler=lambda: 0.0)
+    models["encoder"] = object()
+    models["reranker"] = object()
+    monkeypatch.setattr(semantic, "_models", models)
+    monkeypatch.setattr("dartlab.core.memory.getMemoryMb", lambda: memoryMb)
+    expected = pl.DataFrame({"text": ["공시 문단"]})
+
+    def search(*args, **kwargs):
+        if fails:
+            raise ValueError("검색 실패")
+        return expected
+
+    monkeypatch.setattr(semantic, "_searchSemantic", search)
+    if fails:
+        with pytest.raises(ValueError, match="검색 실패"):
+            semantic.searchSemantic("공시", indexDir=tmp_path)
+    else:
+        assert semantic.searchSemantic("공시", indexDir=tmp_path).equals(expected)
+    assert len(models) == (0 if memoryMb > 1500 else 2)
+
+
 @pytest.fixture
 def encoder(monkeypatch):
     calls = []

@@ -20,6 +20,7 @@ import polars as pl
 
 from dartlab.core.hfRetry import retryHfCall
 from dartlab.core.logger import getLogger
+from dartlab.core.memory import BoundedCache
 from dartlab.core.utils.fileDigest import fileHash
 from dartlab.providers.dart.search.fieldIndex import _activeIndexDir, _contentIndexDir
 
@@ -33,6 +34,7 @@ _CHARS = 900
 _OVERLAP = 120
 _SOURCE_NAMES = {"dartPanel": "panel", "edgarPanel": "edgar-panel", "newsPublic": "news"}
 _log = getLogger(__name__)
+_models = BoundedCache(maxEntries=2)
 
 
 def _indexDir() -> Path:
@@ -89,8 +91,12 @@ def prepareSemanticModels() -> None:
         retryHfCall(snapshot_download, name, revision=revision, allow_patterns=files, local_dir=str(_modelDir(name)))
 
 
-@lru_cache(maxsize=1)
 def _encoder():
+    return _models.getOrCreate("encoder", _loadEncoder)
+
+
+def _loadEncoder():
+    """후보 회수 모델을 공통 메모리 압력 정책 아래에서 준비한다."""
     _requireModels()
     from model2vec import StaticModel
 
@@ -100,8 +106,12 @@ def _encoder():
     return StaticModel.from_pretrained(path)
 
 
-@lru_cache(maxsize=1)
 def _reranker():
+    return _models.getOrCreate("reranker", _loadReranker)
+
+
+def _loadReranker():
+    """재정렬 모델을 공통 메모리 압력 정책 아래에서 준비한다."""
     _requireModels()
     from fastembed import TextEmbedding
     from fastembed.common.model_description import ModelSource, PoolingType
@@ -438,18 +448,28 @@ def searchSemantic(
     if not target.exists():
         raise RuntimeError("의미 인덱스가 없습니다. dartlab search --build-semantic 으로 준비하세요.")
     with FileLock(str(target / "read.lock"), timeout=60):
-        return _searchSemantic(
-            query,
-            corpCode=corpCode,
-            stockCode=stockCode,
-            sourceKind=sourceKind,
-            start=start,
-            end=end,
-            limit=limit,
-            relatedTo=relatedTo,
-            excludeStockCode=excludeStockCode,
-            indexDir=target,
-        )
+        try:
+            return _searchSemantic(
+                query,
+                corpCode=corpCode,
+                stockCode=stockCode,
+                sourceKind=sourceKind,
+                start=start,
+                end=end,
+                limit=limit,
+                relatedTo=relatedTo,
+                excludeStockCode=excludeStockCode,
+                indexDir=target,
+            )
+        finally:
+            # 검색 모델이 남아 후속 재무 조회의 작은 표까지 축출하지 않게 한다.
+            from dartlab.core.memory import PRESSURE_CRITICAL_MB, getMemoryMb
+
+            if getMemoryMb() > PRESSURE_CRITICAL_MB:
+                import gc
+
+                _models.clear()
+                gc.collect()
 
 
 def _searchSemantic(

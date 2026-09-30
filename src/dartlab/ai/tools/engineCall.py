@@ -496,34 +496,18 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
     scope = str(plan.get("scope") or "consolidated")
     if scope not in {"consolidated", "separate"}:
         return ToolResult(False, "scope는 consolidated 또는 separate입니다.", error="invalid_args")
-    rawPeriod = str(plan.get("period") or "").strip().upper()
-    annualRequest = str(plan.get("freq") or "").upper() in {"Y", "FY", "YEAR", "ANNUAL"} or bool(
-        re.fullmatch(r"(?:FY)?20\d{2}(?:\s*(?:-|~|TO|부터)\s*20\d{2})?|RECENT\s*:?\s*\d{1,2}\s*Y", rawPeriod)
-    )
     # EDGAR 분기는 달력 기준이고 연간은 회계연도 기준이다. 분기를 합쳐 FY로
     # 이름만 바꾸지 않고 provider가 보유한 연간 원본을 사용한다.
-    freq = "Y" if getattr(company, "market", None) == "US" and annualRequest else "Q"
+    freq = "Y" if getattr(company, "market", None) == "US" and _isAnnualRequest(plan) else "Q"
     table, autoGatherUsed = _fetchTableWithAutoGather(company, topic, scope=scope, freq=freq)
     if not isinstance(table, pl.DataFrame) or table.height == 0:
         msg = f"{companyName or stockCode} {topic} 데이터를 찾지 못했습니다."
         if autoGatherUsed:
             msg += " (자동 update 후에도 빈 결과 - 미공시 분기 또는 폐상장 가능성)."
         return ToolResult(False, msg, error="empty_result")
-    requestedPeriod, annualYears = _requestedStatementPeriod(plan, table, topic)
-    if str(plan.get("period") or "").strip() and requestedPeriod is None and not annualYears:
-        available = [str(column) for column in table.columns if _PERIOD_RE.match(str(column))]
-        return ToolResult(
-            False,
-            f"요청 기간 {plan.get('period')}을 찾지 못했습니다. 사용 가능 기간: {', '.join(available[:12])}",
-            error="period_not_found",
-        )
-    summary = _summarizeStatement(
-        topic,
-        table,
-        selectedPeriod=requestedPeriod,
-        annualYears=annualYears,
-        currency=str(getattr(company, "currency", None) or "KRW"),
-    )
+    summary = _requestedStatementSummary(company, plan, table, topic)
+    if isinstance(summary, ToolResult):
+        return summary
     if not summary:
         return ToolResult(
             False, f"{companyName or stockCode} {topic} 표를 요약하지 못했습니다.", error="unreadable_table"
@@ -545,13 +529,48 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         includeContext=includeContext,
     )
     data["requestedScope"] = scope
+    tableHandle = _captureStatementTable(stockCode, topic, summary, refs)
+    if tableHandle:
+        data["table"] = tableHandle
+    return ToolResult(True, summaryMsg, refs=refs, data=data)
+
+
+def _isAnnualRequest(plan: dict[str, Any]) -> bool:
+    """명시적 연간 주기와 연도·연도 범위·최근 연도 요청을 판별한다."""
+    rawPeriod = str(plan.get("period") or "").strip().upper()
+    return str(plan.get("freq") or "").upper() in {"Y", "FY", "YEAR", "ANNUAL"} or bool(
+        re.fullmatch(r"(?:FY)?20\d{2}(?:\s*(?:-|~|TO|부터)\s*20\d{2})?|RECENT\s*:?\s*\d{1,2}\s*Y", rawPeriod)
+    )
+
+
+def _requestedStatementSummary(company: Any, plan: dict, table: pl.DataFrame, topic: str) -> dict | ToolResult:
+    """요청 기간의 존재를 확인하고 기업 통화로 재무 표를 요약한다."""
+    requestedPeriod, annualYears = _requestedStatementPeriod(plan, table, topic)
+    if str(plan.get("period") or "").strip() and requestedPeriod is None and not annualYears:
+        available = [str(column) for column in table.columns if _PERIOD_RE.match(str(column))]
+        return ToolResult(
+            False,
+            f"요청 기간 {plan.get('period')}을 찾지 못했습니다. 사용 가능 기간: {', '.join(available[:12])}",
+            error="period_not_found",
+        )
+    return _summarizeStatement(
+        topic,
+        table,
+        selectedPeriod=requestedPeriod,
+        annualYears=annualYears,
+        currency=str(getattr(company, "currency", None) or "KRW"),
+    )
+
+
+def _captureStatementTable(stockCode: str, topic: str, summary: dict, refs: list[Ref]) -> dict:
+    """요약한 재무 범위와 통화를 보존한 계산 표를 세션에 등록한다."""
     from .queryTable import captureTable
 
     records = [
         {
             "stockCode": stockCode,
             "statement": topic,
-            "scope": scope,
+            "scope": summary["scope"],
             "currency": summary["currency"],
             "metric": row["snakeId"],
             "item": row["item"],
@@ -561,11 +580,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         for row in summary.get("timeseries", [])
         for period, value in row["values"].items()
     ]
-    if records:
-        tableHandle = captureTable(pl.DataFrame(records), refs, coverage="selected_metrics_and_periods")
-        if tableHandle:
-            data["table"] = tableHandle
-    return ToolResult(True, summaryMsg, refs=refs, data=data)
+    return captureTable(pl.DataFrame(records), refs, coverage="selected_metrics_and_periods") if records else {}
 
 
 def _companyPanelTopic(target: str, topic: str, *, period: str = "") -> ToolResult:
@@ -970,6 +985,23 @@ def _tryAutoUpdate(company: Any, category: str) -> bool:
 
 
 def _scan(plan: dict[str, Any]) -> ToolResult:
+    axis, target, callKwargs = _scanArguments(plan)
+    import dartlab
+
+    # 회귀 가드: 공개 축과 underlying facade의 어휘가 달라도 도구 오류로 반환한다.
+    try:
+        scan = getattr(dartlab, "scan", None)
+        if scan is None or not callable(scan):
+            return ToolResult(False, "dartlab.scan facade를 찾지 못했습니다.", error="unknown_engine")
+        with _quietExecutionNoise():
+            result = scan(axis, target, **callKwargs)
+    except (ValueError, KeyError, TypeError) as exc:
+        return ToolResult(False, f"dartlab.scan('{axis}') 실행 실패: {exc}", error="invalid_scan_axis")
+    return _scanResult(axis, target, result)
+
+
+def _scanArguments(plan: dict[str, Any]) -> tuple[str, Any, dict[str, Any]]:
+    """검색 축·대상과 facade에 전달할 인자를 한곳에서 해석한다."""
     rawArgs = list(plan.get("args") or [])
     explicitAxis = plan.get("axis")
     axis = str(explicitAxis or plan.get("target") or (rawArgs[0] if rawArgs else "") or "").strip() or "growth"
@@ -984,18 +1016,11 @@ def _scan(plan: dict[str, Any]) -> ToolResult:
     for key in ("spec", "explain", "market", "source", "universe"):
         if key in plan:
             callKwargs[key] = plan[key]
-    import dartlab
+    return axis, target, callKwargs
 
-    # 회귀 가드: CAPABILITIES 에는 `scan.industry` 등이 있지만 underlying `dartlab.scan(axis)` 가
-    # 다른 axis 어휘를 쓰면 ValueError → uncaught traceback 노출. try/except 로 친절한 에러.
-    try:
-        scan = getattr(dartlab, "scan", None)
-        if scan is None or not callable(scan):
-            return ToolResult(False, "dartlab.scan facade를 찾지 못했습니다.", error="unknown_engine")
-        with _quietExecutionNoise():
-            result = scan(axis, target, **callKwargs)
-    except (ValueError, KeyError, TypeError) as exc:
-        return ToolResult(False, f"dartlab.scan('{axis}') 실행 실패: {exc}", error="invalid_scan_axis")
+
+def _scanResult(axis: str, target: Any, result: Any) -> ToolResult:
+    """검색 결과의 원자료 범위와 위험 안내를 도구 근거로 투영한다."""
     if isinstance(result, dict):
         return _resultToRefs(f"scan.{axis}", result, target=str(target or ""))
     if not isinstance(result, pl.DataFrame) or result.height == 0:
