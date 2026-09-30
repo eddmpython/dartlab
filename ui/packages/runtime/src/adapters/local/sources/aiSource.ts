@@ -25,6 +25,7 @@ interface StatusProbe {
 		state: string;
 		version?: string | null;
 		mcp?: { connected?: boolean };
+		toolConnection?: { connected?: boolean };
 		groundedReady?: boolean;
 	}>;
 }
@@ -56,7 +57,7 @@ export function localAiPort(api: LocalApi): AiPort {
 				return {
 					tier: 'advanced',
 					streaming: true,
-					toolCalling: selected.mcp?.connected === true,
+					toolCalling: (selected.toolConnection ?? selected.mcp)?.connected === true,
 					localWorkspace: true,
 					deterministicAnswers: false,
 					providerLabel: selected.displayName,

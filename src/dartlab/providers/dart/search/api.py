@@ -17,7 +17,7 @@ from dartlab.providers.dart.search.sourceIntent import detectSourceIntent
 _log = getLogger(__name__)
 
 
-SEARCH_SCOPES: tuple[str, ...] = ("auto", "title", "content", "both", "news")
+SEARCH_SCOPES: tuple[str, ...] = ("auto", "title", "content", "both", "news", "semantic")
 
 
 def search(
@@ -29,61 +29,45 @@ def search(
     limit: int = 10,
     topK: int | None = None,
     scope: str = "auto",
+    relatedTo: str | None = None,
+    excludeCorp: str | None = None,
 ) -> pl.DataFrame:
-    """KR DART 공시 검색 — title (ngram) + content (BM25) 스코프 조합 entry.
-          ``"content"`` (BM25 만) / ``"both"`` (title + content 합치되 scope 컬럼 동행).
-        - corp 파라미터로 회사 한정 — 6 자리 stockCode / 8 자리 corpCode / 회사명 (resolver lookup).
-        - start/end 필터 — ``rcept_dt`` 컬럼 기준 YYYYMMDD 문자열 비교.
-        - corp 가 US ticker (소문자 5 자 이하 영문) → 안내 info DataFrame 반환 (EDGAR 안내).
-        - title strict (정확 매칭) ≥ limit → title 만, 아니면 content 로 보강 (rcept_no 중복 제거).
+    """공시·뉴스의 정확한 단어 또는 의미가 연결되는 문단을 검색한다.
 
     Args:
-        query: 검색어 (한국어/영어/숫자 혼합 OK). 공백 strip 후 자체 매칭.
-        corp: 회사 한정. None → 전체 회사. 6 자리 숫자 = stockCode, 8 자리 숫자 = corpCode,
-            그 외 문자열 = 회사명 resolver lookup. lookup 실패 → 전체 검색 fallback.
-        start: ``rcept_dt`` 시작일 (YYYYMMDD). None → 미적용.
-        end: ``rcept_dt`` 종료일 (YYYYMMDD). None → 미적용.
-        limit: 결과 최대 row 수. 기본 10.
-        topK: ``limit`` 호환 alias. 지정하면 ``limit`` 대신 사용.
-        scope: ``"auto"`` (default) / ``"title"`` / ``"content"`` / ``"both"`` / ``"news"``. 외 값 → ValueError.
+        query: 한국어·영어 검색어. relatedTo 지정 시 빈 문자열도 허용한다.
+        corp: 회사명, 종목코드, DART corpCode. semantic은 미국 ticker도 지원한다.
+            semantic에서 해소할 수 없는 회사는 오류다. 기존 sparse 경로는 기존 fallback을 유지한다.
+        start: 접수일 시작 YYYYMMDD.
+        end: 접수일 종료 YYYYMMDD.
+        limit: 최대 결과 수. semantic은 1~100.
+        topK: limit의 호환 alias. 지정하면 limit보다 우선한다.
+        scope: auto/title/content/both/news/semantic. auto는 기존 sparse 통합 검색이다.
+        relatedTo: semantic 결과의 passageId. 같은 의미의 다른 원문 위치를 탐색한다.
+        excludeCorp: semantic에서 제외할 회사명·종목코드·ticker. 다른 회사 탐색에 사용한다.
 
     Returns:
-        pl.DataFrame — 검색 결과. 일반 컬럼 = ``rcept_no``/``rcept_dt``/``corp_name``/
-        ``report_nm``/``section_title``/``section_content`` 등 (인덱스에 따라 가변).
-        scope=both/auto 결과는 ``scope`` 컬럼 ("title"/"content") 동행. corp 가 US ticker
-        → ``info`` 컬럼만 있는 안내 DataFrame.
+        sourceRef, dataAsOf, 본문, URL과 evidence card를 포함하는 DataFrame.
+        semantic에는 passageId, charStart/charEnd, coverage, indexedAt이 추가된다.
+        유사도와 answerable은 재무 조건 충족이나 인과관계의 증명이 아니다.
 
     Raises:
-        ValueError: scope 가 4 종 외 값.
+        ValueError: 잘못된 scope, semantic의 회사·날짜·limit·relatedTo.
+        RuntimeError: 의미 인덱스나 선택 모델이 준비되지 않았을 때.
 
     Example:
-        >>> from dartlab.providers.dart.search.api import search
-        >>> df = search("배당", limit=5)
-        >>> df.height >= 0
-        True
-        >>> df2 = search("AAPL", corp="AAPL")  # US ticker 안내
-        >>> "info" in df2.columns
-        True
-              으로 결과 회사 검증 권장.
-            - query 가 매우 짧음 (1~2 글자) → ngram 정밀도 저하 → false positive 많음.
-            - scope="both" 결과에서 동일 rcept_no 가 title/content 양쪽에 등장 (중복 제거 X).
-            - start/end 가 잘못된 형식 (예 "2024-01-01") → 비교 결과 부정확. YYYYMMDD 권장.
-        OutputSchema:
-            - rows: ≤ limit 개 또는 corp 안내 시 3 (info 컬럼만).
-            - columns: 인덱스 의존. 공통 = rcept_no/rcept_dt/corp_name/report_nm.
-            - scope=both/auto 시 ``scope`` 컬럼 추가.
-        Prerequisites:
-            - title index (ngram) + content index (BM25) 가 빌드되어 있어야 함 (``buildIndex``).
-            - 인덱스 미빌드 → 결과 0 또는 KeyError. ``stats()`` 로 확인.
-        Freshness:
-            - ``collectMeta`` + ``fillContent`` + ``rebuildContent`` 운영 후 검색 가능.
-            - 본 함수 자체는 무상태. 인덱스가 freshness 결정.
-        Dataflow:
-            - DART OpenAPI → allFilingsCollector → parquet → 인덱스 빌드 → 본 함수 → AI 답변.
-        TargetMarkets:
-            - KR (DART) 한정. EDGAR (US) 는 별도 API. US ticker 입력 시 안내 fallback.
+        >>> # search("전력 수요가 늘어나는 사업", scope="semantic", limit=5)
+        >>> # search("", scope="semantic", relatedTo=hits["passageId"][0])
+
+    Guide:
+        보유 공시 목록은 Company.filings, 수치 조건은 scan/dataHub를 사용한다. 최신성은 수집 범위와 접수일로 확인한다.
+        의미 검색은 pip install 'dartlab[semantic]' 후 dartlab search --build-semantic으로 준비한다.
+        catalogExcerpt는 배포된 발췌, localFullText는 로컬 원문 전체를 문단으로 나눈 범위다.
+        source intent는 모든 scope에서 공시와 뉴스를 분리한다.
     """
-    if _looksLikeUsTicker(corp):
+    if (relatedTo or excludeCorp) and scope != "semantic":
+        raise ValueError("relatedTo/excludeCorp는 scope='semantic'에서 사용하세요")
+    if _looksLikeUsTicker(corp) and scope != "semantic":
         return pl.DataFrame(
             {
                 "info": [
@@ -102,7 +86,7 @@ def search(
 
     from dartlab.providers.dart.search.facetPlanner import planQueryFacets
 
-    corpCode, stockCode = _resolveCorp(corp)
+    corpCode, stockCode = _semanticCorp(corp) if scope == "semantic" else _resolveCorp(corp)
     facets = planQueryFacets(query, corpCode=corpCode, stockCode=stockCode)
     corpCode = corpCode or facets.corpCode
     stockCode = stockCode or facets.stockCode
@@ -110,7 +94,22 @@ def search(
     sourceKind = sourceIntent.sourceKind
     retrievalLimit = _retrievalLimit(query, limit, sourceKind=sourceKind)
 
-    if scope == "title":
+    if scope == "semantic":
+        from dartlab.providers.dart.search.semanticIndex import searchSemantic
+
+        _, excludedCode = _semanticCorp(excludeCorp, exclude=True)
+        result = searchSemantic(
+            query,
+            corpCode=corpCode,
+            stockCode=stockCode,
+            sourceKind=sourceKind,
+            start=start,
+            end=end,
+            limit=limit,
+            relatedTo=relatedTo,
+            excludeStockCode=excludedCode,
+        )
+    elif scope == "title":
         result = _searchTitle(query, corpCode=corpCode, stockCode=stockCode, limit=limit)
     elif scope == "content":
         result = _searchContent(
@@ -184,6 +183,16 @@ def search(
         result=result,
     )
     return result
+
+
+def _semanticCorp(corp: str | None, *, exclude: bool = False) -> tuple[str | None, str | None]:
+    """의미 검색의 명시적 회사 범위를 해소하고 미해소 필터를 거부한다."""
+    codes = (None, str(corp).upper()) if _looksLikeUsTicker(corp) else _resolveCorp(corp)
+    if corp and exclude and not codes[1]:
+        raise ValueError("excludeCorp는 회사명, 종목코드 또는 ticker로 지정하세요")
+    if corp and not any(codes):
+        raise ValueError(f"회사를 찾지 못했습니다: {corp}. searchName으로 회사명이나 코드를 확인하세요.")
+    return codes
 
 
 def _retrievalLimit(query: str, limit: int, *, sourceKind: str | None = None) -> int:
@@ -554,8 +563,9 @@ def indexInfo() -> dict:
         >>> # indexInfo()
     """
     from dartlab.providers.dart.search.fieldIndexRebuild import indexInfo as _info
+    from dartlab.providers.dart.search.semanticIndex import semanticIndexInfo
 
-    return _info()
+    return {**_info(), "semantic": semanticIndexInfo()}
 
 
 def collectMeta(startDate: str, endDate: str, **kwargs) -> int:

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+COMPANY_PANEL_CONTEXT_DEFAULT = True
+
 CANONICAL_COMPANY_CAPABILITY_REFS = frozenset(
     {
         "Company.panel",
@@ -140,8 +142,30 @@ def engineCallContract(apiRef: str, entry: dict | None = None) -> dict:
         "apiRef": apiRef,
         "args": {},
     }
+    if parameters := metadata.get("parameters"):
+        contract["argsContract"] = dict(parameters)
     if apiRef.startswith("Company."):
-        contract["argsContract"] = {"stockCode": {"required": True, "type": "stockCode|ticker|companyName"}}
+        contract["argsContract"] = {
+            "stockCode": {"required": True, "type": "stockCode|ticker|companyName"},
+            **contract.get("argsContract", {}),
+        }
+        if apiRef == "Company.panel":
+            contract["argsContract"] = {
+                key: value
+                for key, value in contract["argsContract"].items()
+                if key in {"stockCode", "topic", "period", "freq", "scope"}
+            }
+            contract["argsContract"]["period"] = {
+                "required": False,
+                "type": "str",
+                "description": "2025, 2025Q4, 2020-2025 또는 recent:5Y",
+            }
+            contract["argsContract"]["includeContext"] = {
+                "required": False,
+                "type": "bool",
+                "default": COMPANY_PANEL_CONTEXT_DEFAULT,
+                "description": "단순 수치 확인은 false. 신용·산업 판단이 필요할 때만 true로 부가 계산한다.",
+            }
     elif "." in apiRef:
         targetRequired = declared.get("targetRequired")
         if targetRequired is None:

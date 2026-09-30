@@ -82,6 +82,7 @@ def _calcPercentileRanks(rows: list[dict[str, Any]], metric: str) -> dict[str, f
 def peerCompareN(
     stockCodes: list[str] | str | None = None,
     metrics: list[str] | None = None,
+    includeContext: bool = True,
 ) -> ToolResult:
     """N 종목 비교 + peer-internal percentile rank.
 
@@ -97,6 +98,8 @@ def peerCompareN(
     metrics : list[str] | None
         기본 8 종 — revenue, operatingProfit, netIncome, totalAssets, totalEquity,
         totalLiabilities, debtRatio, roe. 일부만 필요 시 명시.
+    includeContext : bool
+        False면 신용·산업 부가 계산을 생략한다. 수치 비교에 권장한다.
 
     Returns
     -------
@@ -166,6 +169,8 @@ def peerCompareN(
         codes = codes[:_MAX_SLOTS]
 
     requested_metrics = tuple(metrics) if metrics else _DEFAULT_METRICS
+    if not isinstance(includeContext, bool):
+        return ToolResult(False, "includeContext는 true 또는 false입니다.", error="invalid_args")
 
     rows: list[dict[str, Any]] = []
     badges: list[dict[str, Any]] = []
@@ -178,14 +183,15 @@ def peerCompareN(
         row: dict[str, Any] = {"stockCode": code, "corpName": corpName}
         row.update(companyMetrics(company))
         rows.append(row)
-        badges.append(
-            {
-                "stockCode": code,
-                "corpName": corpName,
-                "dcr": getDcrBadge(company),
-                "industry": getIndustryBadge(company),
-            }
-        )
+        if includeContext:
+            badges.append(
+                {
+                    "stockCode": code,
+                    "corpName": corpName,
+                    "dcr": getDcrBadge(company),
+                    "industry": getIndustryBadge(company),
+                }
+            )
 
     # peer-internal percentile rank — 각 metric 별 0.0 ~ 1.0.
     rank_by_metric: dict[str, dict[str, float]] = {}

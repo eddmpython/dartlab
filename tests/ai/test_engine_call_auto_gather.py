@@ -162,3 +162,31 @@ def test_requested_annual_range_builds_complete_metric_period_evidence() -> None
     assert all(ref.payload["currency"] == "KRW" for ref in valueRefs)
     assert all(ref.payload["basis"] == "fiscal_year" for ref in valueRefs)
     assert all(ref.payload["provenance"] for ref in valueRefs)
+
+
+@pytest.mark.unit
+def testFactLookupUsesColumnSelectionWithoutContextOrWideBoard():
+    from types import SimpleNamespace
+
+    class Company:
+        corpName, stockCode = "테스트", "005930"
+
+        @property
+        def panel(self):
+            raise AssertionError("숫자 조회에서 전체 원문 보드를 만들면 안 된다")
+
+        def select(self, topic, **kwargs):
+            assert kwargs["scope"] == "separate"
+            return SimpleNamespace(df=pl.DataFrame({"snakeId": ["revenue"], "항목": ["매출액"], "2025Q4": [100.0]}))
+
+    with (
+        patch("dartlab.ai.tools.engineCall._resolveCompany", return_value=Company()),
+        patch("dartlab.ai.tools.engineCall.buildPeriodToFiling", return_value={}),
+        patch("dartlab.ai.tools.engineCall.getDcrBadge", side_effect=AssertionError("불필요한 신용 계산")),
+        patch("dartlab.ai.tools.engineCall.getIndustryBadge", side_effect=AssertionError("불필요한 산업 계산")),
+        patch("dartlab.ai.tools.engineCall.getSectorPosition", side_effect=AssertionError("불필요한 횡단 계산")),
+    ):
+        result = _companyShow({"target": "005930", "topic": "IS", "scope": "separate", "includeContext": False})
+    assert result.ok
+    assert result.data["requestedScope"] == "separate"
+    assert any(ref.kind == "valueRef" for ref in result.refs)

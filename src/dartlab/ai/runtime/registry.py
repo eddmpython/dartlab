@@ -32,6 +32,9 @@ def loadRuntimeRegistry(root: Path | None = None) -> dict[str, RuntimeDescriptor
         runtimeId = str(value["runtimeId"])
         if runtimeId in descriptors:
             raise ValueError(f"중복 runtimeId: {runtimeId}")
+        transport = value.get("toolTransport", "mcp")
+        if transport not in {"mcp", "native"}:
+            raise ValueError(f"지원하지 않는 toolTransport: {transport}")
         descriptors[runtimeId] = RuntimeDescriptor(
             runtimeId=runtimeId,
             displayName=str(value["displayName"]),
@@ -47,5 +50,6 @@ def loadRuntimeRegistry(root: Path | None = None) -> dict[str, RuntimeDescriptor
             authProbeArgs=tuple(str(item) for item in value.get("authProbeArgs", ())),
             authSuccessPattern=str(value["authSuccessPattern"]) if value.get("authSuccessPattern") else None,
             loginArgs=tuple(str(item) for item in value.get("loginArgs", ())),
+            toolTransport=transport,
         )
     return descriptors

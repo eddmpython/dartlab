@@ -2,6 +2,7 @@ runtimeId = "claude"
 displayName = "Claude Code"
 driver = "claudeStreamJson"
 protocol = "stream-json"
+toolTransport = "native"
 executableCandidates = ["claude"]
 versionArgs = ["--version"]
 launchArgs = ["--print", "--output-format", "stream-json", "--include-partial-messages"]

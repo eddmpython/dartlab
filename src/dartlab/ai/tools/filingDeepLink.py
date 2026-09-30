@@ -38,14 +38,14 @@ def buildPeriodToFiling(company: Any) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     for row in df.to_dicts():
         report = str(row.get("reportType") or "")
-        match = _REPORT_RE.search(report)
-        if not match:
-            continue
-        year, month = match.group(1), match.group(2)
-        quarter = _MONTH_TO_QUARTER.get(month)
-        if not quarter:
-            continue
-        period = f"{year}{quarter}"
+        period = str(row.get("period") or "")
+        if re.fullmatch(r"\d{4}", period):
+            period += "Q4"
+        if not re.fullmatch(r"\d{4}Q[1-4]", period):
+            match = _REPORT_RE.search(report)
+            if not match or match.group(2) not in _MONTH_TO_QUARTER:
+                continue
+            period = match.group(1) + _MONTH_TO_QUARTER[match.group(2)]
         if period in out:
             continue
         out[period] = {
@@ -54,6 +54,8 @@ def buildPeriodToFiling(company: Any) -> dict[str, dict[str, Any]]:
             "reportType": report,
             "rceptDate": str(row.get("rceptDate") or ""),
         }
+        if period.endswith("Q4"):
+            out[period[:4] + "FY"] = out[period]
     return out
 
 

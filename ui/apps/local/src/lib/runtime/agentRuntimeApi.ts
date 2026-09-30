@@ -12,6 +12,8 @@ export interface AgentRuntimeInfo extends RuntimeProbe {
 	displayName: string;
 	driver: string;
 	protocol: string;
+	toolTransport?: 'native' | 'mcp';
+	toolConnection?: { connected: boolean; transport?: 'native' | 'mcp'; requiresConnect?: boolean };
 	officialUrl: string;
 	mcp: { connected: boolean; mode?: string; detail?: string | null; pending?: boolean; undetermined?: boolean };
 	auth: {

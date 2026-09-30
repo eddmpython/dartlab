@@ -5,7 +5,7 @@ kind: curated
 scope: builtin
 status: observed
 category: operation
-purpose: 설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 Skill OS·MCP·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.
+purpose: 설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 세션 도구·Skill OS·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.
 whenToUse:
   - dartlab.ask 또는 /api/ask 실행 경계를 변경할 때
   - Codex, Claude Code, Cline runtime driver를 추가하거나 수정할 때
@@ -43,7 +43,7 @@ requiredEvidence:
   - sourceRef
 expectedOutputs:
   - 설치형 agent runtime 실행 결과
-  - MCP 기반 DartLab 근거
+  - 사용자 agent 세션 도구로 조회한 DartLab 근거
   - 명시적 권한 승인 또는 안전한 거부
 runtimeCompatibility:
   server:
@@ -76,9 +76,9 @@ examples:
   - uv run python -X utf8 -m dartlab invest 005930 --runtime codex --expert
 procedure:
   - Runtime manifest에서 실행 파일 후보와 protocol driver를 읽는다.
-  - 15초 TTL probe로 설치·버전, DartLab MCP 연결, embedded grounding capability를 확인하고 셋 다 준비된 groundedReady runtime만 선택한다.
+  - 15초 TTL probe로 설치·버전, 인증, 세션 도구 제공 가능성을 확인하고 groundedReady runtime만 선택한다.
   - native session을 열거나 저장된 opaque session mapping으로 재개한다.
-  - 짧은 analysis capsule과 MCP 도구를 agent에 제공한다.
+  - 짧은 analysis capsule과 읽기 전용 세션 도구를 agent에 제공한다.
   - native event를 AgentEvent로 투영하고 AG-UI allowlist로 공개한다.
   - install과 MCP connect는 계획 argv와 SHA-256 digest를 먼저 보여주고 동일 digest 승인 뒤에만 실행한다.
 linkedSkills:
@@ -103,11 +103,11 @@ dartlab.ask / /api/ask / DartLab UI
   -> Agent Runtime Engine
   -> Codex app-server | Claude stream-json | ACP v1
   -> 사용자의 agent 계정, 모델, native session
-  -> DartLab MCP
+  -> DartLab sessionTools (Codex dynamicTools / Claude SDK control)
   -> Skill OS / Company / scan / analysis / macro / quant / evidence
 ```
 
-DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent CLI를 실행하고, 그 agent가 DartLab MCP로 공시·재무·시장 능력을 사용하게 한다. runtrol은 별도 레포의 설계 참고이며 runtime dependency, daemon, shared package가 아니다.
+DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent CLI를 실행하고, 그 agent가 세션에 직접 제공된 도구로 공시·재무·시장 능력을 사용하게 한다. Codex와 Claude에는 별도 MCP 서버 실행이나 전역 MCP 등록이 필요 없다. Claude SDK 제어 채널의 내부 메시지는 MCP 형식이지만 별도 서버 프로세스를 띄우지 않는다. 외부 MCP 클라이언트 지원은 별도 공개 경로로 유지한다. Puloto와 runtrol은 로컬 설계 참고이며 runtime dependency, daemon, shared package가 아니다.
 
 ## 코드 SSOT
 
@@ -119,6 +119,7 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 | Codex protocol | `drivers/codexAppServer.py` |
 | Claude protocol | `drivers/claudeStreamJson.py` |
 | ACP protocol | `drivers/acp.py` |
+| 세션 도구 명세·실행 영수증 | `sessionTools.py`, `ai/tools/registry.py` |
 | process 수명주기 | `processSupervisor.py` |
 | 이벤트 계약 | `contracts.AgentEvent`, `schema.py` |
 | MCP 연결 계획 | `mcpBootstrap.py` |
@@ -149,6 +150,7 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 - 품질 판정은 답을 삭제하는 게이트가 아니라 사용자에게 보이는 검증 뱃지다. native 성공, grounding tool 성공, 본문 인용 표/문서·값·기준일 exact ref 가 모두 있으면 `verified`, 근거 계약을 못 채운 답은 `unverified` 뱃지와 함께 본문·근거를 그대로 전달하고, 런타임 자체가 실패한 경우만 `failed` 다. 자동 repair 재주입은 하지 않는다 (모델 루프를 소유하지 않는다). 근거: 게이트 시절 실측 2026-08-04, 8질문 중 6건이 인용 서식 사유로 기각됐고 기각된 답도 근거 8~56개를 실인용한 실분석이었다.
 - 정량 답변은 ref ID 인용만으로 충분하지 않다. 인용한 value/date payload의 실제 값과 기간이 답변 산문에 함께 결합돼야 한다. 문서형 질문은 값 ref를 강제하지 않고 문서와 기준시점 결합을 요구한다.
 - evidence는 transcript 없이 ref별 64 KiB 이하 공개 projection만 bounded SQLite에 저장하며 exact outcome/ref 조합으로만 재시작 복구한다. 상한을 넘는 원본 표와 문서는 table/doc/value/date ref 및 bounded preview로 축약한다.
+- 검색 본문은 상위 10문단의 외부 docRef에 한 번만 보존하고 표는 위치·회사·기간 메타데이터를 제공한다. docRef의 passageId와 정제 본문 charStart/charEnd도 재시작 뒤 복구한다. 정성 문단 질의는 문서 근거와 본문에 표시된 접수일을 검증하며 수치 근거를 요구하지 않는다. 각 회사 설명에는 docRef의 exact ID를 접두사 추가 없이 인용한다. 검색 결과 표나 공시 URL만으로 문단 인용을 대신하지 않는다. 재무 표의 명시한 조·억·만원 단위는 셀 검산에 적용한다.
 - 같은 세션의 동시 턴은 거부하고 활성 세션은 LRU 퇴거하지 않는다.
 - 총 턴 제한은 기본 300초이고 `DARTLAB_AGENT_TURN_TIMEOUT_SECONDS`로 30~900초 범위에서만 조정한다. 제한 초과와 SSE 소비자 이탈은 native cancel/interrupt를 실행한다.
 - 턴이 상한을 넘겨 끝나지 않아도 그때까지 쓴 본문과 근거는 미완 표시와 함께 전달한다.
@@ -164,11 +166,12 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 - Runtime Center와 CLI는 먼저 exact argv, 공식 문서 URL, digest를 표시한다.
 - apply 요청의 digest와 현재 manifest로 다시 계산한 계획이 모두 일치해야 실행한다.
 - Codex와 ACP의 native approval request는 UI로 전달한다.
-- Claude print mode는 MCP 지연 검색용 `ToolSearch` 하나와 registry가 read-only로 판정한 DartLab MCP 도구만 노출·허용하며 write 권한을 확대하지 않는다.
-- Codex, Claude, Cline의 MCP 연결은 각 공식 CLI 계획과 exact digest 승인 뒤에만 적용한다. 설치만 된 runtime은 실행 가능 상태가 아니다.
-- 전역 MCP 설정 파일이 있어도 embedded protocol이 MCP tool을 실제 노출하지 않으면 groundedReady가 아니다. Cline 3.0.49 ACP는 이 조건을 만족하지 않아 fail-closed다.
+- Codex는 app-server의 `dynamicTools`, Claude는 stream-json의 SDK 제어 채널로 registry의 read-only 도구를 제공한다. `RunPython`과 쓰기 도구는 노출하지 않는다. 두 경로는 같은 실행 owner와 근거 영수증을 사용한다.
+- Codex는 thread 설정에서 외부 MCP·shell·apps를 비활성화하고 Claude는 `--tools ""`, `--strict-mcp-config`, SDK 전용 설정과 내장 도구 deny 목록을 사용한다. 사용자 전역 설정을 수정하지 않는다.
+- manifest의 `toolTransport=native`이면 setup의 MCP 등록 단계를 생략한다. 기존 MCP 연결 관리 명령은 사용자가 명시한 외부 연결 작업에만 남는다. 설치만 된 runtime은 실행 가능 상태가 아니며 로그인과 protocol 지원이 필요하다.
+- embedded protocol이 근거 도구를 제공하지 않으면 groundedReady가 아니다. Cline 3.0.49 ACP는 이 조건을 만족하지 않아 fail-closed다.
 - agent 인증은 해당 CLI의 공식 로그인 명령에서만 수행한다.
-- Claude driver 는 명시적 허용 목록과 함께 내장 실행 도구를 이름으로 차단한다. 허용 목록만으로는 차단이 되지 않는다 (실측). 도구 검색은 막지 않는다. 지연 로딩되는 DartLab 도구를 그 경로로 발견하므로 막으면 도구 사용이 0 이 된다 (실측 후 되돌림).
+- Claude의 `initialize` 후 질문을 stdin으로 보내고 SDK `tools/list`, `tools/call`을 호스트가 처리한다. 다음 턴은 동일 native session을 resume한다. Codex resume에도 도구 명세를 제공한다.
 - 일반 사용자 여정은 통합 준비 하나다: `dartlab setup codex --yes` (`--yes` 없으면 변경 없이 계획만 출력, GUI 는 Runtime Center `분석 엔진 준비`). 완료된 단계는 재실행하지 않는다. 지원 대상은 Codex 와 Claude Code 이고 Cline 은 상태 확인 계약만 유지한다. 정상 사용 가능 상태는 `dartlab agent status --refresh` 의 `investmentReady=true` 다.
 - `install` 과 `connect` 는 기본 실행에서 계획과 digest 만 출력하고 같은 명령에 `--approve-digest <digest>` 를 붙였을 때만 실행한다. 관리 API 는 `/api/agent/*` (runtimes·default·probe·install/login/mcp plan·apply·sessions·events·cancel·product-outcomes evidence·verify).
 - 런타임이 하나만 준비되면 자동 선택할 수 있다. 둘 이상 준비됐고 기본값이 없으면 임의 선택하지 않고 Runtime Center 선택을 요구한다. 대화가 시작되면 그 런타임은 대화 끝까지 고정된다.
@@ -178,9 +181,10 @@ DartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent 
 
 - 상태 응답 `readiness` 는 `install`, `auth`, `protocol`, `grounding`, `delivery`, `ready` 여섯 축을 분리한다 (`ai/runtime/readiness.py`).
 - 앞 네 축은 CLI 에게 물어보면 알 수 있지만 "질문하면 답이 나오는가" 는 알 수 없다. 설치·로그인·MCP 등록이 전부 정상이면서 계정 사용량 한도로 모델이 한 토큰도 못 만드는 상태가 실재한다. `delivery` 축이 그 간극을 담당한다.
-- delivery 는 3상태다. `verified` = 마지막 턴이 DartLab MCP 도구를 실제 호출. `blocked` = 마지막 턴이 도구를 하나도 못 부른 채 런타임 오류로 종료 (사유는 `blockingReason` 에 런타임 원문 그대로). `unknown` = 아직 턴을 돌린 적 없음 (준비로도 미준비로도 단정하지 않는다). `blocked` 만 groundedReady 를 false 로 만든다.
+- `toolConnection`은 세션 도구 제공 가능성을, `mcp`는 실제 외부 MCP 등록 상태를 나타낸다. native 경로는 `mcp.connected=false`, `mcp.required=false`이며 연결 버튼을 요구하지 않는다.
+- delivery 는 3상태다. `verified` = 마지막 턴이 DartLab 도구를 실제 호출. `blocked` = 마지막 턴이 도구를 하나도 못 부른 채 런타임 오류로 종료 (사유는 `blockingReason` 에 런타임 원문 그대로). `unknown` = 아직 턴을 돌린 적 없음 (준비로도 미준비로도 단정하지 않는다). `blocked` 만 groundedReady 를 false 로 만든다.
 - 판정은 턴 종료 시 기록되고 상태 조회는 그 기록만 읽는다 (조회에 실호출 비용 0). `blocked` 해제는 셋뿐이다: 다음 성공 턴, 사용자의 명시적 다시 확인 (도달을 증명하지 않으므로 `verified` 가 아니라 `unknown` 으로 되돌림), 6시간 경과.
-- 설치, 인증, embedded grounding protocol, DartLab MCP 연결을 모두 통과하고 마지막 실제 턴이 도구 도달에 실패하지 않았을 때만 `groundedReady=true` 다.
+- 설치, 인증, embedded grounding protocol, manifest의 도구 연결 방식을 모두 통과하고 마지막 실제 턴이 도구 도달에 실패하지 않았을 때만 `groundedReady=true` 다.
 
 ## 장애 복구
 

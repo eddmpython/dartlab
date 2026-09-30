@@ -39,16 +39,14 @@ from dartlab.ai.runtime.schema import generateTypeScriptContracts, runtimeJsonSc
 from dartlab.ai.runtime.sessionStore import SessionStore
 
 
-def testClaudeRuntimeAllowsReadOnlyMcpAndBlocksBuiltinExecution():
-    """허용은 --allowedTools(read-only MCP), 차단은 --disallowedTools(내장 실행)로 나눈다.
-
-    실측(2026-08-04): dontAsk 는 "허용 외 거절" 이 아니라 "묻지 않고 실행" 이라
-    allowedTools 만으로는 Bash·PowerShell 이 프롬프트 없이 실행됐다(주입 마커 출력 재현).
-    차단은 disallowedTools 가 소유한다. ToolSearch·MCP 리소스 도구는 dartlab MCP 도구가
-    deferred 라 발견 관문이라서 차단하지 않는다(막으면 분석 자체가 불가).
-    """
+def testClaudeRuntimeAllowsHostToolsAndBlocksBuiltinExecution():
+    """내장 도구를 끄고 세션 SDK 도구만 광고한다. 별도 서버 연결은 없다."""
     args = _claudeToolArgs()
-    assert "--tools" not in args
+    assert args[args.index("--tools") + 1] == ""
+    assert "--strict-mcp-config" in args
+    assert json.loads(args[args.index("--mcp-config") + 1]) == {
+        "mcpServers": {"dartlab": {"type": "sdk", "name": "dartlab"}}
+    }
     assert "--disable-slash-commands" in args
     assert args[args.index("--permission-mode") + 1] == "dontAsk"
     allowed = args[args.index("--allowedTools") + 1]
@@ -226,7 +224,7 @@ def testAnalysisCapsuleHasFiniteToolRoutingContract(tmp_path):
 
     assert "턴당 정확히 한 번" in capsule
     assert "전체 도구 호출 8회 이내" in capsule
-    assert "DartLab 외 다른 MCP 서버의 도구는 사용하지 마라" in capsule
+    assert "이 세션에 제공된 DartLab 도구를 사용하라" in capsule
     assert "필요한 근거가 확보되면 더 탐색하지 말고 즉시 답변" in capsule
     assert "start.dartlabSkillOs" in capsule
     assert "period와 freq를 누락하지 말고" in capsule

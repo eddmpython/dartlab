@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 import uuid
 from collections.abc import Iterator
@@ -10,21 +11,14 @@ from typing import Any
 
 from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
-from ..mcpBootstrap import claudeReadOnlyMcpTools
 from ..processSupervisor import ProcessClosedError, ProcessSupervisor
+from ..sessionTools import callSessionTool, sessionToolSpecs
 from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtimeTurnTimeoutSeconds
 
-# 세션이 노출하는 내장 도구 전수(2026-08-04 init tools 실측)에서, 로컬 실행·파일 변조·
-# 외부 부작용·하위 에이전트 스폰이 가능한 것을 차단한다. 중개 세션은 DartLab MCP 근거
-# 도구만 써야 한다. 실측: allowedTools 만으로는 못 막는다. dontAsk 는 "허용 외 거절" 이
-# 아니라 "묻지 않고 실행" 이라, ReadSkill 만 허용해도 모델이 Bash·PowerShell 을 프롬프트
-# 없이 실행했다(배터리 세션에서 echo PWNED 출력 재현). disallowedTools 로 완전 차단된다.
-#
-# ToolSearch 와 MCP 리소스 3종은 차단하지 않는다: DartLab MCP 도구는 세션에 deferred 로
-# 실려서 ToolSearch 가 스키마 로드 관문이다(배터리 8/8 세션이 ToolSearch 를 첫 도구로 사용).
-# 이들을 막으면 모델이 dartlab 도구에 아예 접근하지 못해 분석이 불가능해진다(실측: 차단 시
-# dartlab 도구 사용 0, 답변 실패). 셋 다 로컬 실행이 아니라 도구·리소스 발견 표면이라
-# 보안 위험이 없다.
+# SDK 제어 채널로 제공하는 read-only DartLab 도구만 사용한다. --tools ""는
+# 내장 도구를 비우고 --strict-mcp-config는 전역 서버 설정의 유입을 막는다.
+# allowedTools만으로 내장 실행을 막지 못했던 기존 실측에 따라 deny 목록도 유지한다.
+# SDK 내부 요청은 MCP 형식이지만 별도 MCP 서버나 사용자 전역 설정은 필요 없다.
 _CLAUDE_DENIED_BUILTINS = (
     "Task",
     "Artifact",
@@ -61,21 +55,16 @@ _CLAUDE_DENIED_BUILTINS = (
 
 
 def _claudeToolArgs() -> tuple[str, ...]:
-    """읽기 전용 DartLab MCP 도구만 노출하고 내장 실행 도구를 차단한다.
-
-    `--tools` 는 쓰지 않는다. 실측(2026-08-04): spawn 시점에 MCP 서버가 `pending` 이라
-    MCP 도구명이 아직 존재하지 않는데 `--tools` 가 그 시점 집합을 하드 제한해 세션이
-    도구 0개로 시작했고(init tools []), 이후 MCP 가 붙어도 못 들어와 모델이 근거 도구
-    없이 기억으로 답했다.
-
-    허용은 `--allowedTools`(read-only MCP), 차단은 `--disallowedTools`(내장 실행 도구)로
-    나눈다. `dontAsk` 는 허용 목록 밖 도구를 거절하지 않고 무프롬프트 실행하므로,
-    `--allowedTools` 만으로는 Bash/PowerShell/파일 쓰기가 뚫린다. 차단은 disallow 가
-    소유한다. 실측: disallow 적용 시 "이 세션에는 Bash 도구가 없다" 로 완전 차단.
-    """
-    allowed = ",".join(claudeReadOnlyMcpTools())
+    """CLI의 SDK 도구 채널을 연결하고 내장 실행 및 외부 MCP 서버를 차단한다."""
+    allowed = ",".join(f"mcp__dartlab__{spec['name']}" for spec in sessionToolSpecs())
     denied = ",".join(_CLAUDE_DENIED_BUILTINS)
     return (
+        "--tools",
+        "",
+        "--strict-mcp-config",
+        "--mcp-config",
+        json.dumps({"mcpServers": {"dartlab": {"type": "sdk", "name": "dartlab"}}}),
+        "--restricted",
         "--disable-slash-commands",
         "--permission-mode",
         "dontAsk",
@@ -131,15 +120,24 @@ class ClaudeStreamJsonDriver:
         argv = (
             *runtimeLaunchArgv(handle.descriptor, handle.executable),
             "--verbose",
+            "--input-format",
+            "stream-json",
             *_claudeToolArgs(),
             "--append-system-prompt",
             instructions,
             *sessionArgs,
-            question,
         )
         supervisor = ProcessSupervisor(ProcessSpec(argv, handle.cwd))
         handle.supervisor = supervisor
         supervisor.start()
+        initializeId = uuid.uuid4().hex
+        supervisor.sendJson(
+            {
+                "type": "control_request",
+                "request_id": initializeId,
+                "request": {"subtype": "initialize", "hooks": None},
+            }
+        )
         completed = False
         timeoutSeconds = runtimeTurnTimeoutSeconds()
         deadline = time.monotonic() + timeoutSeconds
@@ -153,8 +151,28 @@ class ClaudeStreamJsonDriver:
                     raise TimeoutError(f"에이전트 턴이 {timeoutSeconds:g}초 제한을 초과했습니다") from exc
                 except ProcessClosedError:
                     break
+                if (
+                    message.get("type") == "control_response"
+                    and message.get("response", {}).get("request_id") == initializeId
+                ):
+                    response = message["response"]
+                    if response.get("subtype") == "error":
+                        raise RuntimeError(str(response.get("error") or "Claude initialization failed"))
+                    supervisor.sendJson(
+                        {
+                            "type": "user",
+                            "message": {"role": "user", "content": question},
+                            "parent_tool_use_id": None,
+                            "session_id": handle.nativeSessionId,
+                        }
+                    )
+                    continue
+                if message.get("type") == "control_request":
+                    yield from self._hostRequest(handle, message, turnId)
+                    continue
                 for event in handle.projector.project(message, turnId=turnId):
-                    yield event
+                    if event.kind not in {"toolStarted", "toolCompleted"}:
+                        yield event
                 if message.get("type") == "result":
                     nativeId = message.get("session_id")
                     if nativeId:
@@ -172,6 +190,54 @@ class ClaudeStreamJsonDriver:
             supervisor.stop()
             handle.supervisor = None
             handle.activeTurnId = None
+
+    def _hostRequest(self, handle: DriverHandle, message: dict[str, Any], turnId: str) -> Iterator[AgentEvent]:
+        """별도 서버 없이 CLI의 SDK 도구 제어 요청에 응답한다."""
+        request = message.get("request") or {}
+        rpc = request.get("message") or {}
+        params = rpc.get("params") or {}
+        method = rpc.get("method")
+        if request.get("subtype") != "mcp_message" or request.get("server_name") != "dartlab":
+            response = {
+                "subtype": "error",
+                "request_id": message.get("request_id"),
+                "error": "unsupported host request",
+            }
+        else:
+            if method == "initialize":
+                result = {
+                    "protocolVersion": params.get("protocolVersion") or "2025-06-18",
+                    "capabilities": {"tools": {}},
+                    "serverInfo": {"name": "dartlab", "version": "1"},
+                }
+            elif method == "tools/list":
+                result = {"tools": sessionToolSpecs()}
+            elif method == "tools/call":
+                toolResult = yield from callSessionTool(
+                    handle.projector,
+                    turnId,
+                    str(message.get("request_id") or uuid.uuid4().hex),
+                    str(params.get("name") or ""),
+                    params.get("arguments"),
+                )
+                result = {
+                    "content": [{"type": "text", "text": json.dumps(toolResult, ensure_ascii=False, default=str)}],
+                    "isError": not toolResult.get("ok"),
+                }
+            elif "id" not in rpc:
+                result = {}
+            else:
+                result = None
+            answer = (
+                {"result": result} if result is not None else {"error": {"code": -32601, "message": "unknown method"}}
+            )
+            response = {
+                "subtype": "success",
+                "request_id": message.get("request_id"),
+                "response": {"mcp_response": {"jsonrpc": "2.0", "id": rpc.get("id"), **answer}},
+            }
+        if handle.supervisor:
+            handle.supervisor.sendJson({"type": "control_response", "response": response})
 
     def cancel(self, handle: DriverHandle) -> None:
         """Sig: cancel(handle) -> None.

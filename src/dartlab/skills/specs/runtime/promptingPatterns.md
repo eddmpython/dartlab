@@ -72,6 +72,10 @@ recipe id (`recipes.macro.qualityMacroBeta` 등) 명시 호출 → 결과의 `##
 
 ## 강행 prompt 요소
 
+설치형 runtime의 `analysisCapsule.py`는 "이 세션에 제공된 DartLab 도구"를 사용하도록 안내한다. Codex와 Claude의 세션 직접 연결은 MCP 설치를 사용자에게 요구하지 않는다. 도구 transport와 관계없이 같은 Skill OS, EngineCall, 근거 계약을 따른다. 인증·모델·대화 기록은 사용자 CLI가 소유한다.
+
+단순 수치 확인은 `EngineCall`의 `Company.panel`과 `PeerCompareN`에 `includeContext=false`를 지정한다. 이때 표·값·기간·공시 링크는 유지하고 신용·산업 부가 계산을 생략한다. 투자 판단 질문은 관련 분석 계약을 사용하며 기존 `includeContext=true` 동작도 유지한다. 인자 이름은 ReadSkill에 inline된 실제 callable 계약에서 확인하고 추측하지 않는다.
+
 모든 prompt 변형에 다음 4 요소 강행:
 
 1. **단위 명시** (% / bp / index / 원).

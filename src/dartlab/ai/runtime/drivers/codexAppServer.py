@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import time
 import uuid
@@ -13,6 +14,7 @@ from typing import Any
 from ..contracts import AgentEvent, ProcessSpec, RuntimeDescriptor
 from ..eventProjection import EventProjector
 from ..processSupervisor import JsonRpcChannel, ProcessSupervisor
+from ..sessionTools import callSessionTool, sessionToolSpecs
 from .base import DriverHandle, remainingTurnSeconds, runtimeLaunchArgv, runtimeTurnTimeoutSeconds
 
 _DEFAULT_CODEX_REASONING_EFFORT = "high"
@@ -44,21 +46,54 @@ class CodexAppServerDriver:
         Raises: transport or JSON-RPC errors when initialization fails.
         Example: 엔진의 `openSession`에서 호출한다.
         """
-        supervisor = ProcessSupervisor(ProcessSpec(runtimeLaunchArgv(descriptor, executable), cwd))
+        argv = (
+            *runtimeLaunchArgv(descriptor, executable),
+            "-c",
+            "features.hooks=false",
+            "-c",
+            "features.plugins=false",
+        )
+        supervisor = ProcessSupervisor(ProcessSpec(argv, cwd))
         supervisor.start()
         try:
             channel = JsonRpcChannel(supervisor)
             channel.request(
                 "initialize",
-                {"clientInfo": {"name": "dartlab", "version": "1"}, "capabilities": {}},
+                {"clientInfo": {"name": "dartlab", "version": "1"}, "capabilities": {"experimentalApi": True}},
                 timeout=15,
             )
             channel.notify("initialized", {})
+            effective = channel.request("config/read", {"cwd": str(cwd.resolve())}, timeout=15)
+            config = effective.get("config") or {}
+            servers = config.get("mcp_servers") or {}
             threadParams = {
                 "cwd": str(cwd.resolve()),
                 "approvalPolicy": "never",
                 "sandbox": "read-only",
                 "developerInstructions": instructions,
+                "dynamicTools": [{"type": "function", **spec} for spec in sessionToolSpecs()],
+                "environments": [],
+                "config": {
+                    "mcp_servers": {name: {"enabled": False} for name in servers},
+                    "project_doc_max_bytes": 0,
+                    "web_search": "disabled",
+                    "features": {
+                        name: False
+                        for name in (
+                            "shell_tool",
+                            "unified_exec",
+                            "apps",
+                            "multi_agent",
+                            "multi_agent_v2",
+                            "plugins",
+                            "hooks",
+                            "memories",
+                            "computer_use",
+                            "browser_use",
+                            "image_generation",
+                        )
+                    },
+                },
             }
             if nativeSessionId:
                 result = channel.request(
@@ -69,7 +104,10 @@ class CodexAppServerDriver:
             else:
                 result = channel.request(
                     "thread/start",
-                    {**threadParams, "ephemeral": False},
+                    {
+                        **threadParams,
+                        "ephemeral": False,
+                    },
                     timeout=30,
                 )
         except Exception:
@@ -135,6 +173,33 @@ class CodexAppServerDriver:
                 except TimeoutError as exc:
                     raise TimeoutError(f"에이전트 턴이 {timeoutSeconds:g}초 제한을 초과했습니다") from exc
                 nativeType = str(message.get("method") or message.get("type") or "native")
+                params = message.get("params") or {}
+                if params.get("threadId") and params["threadId"] != handle.nativeSessionId:
+                    continue
+                if nativeType == "item/tool/call" and "id" in message:
+                    toolResult = yield from callSessionTool(
+                        handle.projector,
+                        turnId,
+                        str(params.get("callId") or message["id"]),
+                        str(params.get("tool") or ""),
+                        params.get("arguments"),
+                    )
+                    handle.channel.respond(
+                        message["id"],
+                        {
+                            "success": bool(toolResult.get("ok")),
+                            "contentItems": [
+                                {"type": "inputText", "text": json.dumps(toolResult, ensure_ascii=False, default=str)}
+                            ],
+                        },
+                    )
+                    continue
+                if (
+                    nativeType in {"item/started", "item/completed"}
+                    and (params.get("item") or {}).get("type") == "dynamicToolCall"
+                ):
+                    # 실행 결과는 호스트가 발급한다. 런타임의 같은 item을 중복 집계하지 않는다.
+                    continue
                 if "id" in message and nativeType.endswith("/requestApproval"):
                     approvalId = str(message.get("id"))
                     handle.pendingApprovals[approvalId] = (message["id"], nativeType)

@@ -101,8 +101,24 @@ def test_search_no_result(monkeypatch, mock_output):
     _patch_dartlab(monkeypatch)
     from dartlab.cli.commands.search import run
 
-    rc = run(_ns(keyword="없는종목"))
+    parser = argparse.ArgumentParser()
+    from dartlab.cli.commands.search import configureParser
+
+    configureParser(parser.add_subparsers())
+    rc = run(parser.parse_args(["search", "없는종목"]))
     assert rc == 0
+
+
+def testSemanticSearchCliPassesFiltersAndRelatedPassage(monkeypatch, mock_output):
+    fake = _patch_dartlab(monkeypatch)
+    from dartlab.cli.commands.search import configureParser, run
+
+    parser = argparse.ArgumentParser()
+    configureParser(parser.add_subparsers())
+    assert run(parser.parse_args(["search", "--related-to", "passage", "--corp", "AAPL", "--limit", "3"])) == 0
+    fake.search.assert_called_once_with(
+        "", scope="semantic", relatedTo="passage", corp="AAPL", excludeCorp=None, start=None, end=None, limit=3
+    )
 
 
 # ── 2. status ──

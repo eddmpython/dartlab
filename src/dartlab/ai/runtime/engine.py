@@ -41,6 +41,7 @@ from .readiness import (
     _runtimeStatusEntry,
     _scheduledProbes,
     _semanticReadiness,
+    probeToolConnection,
 )
 from .registry import loadRuntimeRegistry
 from .sessionManager import ManagedSession, SessionManager
@@ -187,13 +188,15 @@ class AgentRuntimeEngine:
                 raise RuntimeUnavailableError(
                     f"{preferredRuntimeId}의 현재 ACP 구현은 embedded DartLab MCP를 노출하지 않습니다"
                 )
-            connection = probeMcpConnection(preferredRuntimeId)
+            connection = probeToolConnection(self.registry[preferredRuntimeId], mcpProbe=probeMcpConnection)
             if connection.get("undetermined"):
                 # 상한 초과는 미연결이 아니라 미판정이다. 측정층은 이미 둘을 구분하는데
                 # 이 문에서 하나로 뭉개고 있었다. 실측(2026-08-06): 기기가 바쁜 동안
                 # 13 개 질문이 전부 "연결되지 않았습니다" 로 막혔고, 같은 시점에
                 # `claude mcp list` 는 연결됨이었다. 잠시 뒤에는 성립하므로 한 번 더 잰다.
-                connection = probeMcpConnection(preferredRuntimeId, refresh=True)
+                connection = probeToolConnection(
+                    self.registry[preferredRuntimeId], refresh=True, mcpProbe=probeMcpConnection
+                )
             if connection.get("undetermined"):
                 raise RuntimeUnavailableError(
                     f"{preferredRuntimeId}의 DartLab MCP 연결을 확인하지 못했습니다(측정 상한 초과). "
@@ -225,7 +228,7 @@ class AgentRuntimeEngine:
             if descriptor.embeddedGrounding
             and probeRuntime(descriptor).state == "ready"
             and probeRuntimeAuth(descriptor).get("state") in {"authenticated", "unsupported"}
-            and probeMcpConnection(runtimeId).get("connected")
+            and probeToolConnection(descriptor, mcpProbe=probeMcpConnection).get("connected")
             and _deliveryRecord(self.sessionStore, runtimeId).get("state") != "blocked"
         ]
         if len(ready) == 1:
@@ -235,7 +238,7 @@ class AgentRuntimeEngine:
                 "사용 가능한 런타임이 여러 개입니다. Runtime Center에서 새 대화의 기본 런타임을 선택하세요"
             )
         raise RuntimeUnavailableError(
-            "DartLab MCP까지 준비된 로컬 에이전트를 찾지 못했습니다. "
+            "DartLab 도구를 사용할 수 있는 로컬 에이전트를 찾지 못했습니다. "
             "`dartlab agent status --refresh`에서 설치와 연결 상태를 확인하세요"
         )
 
@@ -286,7 +289,7 @@ class AgentRuntimeEngine:
         if probe.executable is None:
             raise RuntimeUnavailableError(f"{resolvedRuntimeId} 실행 파일을 찾지 못했습니다")
         driver = self.drivers[descriptor.driver]
-        instructions = buildAnalysisCapsule(cwd=resolvedCwd, mcpConnected=True)
+        instructions = buildAnalysisCapsule(cwd=resolvedCwd, mcpConnected=True, toolTransport=descriptor.toolTransport)
         handle = driver.open(
             descriptor,
             probe.executable,
@@ -361,8 +364,12 @@ class AgentRuntimeEngine:
                 if outcomeId
                 else _OutcomeTracker.start(qualityQuestion or question)
             )
-            mcp = probeMcpConnection(managed.handle.descriptor.runtimeId)
-            instructions = buildAnalysisCapsule(cwd=managed.handle.cwd, mcpConnected=bool(mcp.get("connected")))
+            connection = probeToolConnection(managed.handle.descriptor, mcpProbe=probeMcpConnection)
+            instructions = buildAnalysisCapsule(
+                cwd=managed.handle.cwd,
+                mcpConnected=bool(connection.get("connected")),
+                toolTransport=managed.handle.descriptor.toolTransport,
+            )
             turnQuestion = buildTurnQuestion(question, context, contractQuestion=qualityQuestion)
             runtimeId = managed.handle.descriptor.runtimeId
             toolReached = False

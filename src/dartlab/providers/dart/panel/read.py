@@ -940,6 +940,30 @@ def anchorNarrativeToSpine(df: pl.DataFrame) -> pl.DataFrame:
     return df.with_columns(sectionLeafConvergeExpr())
 
 
+def readFilingMetadata(code: str, *, marketNs: str = "kr") -> pl.DataFrame | None:
+    """공시 목록용 메타데이터 두 열만 읽는다.
+
+    Args:
+        code: 종목코드 또는 ticker.
+        marketNs: kr 또는 us.
+    Returns:
+        period/rceptNo DataFrame. artifact가 없으면 None.
+    Raises:
+        OSError: parquet 읽기 실패.
+    Example:
+        >>> # readFilingMetadata("005930")
+    """
+    from dartlab.core.dataLoader import readParquetSafe
+
+    ensurePanelFromHf(code, marketNs)
+    directory = _panelDir(code, marketNs)
+    flat = directory.parent / f"{code}.parquet"
+    paths = [flat] if flat.exists() else sorted(directory.glob("*.parquet"))
+    if not paths:
+        return None
+    return readParquetSafe([str(path) for path in paths], columns=["period", "rceptNo"]).unique()
+
+
 def readLong(code: str, *, marketNs: str = "kr", periods: list[str] | None = None) -> pl.DataFrame | None:
     """panel long format read + disclosureKey 보장 (period 파일 prune).
 

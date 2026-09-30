@@ -242,6 +242,8 @@ def search(
     limit: int = 10,
     topK: int | None = None,
     scope: str = "auto",
+    relatedTo: str | None = None,
+    excludeCorp: str | None = None,
 ):
     """공시·뉴스 통합 검색.
 
@@ -287,7 +289,10 @@ def search(
         end: 종료일 (YYYYMMDD).
         limit: 반환 건수 (기본 10).
         topK: ``limit`` 호환 alias. 지정하면 ``limit`` 대신 사용.
-        scope: ``"auto"`` (기본), ``"title"``, ``"content"``, ``"both"``, ``"news"``.
+        scope: auto/title/content/both/news/semantic. 의미 탐색은 semantic을 사용한다.
+        relatedTo: semantic 결과의 passageId. query=""로 관련 문단을 탐색할 수 있다.
+            의미 검색 준비는 pip install 'dartlab[semantic]' 후 dartlab search --build-semantic.
+        excludeCorp: 의미 검색에서 제외할 회사. 다른 회사로 이어갈 때 기준 회사 코드를 지정한다.
 
     Returns
     -------
@@ -309,7 +314,7 @@ def search(
 
     LLM Specifications:
         AntiPatterns:
-            - 단일 종목 공시 검색에 사용 (Company(code).disclosure() 또는 liveFilings() 우선)
+            - 단일 종목 보유 목록은 Company.filings 우선. 원문 의미 탐색은 corp 필터 사용.
             - 0 건 반환 시 키워드 변형 round 반복 (즉시 다른 경로 fallback)
             - 최근 공시 확인 용도 (인덱스 신선도 부족 — DART API 직접 호출이 정확)
         OutputSchema:
@@ -320,10 +325,10 @@ def search(
         Freshness:
             인덱스 manifest 의 sourceDataAsOf 기준. ``dartlab.search.indexInfo()`` 로 확인.
         TargetMarkets:
-            - KR (DART)
+            - KR (DART), semantic은 로컬 EDGAR 원문과 US ticker도 지원.
     """
     # R33-1: 빈 query 거부
-    if not query or not query.strip():
+    if (not query or not query.strip()) and not relatedTo:
         raise ValueError(
             "search 의 query 가 비어 있습니다. 검색어를 1자 이상 전달하세요. 예: dartlab.search('유상증자')"
         )
@@ -331,7 +336,9 @@ def search(
         limit = int(topK)
     from dartlab.providers.dart.search import search as _search
 
-    return _search(query, corp=corp, start=start, end=end, limit=limit, scope=scope)
+    return _search(
+        query, corp=corp, start=start, end=end, limit=limit, scope=scope, relatedTo=relatedTo, excludeCorp=excludeCorp
+    )
 
 
 def _searchPrefetch(*, tier: str | None = None) -> dict:
@@ -597,7 +604,7 @@ def setup(provider: str | None = None):
     print(f"\n  {provider} 상태: dartlab agent status {provider}")
     print(f"  설치 계획: dartlab agent install {provider}")
     if provider != "cline":
-        print(f"  MCP 연결 계획: dartlab agent connect {provider}")
+        print(f"  로그인 후 사용: dartlab ask --runtime {provider} '삼성전자 매출은?'")
     print("  인증은 설치 후 해당 CLI에서 직접 완료하세요.\n")
 
 

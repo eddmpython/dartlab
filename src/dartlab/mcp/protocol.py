@@ -108,11 +108,11 @@ def mcpAdvertisedToolNames(profile: str | None = None) -> tuple[str, ...]:
     `ask`는 제외한다. 설치형 에이전트가 다시 DartLab AI를 호출하면 재귀 런타임이 되므로
     MCP는 데이터, Skill OS, 실행 도구만 제공한다.
     """
-    from dartlab.ai.tools.registry import CANONICAL_V2, isToolReadOnly
+    from dartlab.ai.tools.registry import CANONICAL_V2, agentToolSpecs
 
     selected = str(profile or os.environ.get("DARTLAB_MCP_PROFILE") or "full").strip().casefold()
     if selected == "agent":
-        return tuple(name for name in CANONICAL_V2 if isToolReadOnly(name))
+        return tuple(spec["name"] for spec in agentToolSpecs())
     if selected != "full":
         raise ValueError(f"지원하지 않는 MCP profile: {selected}")
     return tuple(CANONICAL_V2)

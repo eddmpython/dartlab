@@ -70,8 +70,8 @@ def companyMetrics(company: Any) -> dict[str, Any]:
     metrics: dict[str, Any] = {}
     if company is None:
         return metrics
-    is_df = _safe(lambda: company.panel("IS"))
-    bs_df = _safe(lambda: company.panel("BS"))
+    is_df = _safe(lambda: statementTable(company, "IS"))
+    bs_df = _safe(lambda: statementTable(company, "BS"))
     metrics["sourcePeriods"] = {
         "IS": _latestPeriodFromShow(is_df),
         "BS": _latestPeriodFromShow(bs_df),
@@ -90,6 +90,15 @@ def companyMetrics(company: Any) -> dict[str, Any]:
     metrics["debtRatio"] = round(liab / eq * 100, 2) if eq and liab is not None else None
     metrics["roe"] = round(ni / eq * 100, 2) if eq and ni is not None else None
     return metrics
+
+
+def statementTable(company: Any, topic: str, *, scope: str = "consolidated") -> pl.DataFrame | None:
+    """동일한 finance owner의 select를 사용해 숫자 조회에서 원문 전체 pivot을 피한다."""
+    selector = getattr(company, "select", None)
+    if callable(selector):
+        result = selector(topic, scope=scope, strict=False)
+        return result.df if result is not None else None
+    return company.panel(topic)
 
 
 __all__ = ["companyMetrics"]

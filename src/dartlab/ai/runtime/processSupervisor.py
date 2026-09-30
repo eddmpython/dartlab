@@ -204,7 +204,7 @@ class JsonRpcChannel:
             deadline = time.monotonic() + timeout
             while True:
                 message = self.supervisor.readJson(timeout=max(0.01, deadline - time.monotonic()))
-                if message.get("id") != requestId:
+                if message.get("id") != requestId or "method" in message:
                     self._pending.append(message)
                     continue
                 if "error" in message:

@@ -329,7 +329,7 @@ _SPECS: dict[str, ToolSpec] = {
     ),
     "PeerCompareN": ToolSpec(
         "PeerCompareN",
-        "N (2~12) 종목 wide-format 비교 + peer-internal percentile rank (각 metric 별 0.0~1.0, 1.0=best). 2~3 종목 비교도 본 도구 1 회. '5 개 회사 비교', '삼성 vs SK vs LG vs ...', 'A vs B' 류 질문에 1 회 호출.",
+        "N (2~12) 종목 수치 비교와 내부 percentile rank. 최신 기간의 단순 수치 비교는 includeContext=false로 부가 계산을 생략한다. 특정 과거 연도는 EngineCall의 Company.panel(period=..., freq='Y')을 사용한다.",
         {
             "type": "object",
             "properties": {
@@ -342,6 +342,11 @@ _SPECS: dict[str, ToolSpec] = {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "비교 metric list. 기본 8 종 (revenue/operatingProfit/netIncome/totalAssets/totalEquity/totalLiabilities/debtRatio/roe).",
+                },
+                "includeContext": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": "단순 수치 비교는 false. 신용·산업 부가 판단이 필요할 때 true.",
                 },
             },
             "required": ["stockCodes"],
@@ -811,6 +816,30 @@ def toolSpecs(provider: Any = None) -> list[dict[str, Any]]:
 def listToolNames() -> tuple[str, ...]:
     """현재 등록된 모든 tool name (canonical + plugin) tuple."""
     return tuple(_SPECS.keys())
+
+
+def agentToolSpecs() -> list[dict[str, Any]]:
+    """설치형 세션과 MCP가 공유하는 읽기 전용 도구 정의를 반환한다."""
+    return [spec for spec in toolSpecs() if spec["name"] in CANONICAL_V2 and isToolReadOnly(spec["name"])]
+
+
+def executeAgentTool(name: str, args: Any) -> dict[str, Any]:
+    """광고한 도구만 실행하고 외부 본문 표시와 실패 결과를 같은 경계에서 보존한다."""
+    from .formatting import wrapExternalInResult
+
+    specs = {spec["name"]: spec for spec in agentToolSpecs()}
+    if name not in specs:
+        return ToolResult(False, f"이 세션에서 사용할 수 없는 도구: {name}", error="unknown_tool").toDict()
+    if not isinstance(args, dict):
+        return ToolResult(False, "도구 인자는 JSON object여야 합니다", error="invalid_arguments").toDict()
+    schema = specs[name]["inputSchema"]
+    missing = [key for key in schema.get("required", ()) if key not in args]
+    if missing:
+        return ToolResult(False, f"필수 인자 누락: {', '.join(missing)}", error="invalid_arguments").toDict()
+    try:
+        return wrapExternalInResult(executeTool(name, args))
+    except Exception as exc:  # noqa: BLE001 - 도구 실패는 에이전트가 수정할 수 있는 결과다.
+        return ToolResult(False, str(exc)[:1000], error=type(exc).__name__).toDict()
 
 
 def isToolReadOnly(name: str) -> bool:

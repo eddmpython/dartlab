@@ -166,3 +166,33 @@ def test_peerCompareNMarksMissingCellsAsIncomplete(monkeypatch: pytest.MonkeyPat
         {"stockCode": "A", "metric": "revenue"},
         {"stockCode": "B", "metric": "revenue"},
     ]
+
+
+def testPeerFactsSkipWideBoardAndUnrequestedContext(monkeypatch):
+    from types import SimpleNamespace
+
+    import polars as pl
+
+    class Company:
+        corpName = "기업"
+
+        @property
+        def panel(self):
+            raise AssertionError("전체 원문 보드는 필요하지 않다")
+
+        def select(self, topic, **kwargs):
+            return SimpleNamespace(df=pl.DataFrame({"snakeId": ["sales", "total_assets"], "2025Q4": [100.0, 300.0]}))
+
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.resolveCompanyOrNone", lambda code: Company())
+
+    def forbidden(*args):
+        raise AssertionError("수치 비교에서 부가 분석을 실행하면 안 된다")
+
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.getDcrBadge", forbidden)
+    monkeypatch.setattr("dartlab.ai.tools.peerCompareN.getIndustryBadge", forbidden)
+    result = executeTool(
+        "PeerCompareN", {"stockCodes": ["A", "B"], "metrics": ["revenue", "totalAssets"], "includeContext": False}
+    )
+    assert result["data"]["complete"]
+    assert result["data"]["badges"] == []
+    assert result["data"]["rows"][0]["revenue"] == 100.0

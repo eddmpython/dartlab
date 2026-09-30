@@ -65,7 +65,7 @@ def templates(name: str | None = None):
     Returns: 런타임 분석 template 설명이다.
     Example: `templates("dartlab-agent-runtime")`.
     """
-    items = {"dartlab-agent-runtime": "설치형 agent CLI와 DartLab MCP를 결합한 근거 기반 분석"}
+    items = {"dartlab-agent-runtime": "사용자 agent CLI 세션과 DartLab 도구를 연결한 근거 기반 분석"}
     return items.get(name) if name else items
 
 

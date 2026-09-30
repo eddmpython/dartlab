@@ -4796,13 +4796,13 @@
     },
     {
       "id": "engines.search",
-      "bodyPreview": "## 엔진 역할\n\n`search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 외부 모델/서버·GPU·임베딩 0 — 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope=\"auto\" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).\n\n결과 row는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards`를 가져야 한다. graph catalog가 배포된 환경에서는 optional `entityCards`로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex와 동거하는 `entityGraphCatalog.parquet`이고, explicit copy 또는 opt-in offline build 후 manifest required file로 내려온 경우에만 runtime이 붙인다. 뉴스와 공시는 같은 표면에 나오지만 source intent는 hard isolation이다. 신선도는 본문 인덱스의 source catalog delta와 monthly main compaction을 기준으로 한다. 최근 며칠은 `Company.filings()` 또는 source별 live path 병행을 권장한다. canonical source catalog는 monthly main full HF pull bootstrap 또는 previous-manifest drop guard를 통과한 source-owner run으로만 운영 증거가 된다.\n\n단일 종목 공시는 `Company(code).filings()` 가 안정 진입점. search 는 *횡단 키워드 검색* — \"어떤 회사가 유상증자했나\" 같은 질문 한정.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# 1. 제목 검색 (default scope=\"auto\" 가 자동 판별)\nresult = dartlab.search(\"유상증자\")\n# → DataFrame: score · rcept_no · corp_name · report_nm · scope · dartUrl\n\n# 2. 본문 검색 (개념/내용형 쿼리)\nresult = dartlab.search(\"반도체 HBM 투자\", scope=\"content\")\n\n# 3. 명시적 scope\nresult = dartlab.search(\"환율 리스크\", scope=\"content\")\n\n# 4. 뉴스 source hard isolation\nresult = dartlab.search(\"공시 말고 뉴스로 환율 기사\", scope=\"news\")\n\n# 5. 종목/기간 필터\nresult = dartlab.sea",
+      "bodyPreview": "## 엔진 역할\n\n`scope=\"semantic\"`은 선택 설치하는 다국어 문단 검색이다. 질문에서 직접 단어가 겹치지 않는 표현도 후보로 회수하고 E5로 다시 정렬한다. 검색 결과의 `passageId`를 `relatedTo`로 넘기면 같은 의미의 다른 공시·회사·기간으로 이동한다. 원문 위치는 `sourceRef`, `blockOrder`, 정제 본문 기준 `charStart/charEnd`로 보존한다. `relationType=semanticSimilarity`는 탐색 후보이며 사실이나 인과관계의 증명이 아니다.\n\n준비 명령은 `pip install 'dartlab[semantic]'`과 `dartlab search --build-semantic`이다.\n\n빌드는 공개 검색 catalog의 모든 행과 로컬 DART·EDGAR panel의 모든 본문 block을 사용한다. catalog만 보유한 문서는 배포된 발췌 범위(`catalogExcerpt`), 로컬 원문은 끝까지 겹치는 문단으로 나눈 범위(`localFullText`)다. 원격 원문 전체가 이미 색인돼 있다고 주장하지 않는다. 변경 파일의 동일 본문 벡터는 재사용하며 삭제 문서는 다음 빌드에서 제거한다. 실패한 빌드는 직전 manifest를 보존한다. 모델은 명시적 빌드에서만 내려받고 질의는 로컬 모델을 사용한다. `indexedAt`은 빌드 시점, `sourceDataAsOf`는 문서 기준일이다.\n\n`auto/title/content/both/news`의 기존 기본 검색은 유지한다. 의미 모델 단독 순위가 실제 질문에서 엉뚱한 기업을 올린 실험 결과 때문에 기본 sparse 검색을 무조건 대체하지 않는다. 의미 탐색 질문은 `semantic`, 정확한 공시 유형은 `auto/title`, 수치 조건은 `scan/dataHub`를 선택한다. 의미 검색의 첫 질의는 모델 로딩·후보 재정렬 비용이 있고 같은 문단의 후속 조회는 캐시를 재사용한다.\n\n`search` 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색하는 엔진이다. 기존 sparse 경로는 외부 모델/서버·GPU·임베딩 없이 음절 bigram BM25 numpy 역인덱스 + 큐레이션 동의어 + 결정론 라우터(router.json)만으로 통합 검색한다. scope=\"auto\" 가 plain BM25 lane 과 확장 lane 을 RRF 융합해, 구어·약어 질의도 회수하되 확장이 틀려도 plain 순위가 보존된다(always-safe).\n\n결과 row는 `source/sourceRef/dataAsOf/snippet/answerable/notAnswerableReason/fieldCards`를 가져야 한다. graph catalog가 배포된 환경에서는 optional `entityCards`로 peer/stage/credit weak-axis 컨텍스트가 붙는다. 운영 산출물명은 contentIndex와 동거하는 `entityGr",
       "title": "Search (공시·뉴스 의미·본문 검색)",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "Search 는 DART allFilings, DART panel, EDGAR panel, public news 를 sourceRef 보존 본문 인덱스로 검색한다. scope=\"auto\"(기본)는 sparse R* 통합 검색이며, source intent hard isolation 과 answerability/evidence card 를 붙인다. 단일 종목 공시는 `Company.filings()` / `Company.filings()` 우선. 트리거 — '공시 검색', '뉴스 검색', '통합 검색', '본문 BM25', 'search'.",
+      "purpose": "Search는 DART·EDGAR 공시와 뉴스를 sourceRef 보존 인덱스로 검색한다. 문서의 의미·주제·관련 문단은 scope=\"semantic\", limit=5로 찾는다. 다른 회사로 이어갈 때 relatedTo=passageId, excludeCorp=기준 종목코드를 사용한다. 수치 조건은 scan/dataHub로 계산한다. 보유 공시 목록은 Company.filings로 확인하고 최신성은 별도 검증한다.",
       "whenToUse": [
         "search",
         "공시 검색",
@@ -4812,13 +4812,17 @@
         "대표이사 변경",
         "반도체 HBM 투자",
         "환율 리스크",
-        "뉴스 원문"
+        "뉴스 원문",
+        "의미로 연결된 문서",
+        "비슷한 내용의 다른 공시"
       ],
       "inputs": [
         "검색어 (한국어)",
         "corp 필터 (종목코드 또는 회사명)",
         "start / end (YYYYMMDD)",
-        "scope (auto / title / content / both / news)",
+        "scope (auto / title / content / both / news / semantic)",
+        "relatedTo (semantic 결과의 passageId)",
+        "excludeCorp (다른 회사 탐색에서 제외할 회사)",
         "topK"
       ],
       "requiredInputs": [],
@@ -4847,8 +4851,8 @@
         "dartlab://skills/engines.search"
       ],
       "procedure": [
-        "검색 의도 확인 — 제목형 (report_nm) vs 개념형 (본문 BM25).",
-        "dartlab.search(query, scope=title) 또는 scope=content (auto 가 자동 판별).",
+        "유형명은 title/auto, 의미·관련 문단은 semantic, 정확한 본문 단어는 content.",
+        "dartlab.search(query, scope=...) 호출. auto는 sparse 통합 검색이다.",
         "결과의 `score`, `rcept_no`, `dartUrl` 인용. 본문 분석은 `Company(code).panel(섹션명)`.",
         "0 건이면 round 반복 X — `Company.filings()` 또는 `scan` 으로 즉시 전환.",
         "최근 N 일 데이터는 인덱스 빌드 시점 이후 누락 가능 — DART API 직접 호출 (Company.filings) 권장."
@@ -4868,7 +4872,8 @@
       ],
       "visualGuidance": [],
       "failureModes": [
-        "단일 종목 공시 검색에 search 사용 (Company(code).filings() 우선)",
+        "최근 공시 목록에 본문 의미 검색 사용 (Company(code).filings() 우선)",
+        "의미 유사도를 실제 관계·인과관계·재무 조건 충족으로 단정함",
         "0 건 반환 시 키워드 변형으로 round 반복 — 인덱스 stale 가능성, 즉시 다른 경로 fallback",
         "title 과 content 가중치 합산 — 실험 116 에서 품질 저하 확인됨, 합산 금지",
         "최근 N 일 공시/뉴스 누락 — source catalog delta 또는 live path 확인",
@@ -4887,7 +4892,7 @@
         "유상증자 검색 (제목 매칭, \"유상증자\" 키워드)",
         "반도체 HBM 투자 트렌드 (본문 BM25)",
         "환율 리스크 언급 회사 찾기",
-        "단일 종목 공시는 Company.filings() (search 아님)"
+        "최신 공시 목록은 Company.liveFilings(), 원문 의미 검색은 search(corp=code, scope=semantic)"
       ],
       "runtimeCompatibility": {
         "server": {
@@ -4909,19 +4914,18 @@
     },
     {
       "id": "engines.search.disclosureSearch",
-      "bodyPreview": "## 엔진 역할\n\n`search` 엔진의 *DART 공시 검색 패턴* SSOT sub-spec. base SKILL `engines.search` 가 BETA 엔진 자체 동작을 정의한다면, 본 sub-spec 은 *언제 어느 진입점을 쓰는지* 분기 룰 단일화. AI 답변 회귀 (`search 단일 종목 호출 사고`) 차단의 1 차 게이트.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# === 경로 A: 단일 종목 공시 (Company-bound) ===\nc = dartlab.Company(\"005930\")\n\n# A1. 전체 시계열\ndisclosures = c.filings()\n# → DataFrame: rcept_dt · rcept_no · report_nm · ...\n\n# A2. 라이브 (DART API 직접, 최신성 보장)\nrecent = c.filings()\n# → 최근 N 건 (인덱스 stale 우회)\n\n# A3. 특정 공시 본문 (섹션 검색)\nbody = c.panel(\"사업의 내용\")\n\n# === 경로 B: 횡단 키워드 검색 (search 엔진) ===\n\n# B1. 제목 검색 (auto 가 자동 분기)\nresult = dartlab.search(\"유상증자\")\n\n# B2. 본문 검색 (개념형 쿼리)\nresult = dartlab.search(\"반도체 HBM 투자\", scope=\"content\")\n\n# B3. 종목/기간 필터\nresult = dartlab.search(\"대표이사 변경\", corp=\"005930\",\n                        start=\"20240101\", end=\"20251231\")\n```\n\n## 호출 동작\n\n### 진입점 분기 룰 (강행)\n\n| 질문 패턴 | 정공 경로 | 금지 경로 |\n|---|---|---|\n| \"삼성전자 최근 공시는?\" | `c.filings()` 또는 `c.filings()` | `dartlab.search(\"삼성전자\")` ❌ |\n| \"유상증자한 회사 있어?\" | `dartlab.search(\"유상증자\")` | Company 순회 ❌ |\n| \"삼성전자 유상증자 이력?\" | `c.filings()` 필터 또는 `search(corp=\"005930\")` | `search` 전체 검색 후 필터 ❌ |\n| \"반도체 HBM 언급 회사?\" | `dartlab.search(\"반도체 HBM 투자\", scope=\"content\")` | Company 순회 ❌ |\n\n### scope/source 분기\n\n`scope=\"auto\"` (기본) 가 쿼리 길이 + 단어 수로 title/content 자동 분기:\n\n- 짧은 명사구 (1~2 단어, \"유상증자\" / \"대표이사 변경\") → `title`\n- 긴 개념형 (3+ 단어, \"반도체 HBM 투자 트렌드\") → `content`\n- 명시 강제: `scope=\"title\"` 또는 `scope=\"content\"`.\n\n`scope=\"both\"` 는 두 결과 별도 컬럼 — **점수 합산 금지** (실험 116 에서 합산 품질 저하",
+      "bodyPreview": "## 엔진 역할\n\n`search` 엔진의 *DART 공시 검색 패턴* SSOT sub-spec. base SKILL `engines.search` 가 BETA 엔진 자체 동작을 정의한다면, 본 sub-spec 은 *언제 어느 진입점을 쓰는지* 분기 룰 단일화. AI 답변 회귀 (`search 단일 종목 호출 사고`) 차단의 1 차 게이트.\n\n## 공개 호출 방식\n\n```python\nimport dartlab\n\n# === 경로 A: 단일 종목 공시 (Company-bound) ===\nc = dartlab.Company(\"005930\")\n\n# A1. 로컬 보유 공시 목록\ndisclosures = c.filings()\n# → DataFrame: year · period · rceptDate · rceptNo · reportType · dartUrl\n\n# A2. 보유 공시 본문 (섹션 검색)\nbody = c.panel(\"사업의 내용\")\n\n# === 경로 B: 횡단 키워드 검색 (search 엔진) ===\n\n# B1. 제목 검색 (auto 가 자동 분기)\nresult = dartlab.search(\"유상증자\")\n\n# B2. 본문 검색 (개념형 쿼리)\nresult = dartlab.search(\"반도체 HBM 투자\", scope=\"content\")\n\n# B3. 종목/기간 필터\nresult = dartlab.search(\"대표이사 변경\", corp=\"005930\",\n                        start=\"20240101\", end=\"20251231\")\n```\n\n## 호출 동작\n\n### 진입점 분기 룰 (강행)\n\n| 질문 패턴 | 정공 경로 | 금지 경로 |\n|---|---|---|\n| \"삼성전자 최근 공시는?\" | `c.filings()`의 보유 범위·접수일 확인. 실시간 최신성이 미확인이면 명시 | 회사명 검색 결과를 최신 공시 목록으로 제시 |\n| \"유상증자한 회사 있어?\" | `dartlab.search(\"유상증자\")` | Company 순회 ❌ |\n| \"삼성전자 유상증자 이력?\" | `c.filings()` 필터 또는 `search(corp=\"005930\")` | `search` 전체 검색 후 필터 ❌ |\n| \"반도체 HBM 언급 회사?\" | `dartlab.search(\"반도체 HBM 투자\", scope=\"content\")` | Company 순회 ❌ |\n\n### scope/source 분기\n\n`scope=\"auto\"`는 plain BM25와 동의어·라우팅 확장 lane을 RRF로 결합한다. 정확한 제목은 `title`, 정확한 본문 단어는 `content`로 강제한다. 의미가 유사한 문단이나 후속 관련 문서는 `semantic`과 `relatedTo`를 사용한다. 선택 설치·빌드·범위 계약은 `engines.search`를 따른다.\n\n`scope=\"both\"` 는 두 결과 별도 컬럼 — **점수 합산 금지** (실험 116 에서 합산 품질 저하 확인).\n\n`scope=\"news\"` 또는 뉴스 의도는 public news s",
       "title": "Search — DART 공시 검색 패턴 (disclosureSearch)",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "DART 공시·뉴스 검색의 *진입점 분기* SSOT — 단일 종목은 `Company.filings()` / `liveFilings()`, 횡단 키워드와 뉴스 의도는 `dartlab.search()`. 두 경로의 강행 룰 + stale 가드 + scope/source 분기 (title/content/auto/both/news) 단일 정의.",
+      "purpose": "DART 공시·뉴스 검색의 진입점 분기. 보유 공시 목록은 `Company.filings()`, 횡단 검색과 회사별 의미 탐색은 `dartlab.search()`. 수집 범위·기준일과 scope/source 분기를 함께 확인한다.",
       "whenToUse": [
         "공시 검색",
         "DART 공시",
         "disclosureSearch",
         "Company.filings",
-        "liveFilings",
         "dartlab.search",
         "횡단 키워드",
         "단일 종목 공시",
@@ -4951,18 +4955,14 @@
         "dartlab://skills/engines.search.disclosureSearch"
       ],
       "procedure": [
-        "짧은 명사구 (1~2 단어, \"유상증자\" / \"대표이사 변경\") → `title`",
-        "긴 개념형 (3+ 단어, \"반도체 HBM 투자 트렌드\") → `content`",
-        "명시 강제: `scope=\"title\"` 또는 `scope=\"content\"`.",
-        "N ≤ 1: 정상.",
-        "N = 2~7: 답변에 \"인덱스 N 일 stale\" 명시.",
-        "N > 7: search 결과 신뢰 한계 + `c.filings()` 또는 DART API 직접 권장.",
-        "단일 종목 답변에 `dartlab.search()` 호출 0 (회귀 가드 1).",
+        "최근 공시 목록 질문을 본문 의미 검색으로 대체하지 않는다 (회귀 가드 1).",
         "0 건 결과 시 키워드 변형 호출 0 (회귀 가드 2).",
         "`dataAsOf/sourceRef` 표기 100% (회귀 가드 3).",
         "content scope 결과 본문 발췌 시 untrusted 마커 (회귀 가드 4).",
         "source canary pack 에서 source miss / no-answer false accept 0.",
-        "[engines.search](/skills/engines.search) — base SKILL (BETA 엔진 자체 동작)"
+        "[engines.search](/skills/engines.search) — base SKILL (BETA 엔진 자체 동작)",
+        "[engines.company](/skills/engines.company): `Company.filings`와 공시 본문 접근 계약",
+        "[runtime.untrustedContent](/skills/runtime.untrustedContent) — 외부 본문 wrap 룰"
       ],
       "recipeSteps": [],
       "requiredEvidence": [],
@@ -6764,13 +6764,13 @@
     },
     {
       "id": "operation.aiEngine",
-      "bodyPreview": "## 제품 경계\n\n```text\ndartlab.ask / /api/ask / DartLab UI\n  -> Agent Runtime Engine\n  -> Codex app-server | Claude stream-json | ACP v1\n  -> 사용자의 agent 계정, 모델, native session\n  -> DartLab MCP\n  -> Skill OS / Company / scan / analysis / macro / quant / evidence\n```\n\nDartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent CLI를 실행하고, 그 agent가 DartLab MCP로 공시·재무·시장 능력을 사용하게 한다. runtrol은 별도 레포의 설계 참고이며 runtime dependency, daemon, shared package가 아니다.\n\n## 코드 SSOT\n\n| 책임 | 정본 |\n|---|---|\n| 공개 진입점 | `dartlab.ask`, `/api/ask` |\n| 런타임 조정 | `src/dartlab/ai/runtime/engine.py` |\n| runtime 목록·실행 argv | `src/dartlab/ai/runtime/manifests/*.toml` |\n| Codex protocol | `drivers/codexAppServer.py` |\n| Claude protocol | `drivers/claudeStreamJson.py` |\n| ACP protocol | `drivers/acp.py` |\n| process 수명주기 | `processSupervisor.py` |\n| 이벤트 계약 | `contracts.AgentEvent`, `schema.py` |\n| MCP 연결 계획 | `mcpBootstrap.py` |\n| 설치 계획 | `installManager.py` |\n| 세션 mapping | `sessionStore.py` |\n| 안전한 evidence 복구 | `evidenceStore.py` |\n| 답변 공개 품질 | `answerQuality.py` |\n| 준비 상태 판정 | `ai/runtime/readiness.py` |\n| 분석 캡슐 | `ai/runtime/analysisCapsule.py` |\n| 공개 SSE 게이트웨이 | `server/agentGateway.py` |\n| 근거 제시 projection | `ai/tools/panelInsight/`, `ai/tools/engineResult.py` |\n| 통합 준비·투자 CLI | `cli/commands/setup.py`, `cli/commands/invest.py` |\n| UI 관리 표면 | `/api/agent/*`, Runtime Center |\n| 북극성 결과 원장 | `src/dartlab/productOutcome.py` |\n\n`agent.py`는 runtime event를 기존 `TraceEvent` adapter로 투영한다. 새 실행 의미는 runtime package가 정본이며 provider별 조건문",
+      "bodyPreview": "## 제품 경계\n\n```text\ndartlab.ask / /api/ask / DartLab UI\n  -> Agent Runtime Engine\n  -> Codex app-server | Claude stream-json | ACP v1\n  -> 사용자의 agent 계정, 모델, native session\n  -> DartLab sessionTools (Codex dynamicTools / Claude SDK control)\n  -> Skill OS / Company / scan / analysis / macro / quant / evidence\n```\n\nDartLab은 모델 provider가 아니다. 사용자가 이미 로그인한 agent CLI를 실행하고, 그 agent가 세션에 직접 제공된 도구로 공시·재무·시장 능력을 사용하게 한다. Codex와 Claude에는 별도 MCP 서버 실행이나 전역 MCP 등록이 필요 없다. Claude SDK 제어 채널의 내부 메시지는 MCP 형식이지만 별도 서버 프로세스를 띄우지 않는다. 외부 MCP 클라이언트 지원은 별도 공개 경로로 유지한다. Puloto와 runtrol은 로컬 설계 참고이며 runtime dependency, daemon, shared package가 아니다.\n\n## 코드 SSOT\n\n| 책임 | 정본 |\n|---|---|\n| 공개 진입점 | `dartlab.ask`, `/api/ask` |\n| 런타임 조정 | `src/dartlab/ai/runtime/engine.py` |\n| runtime 목록·실행 argv | `src/dartlab/ai/runtime/manifests/*.toml` |\n| Codex protocol | `drivers/codexAppServer.py` |\n| Claude protocol | `drivers/claudeStreamJson.py` |\n| ACP protocol | `drivers/acp.py` |\n| 세션 도구 명세·실행 영수증 | `sessionTools.py`, `ai/tools/registry.py` |\n| process 수명주기 | `processSupervisor.py` |\n| 이벤트 계약 | `contracts.AgentEvent`, `schema.py` |\n| MCP 연결 계획 | `mcpBootstrap.py` |\n| 설치 계획 | `installManager.py` |\n| 세션 mapping | `sessionStore.py` |\n| 안전한 evidence 복구 | `evidenceStore.py` |\n| 답변 공개 품질 | `answerQuality.py` |\n| 준비 상태 판정 | `ai/runtime/readiness.py` |\n| 분석 캡슐 | `ai/runtime/analysisCapsule.py` |\n| 공개 SSE 게이트웨이 | `server/agentGateway.py` |\n| 근거 제시 projection | `ai/tools/panelInsight/`, `ai/tools/engineResult.py` |\n| 통합 준",
       "title": "AI Engine — Bring Your Agent Runtime",
       "category": "operation",
       "categoryTitle": "Operation",
       "kind": "curated",
       "status": "observed",
-      "purpose": "설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 Skill OS·MCP·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.",
+      "purpose": "설치된 Codex CLI, Claude Code, ACP 호환 agent가 인증·모델·세션을 소유하고 DartLab은 세션 도구·Skill OS·금융 엔진·근거 계약을 제공하는 AI 실행 SSOT다.",
       "whenToUse": [
         "dartlab.ask 또는 /api/ask 실행 경계를 변경할 때",
         "Codex, Claude Code, Cline runtime driver를 추가하거나 수정할 때",
@@ -6821,9 +6821,9 @@
       ],
       "procedure": [
         "Runtime manifest에서 실행 파일 후보와 protocol driver를 읽는다.",
-        "15초 TTL probe로 설치·버전, DartLab MCP 연결, embedded grounding 기능를 확인하고 셋 다 준비된 groundedReady runtime만 선택한다.",
+        "15초 TTL probe로 설치·버전, 인증, 세션 도구 제공 가능성을 확인하고 groundedReady runtime만 선택한다.",
         "native session을 열거나 저장된 opaque session mapping으로 재개한다.",
-        "짧은 analysis capsule과 MCP 도구를 agent에 제공한다.",
+        "짧은 analysis capsule과 읽기 전용 세션 도구를 agent에 제공한다.",
         "native event를 AgentEvent로 투영하고 AG-UI allowlist로 공개한다.",
         "install과 MCP connect는 계획 argv와 SHA-256 digest를 먼저 보여주고 동일 digest 승인 뒤에만 실행한다."
       ],
@@ -6836,7 +6836,7 @@
       ],
       "expectedOutputs": [
         "설치형 agent runtime 실행 결과",
-        "MCP 기반 DartLab 근거",
+        "사용자 agent 세션 도구로 조회한 DartLab 근거",
         "명시적 권한 승인 또는 안전한 거부"
       ],
       "visualGuidance": [],
@@ -10196,7 +10196,7 @@
     },
     {
       "id": "operation.ui",
-      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## AI 채팅 UI 계약\n\n- AI 제품 바탕 교체의 상세 SSOT는 `operation.aiProductReplatform`이다. `operation.ui`는 UI 표현 계층 규칙만 보완한다.\n- 공식 제품 경로는 `DartLab App → /api/ask stream → Agent Gateway → Agent Runtime → 설치형 agent CLI → DartLab MCP`다.\n- UI 표면은 LibreChat식 conversation/message parts 모델을 따른다. DartLab 브랜드, workspace, evidence, artifact viewer는 유지하되 채팅 본문은 message parts만 렌더한다.\n- UI와 엔진 사이의 공개 stream은 AG-UI compatible event allowlist만 허용한다. 내부 kernel trace는 Agent Gateway에서 public event로 변환하고, raw trace는 Evidence/journal에만 저장한다.\n- 허용 public event는 `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_*`, `ACTIVITY_*`, `RUN_FINISHED`, `RUN_ERROR`다. 이 목록 밖 이벤트가 채팅 UI로 직접 들어오면 계약 위반이다.\n- local chat과 terminal ask는 공통 `AiPort`를 통해 `/api/ask` 또는 Agent Gateway를 사용한다. provider별 transport를 UI에 만들지 않는다.\n- Runtime Center는 `/api/agent/*` adapter 하나로 설치 상태, MCP 상태, 명시적 digest 승인, runtime 선택을 제공한다. provider API key와 OAuth 입력란은 두지 않는다.\n- Runtime Center의 action은 서버가 `canInstall` 또는 `canConnect`를 명시한 경우에만 보인다. 근거 protocol 미지원 상태는 `blockingReason`과 `recommendedAction`을 표시하고 성공할 수 없는 버튼을 만들지 않는다.\n- 분석형 질문도 별도 고정 Graph나 Loop로 우회하지 않고 같은 Agent Runtime에 analysis capsule을 전달한다.\n- GUI는 질문을 투자판단, 기업비교, 스크리닝, 공시검토, 실적추이, 일반 리서치 6모드로 분류하고 분석 목표, 공개 진행 단계, 후속 질문을 표시한다.\n- 채팅 본문은 최종 답변, 짧은 activity 로그, 실제 코드/시각화 실행 카드, 실패 notice, source 요약만 렌더한다.\n- raw prompt, raw t",
+      "bodyPreview": "## Skill OS 흡수 규칙\n\n- 이 skill이 공식 진입점이다. 삭제된 운영 문서 경로를 다시 안내하지 않는다.\n- 공개 호출 방식과 대표 반환 형태는 skill에서 확인하고, 세부 필드는 capability/docstring으로 검산한다.\n- 분석이나 변경 결과는 ref, 실행 로그, 테스트 결과로 검증한다.\n\n## AI 채팅 UI 계약\n\n- AI 제품 바탕 교체의 상세 SSOT는 `operation.aiProductReplatform`이다. `operation.ui`는 UI 표현 계층 규칙만 보완한다.\n- 공식 제품 경로는 `DartLab App → /api/ask stream → Agent Gateway → Agent Runtime → 설치형 agent CLI → DartLab 세션 도구`다. transport 정본은 `operation.aiEngine`이다.\n- UI 표면은 LibreChat식 conversation/message parts 모델을 따른다. DartLab 브랜드, workspace, evidence, artifact viewer는 유지하되 채팅 본문은 message parts만 렌더한다.\n- UI와 엔진 사이의 공개 stream은 AG-UI compatible event allowlist만 허용한다. 내부 kernel trace는 Agent Gateway에서 public event로 변환하고, raw trace는 Evidence/journal에만 저장한다.\n- 허용 public event는 `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_*`, `ACTIVITY_*`, `RUN_FINISHED`, `RUN_ERROR`다. 이 목록 밖 이벤트가 채팅 UI로 직접 들어오면 계약 위반이다.\n- local chat과 terminal ask는 공통 `AiPort`를 통해 `/api/ask` 또는 Agent Gateway를 사용한다. provider별 transport를 UI에 만들지 않는다.\n- Runtime Center는 `/api/agent/*` adapter 하나로 설치 상태, `toolConnection` 기반 DartLab 연결 상태, 명시적 digest 승인, runtime 선택을 제공한다. native 경로는 별도 MCP 연결을 요구하지 않는다. provider API key와 OAuth 입력란은 두지 않는다.\n- Runtime Center의 action은 서버가 `canInstall` 또는 `canConnect`를 명시한 경우에만 보인다. 근거 protocol 미지원 상태는 `blockingReason`과 `recommendedAction`을 표시하고 성공할 수 없는 버튼을 만들지 않는다.\n- 분석형 질문도 별도 고정 Graph나 Loop로 우회하지 않고 같은 Agent Runtime에 analysis capsule을 전달한다.\n- GUI는 질문을 투자판단, 기업비교, 스크리닝, 공시검토, 실적추이, 일반 리서치 6모드로 분류하고 분석 목표, 공개 진행 단계, 후속 질문을 표시한",
       "title": "UI 엔진 (L4 표현 계층)",
       "category": "operation",
       "categoryTitle": "Operation",
@@ -28137,7 +28137,7 @@
     },
     {
       "id": "runtime.promptingPatterns",
-      "bodyPreview": "## 분류\n\n### 1. 회사분석 — 6 막 인과 (engines.story)\n\n회사 단위 답변 한정. 모든 질문에 6 막을 강제하지 않는다. 회사분석 의도 (`Company.panel` / `Company.analysis`) 와 `engines.story` / `operation.sixActsAnalysis` 경로에서만 적용한다.\n\n```\n1막 — 산업 위치 (engines.industry.peers + supplyChain)\n2막 — 재무 현황 (engines.analysis 22 axis)\n3막 — 이익품질 (engines.analysis.forensics)\n4막 — 자금조달 (engines.credit + altman)\n5막 — 종합평가 (piotroski + qmj + valuation)\n6막 — 시장분석 (engines.quant + scan)\n```\n\n### 2. 매크로 — axis 가이드 우선\n\n`dartlab.macro()` 가이드 12 axis 먼저 → 사용자 의도 매칭 axis 선택 → 단위/dateRef 강행.\n\n### 3. 횡단 (scan) — universe 정의 강행\n\nuniverse 명시 (default KOSPI200 / 사용자 보유 list) → 횡단 axis 결과 정렬 → top N 인용.\n\n### 4. recipe 호출 — 카탈로그 SSOT 인용\n\nrecipe id (`recipes.macro.qualityMacroBeta` 등) 명시 호출 → 결과의 `## 연계 절차` 다음 단계 자동 제안.\n\n## 강행 prompt 요소\n\n모든 prompt 변형에 다음 4 요소 강행:\n\n1. **단위 명시** (% / bp / index / 원).\n2. **dateRef** (YYYY-MM-DD 또는 YYYY-MM).\n3. **evidence GATE** (skillRef / tableRef / valueRef 묶음).\n4. **untrusted wrap** (외부 본문 시 sentinel 마커).\n\n## 안티패턴\n\n- 모든 질문 6 막 강제 (회사분석 외 trigger 금지).\n- \"최신\" 단어 사용 시 dateRef 누락 (search dataAsOf stale 회귀).\n- recipe 호출 결과 dump (`## 연계 절차` 무시 회귀).\n\n## 기본 검증\n\n본 spec 패턴 변경 시 agent.py system prompt 동시 갱신 (단일 SSOT 강행).",
+      "bodyPreview": "## 분류\n\n### 1. 회사분석 — 6 막 인과 (engines.story)\n\n회사 단위 답변 한정. 모든 질문에 6 막을 강제하지 않는다. 회사분석 의도 (`Company.panel` / `Company.analysis`) 와 `engines.story` / `operation.sixActsAnalysis` 경로에서만 적용한다.\n\n```\n1막 — 산업 위치 (engines.industry.peers + supplyChain)\n2막 — 재무 현황 (engines.analysis 22 axis)\n3막 — 이익품질 (engines.analysis.forensics)\n4막 — 자금조달 (engines.credit + altman)\n5막 — 종합평가 (piotroski + qmj + valuation)\n6막 — 시장분석 (engines.quant + scan)\n```\n\n### 2. 매크로 — axis 가이드 우선\n\n`dartlab.macro()` 가이드 12 axis 먼저 → 사용자 의도 매칭 axis 선택 → 단위/dateRef 강행.\n\n### 3. 횡단 (scan) — universe 정의 강행\n\nuniverse 명시 (default KOSPI200 / 사용자 보유 list) → 횡단 axis 결과 정렬 → top N 인용.\n\n### 4. recipe 호출 — 카탈로그 SSOT 인용\n\nrecipe id (`recipes.macro.qualityMacroBeta` 등) 명시 호출 → 결과의 `## 연계 절차` 다음 단계 자동 제안.\n\n## 강행 prompt 요소\n\n설치형 runtime의 `analysisCapsule.py`는 \"이 세션에 제공된 DartLab 도구\"를 사용하도록 안내한다. Codex와 Claude의 세션 직접 연결은 MCP 설치를 사용자에게 요구하지 않는다. 도구 transport와 관계없이 같은 Skill OS, EngineCall, 근거 계약을 따른다. 인증·모델·대화 기록은 사용자 CLI가 소유한다.\n\n단순 수치 확인은 `EngineCall`의 `Company.panel`과 `PeerCompareN`에 `includeContext=false`를 지정한다. 이때 표·값·기간·공시 링크는 유지하고 신용·산업 부가 계산을 생략한다. 투자 판단 질문은 관련 분석 계약을 사용하며 기존 `includeContext=true` 동작도 유지한다. 인자 이름은 ReadSkill에 inline된 실제 callable 계약에서 확인하고 추측하지 않는다.\n\n모든 prompt 변형에 다음 4 요소 강행:\n\n1. **단위 명시** (% / bp / index / 원).\n2. **dateRef** (YYYY-MM-DD 또는 YYYY-MM).\n3. **evidence GATE** (skillRef / tableRef / valueRef 묶음).\n4. **untrusted wrap** (외부 본문 시 sentinel 마커).\n\n## 안티패턴\n\n- 모든 질문 6 막 강제 (회사분석 외 trigger 금지).\n- \"최신\" 단어 사용 시 dateRef 누",
       "title": "Prompting Patterns — 6 막 인과 + axis 카탈로그",
       "category": "runtime",
       "categoryTitle": "Runtime",

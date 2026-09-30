@@ -223,7 +223,7 @@
 						<dl>
 							<div><dt>실행 파일</dt><dd>{runtime.installed ? '찾음' : '없음'}</dd></div>
 							<div><dt>버전</dt><dd>{stageOf(runtime, 'install') ? '확인 중' : (runtime.version ?? (runtime.detail ?? '미설치'))}</dd></div>
-							<div><dt>DartLab 연결</dt><dd>{stageOf(runtime, 'grounding') ? '확인 중' : runtime.mcp?.connected ? '연결됨' : '미연결'}</dd></div>
+							<div><dt>DartLab 연결</dt><dd>{stageOf(runtime, 'grounding') ? '확인 중' : (runtime.toolConnection ?? runtime.mcp)?.connected ? '연결됨' : '미연결'}</dd></div>
 							<div><dt>투자 계약</dt><dd>{stageOf(runtime, 'contract') ? '확인 중' : runtime.investmentContractReady ? '확인됨' : '미확인'}</dd></div>
 							<div><dt>인증</dt><dd>{stageOf(runtime, 'auth') ? '확인 중' : runtime.auth.state === 'authenticated' ? '로그인됨' : runtime.auth.state === 'unsupported' ? 'CLI 직접 관리' : '로그인 필요'}</dd></div>
 						</dl>

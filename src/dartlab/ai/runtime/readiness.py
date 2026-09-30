@@ -237,6 +237,8 @@ def _runtimeStatusEntry(
     delivery: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """한 런타임의 기술 준비와 투자 계약 준비 상태를 공개 행으로 만든다."""
+    if descriptor.toolTransport == "native":
+        mcp = {"connected": True, "transport": "native", "requiresConnect": False}
     probing = _runtimeProbingStages(probe, auth, mcp, semanticReadiness)
     pending = any(probing.values())
     undetermined = _runtimeUndetermined(probe, auth, mcp)
@@ -248,7 +250,8 @@ def _runtimeStatusEntry(
     return {
         **descriptor.toDict(),
         **probe.toDict(),
-        "mcp": mcp,
+        "mcp": {"connected": False, "required": False} if descriptor.toolTransport == "native" else mcp,
+        "toolConnection": mcp,
         "auth": auth,
         # 실행 파일 발견은 CLI 를 띄우지 않는 즉시 판정이라 측정 중에도 사실이다.
         "installed": probe.executable is not None,
@@ -301,6 +304,20 @@ def _runtimeStatusEntry(
 ProbeBundle = tuple[list[Any], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]
 
 
+def probeToolConnection(
+    descriptor: Any, *, refresh: bool = False, blocking: bool = True, mcpProbe: Any = None
+) -> dict[str, Any]:
+    """세션 직접 연결에는 전역 MCP 등록 검사를 요구하지 않는다.
+
+    native의 connected는 호스트 도구를 제공할 수 있다는 뜻이다. 모델의 실제 도달은
+    별도 delivery receipt가 증명하며 여기서는 구독 세션을 실행하지 않는다.
+    """
+    if descriptor.toolTransport == "native":
+        return {"connected": True, "transport": "native", "requiresConnect": False}
+    probe = mcpProbe or probeMcpConnection
+    return {**probe(descriptor.runtimeId, refresh=refresh, blocking=blocking), "transport": "mcp"}
+
+
 def _measuredProbes(*, refresh: bool) -> ProbeBundle:
     """버전·MCP·인증을 한 번에 펼쳐 실제로 측정하고 가장 느린 한 건까지만 기다린다.
 
@@ -319,7 +336,10 @@ def _measuredProbes(*, refresh: bool) -> ProbeBundle:
         return [], {}, {}
     with ThreadPoolExecutor(max_workers=PROBE_CONCURRENCY, thread_name_prefix="dartlab-runtime-status") as pool:
         # 가장 느린 probe(MCP)를 먼저 큐에 넣어야 짧은 probe 뒤에서 대기하지 않는다.
-        mcpJobs = {runtimeId: pool.submit(probeMcpConnection, runtimeId, refresh=refresh) for runtimeId in registry}
+        mcpJobs = {
+            runtimeId: pool.submit(probeToolConnection, descriptor, refresh=refresh)
+            for runtimeId, descriptor in registry.items()
+        }
         versionJobs = {
             runtimeId: pool.submit(probeRuntime, descriptor, refresh=refresh)
             for runtimeId, descriptor in registry.items()
@@ -338,7 +358,9 @@ def _scheduledProbes(registry: dict[str, Any]) -> ProbeBundle:
     """캐시에 있는 것만 즉시 읽고 없는 것은 백그라운드 실측으로 예약한다."""
     probes = probeAllRuntimes(blocking=False)
     resolvable = [probe for probe in probes if probe.state in {"ready", *_PENDING_STATES}]
-    mcpResults = {probe.runtimeId: probeMcpConnection(probe.runtimeId, blocking=False) for probe in resolvable}
+    mcpResults = {
+        probe.runtimeId: probeToolConnection(registry[probe.runtimeId], blocking=False) for probe in resolvable
+    }
     authResults = {
         probe.runtimeId: probeRuntimeAuth(registry[probe.runtimeId], executable=probe.executable, blocking=False)
         for probe in resolvable

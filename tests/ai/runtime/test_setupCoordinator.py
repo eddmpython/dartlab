@@ -156,3 +156,29 @@ def test_setup_plan_includes_node_prerequisite_in_same_approval(monkeypatch) -> 
     assert plan.prerequisitePlan.key == "nodejs"
     assert "Node.js LTS 자동 설치" in plan.changes
     assert plan.toDict()["prerequisitePlan"]["argv"][0] == "winget"
+
+
+def testNativeSetupNeedsNoMcpPlanOrConfigMutation(monkeypatch):
+    class NativeEngine(_FakeEngine):
+        def status(self, **kwargs):
+            status = super().status(**kwargs)
+            row = status["runtimes"][0]
+            row.update(toolTransport="native", toolConnection={"connected": True, "transport": "native"})
+            row["groundedReady"] = True
+            return status
+
+    engine = NativeEngine(installed=True, authenticated=True)
+    engine.default = "codex"
+    calls = []
+    _patchSetup(monkeypatch, engine, calls)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("native setup must not create an MCP plan")
+
+    monkeypatch.setattr("dartlab.ai.runtime.setupCoordinator.buildMcpConnectPlan", forbidden)
+    plan = previewRuntimeSetup("codex", engine=engine)
+    assert not plan.approvalRequired
+    result = prepareRuntime("codex", approved=False, engine=engine)
+    assert result.investmentReady
+    assert result.mutationCount == 0
+    assert calls == []

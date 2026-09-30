@@ -22,7 +22,8 @@ def test_top_level_search_accepts_top_k_alias(monkeypatch):
 
     calls = {}
 
-    def fakeSearch(query, *, corp=None, start=None, end=None, limit=10, scope="auto"):
+    def fakeSearch(query, *, corp=None, start=None, end=None, limit=10, scope="auto", relatedTo=None, excludeCorp=None):
+        assert relatedTo is None and excludeCorp is None
         calls.update({"query": query, "corp": corp, "start": start, "end": end, "limit": limit, "scope": scope})
         return "ok"
 

@@ -617,11 +617,12 @@ def _sourceDataAsOfFromPanelRow(row: Mapping[str, Any], *, source: str, rceptNo:
     return rceptNo[:8] if len(rceptNo) >= 8 else periodToDataAsOf(row.get("period"))
 
 
-def _stripPanelText(raw: str) -> str:
+def _stripPanelText(raw: str, *, limit: int | None = PANEL_TEXT_LIMIT) -> str:
     if not raw:
         return ""
-    text = html.unescape(raw[: PANEL_TEXT_LIMIT * 4])
-    return _WS_RE.sub(" ", _TAG_RE.sub(" ", _BLOCK_RE.sub(" ", text))).strip()[:PANEL_TEXT_LIMIT]
+    text = html.unescape(raw[: limit * 4] if limit is not None else raw)
+    cleaned = _WS_RE.sub(" ", _TAG_RE.sub(" ", _BLOCK_RE.sub(" ", text))).strip()
+    return cleaned[:limit] if limit is not None else cleaned
 
 
 def _writeCatalogSnapshot(

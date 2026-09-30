@@ -132,7 +132,7 @@ def previewRuntimeSetup(runtimeId: str | None = None, *, engine: Any | None = No
         prerequisitePlan = None
     if authState not in {"authenticated", "unsupported"}:
         changes.append("공식 CLI 로그인")
-    if not mcpConnected:
+    if not mcpConnected and runtime.get("toolTransport") != "native":
         changes.append("DartLab MCP 연결")
         if state == "ready":
             mcpPlan = buildMcpConnectPlan(selected)
@@ -265,6 +265,9 @@ def _ensureRuntimeAuthenticated(
 
 def _ensureRuntimeMcp(progress: _SetupProgress) -> SetupResult | None:
     """DartLab MCP 연결을 적용하고 다시 probe한다."""
+    if progress.current.get("toolTransport") == "native":
+        progress.record("tools", "skipped", "DartLab 도구는 에이전트 세션에 직접 연결됩니다.")
+        return None
     if bool((progress.current.get("mcp") or {}).get("connected")):
         progress.record("mcp", "skipped", "기존 DartLab MCP 연결을 그대로 사용합니다.")
         return None
@@ -521,6 +524,8 @@ def _result(
         "runtimeReady": str(runtime.get("state")) == "ready",
         "authReady": str((runtime.get("auth") or {}).get("state")) in {"authenticated", "unsupported"},
         "mcpReady": bool((runtime.get("mcp") or {}).get("connected")),
+        "toolsReady": bool((runtime.get("toolConnection") or runtime.get("mcp") or {}).get("connected")),
+        "toolTransport": runtime.get("toolTransport", "mcp"),
         "semanticToolsReady": bool(semantic.get("checks", {}).get("readSkill"))
         and bool(semantic.get("checks", {}).get("engineCall")),
         "investmentContractReady": bool(semantic.get("checks", {}).get("investmentContract"))

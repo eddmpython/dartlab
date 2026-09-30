@@ -63,6 +63,9 @@ _DOCUMENTARY_HINTS = (
     "핵심감사사항",
     "계약 내용",
     "공시 내용",
+    "공시",
+    "문단",
+    "원문",
     "소송",
     "위험 요인",
     "주석 내용",
@@ -95,6 +98,12 @@ class AnswerQualityReport:
 def classifyEvidenceContract(question: str) -> EvidenceContract:
     """질문이 수치 근거와 문서 근거 중 무엇을 요구하는지 보수적으로 분류한다."""
     normalized = question.casefold()
+    if (
+        any(hint in normalized for hint in ("문단", "원문", "공시 내용"))
+        and any(hint in normalized for hint in ("의미", "연결", "찾아", "비슷"))
+        and not any(hint in normalized for hint in ("계산", "얼마", "몇 %", "cagr"))
+    ):
+        return "documentary"
     if any(hint in normalized for hint in _QUANTITATIVE_HINTS):
         return "quantitative"
     if any(hint in normalized for hint in _DOCUMENTARY_HINTS):
@@ -261,7 +270,7 @@ def _sourceContractIssues(
         issues.append("document_ref_missing")
     if documentaryRequired and "docRef" in citedKinds and not _coversDocumentaryClaims(question, prose, cited):
         issues.append("document_claim_mismatch")
-    if "dateRef" not in citedKinds:
+    if not _dateEvidence(cited, includeDocuments=contract == "documentary"):
         issues.append("date_ref_missing")
     if contract == "quantitative" and "valueRef" not in citedKinds:
         issues.append("value_ref_missing")
@@ -280,9 +289,25 @@ def _bindingContractIssues(
     issues: list[str] = []
     if contract == "quantitative" and "valueRef" in citedKinds and not _hasBoundValue(prose, cited):
         issues.append("value_binding_mismatch")
-    if "dateRef" in citedKinds and not _hasBoundDate(prose, cited, question=question):
+    dates = _dateEvidence(cited, includeDocuments=contract == "documentary")
+    if dates and not _hasBoundDate(prose, dates, question=question):
         issues.append("date_binding_mismatch")
     return issues
+
+
+def _dateEvidence(cited: list[dict[str, Any]], *, includeDocuments: bool) -> list[dict[str, Any]]:
+    """정성 답변은 인용 문서에 실제 들어 있는 접수일도 날짜 근거로 인정한다."""
+    dates = [ref for ref in cited if ref.get("kind") == "dateRef"]
+    if dates or not includeDocuments:
+        return dates
+    documents = [ref for ref in cited if ref.get("kind") == "docRef"]
+    for ref in documents:
+        payload = _payload(ref)
+        date = payload.get("filedAt") or payload.get("dataAsOf") or payload.get("period")
+        if not date:
+            return []
+        dates.append({"kind": "dateRef", "payload": {"dataAsOf": date}})
+    return dates
 
 
 def _coverageContractIssues(
@@ -575,7 +600,7 @@ def _withoutCitations(answer: str, cited: list[dict[str, Any]]) -> str:
     prose = answer
     for ref in sorted(cited, key=lambda item: len(str(item["id"])), reverse=True):
         prose = _citationPattern(str(ref["id"])).sub(" ", prose)
-    return prose
+    return re.sub(r"\[\s*\]|`\s*`", " ", prose)
 
 
 def _citationPattern(refId: str) -> re.Pattern[str]:

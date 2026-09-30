@@ -23,6 +23,50 @@ pytestmark = pytest.mark.unit
 engineCallModule = importlib.import_module("dartlab.ai.tools.engineCall")
 
 
+def testSearchPassagesPersistWithoutDuplicatingBodies(tmp_path):
+    from dartlab.ai.runtime.evidenceStore import EvidenceStore
+    from dartlab.ai.runtime.outcomeTracking import _publicEvidencePayload
+    from dartlab.ai.tools.engineCall import _resultToRefs
+
+    body = "전력 공급 관련 공시 문장입니다." * 40
+    frame = pl.DataFrame(
+        [
+            {
+                "passageId": f"news:item{i}@p",
+                "sourceRef": f"news:item{i}",
+                "stock_code": "005930",
+                "text": body,
+                "evidenceText": body,
+                "snippet": body,
+                "fieldCards": body * 5,
+                "charStart": 780,
+                "charEnd": 780 + len(body),
+                "coverage": "localFullText",
+                "dartUrl": f"https://example.org/{i}",
+                "rcept_dt": "20250101",
+            }
+            for i in range(20)
+        ]
+    )
+    result = _resultToRefs("search", frame)
+    store = EvidenceStore(tmp_path / "evidence.db")
+    for ref in result.refs:
+        store.save(
+            "turn", {"id": ref.id, "kind": ref.kind, "payload": _publicEvidencePayload(ref.payload, kind=ref.kind)}
+        )
+    table = next(ref for ref in result.refs if ref.kind == "tableRef")
+    assert "text" not in table.payload["columns"]
+    docs = [ref for ref in result.refs if ref.kind == "docRef"]
+    assert len(docs) == 10
+    assert table.payload["rowCount"] == 20
+    assert result.data["previewTruncated"]
+    assert docs[0].payload["excerpt"] == body
+    assert docs[0].sourceType == "external"
+    stored = store.get("turn", docs[0].id)
+    assert stored["payload"]["passageId"] == "news:item0@p"
+    assert stored["payload"]["charStart"] == 780
+
+
 @pytest.mark.parametrize("apiRef", ["Company.audit", "Company.view", "Company.sources"])
 def test_noncanonical_company_member_is_blocked_before_company_resolution(
     apiRef: str, monkeypatch: pytest.MonkeyPatch

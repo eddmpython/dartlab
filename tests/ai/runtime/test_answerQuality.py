@@ -27,6 +27,40 @@ def _refs() -> list[dict]:
     ]
 
 
+def testSemanticDocumentQuestionUsesCitedDocumentDate():
+    refs = [
+        {
+            "id": "doc:passage",
+            "kind": "docRef",
+            "payload": {"stockCode": "005930", "filedAt": "20250102", "excerpt": "전력 공급 사업 확대"},
+        }
+    ]
+    question = "전력 수요가 증가해서 사업을 확대한 공시 문단을 의미로 찾아줘"
+    assert classifyEvidenceContract(question) == "documentary"
+    report = evaluateAnswerQuality(
+        question,
+        "2025-01-02 공시는 전력 공급 사업 확대를 설명합니다. doc:passage",
+        refs,
+        completionSucceeded=True,
+        failed=False,
+    )
+    assert report.passed
+    wrong = evaluateAnswerQuality(
+        question, "2024-01-02의 전력 공급 사업 확대입니다. doc:passage", refs, completionSucceeded=True, failed=False
+    )
+    assert "date_binding_mismatch" in wrong.issues
+
+
+def testFinancialTableBindsOnlyExplicitMoneyUnit():
+    answer = "2026년 1분기, 단위는 **조 원**입니다.\n\n| 지표 | 값 |\n|---|---:|\n| 매출 | 133.87 [value:005930:IS:2026Q1:sales] |\n\n table:005930:IS:2026Q1 date:005930:IS:2026Q1"
+    report = evaluateAnswerQuality("2026년 1분기 매출은?", answer, _refs(), completionSucceeded=True, failed=False)
+    assert report.passed
+    wrong = evaluateAnswerQuality(
+        "2026년 1분기 매출은?", answer.replace("조 원", "억 원"), _refs(), completionSucceeded=True, failed=False
+    )
+    assert "value_binding_mismatch" in wrong.issues
+
+
 def testQuantitativeAnswerBindsExactValueAndPeriodOutsideCitationIds():
     answer = (
         "2026년 1분기 매출은 133,873,444,000,000원이다. "

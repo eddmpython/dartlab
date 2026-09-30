@@ -120,6 +120,8 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         # 첫 설치/첫 promote 에서는 부재가 정상이라 loud-fail 하면 bootstrap 이 깨진다.
         "providers/dart/search/localUpdate.py",
         "providers/dart/search/ngramIndex.py",
+        # 의미 인덱스는 선택 빌드 산출물. info는 available=False를 내고 검색은 미준비 오류를 낸다.
+        "providers/dart/search/semanticIndex.py",
         "providers/dart/search/publishIndex.py",
         "providers/edgar/docs/sections/sectionsStorage.py",
         # quant bottom-up beta peer 추출 — scan finance parquet 없으면 섹터 기본 beta fallback

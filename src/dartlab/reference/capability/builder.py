@@ -550,6 +550,8 @@ def buildCapabilities() -> dict[str, Any]:
         if hasattr(obj, "__call__") and not inspect.isfunction(obj):
             doc = _richestCallableDoc(obj, name, doc)
         entries[name] = _entryFromDoc(doc or "", kind)
+        if callable(obj):
+            entries[name]["parameters"] = _callableParameters(obj)
 
     # 2) Company 공개 메서드/프로퍼티
     for memberName in sorted(dir(DartCompany)):
@@ -560,6 +562,11 @@ def buildCapabilities() -> dict[str, Any]:
             continue
         kind, doc = resolved
         entries[f"Company.{memberName}"] = _entryFromDoc(doc, kind)
+        if kind == "method":
+            entries[f"Company.{memberName}"]["parameters"] = _callableParameters(getattr(DartCompany, memberName))
+        elif memberName in {"panel", "select"}:
+            implementation = DartCompany._showImpl if memberName == "panel" else DartCompany._selectImpl
+            entries[f"Company.{memberName}"]["parameters"] = _callableParameters(implementation)
 
     # 3~6) scan/macro/gather 축 레지스트리. 라이브 객체 introspection (install-robust,
     # AST-소스파싱 X). 레지스트리가 모듈 이동해도 추종한다 (옛 AST 는 _AXIS_REGISTRY 가
@@ -569,6 +576,30 @@ def buildCapabilities() -> dict[str, Any]:
     _applyAiContractMetadata(entries)
     _applyExecutionMetadata(entries)
     return entries
+
+
+def _callableParameters(func: Any) -> dict[str, dict[str, Any]]:
+    """실제 callable 시그니처에서 에이전트가 사용할 인자 계약을 파생한다."""
+    try:
+        parameters = inspect.signature(func).parameters
+    except (TypeError, ValueError):
+        return {}
+    result = {}
+    for name, parameter in parameters.items():
+        if name in {"self", "cls"} or parameter.kind in {
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        }:
+            continue
+        row = {"required": parameter.default is inspect.Parameter.empty}
+        if parameter.annotation is not inspect.Parameter.empty:
+            row["type"] = inspect.formatannotation(parameter.annotation)
+        if parameter.default is not inspect.Parameter.empty:
+            row["default"] = _jsonSafeDeclaredValue(parameter.default)
+        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+            row["positionalOnly"] = True
+        result[name] = row
+    return result
 
 
 @lru_cache(maxsize=1)

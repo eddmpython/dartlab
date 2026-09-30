@@ -30,6 +30,12 @@ const BLOCKED = {
 };
 
 describe('localAiPort capabilities', () => {
+	it('MCP 등록 없이 세션에 직접 연결된 도구를 사용할 수 있다', async () => {
+		const native = { ...CLAUDE, mcp: { connected: false }, toolConnection: { connected: true } };
+		const capabilities = await localAiPort(apiWith({ runtimes: [native] })).capabilities();
+		expect(capabilities.toolCalling).toBe(true);
+	});
+
 	it('선호 런타임이 준비되지 않아도 준비된 것이 있으면 사용 가능으로 본다', async () => {
 		const port = localAiPort(apiWith({ defaultRuntimeId: 'codex', runtimes: [BLOCKED, CLAUDE] }));
 

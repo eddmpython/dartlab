@@ -91,12 +91,12 @@ testUniverse:
 ## AI 채팅 UI 계약
 
 - AI 제품 바탕 교체의 상세 SSOT는 `operation.aiProductReplatform`이다. `operation.ui`는 UI 표현 계층 규칙만 보완한다.
-- 공식 제품 경로는 `DartLab App → /api/ask stream → Agent Gateway → Agent Runtime → 설치형 agent CLI → DartLab MCP`다.
+- 공식 제품 경로는 `DartLab App → /api/ask stream → Agent Gateway → Agent Runtime → 설치형 agent CLI → DartLab 세션 도구`다. transport 정본은 `operation.aiEngine`이다.
 - UI 표면은 LibreChat식 conversation/message parts 모델을 따른다. DartLab 브랜드, workspace, evidence, artifact viewer는 유지하되 채팅 본문은 message parts만 렌더한다.
 - UI와 엔진 사이의 공개 stream은 AG-UI compatible event allowlist만 허용한다. 내부 kernel trace는 Agent Gateway에서 public event로 변환하고, raw trace는 Evidence/journal에만 저장한다.
 - 허용 public event는 `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_*`, `ACTIVITY_*`, `RUN_FINISHED`, `RUN_ERROR`다. 이 목록 밖 이벤트가 채팅 UI로 직접 들어오면 계약 위반이다.
 - local chat과 terminal ask는 공통 `AiPort`를 통해 `/api/ask` 또는 Agent Gateway를 사용한다. provider별 transport를 UI에 만들지 않는다.
-- Runtime Center는 `/api/agent/*` adapter 하나로 설치 상태, MCP 상태, 명시적 digest 승인, runtime 선택을 제공한다. provider API key와 OAuth 입력란은 두지 않는다.
+- Runtime Center는 `/api/agent/*` adapter 하나로 설치 상태, `toolConnection` 기반 DartLab 연결 상태, 명시적 digest 승인, runtime 선택을 제공한다. native 경로는 별도 MCP 연결을 요구하지 않는다. provider API key와 OAuth 입력란은 두지 않는다.
 - Runtime Center의 action은 서버가 `canInstall` 또는 `canConnect`를 명시한 경우에만 보인다. 근거 protocol 미지원 상태는 `blockingReason`과 `recommendedAction`을 표시하고 성공할 수 없는 버튼을 만들지 않는다.
 - 분석형 질문도 별도 고정 Graph나 Loop로 우회하지 않고 같은 Agent Runtime에 analysis capsule을 전달한다.
 - GUI는 질문을 투자판단, 기업비교, 스크리닝, 공시검토, 실적추이, 일반 리서치 6모드로 분류하고 분석 목표, 공개 진행 단계, 후속 질문을 표시한다.

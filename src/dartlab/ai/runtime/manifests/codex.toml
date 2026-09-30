@@ -2,6 +2,7 @@ runtimeId = "codex"
 displayName = "Codex CLI"
 driver = "codexAppServer"
 protocol = "jsonrpc-ndjson"
+toolTransport = "native"
 executableCandidates = ["codex"]
 versionArgs = ["--version"]
 launchArgs = ["app-server"]

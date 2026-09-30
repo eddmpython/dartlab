@@ -11,7 +11,7 @@ import re
 import time
 from collections.abc import Mapping
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
-from dataclasses import fields, is_dataclass
+from dataclasses import fields, is_dataclass, replace
 from datetime import date, datetime
 from io import StringIO
 from typing import Any
@@ -29,6 +29,7 @@ from dartlab.reference.capability.execution import (
 )
 from dartlab.reference.capability.execution import isEngineCallableRef
 
+from .companyMetrics import statementTable
 from .creditBadge import getDcrBadge
 from .engineResult import engineResultMarkdown, engineResultRefs, frameMarkdown
 from .filingDeepLink import attachDocRef, buildPeriodToFiling
@@ -477,7 +478,10 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         )
     companyName = str(getattr(company, "corpName", None) or "")
     stockCode = str(getattr(company, "stockCode", None) or target or "")
-    table, autoGatherUsed = _fetchTableWithAutoGather(company, topic)
+    scope = str(plan.get("scope") or "consolidated")
+    if scope not in {"consolidated", "separate"}:
+        return ToolResult(False, "scope는 consolidated 또는 separate입니다.", error="invalid_args")
+    table, autoGatherUsed = _fetchTableWithAutoGather(company, topic, scope=scope)
     if not isinstance(table, pl.DataFrame) or table.height == 0:
         msg = f"{companyName or stockCode} {topic} 데이터를 찾지 못했습니다."
         if autoGatherUsed:
@@ -501,11 +505,22 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         return ToolResult(
             False, f"{companyName or stockCode} {topic} 표를 요약하지 못했습니다.", error="unreadable_table"
         )
-    refs = _buildShowRefs(stockCode, companyName, topic, summary, company)
+    includeContext = plan.get("includeContext", _capabilityExecution.COMPANY_PANEL_CONTEXT_DEFAULT)
+    if not isinstance(includeContext, bool):
+        return ToolResult(False, "includeContext는 true 또는 false입니다.", error="invalid_args")
+    refs = _buildShowRefs(stockCode, companyName, topic, summary, company, includeContext=includeContext)
     summaryMsg = _showSummaryMessage(companyName, stockCode, topic, summary, autoGatherUsed)
     data = _buildShowData(
-        company, companyName, stockCode, topic, summary, autoGatherUsed, time.perf_counter() - started
+        company,
+        companyName,
+        stockCode,
+        topic,
+        summary,
+        autoGatherUsed,
+        time.perf_counter() - started,
+        includeContext=includeContext,
     )
+    data["requestedScope"] = scope
     return ToolResult(True, summaryMsg, refs=refs, data=data)
 
 
@@ -601,20 +616,30 @@ def _completeStatementYears(columns: set[str], statement: str) -> list[str]:
     return [year for year in years if f"{year}Q4" in columns]
 
 
-def _fetchTableWithAutoGather(company: Any, topic: str) -> tuple[pl.DataFrame | None, bool]:
+def _fetchTableWithAutoGather(
+    company: Any, topic: str, *, scope: str = "consolidated"
+) -> tuple[pl.DataFrame | None, bool]:
     """company.panel(topic) + 빈 결과 시 자동 update 1회 재시도. (table, autoGatherUsed) 반환."""
     with _quietExecutionNoise():
-        table = company.panel(topic)
+        table = statementTable(company, topic, scope=scope)
     if isinstance(table, pl.DataFrame) and table.height > 0:
         return table, False
     if not _AUTO_GATHER_ENABLED or not _tryAutoUpdate(company, "finance"):
         return table, False
     with _quietExecutionNoise():
-        table = company.panel(topic)
+        table = statementTable(company, topic, scope=scope)
     return table, True
 
 
-def _buildShowRefs(stockCode: str, companyName: str, topic: str, summary: dict[str, Any], company: Any) -> list[Ref]:
+def _buildShowRefs(
+    stockCode: str,
+    companyName: str,
+    topic: str,
+    summary: dict[str, Any],
+    company: Any,
+    *,
+    includeContext: bool = _capabilityExecution.COMPANY_PANEL_CONTEXT_DEFAULT,
+) -> list[Ref]:
     """tableRef + valueRef × n + dateRef + (선택) creditRef. enrich closure 가 docRef + confidence + provenance 부착.
 
     creditRef 신규 - dcrBadge.axes (7축 신용 점수) 가 Company.panel 의 부수 data 라 옛 코드는
@@ -706,10 +731,10 @@ def _buildShowRefs(stockCode: str, companyName: str, topic: str, summary: dict[s
             )
             for row in summary["rows"]
         )
-    creditRef = _buildCreditRef(stockCode, companyName, company)
+    creditRef = _buildCreditRef(stockCode, companyName, company) if includeContext else None
     if creditRef is not None:
         refs.append(creditRef)
-    industryRef = _buildIndustryRef(stockCode, companyName, company)
+    industryRef = _buildIndustryRef(stockCode, companyName, company) if includeContext else None
     if industryRef is not None:
         refs.append(industryRef)
     for period in summary.get("periods") or [latestPeriod]:
@@ -836,6 +861,8 @@ def _buildShowData(
     summary: dict[str, Any],
     autoGatherUsed: bool,
     fetchSeconds: float = 0.0,
+    *,
+    includeContext: bool = _capabilityExecution.COMPANY_PANEL_CONTEXT_DEFAULT,
 ) -> dict[str, Any]:
     """ToolResult.data - 호출자 종합 페이로드 (summary + markdown + dcr/industry badge)."""
     data: dict[str, Any] = {
@@ -846,7 +873,10 @@ def _buildShowData(
         "summary": summary,
         "markdown": _statementMarkdown(companyName, stockCode, topic, summary),
         "autoGatherUsed": autoGatherUsed,
+        "includeContext": includeContext,
     }
+    if not includeContext:
+        return data
     badge = getDcrBadge(company)
     if badge is not None:
         data["dcrBadge"] = badge
@@ -1170,7 +1200,10 @@ def _genericPublicCall(apiRef: str, plan: dict[str, Any]) -> ToolResult:
             targetParameter = _publicTargetParameter(method, func)
             if targetParameter:
                 kwargs.setdefault(targetParameter, target)
-        result = func(*args, **kwargs)
+        if invalid := _invalidCallArguments(func, args, kwargs, apiRef):
+            return invalid
+        with _quietExecutionNoise():
+            result = func(*args, **kwargs)
         return _resultToRefs(apiRef, result, target=str(target or ""))
     return ToolResult(False, f"지원하지 않는 apiRef입니다: {apiRef}", error="unsupported_api_ref")
 
@@ -1187,13 +1220,48 @@ def _genericCompanyMethod(method: str, target: str, args: list[Any], kwargs: dic
     func = getattr(company, method)
     if not callable(func):
         return ToolResult(False, f"호출 가능한 API가 아닙니다: Company.{method}", error="not_callable")
+    if invalid := _invalidCallArguments(func, args, kwargs, apiRef):
+        return invalid
     with _quietExecutionNoise():
         result = func(*args, **kwargs)
     return _resultToRefs(f"Company.{method}", result, target=str(getattr(company, "stockCode", None) or target))
 
 
+def _invalidCallArguments(func: Any, args: list[Any], kwargs: dict[str, Any], apiRef: str) -> ToolResult | None:
+    """호출 전에 인자를 검사하고 같은 응답에 올바른 계약을 돌려준다."""
+    import inspect
+
+    from dartlab.reference.capability import loadCapabilities
+
+    try:
+        signature = inspect.signature(func)
+    except (TypeError, ValueError):
+        return None
+    try:
+        signature.bind(*args, **kwargs)
+    except TypeError as exc:
+        entry = loadCapabilities().get(apiRef, {})
+        return ToolResult(
+            False,
+            f"{apiRef} 인자를 수정하세요: {exc}. 호출 형식: {apiRef}{signature}",
+            error="invalid_args",
+            data={"execution": entry.get("execution", {})},
+        )
+    return None
+
+
 def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
     if isinstance(result, pl.DataFrame):
+        resultCount = result.height
+        if apiRef == "search":
+            bodyColumn = next(
+                (key for key in ("text", "evidenceText", "section_content", "snippet") if key in result.columns), None
+            )
+            repeated = {"text", "evidenceText", "section_content", "snippet", "fieldCards", "entityCards"}
+            result = result.select(
+                [pl.col(column) for column in result.columns if column not in repeated]
+                + ([pl.col(bodyColumn).alias("text")] if bodyColumn else [])
+            ).head(10)
         payload = _jsonableResult(result)
         table_ref = Ref(
             id=f"table:{apiRef}:{target or 'result'}",
@@ -1210,18 +1278,26 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             payload={
                 "apiRef": apiRef,
                 "target": target or None,
-                "rowCount": result.height,
+                "rowCount": resultCount,
                 "status": "complete",
             },
         )
         extraRefs = _dataFrameEvidenceRefs(apiRef, payload, target=target, tableRef=table_ref)
+        if apiRef == "search":
+            # 본문은 개별 docRef에 한 번만 싣는다. 중복 본문·카드가 담긴 표는 64 KiB
+            # evidence 저장 한도를 넘겨 재시작 후 근거를 잃던 실제 검색 실패 원인이었다.
+            textColumns = {"text", "evidenceText", "snippet", "fieldCards", "entityCards", "section_content"}
+            payload = _jsonableResult(result.select(column for column in result.columns if column not in textColumns))
+            payload["rowCount"] = resultCount
+            payload["previewTruncated"] = resultCount > result.height
+            table_ref = replace(table_ref, payload=payload)
         # 옛 계약은 행 수와 열 이름만 본문에 줘서 값이 하나도 보이지 않았다. scan 에서
         # 이미 배운 것과 같다. 표를 물은 질문에 표를 주지 않으면 회사별 반복 호출을
         # 막을 수 없다.
         frameData: dict[str, Any] = {
             "tableRef": table_ref.id,
-            "rowCount": result.height,
-            "columns": list(result.columns),
+            "rowCount": resultCount,
+            "columns": payload.get("columns", list(result.columns)),
             "previewTruncated": bool(payload.get("previewTruncated")) if isinstance(payload, dict) else False,
         }
         # 행을 여기에 또 싣지 않는다. 같은 행이 table_ref.payload 에 이미 있어서 두 벌이
@@ -1303,9 +1379,9 @@ def _dataFrameRowEvidenceRefs(
     valueCount: int,
 ) -> tuple[list[Ref], int]:
     """DataFrame 한 행을 독립된 doc/date/value ref로 투영한다."""
-    stockCode = str(row.get("stockCode") or row.get("code") or target or "")
+    stockCode = str(row.get("stockCode") or row.get("stock_code") or row.get("code") or target or "")
     period = str(row.get("period") or row.get("year") or "")
-    dataAsOf = str(row.get("rceptDate") or row.get("rceptDt") or row.get("filedAt") or "")
+    dataAsOf = str(row.get("rceptDate") or row.get("rceptDt") or row.get("rcept_dt") or row.get("filedAt") or "")
     documentRef, dataAsOf = _dataFrameDocumentRef(
         apiRef,
         row,
@@ -1328,6 +1404,8 @@ def _dataFrameRowEvidenceRefs(
     )
     if dateRef is not None:
         refs.append(dateRef)
+    if apiRef == "search":
+        return refs, valueCount
     valueRefs = _dataFrameValueRefs(
         apiRef,
         row,
@@ -1352,21 +1430,29 @@ def _dataFrameDocumentRef(
     dataAsOf: str,
     target: str,
 ) -> tuple[Ref | None, str]:
-    """공시 접수번호가 있는 행만 bounded 문서 근거로 만든다."""
+    """공시 접수번호 또는 sourceRef가 있는 행을 bounded 문서 근거로 만든다."""
     rceptNo = str(row.get("rceptNo") or row.get("rcept_no") or "")
-    if not rceptNo:
+    sourceRef = str(row.get("sourceRef") or "")
+    if not rceptNo and not sourceRef:
         return None, dataAsOf
     inferredSection = "auditOpinion" if {"core_adt_matter", "adt_opinion"} & set(row) else "filing"
-    section = str(row.get("section") or row.get("sectionLeaf") or row.get("reportType") or inferredSection)
+    section = str(
+        row.get("section")
+        or row.get("sectionLeaf")
+        or row.get("section_title")
+        or row.get("reportType")
+        or inferredSection
+    )
     if not dataAsOf and re.fullmatch(r"20\d{6}\d{6}", rceptNo):
         dataAsOf = f"{rceptNo[:4]}-{rceptNo[4:6]}-{rceptNo[6:8]}"
     excerpt, documentFields = _rowDocumentPayload(row)
     return (
         Ref(
-            id=f"doc:{_refStem(stockCode, rceptNo, section, str(rowIndex))}",
+            id=f"doc:{row.get('passageId') or sourceRef or _refStem(stockCode, rceptNo, section, str(rowIndex))}",
             kind="docRef",
             title=f"{stockCode or target} {section}",
             source=str(row.get("dartUrl") or row.get("url") or apiRef),
+            sourceType="external",
             payload={
                 "stockCode": stockCode,
                 "period": period or None,
@@ -1377,6 +1463,23 @@ def _dataFrameDocumentRef(
                 "reportType": row.get("reportType"),
                 "excerpt": excerpt,
                 "fields": documentFields,
+                **{
+                    key: row[key]
+                    for key in (
+                        "sourceRef",
+                        "passageId",
+                        "coverage",
+                        "charStart",
+                        "charEnd",
+                        "blockOrder",
+                        "indexedAt",
+                        "sourceDataAsOf",
+                        "relationType",
+                        "answerable",
+                        "notAnswerableReason",
+                    )
+                    if key in row
+                },
             },
         ),
         dataAsOf,
@@ -1385,7 +1488,7 @@ def _dataFrameDocumentRef(
 
 def _rowDocumentPayload(row: dict[str, Any]) -> tuple[str, dict[str, str]]:
     """감사 claim 검산에 필요한 문서 필드만 크기 제한해 보존한다."""
-    excerptKeys = ("core_adt_matter", "adt_opinion", "content", "text", "summary")
+    excerptKeys = ("core_adt_matter", "adt_opinion", "content", "text", "evidenceText", "section_content", "summary")
     fieldKeys = (
         "adt_opinion",
         "core_adt_matter",

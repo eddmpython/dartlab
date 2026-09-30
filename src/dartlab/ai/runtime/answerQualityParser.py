@@ -294,6 +294,34 @@ def _financialAmounts(prose: str) -> list[tuple[float, float]]:
     wonPattern = re.compile(r"(?<![\w.])(-?\d[\d,]*(?:\.\d+)?)\s*원")
     for match in wonPattern.finditer(prose):
         amounts.append(parse(match.group(1), 1.0))
+    # 단위를 표 위에 한 번 선언하고 셀에는 숫자만 쓰는 실제 비교 답변을 검산한다.
+    # 명시한 단위가 없는 표나 비율 열에 원 단위를 추측해 붙이지 않는다.
+    declaredScale = None
+    headers: list[str] = []
+    for line in prose.splitlines():
+        plain = line.replace("**", "").strip()
+        declaration = re.search(r"단위\s*(?:는|:)?\s*(조|억|만)\s*원", plain)
+        if declaration:
+            declaredScale = scales[declaration.group(1)]
+        if not plain.startswith("|"):
+            if headers and plain:
+                headers = []
+                if not declaration:
+                    declaredScale = None
+            continue
+        cells = [cell.strip() for cell in plain.strip("|").split("|")]
+        if not headers:
+            headers = cells
+            continue
+        if all(re.fullmatch(r"[-: ]+", cell) for cell in cells):
+            continue
+        for header, cell in zip(headers, cells):
+            if any(token in header for token in ("%", "비율", "대비", "순위", "연도", "기간", "코드")):
+                continue
+            unit = re.search(r"(조|억|만)\s*원", header)
+            scale = scales[unit.group(1)] if unit else declaredScale
+            if scale and re.fullmatch(r"-?\d[\d,]*(?:\.\d+)?", cell):
+                amounts.append(parse(cell, scale))
     return amounts
 
 

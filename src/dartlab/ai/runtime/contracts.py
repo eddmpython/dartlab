@@ -74,6 +74,7 @@ class RuntimeDescriptor:
     authProbeArgs: tuple[str, ...] = ()
     authSuccessPattern: str | None = None
     loginArgs: tuple[str, ...] = ()
+    toolTransport: Literal["mcp", "native"] = "mcp"
 
     def toDict(self) -> dict[str, Any]:
         """Sig: toDict() -> dict[str, Any].

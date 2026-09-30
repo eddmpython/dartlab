@@ -38,6 +38,7 @@ _RCEPT_NO_PATTERN = re.compile(r"[?&]rcpNo=(\d{14})")
 
 _FILINGS_SCHEMA = {
     "year": pl.Utf8,
+    "period": pl.Utf8,
     "rceptDate": pl.Utf8,
     "rceptNo": pl.Utf8,
     "reportType": pl.Utf8,
@@ -65,7 +66,7 @@ def buildFilings(company: Company) -> pl.DataFrame | None:
         company: Company 인스턴스 (Company facade 의 self).
 
     Returns:
-        pl.DataFrame — 컬럼 ``year`` (Utf8) / ``rceptDate`` (Utf8) / ``rceptNo`` (Utf8) /
+        pl.DataFrame — 컬럼 ``year`` (Utf8) / ``period`` (Utf8) / ``rceptDate`` (Utf8) / ``rceptNo`` (Utf8) /
         ``reportType`` (Utf8) / ``dartUrl`` (Utf8). panel 부재 시 빈 schema DataFrame.
 
     Example:
@@ -81,12 +82,12 @@ def buildFilings(company: Company) -> pl.DataFrame | None:
         - ``buildUpdate`` — 본 함수의 누락 공시 증분 수집 자매.
         - ``buildDisclosure`` — OpenDART 직접 호출 (로컬 parquet X).
         - ``Company.filings`` — 본 함수의 facade.
-        - ``dartlab.providers.dart.panel.text.panelTextRows`` / ``DART_VIEWER`` — 데이터/URL source.
+        - ``dartlab.providers.dart.panel.read.readFilingMetadata`` / ``DART_VIEWER`` — 데이터/URL source.
 
     Requires:
         - polars — DataFrame.
         - dartlab.core.dataLoader — DART_VIEWER 상수.
-        - dartlab.providers.dart.panel.text — panelTextRows.
+        - dartlab.providers.dart.panel.read: period/rceptNo 열만 읽는다.
 
     AIContext:
         Workbench "이 회사 공시 목록" / "최근 보고서" 질문 entry. 로컬 panel 기반이라 빠름.
@@ -98,14 +99,14 @@ def buildFilings(company: Company) -> pl.DataFrame | None:
             - panel artifact 결락 → 빈 schema. caller 는 height 0 검사 후 buildDisclosure 시도.
             - rceptNo 중복 → unique 로 자동 1 개만 유지.
         OutputSchema:
-            - 컬럼 5 (year/rceptDate/rceptNo/reportType/dartUrl).
+            - 컬럼 6 (year/period/rceptDate/rceptNo/reportType/dartUrl).
             - 정렬: year + rceptDate 내림차순.
         Prerequisites:
             - gather panel 이 stockCode 수집 완료.
         Freshness:
             - panel 수집 시점 의존. 본 함수 무상태.
         Dataflow:
-            - gather → panel parquet → panelTextRows → 본 함수 → AI 답변.
+            - gather → panel parquet 메타데이터 두 열 → 본 함수 → AI 답변.
         TargetMarkets:
             - KR (DART) 한정. EDGAR 는 ``edgar`` provider 의 동등 함수.
 
@@ -115,7 +116,9 @@ def buildFilings(company: Company) -> pl.DataFrame | None:
     if not company._hasPanel:
         return _emptyFilingsFrame()
 
-    df = panelTextRows(company.stockCode)
+    from dartlab.providers.dart.panel.read import readFilingMetadata
+
+    df = readFilingMetadata(company.stockCode)
     if df is None or df.is_empty() or "rceptNo" not in df.columns:
         return _emptyFilingsFrame()
 
@@ -124,6 +127,7 @@ def buildFilings(company: Company) -> pl.DataFrame | None:
     filings = (
         df.select(
             period.str.slice(0, 4).alias("year"),
+            period.alias("period"),
             rcept.str.slice(0, 8).alias("rceptDate"),
             rcept.alias("rceptNo"),
             pl.when(period.str.ends_with("Q4"))

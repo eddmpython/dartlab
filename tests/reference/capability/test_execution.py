@@ -151,6 +151,21 @@ def testEngineCallContractKeepsCanonicalTargetAndDeclaredOptions() -> None:
     assert engineCallContract("Company.diff") == {}
 
 
+def testCallableArgumentsComeFromActualFunction():
+    from dartlab.ai.tools.engineCall import engineCall
+    from dartlab.reference.capability.builder import loadCapabilities
+
+    entries = loadCapabilities()
+    arguments = entries["nameToCode"]["execution"]["argsContract"]
+    assert arguments["corpName"]["required"]
+    assert "name" not in arguments
+    assert set(entries["Company.trace"]["execution"]["argsContract"]) == {"stockCode", "topic", "period"}
+    result = engineCall({"apiRef": "nameToCode", "args": {"name": "삼성전자"}})
+    assert not result.ok
+    assert result.error == "invalid_args"
+    assert "corpName" in result.data["execution"]["argsContract"]
+
+
 def testLoadAnalysisGraphCompilesLiveCapabilityContracts() -> None:
     from dartlab.reference.capability.builder import loadAnalysisGraph
 

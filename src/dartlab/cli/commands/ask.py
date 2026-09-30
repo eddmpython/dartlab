@@ -56,7 +56,7 @@ def run(args) -> int:
     if company is not None:
         console.print(f"\n  [bold {CLR}]{company.corpName}[/] ({company.stockCode})")
     else:
-        console.print(f"\n  [bold {CLR}]Agent runtime analysis[/] [dim](DartLab MCP grounded)[/]")
+        console.print(f"\n  [bold {CLR}]Agent runtime analysis[/] [dim](DartLab 근거 연결)[/]")
     console.print(f"  [{CLR_MUTED}]entry: dartlab.ask · auth/model owned by local CLI[/]")
     console.print()
 
