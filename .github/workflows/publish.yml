@@ -136,6 +136,9 @@ jobs:
     environment: pypi
 
     steps:
+      # checkout이 작업 폴더를 초기화하므로 검증 산출물을 받기 전에 실행한다.
+      - uses: actions/checkout@v6
+
       - uses: actions/download-artifact@v8
         with:
           name: dist
@@ -150,8 +153,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
-
-      - uses: actions/checkout@v6
 
       - name: Extract changelog for this version
         id: changelog
@@ -173,6 +174,7 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.body }}
           generate_release_notes: ${{ steps.changelog.outputs.body == '' }}
+          fail_on_unmatched_files: true
           files: |
             dist/*.whl
             dist/*.tar.gz

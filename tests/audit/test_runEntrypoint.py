@@ -143,6 +143,24 @@ def testPublishWorkflowUsesCanonicalCiFullGate():
 
 
 @pytest.mark.unit
+def testPublishPreservesDownloadedArtifactsAndRequiresReleaseAssets():
+    """checkout 초기화가 검증된 배포 파일을 지우거나 빈 릴리즈를 성공으로 넘기지 않는다."""
+    import yaml
+
+    workflow = yaml.safe_load((WORKFLOWS / "publish.yml").read_text(encoding="utf-8"))
+    steps = workflow["jobs"]["publish"]["steps"]
+    checkouts = [index for index, step in enumerate(steps) if step.get("uses", "").startswith("actions/checkout@")]
+    downloads = [
+        index for index, step in enumerate(steps) if step.get("uses", "").startswith("actions/download-artifact@")
+    ]
+    assert checkouts and downloads
+    assert max(checkouts) < min(downloads), "checkout이 내려받은 dist/SBOM을 지울 수 있음"
+    release = next(step for step in steps if step.get("uses", "").startswith("softprops/action-gh-release@"))
+    assert release["with"]["fail_on_unmatched_files"] is True
+    assert set(release["with"]["files"].splitlines()) == {"dist/*.whl", "dist/*.tar.gz", "sbom/dartlab-sbom.json"}
+
+
+@pytest.mark.unit
 def test_realdataShardsMatchNightlyMatrix():
     """REALDATA_SHARDS 상수 ↔ ci-nightly.yml realdata-suite-full matrix 일치."""
     yaml_path = WORKFLOWS / "ci-nightly.yml"

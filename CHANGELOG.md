@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **릴리즈 첨부 파일 보존.** 배포 job의 checkout을 산출물 다운로드 앞으로 옮겨 wheel·sdist·SBOM이 지워지지 않게 했다. 필수 첨부 파일이 없으면 GitHub Release 발행 단계가 실패한다.
+
 ## [0.12.0] - 2026-10-01
 
 사용자의 로그인된 CLI 세션에서 DartLab 자료를 조회하고, 공시 문단의 의미를 따라 탐색하며, 조회한 표를 직접 계산할 수 있다. 기존 Python 공개 API와 기본 검색 경로는 유지한다.
