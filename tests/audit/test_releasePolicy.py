@@ -126,6 +126,7 @@ def testHookPropagatesPreflightFailure(tmp_path):
         input="",
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False,
     )
     assert result.returncode == 23, result.stdout + result.stderr

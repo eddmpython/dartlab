@@ -222,6 +222,21 @@ def testMutationGatePreservesErrorsAndUsesListConfiguration():
 
 
 @pytest.mark.unit
+def testGatePropagatesUtf8ToChildPython(monkeypatch):
+    from tests import run as entrypoint
+
+    monkeypatch.setenv("PYTHONUTF8", "0")
+    gate = entrypoint.Gate(
+        name="utf8-probe",
+        tier="fast",
+        install_pkg="none",
+        cmd='python -c "import sys; sys.exit(0 if sys.flags.utf8_mode else 23)"',
+    )
+    monkeypatch.setitem(entrypoint.GATES, gate.name, gate)
+    assert entrypoint.runGate(gate.name, dry_run=False, mp={}, strict=True) == 0
+
+
+@pytest.mark.unit
 def testPreflightIsolatesOutputsAndRestoresEnvironment(monkeypatch, tmp_path):
     from tests import run as entrypoint
 
@@ -296,6 +311,15 @@ def test_productSmokeDataModesKeepCiAndExternalSeparated():
     assert '"fixtures"' in run_product_wheel
     assert '"fixtures"' in verify_wheel
     assert "--data-mode empty" in GATES["external-venv-smoke"].cmd
+
+
+@pytest.mark.unit
+def testReleaseExternalSmokeInstallsCandidateInsteadOfPreviousPypi():
+    setup = " && ".join(GATES["external-venv-smoke"].setup)
+    assert '"${GITHUB_REF_TYPE:-}" = "tag"' in setup
+    assert "uv build --wheel --out-dir /tmp/dartlab-candidate-wheel" in setup
+    assert "uv pip install --python /tmp/smoke-venv /tmp/dartlab-candidate-wheel/*.whl" in setup
+    assert "else uv pip install --python /tmp/smoke-venv dartlab; fi" in setup
 
 
 @pytest.mark.unit

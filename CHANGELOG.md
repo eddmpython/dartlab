@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **패치 버전 강제.** 실제 PyPI 발행 버전에서 다음 patch 한 단계만 허용한다. 커밋, push, 배포가 같은 검사기를 실행하며, 일반 릴리즈 요청으로 minor나 major를 올릴 수 없다.
 - **전체 검증 누락 차단.** Git 훅을 `.githooks`로 통일하고 push 전에 정식 preflight를 실행한다. 전체 tier 실행은 모든 실제 데이터 shard를 검사하며, 실패나 실행 계획을 통과로 표시하지 않는다. 배포는 CI Full과 Nightly 검증을 모두 기다린다.
 - **검증 산출물 격리.** 로컬 preflight의 임시 smoke 결과가 작업 중인 결과 파일을 덮어쓰지 않게 했다.
+- **Windows 검증 인코딩.** 하위 Python에도 UTF-8 설정을 전달해 한글 훅 출력을 CP949로 해독하다가 테스트가 실패하는 문제를 수정했다.
 - **릴리즈 첨부 파일 보존.** 배포 job의 checkout을 산출물 다운로드 앞으로 옮겨 wheel·sdist·SBOM이 지워지지 않게 했다. 필수 첨부 파일이 없으면 GitHub Release 발행 단계가 실패한다.
 
 ## [0.12.0] - 2026-10-01

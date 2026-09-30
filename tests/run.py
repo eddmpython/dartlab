@@ -513,7 +513,12 @@ GATES: dict[str, Gate] = {
         install_pkg="none",
         setup=(
             "uv venv /tmp/smoke-venv --python 3.12",
-            "uv pip install --python /tmp/smoke-venv dartlab",
+            # Publish가 재사용하는 tag 검증은 아직 PyPI에 없는 후보 wheel을 검사한다.
+            # 이전 PyPI 버전의 결함 때문에 그 결함을 고친 후보 발행까지 막으면 안 된다.
+            'if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then '
+            "uv build --wheel --out-dir /tmp/dartlab-candidate-wheel && "
+            "uv pip install --python /tmp/smoke-venv /tmp/dartlab-candidate-wheel/*.whl; "
+            "else uv pip install --python /tmp/smoke-venv dartlab; fi",
         ),
         env={"PYTHONUNBUFFERED": "1"},
         cmd=(
@@ -757,6 +762,9 @@ def runGate(name: str, *, dry_run: bool, mp: dict[str, str], strict: bool = Fals
         return 0
 
     full_env = os.environ.copy()
+    # 상위 Python의 -X utf8은 pytest.exe 등 하위 인터프리터에 전달되지 않는다.
+    # Windows CP949가 한글 훅 출력을 해독하지 못하는 회귀를 막는다.
+    full_env["PYTHONUTF8"] = "1"
     full_env.update(env_local)
     runArgs, runKwargs = _shellInvocation(shell_cmd)
     proc = subprocess.run(  # noqa: S603 - CI dispatcher; cmd 는 본 파일 내부 dict 에서만 옴
