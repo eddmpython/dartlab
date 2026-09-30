@@ -143,3 +143,31 @@ def test_readskill_disclosure_payload_stays_within_runtime_budget() -> None:
     )
 
     assert len(json.dumps(result, ensure_ascii=False, default=str).encode("utf-8")) < 64 * 1024
+
+
+def testAnalysisDiscoveryDoesNotReturnDevelopmentSkills() -> None:
+    result = executeTool("ReadSkill", {"query": "삼성전자와 SK하이닉스 투자 사이클 비교", "includeUser": False})
+    assert result["ok"]
+    assert not any(row["id"].startswith(("operation.", "start.", "runtime.")) for row in result["data"]["skills"])
+    assert len(json.dumps(result, ensure_ascii=False)) < 20_000
+    assert all("bodyPreview" not in ref["payload"] for ref in result["refs"])
+
+
+def testDevelopmentDiscoveryRemainsExplicitlyAvailable() -> None:
+    result = executeTool(
+        "ReadSkill", {"query": "operation.contributionWorkflow", "audience": "all", "includeUser": False}
+    )
+    assert any(row["id"] == "operation.contributionWorkflow" for row in result["data"]["skills"])
+
+
+def testMissingScanSkillOffersExistingAlternatives() -> None:
+    from dartlab.skills import getSkill
+
+    result = executeTool("GetSkillBody", {"skillId": "engines.scan.screen", "includeUser": False})
+    assert result["error"] == "skill_not_found"
+    assert result["data"]["availableSkills"]
+    for alternative in result["data"]["availableSkills"]:
+        assert getSkill(alternative["skillId"], includeUser=False)
+    scan = getSkill("engines.scan", includeUser=False)
+    for skillId in scan.linkedSkills:
+        assert getSkill(skillId, includeUser=False)

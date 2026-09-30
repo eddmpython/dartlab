@@ -22,6 +22,7 @@ from .listEngineGaps import listEngineGaps
 from .lookAheadGuard import lookAheadGuard
 from .peerCompareN import peerCompareN
 from .proposeRecipe import proposeRecipe
+from .queryTable import queryTable
 from .readCapability import readCapability
 from .readFile import readFile
 from .readSkill import getSkillBody, readSkill
@@ -43,16 +44,37 @@ from .webSearch import webSearch
 ToolFn = Callable[..., ToolResult]
 
 _SPECS: dict[str, ToolSpec] = {
+    "QueryTable": ToolSpec(
+        "QueryTable",
+        "조회 결과 data.table.tableId를 SQLite SQL로 계산. tables={별칭:tableId}, sql=SELECT 한 문장. "
+        "필터·정렬·비율·LAG·집계·join 가능. 입력 표 전체를 계산하고 원자료 근거와 SQL을 보존. "
+        "행 내 최솟값/최댓값은 MIN/MAX를 사용. LEAST/GREATEST는 지원하지 않음. "
+        "단위와 기간은 원표 기준. 외부 파일·네트워크·쓰기 불가. 같은 native 세션에서만 사용.",
+        {
+            "type": "object",
+            "properties": {
+                "tables": {"type": "object", "additionalProperties": {"type": "string"}},
+                "sql": {"type": "string"},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 500},
+            },
+            "required": ["tables", "sql"],
+        },
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
     # ── 분석 절차 / 메타 — 시작 도구 ──
     "ReadSkill": ToolSpec(
         "ReadSkill",
-        "Skill OS 에서 분석 절차 spec(frontmatter+본문) 검색. 분석 의도면 가장 먼저. recipe 발견 시 그 절차 따르기.",
+        "질문에 맞는 분석 절차와 실행 인자를 짧게 조회. 분석을 시작할 때 한 번 사용. 개발·운영 문서는 audience=all로 별도 조회.",
         {
             "type": "object",
             "properties": {
                 "query": {"type": "string"},
                 "limit": {"type": "integer"},
                 "includeUser": {"type": "boolean"},
+                "audience": {"type": "string", "enum": ["analysis", "all"], "default": "analysis"},
             },
             "required": ["query"],
         },
@@ -710,6 +732,7 @@ _SPECS: dict[str, ToolSpec] = {
 }
 
 _TOOLS: dict[str, ToolFn] = {
+    "QueryTable": queryTable,
     "ReadSkill": readSkill,
     "GetSkillBody": getSkillBody,
     "ReadSkillMarket": readSkillMarket,
@@ -818,16 +841,17 @@ def listToolNames() -> tuple[str, ...]:
     return tuple(_SPECS.keys())
 
 
-def agentToolSpecs() -> list[dict[str, Any]]:
+def agentToolSpecs(*, sessionBound: bool = False) -> list[dict[str, Any]]:
     """설치형 세션과 MCP가 공유하는 읽기 전용 도구 정의를 반환한다."""
-    return [spec for spec in toolSpecs() if spec["name"] in CANONICAL_V2 and isToolReadOnly(spec["name"])]
+    names = (*CANONICAL_V2, "QueryTable") if sessionBound else CANONICAL_V2
+    return [spec for spec in toolSpecs() if spec["name"] in names and isToolReadOnly(spec["name"])]
 
 
 def executeAgentTool(name: str, args: Any) -> dict[str, Any]:
     """광고한 도구만 실행하고 외부 본문 표시와 실패 결과를 같은 경계에서 보존한다."""
     from .formatting import wrapExternalInResult
 
-    specs = {spec["name"]: spec for spec in agentToolSpecs()}
+    specs = {spec["name"]: spec for spec in agentToolSpecs(sessionBound=True)}
     if name not in specs:
         return ToolResult(False, f"이 세션에서 사용할 수 없는 도구: {name}", error="unknown_tool").toDict()
     if not isinstance(args, dict):

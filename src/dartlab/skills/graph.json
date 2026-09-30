@@ -604,7 +604,7 @@
       "category": "engines",
       "purpose": "Scan 엔진은 시장/유니버스 횡단면에서 후보를 발굴하고 순위를 계산하는 실행 스킬이다. 트리거 - '스캔', '종목 발굴', '후보 추출', '랭킹'.",
       "inDegree": 55,
-      "outDegree": 6,
+      "outDegree": 7,
       "cluster": "scan",
       "isEntry": false,
       "isLeaf": false,
@@ -616,12 +616,12 @@
       "title": "Cross-section Stock Screen",
       "category": "engines",
       "purpose": "전 종목 횡단면 스크리닝 — universe filter + sort + rank.",
-      "inDegree": 0,
+      "inDegree": 1,
       "outDegree": 1,
       "cluster": "scan",
       "isEntry": false,
       "isLeaf": false,
-      "isOrphan": true,
+      "isOrphan": false,
       "audiences": []
     },
     {
@@ -4829,6 +4829,11 @@
       "src": "engines.quant.walkforward",
       "dst": "engines.quant",
       "kind": "knowledge"
+    },
+    {
+      "src": "engines.scan",
+      "dst": "engines.scan.crossSectionStockScreen",
+      "kind": "linkedRecipe"
     },
     {
       "src": "engines.scan",
@@ -9713,7 +9718,6 @@
     "engines.quant.marketContext",
     "engines.quant.scanBacktest",
     "engines.quant.walkforward",
-    "engines.scan.crossSectionStockScreen",
     "engines.scan.krxIndexStrength",
     "engines.scan.undervaluedQuality",
     "engines.search.disclosureSearch",
@@ -9848,7 +9852,6 @@
     "engines.quant.marketContext",
     "engines.quant.scanBacktest",
     "engines.quant.walkforward",
-    "engines.scan.crossSectionStockScreen",
     "engines.scan.krxIndexStrength",
     "engines.scan.undervaluedQuality",
     "engines.search",

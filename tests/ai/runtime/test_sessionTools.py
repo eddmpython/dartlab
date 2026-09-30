@@ -18,7 +18,7 @@ pytestmark = pytest.mark.unit
 
 
 def testSessionAdvertisesCanonicalReadOnlySchemas():
-    specs = agentToolSpecs()
+    specs = agentToolSpecs(sessionBound=True)
     names = [spec["name"] for spec in specs]
     assert {"ReadSkill", "EngineCall", "PeerCompareN"}.issubset(names)
     assert len(names) == len(set(names))
@@ -74,6 +74,52 @@ def testHostCompletionRetainsCanonicalEvidence(monkeypatch):
     assert [event.kind for event in events] == ["toolStarted", "toolCompleted"]
     assert _evidenceDetails(events[-1].payload)[0]["payload"] == {"value": 120, "period": "2025"}
     assert not _toolFailed(events[-1].payload)
+
+
+def testSessionSnapshotAndDerivedEvidenceRetainActualInput(monkeypatch):
+    import polars as pl
+
+    from dartlab.ai.runtime.sessionTools import clearSessionTables
+    from dartlab.ai.tools.queryTable import captureTable
+
+    def sourceTool(*args):
+        return {"ok": True, "data": {"table": captureTable(pl.DataFrame({"x": range(20)}), [])}}
+
+    with monkeypatch.context() as patch:
+        patch.setattr("dartlab.ai.tools.registry.executeTool", sourceTool)
+        first = list(
+            callSessionTool(
+                EventProjector("codex", "tables-test"), "t", "c", "EngineCall", {"apiRef": "scan", "args": {}}
+            )
+        )[-1]
+    result = first.payload["item"]["result"]
+    handle = result["data"]["table"]
+    assert result["refs"][0]["id"] == handle["snapshotRef"]
+    assert len(result["refs"][0]["payload"]["contentHash"]) == 64
+    events = list(
+        callSessionTool(
+            EventProjector("codex", "tables-test"),
+            "t",
+            "q",
+            "QueryTable",
+            {"tables": {"t": handle["tableId"]}, "sql": "SELECT SUM(x) AS total FROM t"},
+        )
+    )
+    result = events[-1].payload["item"]["result"]
+    assert result["refs"][0]["payload"]["rows"] == [{"total": 190}]
+    assert handle["snapshotRef"] in result["refs"][0]["payload"]["sourceRefs"]
+    clearSessionTables("tables-test")
+    events = list(
+        callSessionTool(
+            EventProjector("codex", "tables-test"),
+            "t",
+            "q2",
+            "QueryTable",
+            {"tables": {"t": handle["tableId"]}, "sql": "SELECT * FROM t"},
+        )
+    )
+    assert events[-1].payload["item"]["result"]["error"] == "table_not_found"
+    clearSessionTables("tables-test")
 
 
 def testFailedOrOversizedHostResultDoesNotClaimEvidence(monkeypatch):

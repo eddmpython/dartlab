@@ -211,7 +211,17 @@ def _dataHubAxisCall(axis: str, plan: dict[str, Any]) -> ToolResult:
         catalog = _dataHubCatalogResult(result)
         if catalog is not None:
             return catalog
-    return _resultToRefs(f"dataHub.{axis}", result, target=str(plan.get("target") or ""))
+    output = _resultToRefs(f"dataHub.{axis}", result, target=str(plan.get("target") or ""))
+    from .queryTable import capturePartition
+
+    tables = []
+    for partition in getattr(result, "partitions", ())[:8]:
+        handle = capturePartition(partition, output.refs, status=result.status)
+        if handle:
+            tables.append({"assetId": partition.asset.assetId, "truncated": partition.truncated, **handle})
+    if tables:
+        output.data["tables"] = tables
+    return output
 
 
 # 카탈로그 자산에서 사용자가 확인할 수 있는 열만 고른다. executorModule·subjectParam 같은
@@ -246,6 +256,11 @@ def _dataHubCatalogResult(result: Any) -> ToolResult | None:
         return None
     rows = [_catalogRow(asset) for asset in assets]
     rows = [row for row in rows if row]
+    if len(rows) <= 20:
+        for row, asset in zip(rows, assets, strict=True):
+            for key in ("description", "temporalSupport", "selectorKind", "selectorRequired"):
+                value = getattr(asset, key, None) if not isinstance(asset, Mapping) else asset.get(key)
+                row[key] = list(value) if isinstance(value, tuple) else value
     if not rows:
         return None
     owners = sorted({str(row.get("owner") or "") for row in rows if row.get("owner")})
@@ -256,7 +271,7 @@ def _dataHubCatalogResult(result: Any) -> ToolResult | None:
         source="dartlab.dataHub('catalog')",
         payload={
             "rowCount": len(rows),
-            "columns": list(_CATALOG_PUBLIC_COLUMNS),
+            "columns": list(rows[0]),
             "rows": rows[:_JSON_PREVIEW_ROWS],
             "previewTruncated": len(rows) > _JSON_PREVIEW_ROWS,
             "status": payload.get("status"),
@@ -284,7 +299,7 @@ def _dataHubCatalogResult(result: Any) -> ToolResult | None:
         data={
             "tableRef": tableRef.id,
             "rowCount": len(rows),
-            "columns": list(_CATALOG_PUBLIC_COLUMNS),
+            "columns": list(rows[0]),
             "rows": rows,
             "owners": owners,
             "status": payload.get("status"),
@@ -521,6 +536,25 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         includeContext=includeContext,
     )
     data["requestedScope"] = scope
+    from .queryTable import captureTable
+
+    records = [
+        {
+            "stockCode": stockCode,
+            "statement": topic,
+            "scope": scope,
+            "metric": row["snakeId"],
+            "item": row["item"],
+            "period": period,
+            "value": value,
+        }
+        for row in summary.get("timeseries", [])
+        for period, value in row["values"].items()
+    ]
+    if records:
+        tableHandle = captureTable(pl.DataFrame(records), refs, coverage="selected_metrics_and_periods")
+        if tableHandle:
+            data["table"] = tableHandle
     return ToolResult(True, summaryMsg, refs=refs, data=data)
 
 
@@ -1032,6 +1066,9 @@ def _scan(plan: dict[str, Any]) -> ToolResult:
         # 이유는 screenTraps 본문이 말한다.
         headline = "; ".join(note.split(".", 1)[0] for note in traps)
         summary = f"{summary}. 주의: {headline}"
+    from .queryTable import captureTable
+
+    tableHandle = captureTable(result, [table_ref], coverage="owner_result")
     return ToolResult(
         True,
         summary,
@@ -1047,6 +1084,7 @@ def _scan(plan: dict[str, Any]) -> ToolResult:
             "rows": rows,
             "returnedRowCount": len(rows),
             "rowsTruncated": rowsTruncated,
+            **({"table": tableHandle} if tableHandle else {}),
         },
     )
 
@@ -1300,6 +1338,11 @@ def _resultToRefs(apiRef: str, result: Any, *, target: str = "") -> ToolResult:
             "columns": payload.get("columns", list(result.columns)),
             "previewTruncated": bool(payload.get("previewTruncated")) if isinstance(payload, dict) else False,
         }
+        from .queryTable import captureTable
+
+        tableHandle = captureTable(result, [table_ref, executionRef, *extraRefs], coverage="owner_result")
+        if tableHandle:
+            frameData["table"] = tableHandle
         # 행을 여기에 또 싣지 않는다. 같은 행이 table_ref.payload 에 이미 있어서 두 벌이
         # 되고, MCP payload 예산을 넘기면 초과분이 잘리는 게 아니라 결과 전체가 폐기된다.
         # 모델에게 필요한 것은 읽을 수 있는 본문이고 그것은 아래 markdown 이 준다.

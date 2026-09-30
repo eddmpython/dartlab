@@ -85,8 +85,7 @@ procedure:
   - 결과의 ranking · universe · datasetAsOf · filter · formula · executionRef 묶음.
   - 후보 발굴 후 단일 종목 심층 검증은 engines.analysis · engines.credit · engines.quant.
 linkedSkills:
-  - engines.scan.ratio
-  - engines.scan.screen
+  - engines.scan.crossSectionStockScreen
   - engines.analysis
   - engines.credit
   - engines.quant

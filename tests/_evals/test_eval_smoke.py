@@ -33,9 +33,9 @@ _EVAL_SET = Path(__file__).resolve().parent / "eval_set.jsonl"
 
 
 def test_loadEvalSet_returns_cases() -> None:
-    """eval_set.jsonl 가 5 케이스를 로드."""
+    """eval_set.jsonl의 기본 조회와 표 계산 케이스를 로드한다."""
     cases = loadEvalSet(_EVAL_SET)
-    assert len(cases) == 5
+    assert len(cases) == 6
     assert cases[0].id == "samsung_basic_v1"
     assert "삼성전자" in cases[0].expected_signals["factual_correctness"]
 

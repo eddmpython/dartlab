@@ -1,0 +1,45 @@
+id,variant,sourceHash,discoveryChars,operationalSkills,firstDataSeconds,elapsedSeconds,toolCalls,toolErrors,bootstrapErrors,successfulSqlCalls,citedRefs,unknownCitations,timedOut,outcome,review
+size,baseline,,54428,2,15.469,55.937,7,1,1,0,7,0,False,complete,국내 매출 기준을 명시. 개선 후 전체 표에서 순위와 비율 계산.
+cashDivergence,baseline,,52955,0,34.596,68.437,8,4,1,0,2,0,False,incomplete,기존 후보 검증 실패. 개선 후 연간 연결 수치로 현대건설과 한화솔루션 검증.
+investmentCycle,baseline,,57863,3,17.594,82.0,4,1,1,0,24,0,False,complete,5년 연결 현금흐름 비교. 개선 후 SQL 계산 영수증 추가.
+revenue,baseline,,54706,0,12.672,40.344,6,1,1,0,4,0,False,complete,연간 연결 매출과 영업이익률 확인.
+revenueTrend,baseline,,55641,1,18.157,57.375,3,1,1,0,13,0,False,complete,2020년 기준값과 2021~2025 성장률. 개선 후 LAG 계산 근거 추가.
+inventory,baseline,,52617,0,,68.031,8,3,1,0,0,0,False,incomplete,개선 후 조건을 명시한 후보 선별. 회사별 회계기준 확인은 미완료.
+capitalEvent,baseline,,51794,0,50.093,258.953,8,1,1,0,0,0,True,incomplete,기존 제한시간 초과로 답변 없음. 개선 후 예비 후보이나 사건 선후관계 미확정.
+semantic,baseline,,55263,0,27.25,91.11,6,1,1,0,3,0,False,complete,유사 의미의 공시 문단과 공시일 제공. 현재 업황으로 일반화하지 않음.
+filingPeriod,baseline,,55501,0,21.562,63.984,5,1,1,0,1,0,False,complete,2025 사업보고서 해당 문단과 집행액/계획 구분.
+dividend,baseline,,57275,0,20.625,48.656,8,3,1,0,1,0,False,partial,기존 배당 일부. 개선 후 소각 결정 일부. 배당과 소각 전체 확인 미완료.
+credit,baseline,,47820,2,41.187,103.906,8,5,1,0,12,0,False,complete,수치 기반 위험 설명과 모형/공시 한계 명시. 개선 후 현금흐름 수치 확보.
+peers,baseline,,58429,2,16.515,61.546,7,1,1,0,11,0,False,complete,같은 기간과 회계기준으로 수치 비교. 원천 공시 대조는 별도 검증 대상.
+separate,baseline,,61601,1,15.734,40.578,6,1,1,0,3,0,False,partial,별도 조회의 값과 ref 충돌을 식별하고 비교 보류.
+usCompany,baseline,,50060,0,13.437,33.547,6,1,1,0,6,0,False,partial,통화 메타데이터 오류를 식별하고 달러 실적 확정 보류.
+macro,baseline,,53381,0,28.406,50.265,6,1,1,0,4,0,False,complete,자료 기준일과 최신성 한계를 명시. 외부 원천과 일치 여부는 독립 감사하지 않음.
+screen,baseline,,54861,1,22.636,41.812,4,1,1,0,1,0,False,partial,숫자 조건은 계산. 원표의 기간/회계기준 부재로 예비 후보만 제공.
+ownership,baseline,,52717,0,47.234,105.39,8,1,1,0,5,0,False,complete,최대주주/동일인/출자 방향과 서로 다른 기준일 구분.
+catalog,baseline,,53394,5,13.937,44.234,3,1,1,0,1,0,False,complete,실제 카탈로그 조회. 등록과 확보/조회 가능 여부 구분.
+missing,baseline,,59686,0,,17.312,2,1,1,0,0,0,False,expectedAbstention,가상 회사의 수치를 만들지 않고 계산 불가와 필요 입력 설명.
+freshness,baseline,,58167,0,15.594,46.594,6,1,1,0,4,0,False,complete,보유 재무와 정기공시 범위 확인. 전체 원격 저장소 수집 감사는 아님.
+size,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,11588,0,16.213,67.532,8,1,1,1,9,0,False,complete,국내 매출 기준을 명시. 개선 후 전체 표에서 순위와 비율 계산.
+cashDivergence,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,12767,0,38.27,142.0,15,3,1,1,23,0,False,complete,기존 후보 검증 실패. 개선 후 연간 연결 수치로 현대건설과 한화솔루션 검증.
+investmentCycle,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,14842,0,15.188,120.235,5,1,1,1,53,0,False,complete,5년 연결 현금흐름 비교. 개선 후 SQL 계산 영수증 추가.
+revenue,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,13956,0,17.812,39.687,5,1,1,2,5,0,False,complete,연간 연결 매출과 영업이익률 확인.
+revenueTrend,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,13331,0,14.453,54.313,5,1,1,2,14,0,False,complete,2020년 기준값과 2021~2025 성장률. 개선 후 LAG 계산 근거 추가.
+inventory,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,13095,0,22.877,94.891,8,2,1,2,2,0,False,partial,개선 후 조건을 명시한 후보 선별. 회사별 회계기준 확인은 미완료.
+capitalEvent,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,12887,0,39.462,122.453,8,2,1,0,3,0,False,partial,기존 제한시간 초과로 답변 없음. 개선 후 예비 후보이나 사건 선후관계 미확정.
+semantic,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,13681,0,32.235,74.579,4,1,1,0,2,0,False,complete,유사 의미의 공시 문단과 공시일 제공. 현재 업황으로 일반화하지 않음.
+filingPeriod,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,14483,0,32.297,54.203,4,1,1,0,1,0,False,complete,2025 사업보고서 해당 문단과 집행액/계획 구분.
+dividend,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,13701,0,15.5,80.422,8,2,1,1,3,0,False,partial,기존 배당 일부. 개선 후 소각 결정 일부. 배당과 소각 전체 확인 미완료.
+credit,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,13776,0,36.282,107.36,10,4,1,1,9,0,False,complete,수치 기반 위험 설명과 모형/공시 한계 명시. 개선 후 현금흐름 수치 확보.
+peers,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,14662,0,18.578,57.594,7,1,1,0,11,0,False,complete,같은 기간과 회계기준으로 수치 비교. 원천 공시 대조는 별도 검증 대상.
+separate,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,15314,0,14.109,42.688,8,3,1,0,3,0,False,partial,별도 조회의 값과 ref 충돌을 식별하고 비교 보류.
+usCompany,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,12452,0,20.36,69.672,8,1,1,1,6,0,False,partial,통화 메타데이터 오류를 식별하고 달러 실적 확정 보류.
+macro,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,12705,0,21.968,53.781,8,1,1,1,3,0,False,complete,자료 기준일과 최신성 한계를 명시. 외부 원천과 일치 여부는 독립 감사하지 않음.
+screen,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,13444,0,30.146,54.75,6,1,1,1,2,0,False,partial,숫자 조건은 계산. 원표의 기간/회계기준 부재로 예비 후보만 제공.
+ownership,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,14215,0,38.435,92.782,8,2,1,0,4,0,False,complete,최대주주/동일인/출자 방향과 서로 다른 기준일 구분.
+catalog,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,14056,0,18.015,43.359,3,1,1,0,1,0,False,complete,실제 카탈로그 조회. 등록과 확보/조회 가능 여부 구분.
+missing,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,14605,0,,14.25,2,1,1,0,0,0,False,expectedAbstention,가상 회사의 수치를 만들지 않고 계산 불가와 필요 입력 설명.
+freshness,candidate,10bc1c74431e10ad2d0f04e75a5bcb2bc62edebebe01483a723e1133de2a89e5,14398,0,18.75,41.266,6,3,1,0,3,0,False,complete,보유 재무와 정기공시 범위 확인. 전체 원격 저장소 수집 감사는 아님.
+cashDivergence,followup,ecd1fac47bf17568e42cb8c8ee01c2a6f6811b7401878cd6616c353a5f0628de,12762,0,30.281,81.953,11,2,1,1,15,0,False,complete,링크와 LIKE 수정 후 현대건설 연간 수치 확인. 복합어 fields 검색은 한 번 빈 결과.
+inventory,followup,ecd1fac47bf17568e42cb8c8ee01c2a6f6811b7401878cd6616c353a5f0628de,13090,0,39.156,110.0,10,2,1,1,3,0,False,partial,링크와 LIKE 수정 후 17개 예비 후보. LEAST 미지원 오류 후 MIN/MAX로 복구. SQLite 안내 추가.
+capitalEvent,eventFollowup,ca09ab43c6c7014d1a8b71e0c3d1fd1064a55720ed716dacd16b88a5038f1669,12882,0,35.672,115.515,8,1,1,1,3,0,False,partial,LIKE 수정 후 사건 날짜와 원문을 대조. 증자 발표 전 매각과 납입 전 변동을 구분하나 최신 전체 명단은 미확정.
+dividend,eventFollowup,ca09ab43c6c7014d1a8b71e0c3d1fd1064a55720ed716dacd16b88a5038f1669,13701,0,17.219,110.063,8,2,1,0,7,0,False,partial,후속 실행에서 최근 배당과 소각 완료/예정을 원문으로 구분. 가장 최근 소각 결정의 규모와 완료일은 미확인.

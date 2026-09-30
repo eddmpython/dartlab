@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 _GROUNDING_TOOL_NAMES = frozenset(
     {
         "EngineCall",
+        "QueryTable",
         "InspectDataset",
         "RunPython",
         "PeerCompareN",

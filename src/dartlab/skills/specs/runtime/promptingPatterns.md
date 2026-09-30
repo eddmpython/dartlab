@@ -76,6 +76,24 @@ recipe id (`recipes.macro.qualityMacroBeta` 등) 명시 호출 → 결과의 `##
 
 단순 수치 확인은 `EngineCall`의 `Company.panel`과 `PeerCompareN`에 `includeContext=false`를 지정한다. 이때 표·값·기간·공시 링크는 유지하고 신용·산업 부가 계산을 생략한다. 투자 판단 질문은 관련 분석 계약을 사용하며 기존 `includeContext=true` 동작도 유지한다. 인자 이름은 ReadSkill에 inline된 실제 callable 계약에서 확인하고 추측하지 않는다.
 
+`ReadSkill`은 기본 세 후보의 짧은 절차와 실행 계약을 반환한다. 일반 분석에서는 operation, start,
+runtime 문서를 제외하며, 개발·운영 문서 검색은 `audience="all"`로 요청한다. 본문 전문은
+`GetSkillBody(skillId)`로 읽는다. API 설명과 본문을 여러 곳에 반복해서 펼치지 않는다.
+
+native 세션에서 `EngineCall`의 표는 `data.table.tableId`, DataHub partition은 `data.tables`로
+후속 계산에 연결된다. `QueryTable(tables={"t": tableId}, sql="SELECT ... FROM t")`는 같은 세션의
+표 전체에서 필터, 정렬, 비율, window와 join을 실행한다. SQL은 메모리 표를 읽는 한 문장으로
+제한되며, 새 원천 수집이나 파일 쓰기는 수행하지 않는다. 표의 schema, 조회 범위, 원자료 ref와
+내용 hash를 보존하고 계산 결과에도 SQL과 입력 근거를 남긴다. 미리보기 행만으로 전종목 순위를
+추정하지 않는다. 기간, 단위, 연결·별도 기준을 맞춰 계산한다.
+
+후속 계산 표는 세션별 최대 8개, 표당 4 MiB로 제한한다. 닫힌 세션의 표는 해제되고 만료된
+tableId는 다시 조회하도록 안내한다. QueryTable 결과가 잘리면 그 일부를 새 전체 표로 저장하지
+않는다. DataHub의 partial partition은 전체 universe를 대표한다고 설명하지 않는다.
+
+"큰 회사"처럼 비교축이 모호하면 매출, 자산, 시가총액을 구분하고 실제 선택한 기준과 비교
+범위를 답변에 밝힌다. 데이터에서 확인할 수 없는 축을 추측으로 채우지 않는다.
+
 모든 prompt 변형에 다음 4 요소 강행:
 
 1. **단위 명시** (% / bp / index / 원).

@@ -273,12 +273,16 @@ def getSkill(skillId: str, *, includeUser: bool = True) -> SkillSpec:
     raise KeyError(f"unknown DartLab skill: {skillId}")
 
 
-def searchSkills(query: str, *, limit: int = 8, includeUser: bool = True) -> list[SkillMatch]:
+def searchSkills(
+    query: str, *, limit: int = 8, includeUser: bool = True, excludeCategories: tuple[str, ...] = ()
+) -> list[SkillMatch]:
     """Skill 검색 — 분석 목적과 capability ref 를 기준으로 매칭."""
 
     terms = _terms(query)
     matches: list[SkillMatch] = []
     for spec in listSkills(includeUser=includeUser):
+        if spec.category in excludeCategories:
+            continue
         score, reasons = _score(spec, terms, query=query)
         if score > 0 or not terms:
             matches.append(SkillMatch(skill=spec, score=score, reasons=reasons))

@@ -181,6 +181,60 @@ def engineCallContract(apiRef: str, entry: dict | None = None) -> dict:
             contract["returnType"] = returnType
     if example := metadata.get("example"):
         contract["nativeExample"] = example
+    if apiRef == "scan":
+        contract["argsContract"] = {
+            "axis": {
+                "required": True,
+                "type": "str",
+                "description": "fields, screen, account, ratio 또는 scan 가이드의 축",
+            },
+            "target": {"required": False, "type": "str", "description": "fields 검색어 또는 account/ratio 지표"},
+            "spec": {
+                "required": False,
+                "type": "object",
+                "description": "screen 조건. where/any/select/sort/limit/define",
+            },
+        }
+        contract["exampleCall"] = {"apiRef": apiRef, "args": {"axis": "fields", "target": "매출"}}
+        contract["guide"] = (
+            "account와 ratio는 전종목 시계열을 반환한다. screen에 period/freq를 전달하지 않는다. 반환 표의 tableId로 QueryTable 계산을 이어갈 수 있다."
+        )
+    elif apiRef == "Company.panel":
+        contract["exampleCall"] = {
+            "apiRef": apiRef,
+            "args": {
+                "stockCode": "005930",
+                "topic": "IS",
+                "period": "recent:5Y",
+                "freq": "Y",
+                "includeContext": False,
+            },
+        }
+    elif apiRef == "dataHub.catalog":
+        contract["argsContract"] = {
+            "query": {
+                "required": False,
+                "type": "object",
+                "description": "search, owners, layers, kinds로 metadata 필터",
+            }
+        }
+        contract["exampleCall"] = {"apiRef": apiRef, "args": {"query": {"search": "scan"}}}
+    elif apiRef == "dataHub.query":
+        contract["argsContract"] = {
+            "target": {"required": True, "type": "str", "description": "catalog의 assetId"},
+            "query": {
+                "required": False,
+                "type": "object",
+                "description": "subjects, measures, projection, time, budget. 값의 지원 여부는 asset 계약을 따른다.",
+            },
+        }
+        contract["exampleCall"] = {
+            "apiRef": apiRef,
+            "args": {
+                "target": "scan.ratio",
+                "query": {"measures": ["roe"]},
+            },
+        }
     return contract
 
 

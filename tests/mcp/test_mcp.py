@@ -59,7 +59,7 @@ def test_mcp_canonical_tools_execute():
     """canonical tool dispatch (registry SSOT 경유). 0.11 부터 dict 직접 반환 (structuredContent 활용)."""
     from dartlab.mcp import _executeWorkspaceAgentTool
 
-    found = _executeWorkspaceAgentTool("ReadSkill", {"query": "테스트 규칙", "limit": 3})
+    found = _executeWorkspaceAgentTool("ReadSkill", {"query": "테스트 규칙", "limit": 3, "audience": "all"})
     assert found["refs"][0]["id"] == "skill:operation.testing"
 
     spec = _executeWorkspaceAgentTool("ReadCapability", {"query": "재무상태표", "limit": 5})

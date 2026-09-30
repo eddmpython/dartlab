@@ -9,6 +9,7 @@ from typing import Any
 
 from .drivers.base import AgentRuntimeDriver, DriverHandle
 from .eventBuffer import EventBuffer
+from .sessionTools import clearSessionTables
 
 
 @dataclass
@@ -40,6 +41,7 @@ class SessionManager:
             old = self._sessions.pop(sessionId, None)
             if old:
                 old.driver.close(old.handle)
+                clearSessionTables(sessionId)
             self._sessions[sessionId] = managed
             while len(self._sessions) > self.maxHotSessions:
                 evictId = next(
@@ -56,6 +58,7 @@ class SessionManager:
                     raise RuntimeError("모든 hot session이 실행 중이라 새 세션을 열 수 없습니다")
                 evicted = self._sessions.pop(evictId)
                 evicted.driver.close(evicted.handle)
+                clearSessionTables(evictId)
         return managed
 
     def get(self, sessionId: str) -> ManagedSession | None:
@@ -82,6 +85,7 @@ class SessionManager:
             managed = self._sessions.pop(sessionId, None)
         if managed:
             managed.driver.close(managed.handle)
+        clearSessionTables(sessionId)
 
     def closeAll(self) -> None:
         """Sig: closeAll() -> None.
@@ -95,6 +99,7 @@ class SessionManager:
             self._sessions.clear()
         for managed in sessions:
             managed.driver.close(managed.handle)
+            clearSessionTables(managed.handle.sessionId)
 
     def status(self) -> list[dict[str, Any]]:
         """Sig: status() -> list[dict[str, Any]].

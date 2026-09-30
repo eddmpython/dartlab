@@ -1025,6 +1025,7 @@
         "조건형 screen"
       ],
       "nextSkills": [
+        "engines.scan.crossSectionStockScreen",
         "engines.analysis",
         "engines.credit",
         "engines.quant"

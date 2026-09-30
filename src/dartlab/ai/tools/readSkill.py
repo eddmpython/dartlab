@@ -1,12 +1,4 @@
-"""read_skill / get_skill_body — Skill OS 검색 + frontmatter/본문 반환.
-
-skillSearch.py 의 후속. SSOT v2: dartlab.skills.searchSkills 호출 + LLM 친화 포맷.
-
-read_skill 은 default 로 frontmatter + bodyPreview (1500 자) 만 반환 — context 절약.
-LLM 이 단일 skill 의 본문 전문이 필요하면 get_skill_body(skillId) 로 두 번째 호출.
-fallback workbench (brief/heuristic) 처럼 한 번에 본문이 필요한 호출자는
-includeBody=True 로 raw markdown 까지 받아간다.
-"""
+"""질문에 필요한 Skill 후보와 실행 계약을 짧게 반환한다. 전문은 GetSkillBody로 조회한다."""
 
 from __future__ import annotations
 
@@ -38,6 +30,7 @@ def _inlineCapabilities(
     *,
     isTopRank: bool,
     capabilityLimit: int | None = None,
+    compact: bool = False,
 ) -> dict[str, dict]:
     """spec.capabilityRefs id 마다 CAPABILITIES payload fetch → trimmed dict.
 
@@ -55,6 +48,8 @@ def _inlineCapabilities(
     except Exception:  # noqa: BLE001
         return {}
     field_caps = _CAP_FIELD_CAPS if isTopRank else _CAP_FIELD_CAPS_OTHERS
+    if compact:
+        field_caps = {"summary": 200, "args": 600, "guide": 400}
     out: dict[str, dict] = {}
     boundedLimit = capabilityLimit if capabilityLimit is not None else (10 if isTopRank else 5)
     for ref in capabilityRefs[: max(1, min(int(boundedLimit), 12))]:
@@ -66,10 +61,14 @@ def _inlineCapabilities(
             "executionGuide": str(entry.get("executionGuide") or ""),
             "replacementRefs": list(entry.get("replacementRefs") or ())[:5],
         }
-        if isTopRank and isinstance(entry.get("declared"), dict):
+        if isTopRank and not compact and isinstance(entry.get("declared"), dict):
             trimmed["declared"] = dict(entry["declared"])
         if isTopRank and isinstance(entry.get("execution"), dict):
             trimmed["execution"] = dict(entry["execution"])
+            if compact:
+                trimmed["execution"].pop("nativeExample", None)
+                trimmed.pop("executionGuide", None)
+                trimmed.pop("replacementRefs", None)
         for field, cap in field_caps.items():
             value = entry.get(field)
             if not value:
@@ -135,22 +134,30 @@ def _extractProcedureSections(body: str, *, cap: int) -> str:
 def readSkill(
     query: str,
     *,
-    limit: int = 8,
+    limit: int = 3,
     includeUser: bool = True,
     includeBody: bool = False,
+    audience: str = "analysis",
 ) -> ToolResult:
-    """Skill OS 후보 검색.
+    """기본 세 후보와 실행 계약을 반환한다.
 
-    Default (includeBody=False): frontmatter + bodyPreview (앞 3000 자, procedure 섹션
-    우선 추출) 만 ref payload 에. includeBody=True: raw markdown 본문 전체를 payload.body
-    에 함께. fallback workbench (brief/heuristic) 가 한 번에 본문까지 필요할 때만 사용.
-    LLM 자율 chat-native 경로는 default 로 두고, 특정 skill 본문이 필요하면
-    `get_skill_body` 도구로 두 번째 호출.
+    Args: audience=analysis는 개발·운영 문서를 제외한다. all은 전체 카탈로그를 검색한다.
+        includeBody=True는 본문과 연결 스킬을 함께 읽는 기존 호출자를 위한 옵션이다.
+    Returns: 후보의 짧은 설명, 실행 인자 계약, 원문을 여는 skillRef.
+    Guide: 본문 preview는 첫 후보에만 한 번 싣는다. 추가 절차는 GetSkillBody로 확인한다.
     """
     from dartlab.reference.capability.analysisGraph import coveragePacketForQuestion
+    from dartlab.reference.capability.execution import isEngineCallableRef
     from dartlab.skills import describeSkill, getSkill, searchSkills
 
-    matches = searchSkills(query or "", limit=max(1, int(limit or 8)), includeUser=includeUser)
+    if audience not in {"analysis", "all"}:
+        return ToolResult(False, "audience는 analysis 또는 all입니다.", error="invalid_audience")
+    matches = searchSkills(
+        query or "",
+        limit=max(1, min(int(limit or 3), 20)),
+        includeUser=includeUser,
+        excludeCategories=("operation", "start", "runtime") if audience == "analysis" else (),
+    )
     coverage = coveragePacketForQuestion(query or "")
     coverageRefs = [str(ref) for ref in coverage.get("candidateCapabilityRefs") or []]
     refs: list[Ref] = []
@@ -169,13 +176,13 @@ def readSkill(
         spec = match.skill
         body = _loadBody(spec.id)
 
-        previewCap = _BODY_PREVIEW_CHARS if rank == 0 else 1_000
-        body_preview = _extractProcedureSections(body, cap=previewCap) if body else ""
+        previewCap = (_BODY_PREVIEW_CHARS if rank == 0 else 1_000) if includeBody else (900 if rank == 0 else 0)
+        body_preview = _extractProcedureSections(body, cap=previewCap) if body and previewCap else ""
         payload = {
             "status": spec.status,
             "id": spec.id,
             "title": spec.title,
-            "purpose": spec.purpose[:800],
+            "purpose": spec.purpose[:200],
             "kind": spec.kind,
             "scope": spec.scope,
             "score": match.score,
@@ -185,9 +192,6 @@ def readSkill(
         if includeBody:
             payload["body"] = body
             payload["bodyPreview"] = body_preview
-        else:
-            payload["bodyPreview"] = body_preview
-            payload["bodyTruncated"] = bool(body) and len(body) > previewCap
         refs.append(
             Ref(
                 id=f"skill:{spec.id}",
@@ -210,7 +214,7 @@ def readSkill(
         # 체인 전체 (max 3 노드) 를 한 번에 본다. cap 자체는 절차 섹션 우선 추출이라 inline
         # 노드당 ~2k chars → 3 노드 = 6k chars 한도. 추가 비용 ~1.5k token (수용).
         chain_inline: list[dict] = []
-        if rank == 0 and next_skills:
+        if includeBody and rank == 0 and next_skills:
             seen = {spec.id}
             for linked_id in next_skills[:3]:
                 if linked_id in seen:
@@ -239,8 +243,13 @@ def readSkill(
         # top-1 후보: 6 필드 (summary/args/example/guide/capabilities/returns).
         # 그 외: summary + args 만. → ReadCapability 자동 동행 회귀 해소.
         explicitRefs = list(spec.capabilityRefs)
-        combinedRefs = list(dict.fromkeys([*explicitRefs, *(coverageRefs if rank == 0 else [])]))
-        capability_details = _inlineCapabilities(combinedRefs, isTopRank=True) if rank == 0 else {}
+        executableRefs = [ref for ref in explicitRefs if isEngineCallableRef(ref)]
+        combinedRefs = list(dict.fromkeys([*executableRefs[:2], *(coverageRefs if rank == 0 else []), *explicitRefs]))
+        capability_details = (
+            _inlineCapabilities(combinedRefs, isTopRank=True, capabilityLimit=8, compact=not includeBody)
+            if rank == 0
+            else {}
+        )
 
         rows.append(
             {
@@ -251,13 +260,13 @@ def readSkill(
                 "status": spec.status,
                 "trustTier": "localUserDraft" if spec.scope == "user" else "builtin",
                 "score": match.score,
-                "purpose": spec.purpose[:1_200],
-                "whenToUse": list(spec.whenToUse)[:16],
+                "purpose": spec.purpose[:300],
+                "whenToUse": list(spec.whenToUse)[:3],
                 "capabilityRefs": list(spec.capabilityRefs)[:12],
                 "coverageCapabilityRefs": coverageRefs if rank == 0 else [],
                 "capabilityDetails": capability_details,
                 "requiredEvidence": list(spec.requiredEvidence)[:16],
-                "expectedOutputs": list(spec.expectedOutputs)[:12],
+                "expectedOutputs": list(spec.expectedOutputs)[:3],
                 "visualGuidance": list(spec.visualGuidance)[:8],
                 "visualRefs": list(spec.visualRefs)[:8],
                 "nextSkills": next_skills,
@@ -271,7 +280,11 @@ def readSkill(
         summary=f"Skill OS 후보 {len(refs)}개"
         + (f" (+ chain {len(rows[0]['chainInline'])})" if rows and rows[0].get("chainInline") else ""),
         refs=refs,
-        data={"skills": rows, "coverage": coverage},
+        data={
+            "skills": rows,
+            "coverage": coverage,
+            "more": "GetSkillBody(skillId)로 절차 전문, ReadCapability(query)로 추가 실행 계약을 조회할 수 있습니다.",
+        },
     )
 
 
@@ -294,10 +307,17 @@ def getSkillBody(skillId: str, *, includeUser: bool = True) -> ToolResult:
     try:
         spec = getSkill(skill_id, includeUser=includeUser)
     except KeyError:
+        from dartlab.skills import searchSkills
+
+        alternatives = [
+            {"skillId": match.skill.id, "title": match.skill.title}
+            for match in searchSkills(skill_id, limit=3, includeUser=includeUser)
+        ]
         return ToolResult(
             ok=False,
-            summary=f"Skill 없음: {skill_id}",
+            summary=f"Skill 없음: {skill_id}. availableSkills의 실제 skillId를 선택하세요.",
             error="skill_not_found",
+            data={"availableSkills": alternatives},
         )
     body = ""
     try:
