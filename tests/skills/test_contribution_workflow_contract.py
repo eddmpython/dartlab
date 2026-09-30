@@ -17,20 +17,24 @@ def test_push_decision_uses_complete_cycle_not_request_only() -> None:
     text = _WORKFLOW.read_text(encoding="utf-8")
 
     assert "push는 별도 요청이 있을 때만 수행한다" not in text
-    assert "적정 cycle의 일반 push를 수행한다" in text
+    assert "기본 완료 범위는 검토, 검증, 커밋, 일반 push까지" in text
+    assert "별도 커밋·push 요청을 기다리지 않는다" in text
     assert "git log origin/master..HEAD" in text
     assert "git diff --name-only origin/master..HEAD" in text
 
 
-def test_push_decision_preserves_force_hold_and_ui_gates() -> None:
-    """위험한 push와 UI 범위는 자동 판단의 예외로 명시한다."""
+def testPushPreservesHoldAndValidationWithoutExtraUiApproval() -> None:
+    """일반 push 위임은 UI 검수를 포함하며 보류 지시와 위험한 이력 변경은 구분한다."""
     text = _WORKFLOW.read_text(encoding="utf-8")
 
     assert "force push" in text
     assert "push 보류" in text
     for path in ("landing/src", "ui/packages/surfaces", "ui/packages/runtime", "ui/apps/local"):
         assert path in text
-    assert "운영자의 시각 검수 또는 명시 승인을 기다린다" in text
+    assert "검수를 통과한 UI 변경도 별도 승인 없이 일반 push한다" in text
+    assert "검증 우회 플래그로 push하지 않는다" in text
+    assert "그런 파일이 있다는 이유만으로 검증한" in text
+    assert "본인 커밋의 push를 보류하지 않는다" in text
 
 
 def test_claude_routes_git_rules_without_duplicating_them() -> None:

@@ -36,8 +36,8 @@ procedure:
   - operation.code, operation.architecture, operation.testing 중 변경 범위에 맞는 규칙을 먼저 읽는다.
   - 변경은 한 논리 단위로 묶고, unrelated dirty worktree는 되돌리지 않는다.
   - 검증은 변경 범위에 맞게 최소 충분하게 실행하고 결과를 남긴다.
-  - 커밋은 명시 경로만 포함하고 한국어 메시지로 남긴다.
-  - push 직전 전체 미푸시 범위와 검증 상태를 확인해 자동 push, 승인 대기, 보류 중 하나를 판단한다.
+  - 검증한 본인 변경을 명시 경로로 커밋하고 한국어 메시지로 남긴다.
+  - 전체 미푸시 범위를 검토한 뒤 일반 push까지 완료하며 별도 확인을 다시 요청하지 않는다.
 requiredEvidence:
   - skillRef
   - testRef
@@ -75,11 +75,11 @@ forbidden:
 examples:
   - 코드 변경 전 operation.code와 operation.testing을 확인한다.
   - "문서 변경 커밋은 `문서: README Skill OS 안내 정리`처럼 범주와 내용을 함께 적는다."
-  - "완결된 green master 작업은 전체 미푸시 범위에 UI 변경이 없으면 자동 push한다."
+  - "완결된 master 작업은 검증 후 커밋과 일반 push까지 완료한다. UI 변경은 실제 화면 검수도 수행한다."
 source:
   type: skill_os
   format: markdown
-lastUpdated: '2026-08-11'
+lastUpdated: '2026-09-30'
 testUniverse:
   market: KR
   stockCodes:
@@ -113,6 +113,7 @@ testUniverse:
 - 저장소 기본 작업 브랜치는 `master`다. 별도 브랜치와 worktree를 만들지 않는다. 외부 기여자는 fork의
   `master`에서 작업하고 PR로 제출한다.
 - 커밋은 한 논리 단위로 나눈다. 기능 변경과 생성 산출물 동기화가 분리 가능한 경우 별도 커밋으로 둔다.
+- 변경 작업의 기본 완료 범위는 검토, 검증, 커밋, 일반 push까지다. 별도 커밋·push 요청을 기다리지 않는다.
 - staging은 명시 경로만 사용한다. 예: `git add README.md src/dartlab/skills/specs/operation/contributionWorkflow.md`.
 - 전체 staging 명령 (`git add .`, `git add -A`)은 사용하지 않는다.
 - 커밋 메시지는 한국어로 작성하고, 변경 범주와 내용을 함께 담는다. 예: `문서: Skill OS 운영 안내 추가`.
@@ -120,23 +121,26 @@ testUniverse:
 
 ## Push 판단 규칙
 
-push는 요청 유무 한 가지로 결정하지 않는다. 다음 순서로 판단하고 첫 번째로 맞는 조건을 적용한다.
+완결된 작업은 아래 검증을 마친 뒤 별도 승인 없이 일반 push한다. 이는 DartLab 변경 작업에 대한
+기본 위임이며, 전역 안내의 "push는 별도 권한"을 매번 새 확인이 필요한 것으로 해석하지 않는다.
 
-1. force push, tag 이동, 공개 이력 재작성은 운영자의 직접 지시 없이는 수행하지 않는다.
-2. 운영자가 push 보류를 명시했으면 해제 지시 전까지 보류한다.
-3. 운영자가 일반 push를 직접 지시했으면 현재 브랜치와 미푸시 범위를 확인한 뒤 수행한다. 미완료 검증은
-   숨기지 않고 함께 보고한다.
-4. 별도 지시가 없어도 논리 단위가 완결되고 다음 조건을 모두 만족하면 적정 cycle의 일반 push를 수행한다.
-   - 현재 브랜치가 `master`다.
-   - 작업 트리에 stray 변경이 없다.
-   - 변경에 맞는 테스트가 동행했고 로컬 차단 게이트에 신규 실패가 없다.
-   - `git log origin/master..HEAD`와 `git diff --name-only origin/master..HEAD`로 push될 전체 범위를 확인했다.
-5. 전체 미푸시 범위에 사용자 화면이나 화면 배선 변경(`landing/src`, `ui/packages/surfaces`,
-   `ui/packages/runtime`, `ui/apps/local`)이 포함되면 자동 push 대신 운영자의 시각 검수 또는 명시 승인을 기다린다.
-6. 미완료, stray, 신규 실패, 비기본 브랜치 등 자동 push 조건이 부족하면 그 조건만 명시하고 보류한다.
+1. 운영자가 push 보류를 명시했으면 해제 지시 전까지 보류한다. force push, tag 이동, 공개 이력
+   재작성은 이 기본 위임에 포함되지 않으며 운영자의 직접 지시가 필요하다.
+2. 현재 브랜치와 원격을 확인한다. 기본 작업 대상은 `master`와 `origin/master`다.
+   `git log origin/master..HEAD`와 `git diff --name-only origin/master..HEAD`로 전체 미푸시 범위를
+   검토한다. 다른 작업의 미검증 커밋이 함께 나가는지도 확인한다.
+3. 변경에 맞는 테스트와 필수 게이트를 통과시킨다. 실패는 수정하고 해당 검증을 다시 실행한다.
+   검증 우회 플래그로 push하지 않는다.
+4. 사용자 화면이나 화면 배선(`landing/src`, `ui/packages/surfaces`, `ui/packages/runtime`,
+   `ui/apps/local`)이 바뀌었으면 `operation.uiQa`에 따라 실제 화면과 핵심 동작을 직접 검수한다.
+   검수를 통과한 UI 변경도 별도 승인 없이 일반 push한다.
+5. 관련 없는 미커밋 변경은 보존하고 staging에서 제외한다. 그런 파일이 있다는 이유만으로 검증한
+   본인 커밋의 push를 보류하지 않는다. 본인 커밋이 그 미커밋 변경에 의존하면 먼저 의존성을 해소한다.
+6. 일반 push를 실행하고 원격 반영을 확인한 뒤 커밋 ID와 검증 결과를 보고한다. 인증·권한 문제,
+   원격 충돌, 실제 검증 실패 등으로 진행할 수 없으면 구체적인 원인을 보고한다.
 
-자동 push와 승인 대기를 구분할 때 현재 커밋 하나만 보지 않는다. 일반 push는 `origin/master..HEAD`의 모든
-조상 커밋을 함께 올리므로 이전 작업의 UI 변경과 미검증 변경도 같은 범위에서 판단한다.
+일반 push는 현재 커밋뿐 아니라 모든 미푸시 조상 커밋을 함께 올린다. 소유권이나 검증이 불명확한
+변경을 섞지 않고, 해결할 수 있는 문제는 작업 안에서 해결한 뒤 push까지 이어간다.
 
 ## 공개 산출물 규칙
 
