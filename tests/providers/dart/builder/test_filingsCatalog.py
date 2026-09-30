@@ -45,6 +45,8 @@ def testFilingsReadOnlyMetadataAndKeepExactPeriod(monkeypatch, tmp_path):
         return original(paths, columns=columns)
 
     monkeypatch.setattr(dataLoader, "readParquetSafe", projected)
+    metadata = read.readFilingMetadata("005930")
+    assert metadata.to_dicts() == [{"period": "2025Q4", "rceptNo": "20260310002820"}]
     result = buildFilings(SimpleNamespace(_hasPanel=True, stockCode="005930"))
     assert result["period"].to_list() == ["2025Q4"]
     assert result["reportType"].to_list() == ["사업보고서"]

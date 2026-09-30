@@ -31,6 +31,43 @@ def catalog(path, rows):
     normalizeCatalogRows(rows).write_parquet(path)
 
 
+def testExplicitModelPreparationPinsRevisionsAndDownloadFiles(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(semantic, "_requireModels", lambda: None)
+    monkeypatch.setattr(semantic, "_modelDir", lambda name: tmp_path / name.rsplit("/", 1)[-1])
+    monkeypatch.setattr("huggingface_hub.snapshot_download", lambda name, **kwargs: calls.append((name, kwargs)))
+    semantic.prepareSemanticModels()
+    assert [name for name, args in calls] == [semantic._MODEL, semantic._RERANK_MODEL]
+    assert [args["revision"] for name, args in calls] == [semantic._REVISION, semantic._RERANK_REVISION]
+    for name, args in calls:
+        assert len(args["revision"]) == 40
+        assert args["local_dir"] == str(tmp_path / name.rsplit("/", 1)[-1])
+        assert "tokenizer.json" in args["allow_patterns"]
+        assert all("*" not in pattern for pattern in args["allow_patterns"])
+    assert "model.safetensors" in calls[0][1]["allow_patterns"]
+    assert "onnx/model_qint8_avx512_vnni.onnx" in calls[1][1]["allow_patterns"]
+
+
+def testCatalogSourceLineageSurvivesSemanticProjection(tmp_path, encoder):
+    from dartlab.providers.dart.search.sourceCatalog import buildCatalogSnapshot, buildSourceManifest
+
+    raw, snapshot, index = tmp_path / "raw.parquet", tmp_path / "catalog.parquet", tmp_path / "index"
+    pl.DataFrame([{"rceptNo": "20250101000001", "date": "20250101", "searchText": "전력 공급 계획"}]).write_parquet(raw)
+    manifest = buildSourceManifest("allFilings", [raw], producerRun={"id": "run-1"})
+    assert manifest["totalRows"] == manifest["changedRows"] == 1
+    assert manifest["producerRun"] == {"id": "run-1"}
+    assert manifest["files"][0]["sizeBytes"] == raw.stat().st_size
+    assert manifest["files"][0]["hash"]
+    frame = buildCatalogSnapshot("allFilings", [raw], sourceDataAsOf="20250102", sourceAdapterVersion="trial-v2")
+    assert frame["sourceAdapterVersion"].to_list() == ["trial-v2"]
+    frame.write_parquet(snapshot)
+    semantic.buildSemanticIndex(indexDir=index, sources=[(snapshot, "catalog")])
+    hit = semantic.searchSemantic("전력", indexDir=index).row(0, named=True)
+    assert hit["sourceRef"] == frame["sourceRef"][0]
+    assert hit["sourceDataAsOf"] == "20250102"
+    assert hit["coverage"] == "catalogExcerpt"
+
+
 def testIncrementalReusesTextAndRemovesDeletedDocuments(tmp_path, encoder):
     source, index = tmp_path / "source.parquet", tmp_path / "index"
     rows = [
@@ -40,6 +77,9 @@ def testIncrementalReusesTextAndRemovesDeletedDocuments(tmp_path, encoder):
     catalog(source, rows)
     first = semantic.buildSemanticIndex(indexDir=index, sources=[(source, "catalog")])
     assert first["encoded"] == 2
+    info = semantic.semanticIndexInfo(indexDir=index)
+    assert info["available"] and info["passages"] == 2
+    assert "shards" not in info
     assert semantic.buildSemanticIndex(indexDir=index, sources=[(source, "catalog")])["encoded"] == 0
     rows[0]["companyName"] = "변경된 이름"
     rows[1]["deleted"] = True
@@ -51,6 +91,7 @@ def testIncrementalReusesTextAndRemovesDeletedDocuments(tmp_path, encoder):
     assert result.height == 2
     assert "20250102000001" not in result["rcept_no"]
     assert "변경된 이름" in result["corp_name"]
+    assert semantic.semanticIndexInfo(indexDir=index)["passages"] == 2
 
 
 def testFailedRebuildKeepsLastReadableSnapshot(tmp_path, encoder, monkeypatch):
@@ -139,11 +180,16 @@ def testFiltersApplyBeforeRankingAndRelatedSearchExcludesSeed(tmp_path, encoder)
     otherCompanies = semantic.searchSemantic("", relatedTo=seed, excludeStockCode="005930", indexDir=index)
     assert set(otherCompanies["stock_code"]) == {"000660"}
     assert "news" not in otherCompanies["source"]
+    assert list(semantic.iterSemantic("", relatedTo=seed, excludeStockCode="005930", indexDir=index)) == (
+        otherCompanies.to_dicts()
+    )
     with pytest.raises(ValueError, match="passageId"):
         semantic.searchSemantic("", relatedTo="missing", indexDir=index)
 
 
 def testMissingSemanticIndexExplainsPreparation(tmp_path, encoder):
+    assert semantic.semanticIndexInfo(indexDir=tmp_path) == {"available": False}
+    assert encoder == []
     with pytest.raises(RuntimeError, match="--build-semantic"):
         semantic.searchSemantic("설비", indexDir=tmp_path)
 

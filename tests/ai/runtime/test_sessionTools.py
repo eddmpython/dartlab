@@ -12,9 +12,19 @@ from dartlab.ai.runtime.processSupervisor import JsonRpcChannel
 from dartlab.ai.runtime.readiness import _runtimeStatusEntry, probeToolConnection
 from dartlab.ai.runtime.registry import loadRuntimeRegistry
 from dartlab.ai.runtime.sessionTools import callSessionTool, sessionToolSpecs
-from dartlab.ai.tools.registry import executeAgentTool
+from dartlab.ai.tools.registry import agentToolSpecs, executeAgentTool, isToolReadOnly
 
 pytestmark = pytest.mark.unit
+
+
+def testSessionAdvertisesCanonicalReadOnlySchemas():
+    specs = agentToolSpecs()
+    names = [spec["name"] for spec in specs]
+    assert {"ReadSkill", "EngineCall", "PeerCompareN"}.issubset(names)
+    assert len(names) == len(set(names))
+    assert not {"RunPython", "SaveArtifact"}.intersection(names)
+    assert all(isToolReadOnly(name) for name in names)
+    assert sessionToolSpecs() == [{key: spec[key] for key in ("name", "description", "inputSchema")} for spec in specs]
 
 
 def testSessionOnlyExecutesAdvertisedReadOnlyTools(monkeypatch):

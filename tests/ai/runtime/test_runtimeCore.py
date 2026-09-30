@@ -554,6 +554,18 @@ def testProcessSupervisorUsesNdjsonWithoutShell(tmp_path):
         supervisor.stop()
 
 
+def testProcessSupervisorRetainsBoundedDiagnosticText(tmp_path):
+    from io import BytesIO
+    from types import SimpleNamespace
+
+    supervisor = ProcessSupervisor(ProcessSpec((sys.executable,), tmp_path, outputLimitBytes=4096))
+    tail = "인증 세션이 종료됨".encode("utf-8") + b"\xff"
+    supervisor.process = SimpleNamespace(stderr=BytesIO(b"x" * 4096 + tail))
+    supervisor._readStderr()
+    assert supervisor.stderrText() == "인증 세션이 종료됨\ufffd"
+    assert supervisor._stderrBytes <= supervisor.spec.outputLimitBytes
+
+
 def testJsonRpcStartRequestUsesAnIdWithoutWaiting(tmp_path):
     from dartlab.ai.runtime.processSupervisor import JsonRpcChannel
 

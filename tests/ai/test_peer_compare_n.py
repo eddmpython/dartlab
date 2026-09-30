@@ -173,6 +173,10 @@ def testPeerFactsSkipWideBoardAndUnrequestedContext(monkeypatch):
 
     import polars as pl
 
+    from dartlab.ai.tools.companyMetrics import statementTable
+
+    selected = []
+
     class Company:
         corpName = "기업"
 
@@ -181,8 +185,12 @@ def testPeerFactsSkipWideBoardAndUnrequestedContext(monkeypatch):
             raise AssertionError("전체 원문 보드는 필요하지 않다")
 
         def select(self, topic, **kwargs):
+            selected.append((topic, kwargs))
             return SimpleNamespace(df=pl.DataFrame({"snakeId": ["sales", "total_assets"], "2025Q4": [100.0, 300.0]}))
 
+    statement = statementTable(Company(), "IS", scope="separate")
+    assert statement["2025Q4"].to_list() == [100.0, 300.0]
+    assert selected == [("IS", {"scope": "separate", "strict": False})]
     monkeypatch.setattr("dartlab.ai.tools.peerCompareN.resolveCompanyOrNone", lambda code: Company())
 
     def forbidden(*args):

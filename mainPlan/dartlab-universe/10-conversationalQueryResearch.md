@@ -280,6 +280,7 @@ dartlab.search.indexInfo()["semantic"]
 회귀 테스트는 native 세션 재개·도구 권한·host receipt, 인자 계약, finance 직접 조회, 보고 기간·공시 링크, 증분 재사용·삭제·실패 보존·읽기 중 publication, 원문 뒤쪽 문단, 기간·출처·회사 제외, 외부 본문 표시와 근거 재시작 복구를 다룬다.
 
 - 변경 관련 묶음 234 passed, 1 skipped. 외부 본문 경계 보강 뒤 관련 52 passed, 검색·공개 문서 계약 보강 뒤 54 passed, 1 skipped. 검색 함수 정리 뒤 최종 19 passed. 각 묶음은 중복 테스트를 포함하므로 합산하지 않는다.
+- 커밋 후 공개 함수 참조 검사에서 누락된 직접 계약을 보강했다. 해당 묶음 100 passed, 변경된 소스 25개 파일의 공개 함수 138개에서 테스트 참조 누락 0건이다. 이는 실행 경로의 전체 coverage 비율을 뜻하지 않는다.
 - L0/L1.5 strict guard, lint, 포맷, 복잡도·죽은 코드, source/wheel smoke, 노트북 공개 계약, schema drift, eval, mutation smoke, DART panel 검사를 통과했다. 선택 인덱스가 없는 상태는 available=False로 명시하고 실제 검색은 준비 오류를 내므로 optional loader로 감사 목록에 등록했다.
 - UI 타입 검사 오류 0건, 기존 경고 48건. 변경 adapter 테스트 4 passed. 로컬 UI·landing 빌드와 데스크톱·모바일 화면 검수를 통과했다.
 - 전체 preflight의 test-fast는 6,492 passed, 17 skipped, 1 xfailed 뒤 79%에서 worker 종료로 중단됐다. 같은 감사 테스트를 별도 재현하면 약 3,116 MB에서 기존 메모리 보호가 종료한다. 한도를 올려 통과시키지 않았다. 실행 도중 발견된 CLI 인자·topK mock·문서 호출 계약 실패 3건은 수정 후 관련 묶음에서 재검증했다. 미실행된 나머지 전체 테스트까지 통과했다고 주장하지 않는다.
