@@ -221,6 +221,33 @@ def test_batch_collect_all_callable() -> None:
     assert callable(batchCollectAll)
 
 
+def test_batchUsesFilingIdentityWhenCorpMasterHasNoStockCode(monkeypatch):
+    from dartlab.gather.dart import batch, batchWorker
+
+    monkeypatch.setattr(batch, "resolveDartKeys", lambda: ["fake-key"])
+    monkeypatch.setattr(batch, "_resolveCorpMap", lambda codes: {code: ("", code) for code in codes})
+
+    class Client:
+        exhausted = False
+
+        def __init__(self, *args):
+            pass
+
+        async def close(self):
+            pass
+
+    async def collect(stockCode, corpCode, corpName, client, **kwargs):
+        assert (stockCode, corpCode, corpName) == ("266690", "00960623", "덕산넵코어스")
+        return 109
+
+    monkeypatch.setattr(batch, "AsyncDartClient", Client)
+    monkeypatch.setattr(batchWorker, "_collectFinance", collect)
+    result = batch.batchCollect(
+        ["266690"], categories=["finance"], showProgress=False, corpMap={"266690": ("00960623", "덕산넵코어스")}
+    )
+    assert result == {"266690": {"finance": 109}}
+
+
 def test_batch_collect_invokes_on_checkpoint_per_n_stocks(monkeypatch) -> None:
     """batchCollect 가 N 종목마다 onCheckpoint 콜백 호출 + 종료 직전 final flush.
 

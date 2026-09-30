@@ -25,7 +25,7 @@ on:
     inputs:
       lookback_days:
         description: '신규 공시 조회 기간 (일)'
-        default: '14'
+        default: '85'
         type: string
       mode:
         description: 'recent (list.json 기반) / full (88분기 차집합, 무거움)'
@@ -115,7 +115,7 @@ jobs:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
           DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: "6"  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}  # checkpoint subprocess (uploadData.py) 가 필요
-          SYNC_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '14' }}
+          SYNC_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '85' }}
           SYNC_CATEGORIES: finance,report
           SYNC_STATE_SCOPE: fr  # 병렬 Job pending.txt 경쟁 회피
           PYTHONUNBUFFERED: "1"

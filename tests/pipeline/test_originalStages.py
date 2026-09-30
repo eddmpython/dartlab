@@ -332,6 +332,19 @@ def test_run_allfilings_callable() -> None:
     assert callable(runAllFilings)
 
 
+def test_seedRecentDatesPreservesLocalBodiesAndPullsPublishedDays(monkeypatch):
+    from dartlab.gather.dart import allFilingsCollector as coll
+    from dartlab.gather.dart import allFilingsSync as sync
+    from dartlab.pipeline.stages import allFilings
+
+    monkeypatch.setattr(coll, "collectedDates", lambda: ["20260929"])
+    monkeypatch.setattr(sync, "_remoteDates", lambda **kwargs: {"20260928", "20260929"})
+    pulled = []
+    monkeypatch.setattr(sync, "_pullDates", lambda dates, **kwargs: pulled.extend(dates))
+    allFilings._seedRecentDates(["20260928", "20260929", "20260930"], None)
+    assert pulled == ["20260928"]
+
+
 def test_run_allfilings_retries_transient_collect(monkeypatch) -> None:
     """runAllFilings — collectMetaRange transient timeout 은 bounded retry 후 계속 진행."""
     import polars as pl
@@ -360,6 +373,7 @@ def test_run_allfilings_retries_transient_collect(monkeypatch) -> None:
         attempts["push"] += 1
 
     monkeypatch.setattr(coll, "collectMetaRange", flakyCollect)
+    monkeypatch.setattr(allFilings, "_seedRecentDates", lambda dates, token: None)
     monkeypatch.setattr(coll, "fillContent", fakeFill)
     monkeypatch.setattr(sync, "pushAllFilings", fakePush)
 
@@ -386,6 +400,7 @@ def test_run_allfilings_retries_transient_fill(monkeypatch) -> None:
 
     attempts = {"fill": 0}
     monkeypatch.setattr(coll, "collectMetaRange", lambda *args, **kwargs: 1)
+    monkeypatch.setattr(allFilings, "_seedRecentDates", lambda dates, token: None)
 
     def flakyFill(*args, **kwargs):
         attempts["fill"] += 1
@@ -427,6 +442,7 @@ def test_run_allfilings_progress_is_enabled_by_default(monkeypatch, capsys) -> N
         return pl.DataFrame({"rcept_no": ["1"]})
 
     monkeypatch.setattr(coll, "collectMetaRange", fakeCollect)
+    monkeypatch.setattr(allFilings, "_seedRecentDates", lambda dates, token: None)
     monkeypatch.setattr(coll, "fillContent", fakeFill)
     monkeypatch.setattr(sync, "pushAllFilings", lambda *args, **kwargs: None)
 

@@ -279,8 +279,8 @@ def fillContent(
         2. 기존 ``.parquet`` 의 rcept_no → fetch_status 맵 빌드.
         3. 처리 대상:
            - 신규 rcept_no (목록엔 있지만 .parquet 에 없는 것) → 본문 수집
-           - 기존 ``fetch_status="error"`` → retry
-           - 기존 ``fetch_status="ok"`` / ``"no_body"`` → skip (final)
+           - 기존 ``fetch_status="error"`` / ``"no_body"`` → retry
+           - 기존 ``fetch_status="ok"`` → skip
         4. 정기공시 (``_PERIODIC_REPORT_PATTERNS``) 는 row 자체 생략 — docs/ owner.
         5. atomic merge — skip row + 신규/retry row → tmp.parquet → rename.
 
@@ -341,15 +341,15 @@ def fillContent(
         existing = existingStatus.get(rceptNo)
         if existing is None:
             targets.append(metaRow)  # 신규
-        elif existing == "error":
+        elif existing in {"error", "no_body"}:
             targets.append(metaRow)  # retry
         else:
-            skipExisting += 1  # ok / no_body — final, skip
+            skipExisting += 1  # 이미 확보한 본문은 보존한다.
 
     if not targets:
         if showProgress:
             _log.info(
-                "[%s] 변경 없음: 기존 ok/no_body %d, 정기공시 skip %d, 처리 대상 0",
+                "[%s] 변경 없음: 기존 ok %d, 정기공시 skip %d, 처리 대상 0",
                 period,
                 skipExisting,
                 skipPeriodic,
@@ -359,7 +359,7 @@ def fillContent(
 
     if showProgress:
         _log.info(
-            "[%s] 처리 시작: 신규/retry %d, 기존 skip %d (ok/no_body), 정기공시 skip %d",
+            "[%s] 처리 시작: 신규/retry %d, 기존 skip %d (ok), 정기공시 skip %d",
             period,
             len(targets),
             skipExisting,

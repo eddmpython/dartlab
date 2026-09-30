@@ -189,7 +189,7 @@ def mergeSourceCatalogSnapshot(
     if previous.height == 0:
         return changed.filter(~pl.col("deleted")).select(CATALOG_COLUMNS)
     if changed.height == 0:
-        return previous.select(CATALOG_COLUMNS)
+        return _dropReplacedPartitions(source, previous, changed, changedFiles).select(CATALOG_COLUMNS)
 
     liveChanged = changed.filter(~pl.col("deleted"))
     changedDocKeys = _catalogStringSet(changed, "docKey")
@@ -217,7 +217,7 @@ def _mergedSourceManifest(
 ) -> dict[str, Any]:
     from dartlab.providers.dart.search.sourceCatalog import _intOrZero
 
-    files = _mergeManifestFiles(previousManifest, deltaManifest)
+    files = _mergeManifestFiles(previousManifest, deltaManifest, source=source)
     rawRows = sum(_intOrZero(row.get("rowCount")) for row in files)
     dataAsOf = catalogDataAsOf or max(
         [
@@ -249,25 +249,31 @@ def _mergedSourceManifest(
 def _mergeManifestFiles(
     previousManifest: Mapping[str, Any],
     deltaManifest: Mapping[str, Any],
+    *,
+    source: str,
 ) -> list[dict[str, Any]]:
     merged: dict[str, dict[str, Any]] = {}
     for row in previousManifest.get("files") or []:
         if not isinstance(row, Mapping):
             continue
-        path = _manifestFileKey(row)
+        path = _manifestFileKey(row, source=source)
         if path:
-            merged[path] = dict(row)
+            merged[path] = {**row, "path": path}
     for row in deltaManifest.get("files") or []:
         if not isinstance(row, Mapping):
             continue
-        path = _manifestFileKey(row)
+        path = _manifestFileKey(row, source=source)
         if path:
-            merged[path] = dict(row)
+            merged[path] = {**row, "path": path}
     return [merged[key] for key in sorted(merged)]
 
 
-def _manifestFileKey(row: Mapping[str, Any]) -> str:
-    return str(row.get("path") or "").replace("\\", "/")
+def _manifestFileKey(row: Mapping[str, Any], *, source: str) -> str:
+    path = str(row.get("path") or "").replace("\\", "/")
+    if path and source in {"dartPanel", "edgarPanel"}:
+        provider = "dart" if source == "dartPanel" else "edgar"
+        return f"{provider}/panel/{Path(path).name}"
+    return path
 
 
 def _manifestIdentity(manifest: Mapping[str, Any]) -> str:
@@ -296,7 +302,7 @@ def _dropReplacedPartitions(
     changed: pl.DataFrame,
     changedFiles: Iterable[str | Path],
 ) -> pl.DataFrame:
-    if previous.height == 0 or changed.height == 0:
+    if previous.height == 0:
         return previous
     if source == "dartPanel":
         stockCodes = {Path(path).stem for path in changedFiles if Path(path).stem}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 import polars as pl
+import pytest
 
 
 def test_merged_news_source_catalog_upserts_urls_without_dropping_same_article_date(tmp_path) -> None:
@@ -290,3 +291,44 @@ def test_merged_edgar_source_catalog_replaces_changed_ticker_partition(tmp_path)
     assert {row["ticker"] for row in rows} == {"AAPL", "MSFT"}
     assert any(row["sourceRef"] == "edgar:panel:0000320193-26-000001#section=0" for row in rows)
     assert all(row["sourceRef"] != "edgar:panel:0000320193-25-000001#section=0" for row in rows)
+
+
+def test_panelManifestUsesStablePathsAndPublishedByteDigest(tmp_path):
+    import hashlib
+
+    from dartlab.providers.dart.search.sourceCatalog import writeSourceCatalogArtifacts
+    from dartlab.providers.dart.search.sourceCatalogMerge import writeMergedSourceCatalogArtifacts
+
+    old = tmp_path / "old" / "005930.parquet"
+    changed = tmp_path / "another-run" / "005930.parquet"
+    old.parent.mkdir()
+    changed.parent.mkdir()
+    pl.DataFrame({"rceptNo": ["20260515002181"], "contentRaw": ["1분기 원문"]}).write_parquet(old)
+    previous = writeSourceCatalogArtifacts("dartPanel", [old], outDir=tmp_path / "before")
+    manifest = json.loads(previous["manifest"].read_text(encoding="utf-8"))
+    manifest["files"][0]["path"] = "data/dart/panel/005930.parquet"
+    pl.DataFrame(
+        {"rceptNo": ["20260515002181", "20260814003699"], "contentRaw": ["1분기 원문", "반기 원문"]}
+    ).write_parquet(changed)
+    result = writeMergedSourceCatalogArtifacts(
+        "dartPanel",
+        [changed],
+        previousCatalog=previous["catalog"],
+        previousManifest=manifest,
+        outDir=tmp_path / "after",
+    )
+    current = json.loads(result["manifest"].read_text(encoding="utf-8"))
+    assert len(current["files"]) == 1
+    assert current["files"][0]["path"] == "dart/panel/005930.parquet"
+    assert current["files"][0]["sha256"] == hashlib.sha256(changed.read_bytes()).hexdigest()
+    assert set(pl.read_parquet(result["catalog"])["rceptNo"]) == {"20260515002181", "20260814003699"}
+
+
+def test_panelCatalogDoesNotAcknowledgeUnreadableSource(tmp_path):
+    from dartlab.providers.dart.search.sourceCatalog import writeSourceCatalogArtifacts
+
+    path = tmp_path / "005930.parquet"
+    pl.DataFrame({"unrelated": ["not a panel"]}).write_parquet(path)
+    with pytest.raises(ValueError, match="source schema invalid"):
+        writeSourceCatalogArtifacts("dartPanel", [path], outDir=tmp_path / "out")
+    assert not (tmp_path / "out" / "dartPanel.source_manifest.json").exists()

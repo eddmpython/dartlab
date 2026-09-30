@@ -33,6 +33,18 @@ def _recentDates(days: int) -> list[str]:
     return [(today - timedelta(days=i)).strftime("%Y%m%d") for i in range(days)]
 
 
+def _seedRecentDates(dates: list[str], token: str | None) -> None:
+    """Preserve published bodies before retrying incomplete rows on a fresh runner."""
+    from dartlab.gather.dart.allFilingsCollector import collectedDates
+    from dartlab.gather.dart.allFilingsSync import _pullDates, _remoteDates
+
+    missing = set(dates) - set(collectedDates())
+    if missing:
+        available = missing & _remoteDates(token=token)
+        if available:
+            _pullDates(sorted(available), token=token)
+
+
 def _prevMonths(earliestYm: str, months: int, floorYm: str) -> list[str]:
     """``earliestYm``(YYYYMM) 직전부터 과거로 최대 ``months`` 개월(YYYYMM), ``floorYm`` 이상만."""
     out: list[str] = []
@@ -168,6 +180,7 @@ def runAllFilings(
             flush=True,
         )
         _retryTransient("collectMetaRange", lambda: collectMetaRange(start, end, showProgress=progress))
+        _retryTransient("seedRecentDates", lambda: _seedRecentDates(dates, token))
         rows = 0
         for d in dates:
             dayStarted = time.monotonic()

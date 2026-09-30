@@ -131,6 +131,23 @@ EDGAR 는 `data/original/edgar/docs/*.txt` 를 만들지 않는다. native 재�
 
 ## 갱신 절차
 
+### 수집과 검색 반영 확인
+
+원문 파일의 최신 날짜만으로 수집이나 검색 반영 완료를 판단하지 않는다. DART 정기공시 수집은
+공시 목록의 회사 고유번호를 다음 수집 단계까지 전달한다. 법인 목록의 종목코드 연결이 늦어도
+제출 회사의 identity를 잃지 않아야 한다. 미수집 접수번호는 `syncRecent.py`의 pending Parquet에
+보존하고, 새 공시 조회 기간이 지나도 실제 수록 여부를 다시 확인한다.
+
+panel 검색 catalog는 `pipeline.searchCatalog`가 HF 원문 내용 해시와 마지막 반영 해시를 대조한다.
+원문 복구 뒤 별도 catalog 단계가 실행되며, 이전 실행의 중단으로 남은 차이도 같은 경로에서 복구한다.
+원격 조회는 하나의 revision에 고정하고 파일 무결성과 기존 catalog 보존 검증을 통과한 결과만 발행한다.
+catalog 입력을 읽지 못한 경우 해당 파일을 처리 완료로 기록하지 않는다.
+
+비정기공시의 `no_body`는 조회 당시의 본문 부재다. 최근 날짜를 다시 수집할 때 HF의 성공 본문을
+먼저 확보하고 `no_body`와 오류 행을 재조회한다. 확보된 본문은 재시도 과정에서 보존한다.
+
+### 변경 전파
+
 1. source 변경 → L1 parquet rebuild (sync workflow).
 2. parquet schema 변경 → migration 절차 (별 spec).
 3. L2 cache invalidation (`BoundedCache.clear`).

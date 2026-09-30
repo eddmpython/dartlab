@@ -234,6 +234,12 @@ uv run python -X utf8 .github/scripts/search/evaluateSearchProductizationStatus.
 
 canary pack 은 source intent, source coverage, expected sourceRef, no-answer false accept 를 빠르게 본다. query-log gold 는 제품 졸업 gate 다. productization status 는 remote evidence, local indexInfo, HF round-trip, result contract, canary, quality report 를 한 번에 묶어 ops/release 가능 여부를 판정한다. source catalog 는 HF 파일 존재만으로 ops 증거가 아니며, `producerRun` lineage 와 previous full 대비 files/rows/catalogRows drop guard 통과 증거가 필요하다.
 
+DART panel catalog는 HF 원문과 마지막 반영 파일의 SHA256을 대조해 누락된 변경분을 복구한다.
+원문 복구와 catalog 반영은 `Original SSOT Sync`에서 순서대로 실행한다. 이전 실행이 중단돼도
+발행된 원문의 미반영 변경은 다음 실행에서 다시 발견한다. 최근 접수일 하나가 포함됐다는 사실은
+그 이전 보고서가 모두 검색된다는 증거가 아니다. 상세 발행 경계는
+[데이터 반영 계약](/skills/operation.dataLineage)을 따른다.
+
 Hard-negative gate 는 same-company-different-year, sibling filing, report-type mismatch, news/filing confusion, EDGAR/DART confusion, panel/filing confusion, noAnswer missing-event rows 를 포함한다. current-data candidate 360 rows 에서 metric/noAnswer gate 가 통과해도 `goldOrigin` 과 `reviewStatus` 가 real/reviewed 계열이 아니면 release evidence 로 보지 않는다. 2026-06-18 기준 current-data 360행은 `overallReadyRate=0.9806`, `exactDocHit10=0.9667`, `hardNegativeWinRate=0.9667`, `noAnswerFalseAcceptRate=0.0` 으로 metric gate 를 통과했지만 reviewer-approved 상태가 아니라 `releaseReady=false` 다.
 
 운영자가 실제 품질 후보를 쌓을 때는 새 API 를 만들지 않고 기존 `dartlab.search(...)` 를 그대로 쓴다. `DARTLAB_SEARCH_QUERY_LOG=1` 이면 `{dartlab.dataDir}/search/queryLogRaw.jsonl` 에 raw candidate row 를 남긴다. 각 row 는 `goldOrigin=userLog`, `reviewStatus=candidate`, top sourceRef/source/answerability/dataAsOf 를 가진다. 이 raw row 는 reviewer label 이 붙기 전까지 release gold 가 아니며, `prepareSearchGold.py` 를 거쳐 reviewed real gold 로 승격돼야 한다.

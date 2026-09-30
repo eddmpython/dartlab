@@ -10,6 +10,7 @@ from importlib import util
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 
 def _loadBuildSearchCatalogScript():
@@ -20,6 +21,89 @@ def _loadBuildSearchCatalogScript():
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_remoteReconciliationMergesAllBatchesBeforePublish(tmp_path, monkeypatch):
+    import huggingface_hub
+
+    from dartlab.pipeline import searchCatalog
+    from dartlab.providers.dart.search.sourceCatalog import writeSourceCatalogArtifacts
+
+    module = _loadBuildSearchCatalogScript()
+    first = tmp_path / "005930.parquet"
+    second = tmp_path / "000660.parquet"
+    for path in [first, second]:
+        pl.DataFrame({"rceptNo": [f"{path.stem}old"], "contentRaw": ["1분기"]}).write_parquet(path)
+    previous = writeSourceCatalogArtifacts("dartPanel", [first, second], outDir=tmp_path / "previous")
+    manifest = json.loads(previous["manifest"].read_text(encoding="utf-8"))
+    for path in [first, second]:
+        pl.DataFrame({"rceptNo": [f"{path.stem}new"], "contentRaw": ["반기"]}).write_parquet(path)
+    monkeypatch.setattr(
+        huggingface_hub,
+        "HfApi",
+        lambda: types.SimpleNamespace(repo_info=lambda *args, **kwargs: types.SimpleNamespace(sha="pinned")),
+    )
+    monkeypatch.setattr(module, "_downloadRemotePreviousManifest", lambda *args, **kwargs: manifest)
+    monkeypatch.setattr(module, "_downloadRemotePreviousCatalog", lambda *args, **kwargs: previous["catalog"])
+
+    def batches(*args, **kwargs):
+        assert kwargs["revision"] == "pinned"
+        yield [first]
+        yield [second]
+
+    monkeypatch.setattr(searchCatalog, "reconcileSourceFiles", batches)
+    published = []
+    monkeypatch.setattr(
+        module, "_upload", lambda source, result, prefix, **kwargs: published.append(pl.read_parquet(result["catalog"]))
+    )
+    module.main(
+        [
+            "--source",
+            "dartPanel",
+            "--input",
+            str(tmp_path / "none"),
+            "--out-dir",
+            str(tmp_path / "out"),
+            "--compare-remote-manifest",
+            "--merge-previous-catalog",
+            "--reconcile-remote-source",
+            "--upload",
+        ]
+    )
+    assert len(published) == 1
+    assert set(published[0]["rceptNo"]) == {"005930new", "000660new"}
+    current = json.loads((tmp_path / "out" / "dartPanel.source_manifest.json").read_text(encoding="utf-8"))
+    assert current["sourceRevision"] == "pinned"
+    assert len(current["files"]) == 2
+
+
+@pytest.mark.parametrize("catalogChanged", [False, True])
+def test_reconcilePublishAcceptsUnrelatedCommitsButRejectsCatalogRace(tmp_path, monkeypatch, catalogChanged):
+    import huggingface_hub
+
+    module = _loadBuildSearchCatalogScript()
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    manifest = tmp_path / "dartPanel.source_manifest.json"
+    manifest.write_text("{}", encoding="utf-8")
+
+    class Api:
+        def repo_info(self, *args, **kwargs):
+            return types.SimpleNamespace(sha="current")
+
+        def get_paths_info(self, repo, names, **kwargs):
+            digest = "changed" if catalogChanged and kwargs["revision"] == "current" else "same"
+            return [types.SimpleNamespace(path=name, blob_id=digest) for name in names]
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", lambda **kwargs: Api())
+    commits = []
+    monkeypatch.setattr(module, "_uploadFiles", lambda *args, **kwargs: commits.append(kwargs["parentCommit"]))
+    if catalogChanged:
+        with pytest.raises(RuntimeError, match="catalog changed"):
+            module._upload("dartPanel", {"manifest": manifest}, "dart/searchCatalog", parentCommit="original")
+        assert commits == []
+    else:
+        module._upload("dartPanel", {"manifest": manifest}, "dart/searchCatalog", parentCommit="original")
+        assert commits == ["current"]
 
 
 def test_build_search_catalog_script_subprocess(tmp_path) -> None:

@@ -97,3 +97,66 @@ def test_verify_collected_rcepts_accepts_correction_version(tmp_path):
     )
     failures = mod._verifyCollectedRcepts(targetFilings, str(tmp_path), ["finance"])
     assert sorted(f["rceptNo"] for f in failures) == ["20260814003797", "20260819000055"]
+
+
+def test_attachmentWithoutOriginalDoesNotBecomePermanentPending():
+    mod = _loadSyncRecent()
+    assert mod._keyMissingRows([ATTACHMENT], set(), today=TODAY) == []
+
+
+def test_unresolvedFilingSurvivesDiscoveryWindow(monkeypatch, tmp_path):
+    import dartlab.core.dartClient as clientMod
+    import dartlab.gather.dart.disclosure as disclosure
+
+    mod = _loadSyncRecent()
+    monkeypatch.delenv("SYNC_STATE_SCOPE", raising=False)
+    row = {**ORIGINAL, "stock_code": "035720", "corp_code": "00258801", "corp_name": "카카오"}
+    targets = {"035720": {"finance": [row], "report": []}}
+    mod._savePendingFilings(str(tmp_path), targets)
+    monkeypatch.setattr(clientMod, "DartClient", lambda **kwargs: object())
+    monkeypatch.setattr(
+        disclosure, "listFilings", lambda *args, **kwargs: pl.DataFrame(schema={key: pl.String for key in row})
+    )
+    monkeypatch.setattr(mod, "_cloneCategory", lambda *args: 0)
+    codes, discovered = mod._discoverNewFilings("dummy", 1, str(tmp_path))
+    assert codes == {"035720"}
+    assert discovered["035720"]["finance"][0]["rcept_no"] == ORIGINAL["rcept_no"]
+    failures = [{"stockCode": "035720", "rceptNo": ORIGINAL["rcept_no"]}]
+    mod._savePendingFilings(str(tmp_path), discovered, failures)
+    assert (mod._stateDir(str(tmp_path)) / "pendingFilings.parquet").exists()
+    mod._savePendingFilings(str(tmp_path), discovered, [])
+    assert not (mod._stateDir(str(tmp_path)) / "pendingFilings.parquet").exists()
+
+
+@pytest.mark.parametrize("completed", [False, True])
+def test_syncPreservesUnfinishedQueueAndPassesFilingIdentity(monkeypatch, tmp_path, completed):
+    from dartlab.gather.dart import batch
+
+    mod = _loadSyncRecent()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DART_API_KEYS", "dummy")
+    monkeypatch.setenv("DARTLAB_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("SYNC_CATEGORIES", "finance")
+    monkeypatch.setenv("SYNC_CHECKPOINT_EVERY", "0")
+    monkeypatch.delenv("SYNC_STATE_SCOPE", raising=False)
+    row = {**ORIGINAL, "stock_code": "266690", "corp_code": "00960623", "corp_name": "덕산넵코어스"}
+    targets = {"266690": {"finance": [row], "report": []}}
+    monkeypatch.setattr(mod, "_discoverNewFilings", lambda *args: ({"266690"}, targets))
+    monkeypatch.setattr(mod, "_cloneCategory", lambda *args: 0)
+
+    def collect(codes, **kwargs):
+        state = mod._stateDir(str(tmp_path / "data"))
+        assert (state / "pendingFilings.parquet").exists()
+        assert kwargs["corpMap"]["266690"] == ("00960623", "덕산넵코어스")
+        if not completed:
+            return {}
+        path = tmp_path / "data" / "dart" / "finance" / "266690.parquet"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        pl.DataFrame({"rcept_no": [ORIGINAL["rcept_no"]]}).write_parquet(path)
+        return {"266690": {"finance": 1}}
+
+    monkeypatch.setattr(batch, "batchCollect", collect)
+    mod.main()
+    state = mod._stateDir(str(tmp_path / "data"))
+    assert (state / "pendingFilings.parquet").exists() is not completed
+    assert (state / "pending.txt").exists() is not completed

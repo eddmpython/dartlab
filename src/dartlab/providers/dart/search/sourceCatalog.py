@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -477,10 +478,17 @@ def _dropErrors(
 
 def _fileManifest(path: Path, *, source: str) -> dict[str, Any]:
     rowCount, minDate, maxDate = _fileStats(path, source=source)
+    with path.open("rb") as stream:
+        sha256 = hashlib.file_digest(stream, "sha256").hexdigest()
+    canonicalPath = path.as_posix()
+    if source in PANEL_CATALOG_SOURCES:
+        provider = "dart" if source == "dartPanel" else "edgar"
+        canonicalPath = f"{provider}/panel/{path.name}"
     return {
-        "path": path.as_posix(),
+        "path": canonicalPath,
         "sizeBytes": path.stat().st_size if path.exists() else 0,
         "hash": fileHash(path) if path.exists() else "",
+        "sha256": sha256,
         "rowCount": rowCount,
         "minDate": minDate,
         "maxDate": maxDate,
@@ -543,17 +551,17 @@ def _iterPanelCatalogFrames(
         path = Path(rawPath)
         try:
             schema = set(pl.scan_parquet(path).collect_schema().names())
-        except (pl.exceptions.PolarsError, OSError):
-            continue
+        except (pl.exceptions.PolarsError, OSError) as exc:
+            raise ValueError(f"panel catalog source unreadable: {path}") from exc
         if not {"rceptNo", "contentRaw"}.issubset(schema):
-            continue
+            raise ValueError(f"panel catalog source schema invalid: {path}")
         readCols = [
             col for col in ("rceptNo", "period", "contentRaw", "sectionLeaf", "corp", *DATE_COLUMNS) if col in schema
         ]
         try:
             df = pl.read_parquet(path, columns=readCols)
-        except (pl.exceptions.PolarsError, OSError):
-            continue
+        except (pl.exceptions.PolarsError, OSError) as exc:
+            raise ValueError(f"panel catalog source unreadable: {path}") from exc
         if df.height == 0:
             continue
         for col in ("period", "sectionLeaf", "corp"):
@@ -571,8 +579,8 @@ def _iterPanelCatalogFrames(
                     *[pl.col(col).first().alias(col) for col in DATE_COLUMNS if col in df.columns],
                 )
             )
-        except (pl.exceptions.PolarsError, OSError):
-            continue
+        except (pl.exceptions.PolarsError, OSError) as exc:
+            raise ValueError(f"panel catalog source aggregation failed: {path}") from exc
         rows: list[dict[str, Any]] = []
         code = path.stem
         for row in rolled.iter_rows(named=True):

@@ -379,7 +379,7 @@ def test_fill_content_schema_raw_html(monkeypatch, tmp_path) -> None:
 
 
 def test_collect_one_raw_no_body_014(monkeypatch) -> None:
-    """DART status=014 (파일 부재) → (None, "no_body") — 영원히 retry 불가."""
+    """DART status=014는 현재 본문 부재이며 다음 수집에서 재조회한다."""
     from dartlab.gather.dart import allFilingsCollector as mod
 
     class _C:
@@ -418,7 +418,7 @@ def test_collect_one_raw_error_exception(monkeypatch) -> None:
 
 
 def test_fill_content_diff_retry(monkeypatch, tmp_path) -> None:
-    """기존 .parquet 의 error row 만 retry, no_body/ok 는 skip, 신규 row 추가."""
+    """늦게 공개된 no_body 본문을 회복하고 기존 ok 본문은 보존한다."""
     import dartlab.config as _cfg
     from dartlab.gather.dart import allFilingsCollector as mod
 
@@ -506,17 +506,17 @@ def test_fill_content_diff_retry(monkeypatch, tmp_path) -> None:
     df = mod.fillContent("20260527", client=_StubClient(), showProgress=False)
     assert df is not None
 
-    # 처리 대상은 신규 + retry 만 (ok / no_body 는 skip)
-    assert set(collectCalls) == {"R_ERR", "R_NEW"}
+    # error와 no_body는 재조회하고 이미 확보한 본문은 호출하지 않는다.
+    assert set(collectCalls) == {"R_ERR", "R_NB", "R_NEW"}
 
     rowsByRcept = {r["rcept_no"]: r for r in df.iter_rows(named=True)}
     assert len(rowsByRcept) == 4
 
-    # ok / no_body 는 그대로 보존
+    # ok는 보존하고 늦게 생긴 본문을 반영한다.
     assert rowsByRcept["R_OK"]["fetch_status"] == "ok"
     assert rowsByRcept["R_OK"]["content_raw"] == "<DOC>기존 ok</DOC>"
-    assert rowsByRcept["R_NB"]["fetch_status"] == "no_body"
-    assert rowsByRcept["R_NB"]["content_raw"] is None
+    assert rowsByRcept["R_NB"]["fetch_status"] == "ok"
+    assert "R_NB 신규 ok" in rowsByRcept["R_NB"]["content_raw"]
 
     # error 는 retry 결과로 업데이트
     assert rowsByRcept["R_ERR"]["fetch_status"] == "ok"

@@ -1,14 +1,15 @@
 name: Original SSOT Sync
 
 # ──────────────────────────────────────────────────────────────
-# 원본=SSOT 3-job 자동화 (memory: project_original_ssot_strategy).
+# 원본과 검색 catalog를 함께 갱신한다.
 #  ① dart-zip   : 정기보고서 원본 zip archive(증분) → 변경 종목 tar seed → panel within-company
 #                 증분 빌드(신규 zip만 merge=True period upsert) → dartOriginal(tar) + panel HF push.
 #                 dart_full_rebuild=true 시에만 전이력 재빌드(self-heal).  (dartlab.pipeline dartZip)
 #  ①' dart-reconcile : panel rcept 단위(파일내) 자가치유 — DART 정기 rcept(85일 윈도) vs HF panel
 #                 rceptNo 차집합 = 누락 분기만 fetch+merge+push. forward 7일 윈도가 run 실패/
-#                 타임아웃으로 놓친 분기보고서를 회복(finance 의 60일+rcept 대조 자가치유와 대칭).
+#                 타임아웃으로 놓친 분기보고서를 회복한다.
 #                 (dartlab.pipeline panelRceptReconcile)
+#  ①'' dart-catalog : HF panel SHA256 대조로 미반영 원문을 찾아 검색 catalog에 병합한다.
 #  ② allfilings : 비정기 공시 일별 parquet forward 7일 증분.  (dartlab.pipeline allFilings)
 #  ②' allfilings-backfill : 과거 커버리지 심화는 별도 AllFilings Backfill workflow 가 자동 담당.
 #                 이 workflow 에서는 명시 dispatch 때만 실행해 current 전진/검색 갱신을 막지 않는다.
@@ -21,7 +22,7 @@ name: Original SSOT Sync
 #   ① 외부 cron 과의 직렬 = concurrency group hf-dart-push (dataSync/dartNewStocks/dataPrebuild/
 #     valuationSnapshot/newsArchiveSync 와 공유, cancel-in-progress:false). 메인 public repo
 #     (eddmpython/dartlab-data, panel·allFilings 동거)에 push 하는 모든 cron 을 한 줄로.
-#   ② 본 run 내부 dart 4-job 직렬 = needs 체인 (dart-zip → dart-reconcile → allfilings →
+#   ② 본 run 내부 dart 4-job 직렬 = needs 체인 (dart-zip → dart-reconcile → dart-catalog →
 #     allfilings). ⚠ 같은 group 을 *병렬* 로 4 job 이 선언하면 GitHub 동시성은
 #     "실행 1 + 대기 1" 만 허용 → 새 대기가 이전 대기를 취소 → 매 run 2~3 job 이 1 초 만에
 #     queue 축출(2026-06 allfilings 산출물 43h 동결 사고). needs 로 한 번에 한 job 만
@@ -38,10 +39,10 @@ on:
   workflow_dispatch:
     inputs:
       jobs:
-        description: 'all | dart-zip | dart-reconcile | allfilings | allfilings-backfill | edgar'
+        description: 'all | dart-zip | dart-reconcile | dart-catalog | allfilings | allfilings-backfill | edgar'
         default: 'all'
         type: choice
-        options: [all, dart-zip, dart-reconcile, allfilings, allfilings-backfill, edgar]
+        options: [all, dart-zip, dart-reconcile, dart-catalog, allfilings, allfilings-backfill, edgar]
       lookback_days:
         description: 'archive/allFilings forward 윈도 (일)'
         default: '7'
@@ -96,34 +97,6 @@ jobs:
           # 기본 within-company 증분(신규 zip만 merge). full-rebuild(self-heal)는 dispatch 시에만.
           DART_PANEL_FULL_REBUILD: ${{ github.event.inputs.dart_full_rebuild == 'true' && '1' || '0' }}
         run: uv run python -X utf8 -m dartlab.pipeline dartZip
-      - name: DART panel search source manifest + catalog
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          SEARCH_CATALOG_BOOTSTRAP: ${{ github.event.inputs.search_catalog_bootstrap == 'true' && '1' || '0' }}
-        run: |
-          extra=()
-          if [ "${SEARCH_CATALOG_BOOTSTRAP:-0}" != "1" ]; then
-            extra+=(--require-previous-manifest)
-          fi
-          uv run python -X utf8 .github/scripts/search/buildSearchCatalog.py \
-            --source dartPanel \
-            --input 'data/dart/panel/*.parquet' \
-            --out-dir data/dart/searchCatalog/dartPanel \
-            --producer originalSync.dart-zip \
-            --compare-remote-manifest \
-            --merge-previous-catalog \
-            --min-files 2400 \
-            --min-rows 90000 \
-            --min-catalog-rows 90000 \
-            "${extra[@]}" \
-            --upload
-      - name: Upload DART panel search catalog evidence
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: search-catalog-dartPanel-${{ github.job }}-${{ github.run_id }}
-          path: data/dart/searchCatalog/dartPanel/**
-          if-no-files-found: ignore
 
   dart-reconcile:
     needs: dart-zip  # 자가 축출 차단 — 한 번에 한 dart job 만 hf-dart-push 요청
@@ -156,8 +129,50 @@ jobs:
           PANEL_WORKERS: '2'
         run: uv run python -X utf8 -m dartlab.pipeline panelRceptReconcile
 
+  dart-catalog:
+    needs: [dart-zip, dart-reconcile]
+    if: ${{ !cancelled() && (github.event_name == 'schedule' || contains(fromJSON('["all", "dart-zip", "dart-reconcile", "dart-catalog"]'), github.event.inputs.jobs)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    concurrency:
+      group: hf-dart-push
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: DART panel search source manifest + catalog
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SEARCH_CATALOG_BOOTSTRAP: ${{ github.event.inputs.search_catalog_bootstrap == 'true' && '1' || '0' }}
+        run: |
+          extra=()
+          if [ "${SEARCH_CATALOG_BOOTSTRAP:-0}" != "1" ]; then
+            extra+=(--require-previous-manifest)
+          fi
+          uv run python -X utf8 .github/scripts/search/buildSearchCatalog.py \
+            --source dartPanel \
+            --input 'data/dart/panel/*.parquet' \
+            --out-dir data/dart/searchCatalog/dartPanel \
+            --producer originalSync.dart-catalog \
+            --compare-remote-manifest \
+            --merge-previous-catalog \
+            --reconcile-remote-source \
+            --min-files 2400 \
+            --min-rows 90000 \
+            --min-catalog-rows 90000 \
+            "${extra[@]}" \
+            --upload
+      - name: Upload DART panel search catalog evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: search-catalog-dartPanel-${{ github.job }}-${{ github.run_id }}
+          path: data/dart/searchCatalog/dartPanel/**
+          if-no-files-found: ignore
   allfilings:
-    needs: dart-reconcile  # 직렬 체인 3 번째. 상위 실패해도 daily 코드 파티션 갱신 위해 !cancelled()
+    needs: dart-catalog  # 원문과 catalog 반영 뒤 실행. 상위 실패는 !cancelled()로 격리한다.
     if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'allfilings') }}
     runs-on: ubuntu-latest
     timeout-minutes: 90

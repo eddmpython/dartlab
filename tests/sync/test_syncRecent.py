@@ -57,10 +57,10 @@ def test_key_rotation_log_prints_index_not_key(
     monkeypatch.setattr(gatherDisclosure, "listFilings", _limitExceeded)
 
     syncRecent = _loadSyncRecent()
-    result = syncRecent._discoverNewFilings(",".join(_KEYS), 7, str(tmp_path))
+    with pytest.raises(RuntimeError, match="기존 pending 보존"):
+        syncRecent._discoverNewFilings(",".join(_KEYS), 7, str(tmp_path))
     out = capsys.readouterr().out
 
-    assert result == (set(), {})
     assert triedKeys == _KEYS
     assert "[syncRecent] API 한도 초과 (키 #1), 다음 키 시도" in out
     assert "[syncRecent] API 한도 초과 (키 #2), 다음 키 시도" in out

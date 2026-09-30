@@ -76,3 +76,15 @@ def test_dart_serial_group_members_are_job_level() -> None:
     assert len(members) >= 6, f"참여자가 예상보다 적다: {members}"
     workflowLevel = [name for name, level in members if level == "workflow"]
     assert workflowLevel == [], f"hf-dart-push 에 워크플로 레벨 참여자 복귀: {workflowLevel}"
+
+
+def test_catalogReconcilesPublishedSourcesAfterBothPanelProducers():
+    jobs = yaml.safe_load((WORKFLOWS / "originalSync.yml").read_text(encoding="utf-8"))["jobs"]
+    catalog = jobs["dart-catalog"]
+    assert set(catalog["needs"]) == {"dart-zip", "dart-reconcile"}
+    assert jobs["allfilings"]["needs"] == "dart-catalog"
+    commands = "\n".join(step.get("run", "") for step in catalog["steps"])
+    assert "--reconcile-remote-source" in commands
+    assert "--merge-previous-catalog" in commands
+    assert "--upload" in commands
+    assert "!cancelled()" in catalog["if"]

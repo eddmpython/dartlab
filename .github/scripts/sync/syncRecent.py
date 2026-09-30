@@ -8,7 +8,7 @@
 
 환경변수:
   DART_API_KEYS: DART OpenAPI 키 (쉼표 구분)
-  SYNC_LOOKBACK_DAYS: 조회 기간 (기본: 7일)
+  SYNC_LOOKBACK_DAYS: 신규 공시 조회 기간. 기간 밖 미수집 건은 pending 원장에서 재개.
   SYNC_CATEGORIES: 수집 카테고리 (기본: finance,report)
   DARTLAB_DATA_DIR: 데이터 저장 경로 (기본: ./data)
 """
@@ -104,6 +104,27 @@ def _existingRceptNos(directory: Path, stockCode: str) -> set[str]:
         return set()
 
 
+def _savePendingFilings(dataDir: str, targetFilings: dict, failures: list[dict] | None = None) -> None:
+    """Keep unresolved filing identities across discovery windows and interrupted runs."""
+    import polars as pl
+
+    pending = _stateDir(dataDir) / "pendingFilings.parquet"
+    wanted = None if failures is None else {(row["stockCode"], row["rceptNo"]) for row in failures}
+    rows = []
+    for stockCode, perCat in targetFilings.items():
+        for filings in perCat.values():
+            for row in filings:
+                if wanted is None or (stockCode, row["rcept_no"]) in wanted:
+                    rows.append({**row, "stock_code": stockCode})
+    if not rows:
+        pending.unlink(missing_ok=True)
+        return
+    pending.parent.mkdir(parents=True, exist_ok=True)
+    temp = pending.with_suffix(".tmp")
+    pl.DataFrame(rows).unique(subset=["stock_code", "rcept_no"]).write_parquet(temp)
+    temp.replace(pending)
+
+
 # report도 finance와 동일 — rcept_no 존재 여부만 본다.
 # (이전엔 apiType≥5 partial 임계를 두었으나, 정상 종목까지 재수집 대상으로
 #  분류하는 부작용이 있어 폐기. partial은 batchCollect 단계에서 처리한다.)
@@ -171,6 +192,8 @@ def _keyMissingRows(
     byKey: dict[tuple[str, str], list[dict]] = {}
     missing: list[dict] = []
     for row in rows:
+        if _ATTACHMENT_ONLY_RE.match(str(row.get("report_nm", ""))):
+            continue
         key = _reportNmToFinanceKey(str(row.get("report_nm", "")))
         if key is None:
             if str(row.get("rcept_no", "") or "") not in existing:
@@ -240,8 +263,14 @@ def _discoverNewFilings(keys: str, lookbackDays: int, dataDir: str) -> tuple[set
             raise
 
     if filings is None:
-        print("[syncRecent] 모든 API 키 한도 초과 → 수집 불가, 다음 실행까지 대기")
-        return set(), {}
+        raise RuntimeError("[syncRecent] 모든 API 키 한도 초과: 발견 실패, 기존 pending 보존")
+
+    pending = _stateDir(dataDir) / "pendingFilings.parquet"
+    if pending.exists():
+        previous = pl.read_parquet(pending)
+        filings = pl.concat([filings, previous], how="diagonal_relaxed").unique(
+            subset=["stock_code", "rcept_no"], keep="first"
+        )
 
     if filings.height == 0:
         print("[syncRecent] 최근 정기공시 없음")
@@ -454,10 +483,10 @@ def main():
         print("DART_API_KEYS 환경변수가 필요합니다.")
         sys.exit(1)
 
-    # 2개월 기본 — list.json에 있는데 finance/report에 없는 것만 수집한다.
+    # 분기 제출 기간을 포함하되 corp 생략 list.json의 3개월 한도 안에서 조회한다.
     # 짧으면 정정 보고서 + 늦은 제출을 놓친다. rcept_no 누락 검사가 정확하므로
     # 길어도 비용은 사실상 list.json 페이징뿐.
-    lookbackDays = int(os.environ.get("SYNC_LOOKBACK_DAYS", "60"))
+    lookbackDays = int(os.environ.get("SYNC_LOOKBACK_DAYS", "85"))
     categories = [c.strip() for c in os.environ.get("SYNC_CATEGORIES", "finance,report").split(",") if c.strip()]
     invalid = [cat for cat in categories if cat not in {"finance", "report"}]
     if invalid:
@@ -498,15 +527,14 @@ def main():
                     print(f"[syncRecent] 이전 실행 failures: {len(newToRetry)}개 종목 재시도 추가")
         except (OSError, ValueError):
             pass
-        # 흡수했으니 지운다. 이번 run 에서 다시 실패하면 batchCollect 가 새로 쓴다. 안 지우면 한 번의 대규모
-        # 장애 목록이 GHA cache 를 타고 영구히 남아 매 run "재시도 추가" 로 찍힌다(2026-08-21 실측 2718 종목).
-        try:
-            failuresPath.unlink()
-        except OSError:
-            pass
-
     # 1단계: 새 보고서가 있는 종목 발견
     targetCodes, targetFilings = _discoverNewFilings(keys, lookbackDays, dataDir)
+    # Persist before collection so a timeout cannot move unresolved filings out of the discovery window.
+    _savePendingFilings(dataDir, targetFilings)
+    if pendingCodes:
+        pendingPath.parent.mkdir(parents=True, exist_ok=True)
+        pendingPath.write_text("\n".join(sorted(pendingCodes)), encoding="utf-8")
+    failuresPath.unlink(missing_ok=True)
 
     # pending과 합침 (우선)
     targetCodes = targetCodes | pendingCodes
@@ -553,14 +581,22 @@ def main():
             if ks:
                 codes.append(sc)
                 periods[sc] = sorted(ks)
-        return codes, periods
+        return sorted(set(codes) | pendingCodes), periods
 
     nonDocsCats = categories
+    unfinishedCodes: set[str] = set()
     if nonDocsCats:
         from dartlab.gather.dart.batch import batchCollect
 
         maxWorkers = _syncMaxWorkers()
         checkpointEvery = _syncCheckpointEvery()
+        corpMap = {
+            sc: (str(row["corp_code"]), str(row.get("corp_name") or sc))
+            for sc, perCat in targetFilings.items()
+            for rows in perCat.values()
+            for row in sorted(rows, key=lambda item: str(item.get("rcept_no", "")))
+            if row.get("corp_code")
+        }
 
         # finance/report 각각 독립적으로 누락 종목만 수집.
         # 한 카테고리만 누락이면 다른 카테고리는 건드리지 않는다.
@@ -573,18 +609,27 @@ def main():
                 f"[syncRecent] {cat}: {len(codes)}개 종목 수집 시작 (checkpoint={checkpointEvery or 'off'})",
                 flush=True,
             )
-            batchCollect(
+            collected = batchCollect(
                 codes,
                 categories=[cat],
                 incremental=True,
                 showProgress=False,
                 targetPeriodsByCode=periods,
+                corpMap=corpMap,
                 maxWorkers=maxWorkers,
                 onCheckpoint=_makeCheckpointUploader(cat) if checkpointEvery > 0 else None,
                 checkpointEvery=checkpointEvery,
             )
+            unfinishedCodes.update(set(codes) - set(collected))
+
+    if unfinishedCodes:
+        pendingPath.parent.mkdir(parents=True, exist_ok=True)
+        pendingPath.write_text("\n".join(sorted(unfinishedCodes)), encoding="utf-8")
+    else:
+        pendingPath.unlink(missing_ok=True)
 
     verifyFailures = _verifyCollectedRcepts(targetFilings, dataDir, categories)
+    _savePendingFilings(dataDir, targetFilings, verifyFailures)
     if verifyFailures:
         import json
 
@@ -603,13 +648,6 @@ def main():
             print(f"[syncRecent] ... 외 {len(verifyFailures) - 20}건")
 
     elapsed = time.time() - startTime
-
-    # pending.txt 비움 — collector가 새로 exhausted되면 batchCollect가 새 pending.txt를 작성
-    if pendingPath.exists():
-        try:
-            pendingPath.unlink()
-        except OSError:
-            pass
 
     # 5단계: 변경 파일 감지
     allChanged: dict[str, list[str]] = {}

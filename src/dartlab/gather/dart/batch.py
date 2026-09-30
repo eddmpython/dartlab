@@ -423,6 +423,7 @@ def batchCollect(
     incremental: bool = True,
     showProgress: bool = True,
     targetPeriodsByCode: dict[str, list[tuple[str, str]]] | None = None,
+    corpMap: dict[str, tuple[str, str]] | None = None,
     onCheckpoint: Callable[[list[str]], None] | None = None,
     checkpointEvery: int = 0,
 ) -> dict[str, dict[str, int]]:
@@ -433,6 +434,8 @@ def batchCollect(
     Args:
         targetPeriodsByCode: list.json에서 발견한 종목별 정확한 (year, reprt_code).
             지정하면 _collectFinance/_collectReport가 88분기 차집합 우회.
+        corpMap: 공시 목록에서 확인한 종목별 (corp_code, corp_name).
+            corpCode.xml의 종목코드 갱신이 늦어도 제출 회사의 identity로 수집한다.
 
     Raises:
         ValueError: DART API 키가 없거나 지원하지 않는 category인 경우.
@@ -454,7 +457,9 @@ def batchCollect(
         keys = keys[:maxWorkers]
 
     # corpCode 맵 사전 로드
-    corpMap = _resolveCorpMap(stockCodes)
+    supplied = corpMap or {}
+    unresolved = [code for code in stockCodes if code not in supplied]
+    corpMap = {**(_resolveCorpMap(unresolved) if unresolved else {}), **supplied}
     total = len(stockCodes)
 
     async def _run(completeFn, statusFn, periodFn) -> dict[str, dict[str, int]]:
