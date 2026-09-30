@@ -708,6 +708,7 @@ def _worldReplayEpisodePayload(episode: WorldModelReplayEpisode) -> dict:
             "knowledgeAsOf": episode.realizedPath.knowledgeAsOf,
             "historyStatus": episode.realizedPath.historyStatus,
             "refs": episode.realizedPath.refs,
+            "parameterDraws": episode.realizedPath.parameterDraws,
         },
         "observedPolicy": {
             "strategyId": episode.observedPolicy.strategyId,

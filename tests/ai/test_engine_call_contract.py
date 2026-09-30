@@ -245,7 +245,7 @@ def test_companyPanelDocumentTopicFiltersPeriodAndEmitsExactDocumentEvidence(
     ("apiRef", "args", "attribute", "expected"),
     [
         ("codeToName", {"stockCode": "005930"}, "stockCode", "005930"),
-        ("simulate", {"target": "005930"}, "code", "005930"),
+        ("simulate", {"target": "005930"}, "target", "005930"),
     ],
 )
 def test_generic_public_call_forwards_reserved_target_argument(
@@ -265,8 +265,8 @@ def test_generic_public_call_forwards_reserved_target_argument(
 
     else:
 
-        def fakeCallable(code: str):
-            captured["code"] = code
+        def fakeCallable(target: str):
+            captured["target"] = target
             return {"status": "complete"}
 
     monkeypatch.setattr(dartlab, apiRef, fakeCallable)

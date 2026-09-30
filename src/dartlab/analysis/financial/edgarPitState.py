@@ -894,6 +894,125 @@ def _q4FromYearToDate(
     )
 
 
+def compileEdgarPeriodFlows(
+    facts: pl.DataFrame,
+    conceptTags: dict[str, tuple[str, ...]],
+    *,
+    knowledgeAsOf: str,
+    fiscalStart: str,
+    fiscalEnd: str,
+) -> tuple[FactEvidence, ...]:
+    """Read an exact quarter's flows, subtracting a comparable YTD prefix when needed.
+
+    Args:
+        facts: One company's normalized EDGAR facts.
+        conceptTags: Concept ids and ordered equivalent tag choices.
+        knowledgeAsOf: Latest filing date allowed for both subtraction legs.
+        fiscalStart: Inclusive quarter start, in YYYYMMDD form.
+        fiscalEnd: Inclusive quarter end, in YYYYMMDD form.
+
+    Returns:
+        Observed or derived evidence, in concept order. Missing concepts are omitted, never zero.
+
+    Raises:
+        EdgarStateError: Dates, units or same-filing values conflict.
+
+    Example:
+        ``compileEdgarPeriodFlows(facts, {"capex": ("PaymentsToAcquirePropertyPlantAndEquipment",)},
+        knowledgeAsOf="20250731", fiscalStart="20250330", fiscalEnd="20250628")``.
+    """
+    start, end = _dateText(fiscalStart), _dateText(fiscalEnd)
+    cutoff = _dateText(knowledgeAsOf)
+    startDate, endDate = (datetime.strptime(value, "%Y%m%d") for value in (start, end))
+    if not 60 <= (endDate - startDate).days <= 120 or end > cutoff:
+        raise EdgarStateError("flow interval must be a completed quarter")
+    previousEnd = (startDate - timedelta(days=1)).strftime("%Y%m%d")
+    pit = _normalize(facts, cutoff)
+    result = []
+    for conceptId, tags in conceptTags.items():
+        rows = pit.filter(pl.col("tag").is_in(tags) & pl.col("__start").is_not_null() & (pl.col("__end") <= end))
+        endRows = rows.filter((pl.col("__end") == end) & (pl.col("__start") <= start))
+        if not endRows.height:
+            continue
+        if set(endRows["unit"].to_list()) != {"USD"}:
+            raise EdgarStateError(f"unit conflict for {conceptId}")
+        # Select the newest filing before tag preference. An older standalone value must not
+        # silently outrank a revision that is only available as a YTD pair.
+        newest = endRows["__filed"].max()
+        endRows = endRows.filter(pl.col("__filed") == newest)
+        direct = endRows.filter(pl.col("__start") == start)
+        if direct.height:
+            result.append(
+                _selectLatestRow(
+                    direct.to_dicts(),
+                    tags,
+                    conceptId,
+                    conflictKind="quarterly",
+                    fiscalEnd=end,
+                    kind="flowQuarter",
+                )
+            )
+            continue
+        # Only subtract the same tag, fiscal-year start and adjacent prefix. Missing one leg
+        # remains a gap; quarter labels alone cannot establish a comparable cash-flow period.
+        for tag in tags:
+            candidates = endRows.filter(pl.col("tag") == tag)
+            if not candidates.height:
+                continue
+            starts = candidates["__start"].unique().to_list()
+            if len(starts) != 1:
+                raise EdgarStateError(f"ambiguous cumulative start for {conceptId}")
+            prefix = rows.filter(
+                (pl.col("tag") == tag)
+                & (pl.col("__start") == starts[0])
+                & (pl.col("__end") == previousEnd)
+                & (pl.col("__filed") <= newest)
+            )
+            if not prefix.height:
+                break
+            if set(prefix["unit"].to_list()) != {"USD"}:
+                raise EdgarStateError(f"unit conflict for {conceptId} prefix")
+            total = _selectLatestRow(
+                candidates.to_dicts(),
+                (tag,),
+                conceptId,
+                conflictKind="cumulative",
+                fiscalEnd=end,
+                kind="flowYearToDate",
+            )
+            prior = _selectLatestRow(
+                prefix.to_dicts(),
+                (tag,),
+                conceptId,
+                conflictKind="cumulative",
+                fiscalEnd=previousEnd,
+                kind="flowYearToDate",
+            )
+            result.append(
+                FactEvidence(
+                    conceptId=conceptId,
+                    value=total.value - prior.value,
+                    unit="USD",
+                    currency="USD",
+                    kind="flowQuarter",
+                    fiscalStart=start,
+                    fiscalEnd=end,
+                    filedAt=total.filedAt,
+                    accession=total.accession,
+                    form=total.form,
+                    tag=tag,
+                    status="derived",
+                    derivation="cumulative flow minus adjacent same-tag fiscal-year prefix",
+                    derivationInputs=tuple(
+                        f"{item.accession}|{item.tag}|{item.fiscalStart}|{item.fiscalEnd}|{item.value:.17g}"
+                        for item in (total, prior)
+                    ),
+                )
+            )
+            break
+    return tuple(result)
+
+
 def _q4FromFirstThreeQuarters(
     annual: FactEvidence,
     asKnownAtAnnual: dict[str, FactEvidence],

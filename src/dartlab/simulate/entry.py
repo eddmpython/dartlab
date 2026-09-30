@@ -73,10 +73,10 @@ def simulate(
           두고 노드 품질을 ``partial`` 로 낮춘다.
         - 결정론: 같은 회사·시나리오·asOf 를 다시 돌리면 노드별 ``inputsHash`` 가 byte 단위 동일
           (이 경로에 난수 없음).
-        - ``strategies`` 축은 회사의 현재 재무 상태에서 유지·증설·부채 축소 전략을 모든 KR
-          프리셋의 같은 경로 위에서 비교해 프리셋별 리더, 리더가 뒤집히는 프리셋, 결정이 가장
-          쉽게 뒤집히는 프리셋을 담은 `StrategyComparison` 을 낸다. 항상 조건부 비교이며 추천은
-          없다.
+        - ``strategies`` 축은 회사의 현재 재무 상태에서 유지·증설·부채 축소 전략을 선택한
+          시나리오(생략하면 모든 KR 프리셋)의 같은 경로 위에서 비교한다. 시나리오별 리더와
+          리더가 뒤집히거나 결정이 쉽게 바뀌는 프리셋을 `StrategyComparison` 에 담는다.
+          항상 조건부 비교이며 추천은 없다.
 
     Args:
         target: 축 이름(``"scenario"``, ``"strategies"``) 또는 축을 생략할 때의 종목코드.
@@ -87,7 +87,7 @@ def simulate(
             ``"baseline"``, ``"adverse"``) 또는 사용자 시나리오 dict. 사용자 시나리오는
             ``{"name": "rateShock", "base": "baseline", "rate": [5.0, 5.5, 5.5]}`` 처럼 ``base``
             프리셋의 ``gdp``, ``rate``, ``fx`` 경로 중 준 것만 바꾼다. 생략하면 ``"baseline"``.
-            ``strategies`` 축은 모든 프리셋을 비교하므로 받지 않는다.
+            ``strategies`` 축은 생략하면 모든 프리셋, 지정하면 해당 시나리오에서 전략을 비교한다.
         horizon: 예측 연수 (기본 3). 프리셋은 프리셋 경로 길이까지, 세 경로를 모두 준 사용자
             시나리오는 10년까지다.
         asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 현재는 기간 단위 PIT이며 공시 접수일
@@ -95,7 +95,7 @@ def simulate(
         overrides: 드라이버 override dict. ``baseWacc``, ``terminalGrowth``, ``baseMargin`` (%),
             ``revenueToGdp``, ``revenueToFx``, ``marginToGdp``, ``nimToRate`` (업종 탄성 단위) 중
             일부를 바꾼다. 적용한 값은 결과 ``assumptionLedger`` 에 ``source="user"`` 로 남는다.
-            ``strategies`` 축은 아직 받지 않는다.
+            ``strategies`` 축은 순현금 비교에 사용하지 않는 ``baseWacc``, ``terminalGrowth`` 를 거부한다.
 
     Returns:
         SimulationResult: ``scenario`` 축. 시나리오 매출·마진·FCF·WACC 경로 + dcf 주당가치 +

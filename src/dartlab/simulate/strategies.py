@@ -1,4 +1,4 @@
-"""One-company conditional strategy comparison across the KR macro presets (the `strategies` axis).
+"""One-company conditional strategy comparison under KR macro scenarios (the `strategies` axis).
 
 The public simulate verb has two axes. `scenario` evaluates the deterministic driver sheet for one
 preset. `strategies` asks a different question: given the company's current financial state, which
@@ -25,11 +25,18 @@ Layer: L3.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from dartlab.analysis.financial.proforma import extractHistoricalRatios
-from dartlab.simulate.channels import PRESET_MARKET
+from dartlab.simulate.assumptions import (
+    AssumptionInputError,
+    applyDriverOverrides,
+    resolveDriverOverrides,
+    resolveScenarioPaths,
+    userAssumptionRows,
+)
+from dartlab.simulate.channels import PRESET_MARKET, ScenarioPaths
 from dartlab.simulate.financialBridge import bridgeFinancialPaths, buildFinancialBridgeLaw
 from dartlab.simulate.financialWorld import (
     FinancialWorldInputs,
@@ -37,7 +44,7 @@ from dartlab.simulate.financialWorld import (
     financialInputsFromSnapshot,
     runFinancialStrategies,
 )
-from dartlab.simulate.registry import buildSnapshot, validateScenarioSpec
+from dartlab.simulate.registry import buildSnapshot
 from dartlab.simulate.world import ScenarioPath, SimulationBlocked, SimulationRun, StrategySpec
 from dartlab.synth.scenario import BASELINE_FX, BASELINE_RATE, getPresetScenarios
 
@@ -93,6 +100,9 @@ class StrategyCase:
     shockPath: tuple[dict[str, float], ...]
     decisionStatus: str
     runHash: str
+    scenarioKind: str = "preset"
+    scenarioBase: str = ""
+    macroPaths: dict[str, tuple[float, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -104,7 +114,7 @@ class StrategyComparison:
         horizon           : 연 단위 전개 기간.
         asOf / latestAsOf : 초기 상태의 재무 기준 기간과 최신 가용 기간.
         strategies        : 비교한 전략 정의.
-        cases             : 프리셋마다 하나. 리더, 리더 격차, Pareto 집합, 전략별 결과.
+        cases             : 선택한 시나리오마다 하나. 리더, 리더 격차, Pareto 집합, 전략별 결과와 거시 경로.
         leaderByCase      : 프리셋 이름 -> 리더 전략 (없으면 None).
         leaderReversal    : 프리셋에 따라 리더가 달라지면 True.
         stableLeader      : 모든 프리셋에서 같은 전략이 리더일 때 그 전략.
@@ -114,6 +124,7 @@ class StrategyComparison:
         assumptions       : 결과를 조건 짓는 명시 가정.
         warnings          : 입력과 실행이 남긴 한계.
         gaps              : 비교를 할 수 없었던 사유. 있으면 cases 는 비어 있다.
+        assumptionLedger  : 사용자 경로와 적용한 마진·탄성 변경.
         blockedReasons    : 추천이 닫혀 있는 이유.
         decisionStatus    : 항상 ``conditionalOnly``.
         recommendation    : 항상 None.
@@ -138,31 +149,33 @@ class StrategyComparison:
     decisionStatus: str = "conditionalOnly"
     recommendation: None = None
     schemaVersion: str = STRATEGY_COMPARISON_VERSION
+    assumptionLedger: tuple[dict, ...] = ()
 
 
 def _dedupe(values: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(values))
 
 
-def _macroShockPath(name: str, horizon: int) -> ScenarioPath:
-    """프리셋 하나를 연간 거시 혁신 경로로 바꾼다. 금리는 변화분과 기준 대비 편차를 함께 싣는다."""
-    preset = getPresetScenarios(PRESET_MARKET)[name]
+def _macroShockPath(paths: ScenarioPaths, horizon: int) -> ScenarioPath:
+    """해소한 거시 경로를 연간 변화로 바꾸고 사용자 입력의 출처를 보존한다."""
     steps: list[dict[str, float]] = []
     previousRate = float(BASELINE_RATE)
     for year in range(horizon):
-        rate = float(preset.interestRate[year])
-        fx = float(preset.krwUsd[year])
+        rate = paths.rate[year]
+        fx = paths.fx[year]
         steps.append(
             {
-                "gdpChange": float(preset.gdpGrowth[year]) / 100.0,
+                "gdpChange": paths.gdp[year] / 100.0,
                 "fxDeviation": (fx - BASELINE_FX) / BASELINE_FX,
                 "rateChange": (rate - previousRate) / 100.0,
                 "rateDeviation": (rate - BASELINE_RATE) / 100.0,
             }
         )
         previousRate = rate
-    refs = (f"synth.scenario:PRESET_SCENARIOS_{PRESET_MARKET}/{preset.name}",)
-    return ScenarioPath(name, tuple(steps), refs=refs, frequency="year")
+    refs = (f"synth.scenario:PRESET_SCENARIOS_{PRESET_MARKET}/{paths.base}",) + tuple(
+        f"user:scenario/{paths.name}#{variable}" for variable in paths.userVariables
+    )
+    return ScenarioPath(paths.name, tuple(steps), refs=refs, frequency="year")
 
 
 def _bridgeLaw(snapshot: dict, baseDebtRate: float):
@@ -278,7 +291,7 @@ def _outcomes(run: SimulationRun, order: tuple[str, ...]) -> tuple[StrategyOutco
 
 
 def _case(
-    name: str,
+    macro: ScenarioPaths,
     run: SimulationRun,
     path: ScenarioPath,
     order: tuple[str, ...],
@@ -294,7 +307,7 @@ def _case(
     margin = ranked[0].terminalNetCash - ranked[1].terminalNetCash if len(ranked) > 1 else None
     ratio = margin / baseRevenue if margin is not None and baseRevenue > 0 else None
     return StrategyCase(
-        scenarioName=name,
+        scenarioName=macro.name,
         leaderStrategyId=leader,
         leaderMargin=margin,
         leaderMarginRatio=ratio,
@@ -303,6 +316,9 @@ def _case(
         shockPath=tuple(dict(step) for step in path.steps),
         decisionStatus=run.decisionStatus,
         runHash=run.runHash,
+        scenarioKind="user" if macro.isUser else "preset",
+        scenarioBase=macro.base,
+        macroPaths={key: macro.path(key)[: len(path.steps)] for key in ("gdp", "rate", "fx")},
     )
 
 
@@ -313,6 +329,7 @@ def _gapComparison(
     assumptions: list[str],
     warnings: list[str],
     gap: str,
+    assumptionLedger: tuple[dict, ...] = (),
 ) -> StrategyComparison:
     return StrategyComparison(
         stockCode=stockCode,
@@ -330,14 +347,22 @@ def _gapComparison(
         assumptions=_dedupe(assumptions),
         warnings=_dedupe(warnings),
         gaps=(gap,),
+        assumptionLedger=assumptionLedger,
     )
 
 
-def compareStrategies(company: Any, *, horizon: int = 3, asOf: str | None = None) -> StrategyComparison:
-    """Compare a fixed set of financial strategies for one company across every KR macro preset.
+def compareStrategies(
+    company: Any,
+    *,
+    horizon: int = 3,
+    asOf: str | None = None,
+    scenario: str | dict | None = None,
+    overrides: dict | None = None,
+) -> StrategyComparison:
+    """Compare financial strategies under all KR presets or one selected scenario.
 
     Capabilities:
-        Compiles the company's current financial state once, bridges each KR preset into an annual
+        Compiles the company's current financial state once, bridges each selected macro scenario into an annual
         demand / margin / debt-rate shock path with the scenario axis's sector elasticities, and
         runs hold, expand and deleverage on the same path per preset. Reports each preset's leader
         on terminal net cash, the margin to the runner-up, the Pareto set over net cash and debt,
@@ -345,9 +370,13 @@ def compareStrategies(company: Any, *, horizon: int = 3, asOf: str | None = None
 
     Args:
         company: a KR `Company`. Read once through `buildSnapshot`.
-        horizon: annual steps. It cannot exceed the shortest preset path.
+        horizon: annual steps, up to the selected paths' length (user paths: at most ten).
         asOf: optional fiscal period for the initial state (period-scoped PIT, as on the scenario
             axis). A historical period has no parameter vintage, so the comparison abstains.
+        scenario: None compares all KR presets. A preset id or user mapping compares strategies
+            within that one scenario, using the scenario axis's input contract.
+        overrides: Base operating margin and sector elasticities. WACC and terminal growth are
+            rejected because the terminal net-cash objective does not use discounting.
 
     Returns:
         StrategyComparison: always ``conditionalOnly`` with ``recommendation`` None. When the
@@ -370,10 +399,18 @@ def compareStrategies(company: Any, *, horizon: int = 3, asOf: str | None = None
         Never present a case leader as advice. Quote the preset, the assumptions and the blocked
         reasons with it, and treat an empty ``cases`` as an honest gap, not as zero.
     """
-    names = tuple(sorted(getPresetScenarios(PRESET_MARKET)))
-    for name in names:
-        validateScenarioSpec(name, horizon)
-    snapshot = buildSnapshot(company, asOf=asOf)
+    selected = tuple(sorted(getPresetScenarios(PRESET_MARKET))) if scenario is None else (scenario,)
+    macroPaths = tuple(resolveScenarioPaths(item, horizon) for item in selected)
+    driverOverrides = resolveDriverOverrides(overrides)
+    unused = sorted(set(dict(driverOverrides)) & {"baseWacc", "terminalGrowth"})
+    if unused:
+        raise AssumptionInputError(f"strategies 의 순현금 비교에 사용하지 않는 override 입니다: {unused}")
+    ledger = tuple(
+        {**row, "appliedToDriverSheet": False, "appliedToFinancialWorld": True}
+        for index, macro in enumerate(macroPaths)
+        for row in userAssumptionRows(macro, driverOverrides if index == 0 else (), horizon)
+    )
+    snapshot = applyDriverOverrides(buildSnapshot(company, asOf=asOf), driverOverrides)
     stockCode = str(getattr(company, "stockCode", "") or "")
     assumptions = [f"snapshot:{item}" for item in snapshot.get("assumptions", ())]
     assumptions.extend(
@@ -387,13 +424,13 @@ def compareStrategies(company: Any, *, horizon: int = 3, asOf: str | None = None
     warnings = [f"snapshot:{item}" for item in snapshot.get("warnings", ())]
     if snapshot.get("parameterVintageStatus", "available") != "available":
         return _gapComparison(
-            stockCode, horizon, snapshot, assumptions, warnings, "historical_parameter_vintage_absent"
+            stockCode, horizon, snapshot, assumptions, warnings, "historical_parameter_vintage_absent", ledger
         )
     try:
         inputs = financialInputsFromSnapshot(snapshot, capacityHeadroom=_CAPACITY_HEADROOM)
         baseDebtRate = _baseDebtRate(snapshot["series"])
     except SimulationBlocked as error:
-        return _gapComparison(stockCode, horizon, snapshot, assumptions, warnings, str(error))
+        return _gapComparison(stockCode, horizon, snapshot, assumptions, warnings, str(error), ledger)
     assumptions.append(f"baseDebtRate:{baseDebtRate:.6g}")
     warnings.extend(inputs.warnings)
 
@@ -403,13 +440,13 @@ def compareStrategies(company: Any, *, horizon: int = 3, asOf: str | None = None
     definitions, specs = _strategies(inputs, horizon, maxFinancing)
     order = tuple(item.strategyId for item in definitions)
     cases: list[StrategyCase] = []
-    for name in names:
-        bridged = bridgeFinancialPaths((_macroShockPath(name, horizon),), law)
+    for macro in macroPaths:
+        bridged = bridgeFinancialPaths((_macroShockPath(macro, horizon),), law)
         warnings.extend(bridged.audit.warnings)
         path = bridged.paths[0]
         run = runFinancialStrategies(inputs, (path,), specs, debtLimit=debtLimit, maxFinancing=maxFinancing)
         warnings.extend(run.warnings)
-        cases.append(_case(name, run, path, order, inputs.state.revenue))
+        cases.append(_case(macro, run, path, order, inputs.state.revenue))
 
     summary = summarizeCases(tuple(cases))
     dataLimited = any(item.startswith("snapshot:") for item in warnings)
@@ -429,6 +466,7 @@ def compareStrategies(company: Any, *, horizon: int = 3, asOf: str | None = None
         assumptions=_dedupe(assumptions),
         warnings=_dedupe(warnings),
         gaps=(),
+        assumptionLedger=ledger,
     )
 
 

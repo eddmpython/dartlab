@@ -2040,20 +2040,22 @@ class Company:
         주당가치 + 노드별 근거를 담은 `SimulationResult` 를 낸다. honest-gap: 결손 leaf·부재 base
         지표는 0 이 아니라 None 으로 두고 노드 품질을 ``partial`` 로 낮춘다. 결정론: 같은
         시나리오·asOf 재실행 시 inputsHash 동일. ``strategies`` 축은 유지·증설·부채 축소 전략을
-        모든 KR 프리셋에서 비교한 `StrategyComparison` 을 낸다. 항상 조건부이며 추천은 없다.
+        선택한 시나리오(생략하면 모든 KR 프리셋)에서 비교한 `StrategyComparison` 을 낸다.
+        항상 조건부이며 추천은 없다.
 
         Args:
             axis: ``"scenario"`` (기본) 또는 ``"strategies"``.
             scenario: ``scenario`` 축의 프리셋 id(``synth.scenario.getPresetScenarios("KR")`` 의 키)
                 또는 사용자 시나리오 dict ``{"name", "base", "gdp", "rate", "fx"}``. 사용자 시나리오는
                 ``base`` 프리셋의 거시 경로 중 준 것만 바꾼다. 생략하면 ``"baseline"``. ``strategies``
-                축은 모든 프리셋을 비교하므로 받지 않는다.
+                축은 생략하면 모든 프리셋, 지정하면 그 시나리오 하나에서 전략을 비교한다.
             horizon: 예측 연수 (기본 3). 프리셋은 프리셋 경로 길이까지, 세 경로를 모두 준 사용자
                 시나리오는 10년까지다.
             asOf: 명시 재무 기간(YYYY 또는 YYYY-Qn). 기간 단위 PIT이며 접수일 vintage 복원 미지원.
             overrides: 드라이버 override dict. ``baseWacc``, ``terminalGrowth``, ``baseMargin``,
                 ``revenueToGdp``, ``revenueToFx``, ``marginToGdp``, ``nimToRate`` 중 일부. 적용한
-                값은 ``assumptionLedger`` 에 ``source="user"`` 로 남는다. ``strategies`` 축은 아직 받지 않는다.
+                값은 ``assumptionLedger`` 에 ``source="user"`` 로 남는다. ``strategies`` 축은
+                순현금 비교에 사용하지 않는 ``baseWacc``, ``terminalGrowth`` 를 거부한다.
 
         Returns:
             ``SimulationResult`` (``scenario`` 축) - 시나리오 경로 + dcf 주당가치 + 노드별 audit +
@@ -2102,7 +2104,7 @@ class Company:
 
         How:
             - scenario 축: self → simulate.run.runScenario(self, scenario, horizon, asOf).
-            - strategies 축: self → simulate.strategies.compareStrategies(self, horizon, asOf).
+            - strategies 축: self → simulate.strategies.compareStrategies(self, scenario, overrides, horizon, asOf).
 
         LLM Specifications:
             AntiPatterns:
@@ -2122,13 +2124,9 @@ class Company:
         from dartlab.simulate.assumptions import resolveDriverOverrides, resolveScenarioPaths
 
         if axis == "strategies":
-            if scenario is not None:
-                raise ValueError("strategies 축은 모든 KR 프리셋을 비교하므로 scenario 를 받지 않습니다")
-            if overrides is not None:
-                raise ValueError("strategies 축은 아직 드라이버 override 를 받지 않습니다")
             from dartlab.simulate.strategies import compareStrategies
 
-            return compareStrategies(self, horizon=horizon, asOf=asOf)
+            return compareStrategies(self, horizon=horizon, asOf=asOf, scenario=scenario, overrides=overrides)
         if axis != "scenario":
             raise ValueError(f"알 수 없는 simulate 축: {axis!r}; 유효값: scenario, strategies")
 

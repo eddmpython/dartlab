@@ -38,7 +38,7 @@
 
 | 폴더 | 상태 | 한 줄 |
 |---|---|---|
-| [scenario-simulator](scenario-simulator/) | 🟢 | `dartlab.simulate(...)` 드라이버 DAG(L3). 결정론 코어 졸업, Play UI·fan·계약 등록 미완(preview). 사상 바닥 = 15·16. |
+| [scenario-simulator](scenario-simulator/) | 🟢 | `scenario`·`strategies` 공개 계약과 사용자 가정 입력 구현. AAPL 실제 재무 이력 17개 전이 검증 연결. Play UI·공개 fan·모델 개선은 잔여. 현재 범위는 폴더 README와 Skill OS 참조. |
 
 ## 3. 스캔 · 스크리너 · 추출
 

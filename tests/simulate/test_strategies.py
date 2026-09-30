@@ -199,13 +199,71 @@ def test_summary_names_a_stable_leader_only_when_every_case_has_one() -> None:
 
 
 @pytest.mark.unit
-def test_company_axis_contract() -> None:
+def test_company_axis_contract(snapshotHolder) -> None:
     from dartlab.providers.dart.company import Company
 
-    with pytest.raises(ValueError, match="scenario"):
-        Company.simulate(SimpleNamespace(), "strategies", scenario="adverse")
+    result = Company.simulate(_company(), "strategies", scenario="adverse")
+    assert [case.scenarioName for case in result.cases] == ["adverse"]
     with pytest.raises(ValueError, match="축"):
         Company.simulate(SimpleNamespace(), "unknown")
+
+
+@pytest.mark.unit
+def testUserScenarioAndMarginReachFinancialStrategies(snapshotHolder) -> None:
+    from dartlab.providers.dart.company import Company
+
+    base = compareStrategies(_company(), scenario="baseline")
+    result = Company.simulate(
+        _company(),
+        "strategies",
+        scenario={"name": "highRate", "rate": [5.0, 5.5, 5.5]},
+        overrides={"baseMargin": 20.0, "revenueToGdp": 0.0},
+    )
+    case = result.cases[0]
+    assert (case.scenarioName, case.scenarioKind, case.scenarioBase) == ("highRate", "user", "baseline")
+    assert case.macroPaths["rate"] == (5.0, 5.5, 5.5)
+    assert case.shockPath[-1]["debtRate"] > base.cases[0].shockPath[-1]["debtRate"]
+    assert case.shockPath[-1]["demandGrowth"] == 0
+    assert case.outcomes[0].terminalNetCash != base.cases[0].outcomes[0].terminalNetCash
+    assert case.runHash != base.cases[0].runHash
+    assert result.recommendation is None and result.decisionStatus == "conditionalOnly"
+    assert {row["id"] for row in result.assumptionLedger} == {"rate", "baseMargin", "revenueToGdp"}
+    assert all(row["appliedToFinancialWorld"] and not row["appliedToDriverSheet"] for row in result.assumptionLedger)
+    assert snapshotHolder["snapshot"]["baseMargin"] == 15
+
+
+@pytest.mark.unit
+def testCompleteUserPathsAllowFiveYearStrategyComparison(snapshotHolder) -> None:
+    spec = {"name": "long", "gdp": [1.0] * 5, "rate": [3.0] * 5, "fx": [1470.0] * 5}
+    first = compareStrategies(_company(), scenario=spec, horizon=5)
+    again = compareStrategies(_company(), scenario=spec, horizon=5)
+    assert len(first.cases[0].shockPath) == 5
+    assert first.cases[0].runHash == again.cases[0].runHash
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"scenario": {"name": "invalid", "rate": [float("nan")] * 3}},
+        {"scenario": {"name": "short", "rate": [4]}},
+        {"overrides": {"baseWacc": 12}},
+        {"overrides": {"terminalGrowth": 2}},
+        {"overrides": {"baseMargin": float("inf")}},
+    ],
+)
+def testInvalidStrategyAssumptionsFailBeforeSnapshot(monkeypatch, kwargs) -> None:
+    monkeypatch.setattr(strategiesModule, "buildSnapshot", lambda *a, **k: pytest.fail("snapshot was read"))
+    with pytest.raises(ValueError):
+        compareStrategies(_company(), **kwargs)
+
+
+@pytest.mark.unit
+def testUserAssumptionsSurviveMissingFinancialState(snapshotHolder) -> None:
+    snapshotHolder["snapshot"] = _snapshot(series=_series(withPpe=False))
+    result = compareStrategies(_company(), scenario={"rate": [5] * 3}, overrides={"baseMargin": 20})
+    assert not result.cases and result.gaps
+    assert {row["id"] for row in result.assumptionLedger} == {"rate", "baseMargin"}
 
 
 @pytest.mark.unit
@@ -233,6 +291,15 @@ def test_realData_strategies_axis_005930() -> None:
         assert result.recommendation is None
         assert all(case.leaderStrategyId is not None for case in result.cases)
         assert result.fragileCase in _PRESETS
+        custom = dartlab.simulate(
+            "strategies",
+            "005930",
+            scenario={"name": "highRate", "rate": [5.0, 5.5, 5.5]},
+            overrides={"baseMargin": 20.0},
+        )
+        assert len(custom.cases) == 1 and custom.cases[0].scenarioKind == "user"
+        assert custom.cases[0].macroPaths["rate"] == (5.0, 5.5, 5.5)
+        assert custom.recommendation is None and custom.assumptionLedger
     finally:
         del result
         gc.collect()

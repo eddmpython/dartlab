@@ -104,7 +104,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-09-29'
+lastUpdated: '2026-09-30'
 testUniverse:
   market: KR
   stockCodes:
@@ -133,7 +133,7 @@ visualRefs:
 
 ## 사용자 가정: 시나리오 경로와 드라이버 override
 
-프리셋 다섯 개 밖의 가정은 사용자가 직접 넣는다. 두 입력 모두 scenario 축에서만 받는다.
+프리셋 다섯 개 밖의 가정은 사용자가 직접 넣는다. `scenario`, `strategies` 두 축 모두 경로와 드라이버 변경을 받으며, 각 축에서 실제 계산에 쓰는 값만 허용한다.
 
 - 사용자 시나리오: `scenario`에 dict를 넘긴다. 키는 `name`, `base`, `gdp`, `rate`, `fx`다. `base` 프리셋(기본 `baseline`)의 경로 중 준 변수만 바꾼다. GDP 성장률과 기준금리는 %, 환율은 원달러 수준이다. 세 경로를 모두 주면 프리셋 길이 3년을 넘어 10년까지 펼칠 수 있다.
 - 드라이버 override: `overrides`에 dict를 넘긴다. `baseWacc`, `terminalGrowth`, `baseMargin`은 %, `revenueToGdp`, `revenueToFx`, `marginToGdp`, `nimToRate`는 업종 탄성 단위다. 정한 값이 대신한 기본값 가정은 `assumptions`에서 빠진다.
@@ -158,6 +158,8 @@ slow = dartlab.simulate(
 
 `dartlab.simulate("strategies", code)` 또는 `Company.simulate("strategies")`는 회사의 현재 재무 상태에서 전략 세 개를 모든 KR 프리셋의 같은 경로 위에 굴려 비교한다.
 
+`scenario`를 지정하면 해당 프리셋 또는 사용자 시나리오 하나에서 전략을 비교한다. 사용자 경로 세 개를 모두 주면 최대 10년까지 실행한다. `overrides`는 기준 영업이익률과 업종 탄성을 바꾸며, 할인 계산에만 쓰는 `baseWacc`, `terminalGrowth`는 이 축에서 거부한다. 비교 기준은 마지막 해 순현금이기 때문이다. 각 case는 `scenarioKind`, `scenarioBase`, `macroPaths`를 보존하고, 사용자 입력은 `assumptionLedger`에 `source="user"`, `appliedToFinancialWorld=True`로 남는다.
+
 - 전략: `hold`(감가상각만큼 유지 투자), `expand`(유지 투자의 1.5배), `deleverage`(현재 부채의 절반을 기간에 나눠 상환). 모두 명시 가정이다.
 - 경로: 프리셋의 GDP, 금리, 환율을 시나리오 축과 같은 업종 탄성으로 연간 수요, 마진, 차입금리 충격으로 옮긴다.
 - 실행: 감사된 재무 세계 실행기가 매년 회계 항등식을 닫으며 전개한다. 현금 음수와 부채 한도는 제약 위반으로 기록한다.
@@ -167,7 +169,20 @@ slow = dartlab.simulate(
 ```python
 comparison = dartlab.simulate("strategies", "005930", horizon=3)
 comparison.leaderByCase, comparison.fragileCase, comparison.blockedReasons
+
+custom = dartlab.simulate(
+    "strategies", "005930",
+    scenario={"name": "highRate", "rate": [5.0, 5.5, 5.5]},
+    overrides={"baseMargin": 20.0},
+)
+custom.cases[0].outcomes, custom.assumptionLedger
 ```
+
+## 내부 재무 이력 검증의 경계
+
+EDGAR 검증은 최초 공시에서 확인되는 분기 재무 상태와 그때 알려진 비율을 고정하고, 다음 분기의 공시된 투자·차입·상환과 실제 재무 결과를 기존 재무 실행기와 모델 비교기로 연결한다. 공시 누계는 같은 태그·회계연도 시작·인접 기간을 확인한 뒤 차감하며, 관측된 0과 항목 부재를 구분한다. 성공·결손 시점과 항목별 공시 근거는 표로 보존한다.
+
+이 경로는 공개 축에 포함되지 않은 내부 검증이다. 실제 매출을 수요 대용값으로 쓰고 공시된 행동을 사후 주입하므로 예측 성과나 투자 전략 백테스트가 아니다. 감가상각·상각 합계를 설비 감가상각의 대용값으로 쓰며, 장기차입과 순기업어음 이외의 자금 조달, 자사주·유가증권·환율 효과는 현재 모델 밖이다. 차이는 오차로 남기고 잔액을 맞추는 값으로 메우지 않는다. 모델 비교는 직전 상태 유지 기준을 포함하며, 표본 부족이나 기준 대비 열세를 숨기지 않고 인증·추천으로 승격하지 않는다.
 
 ## 공개 호출 방식
 

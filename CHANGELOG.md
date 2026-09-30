@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **사용자 가정으로 전략 비교.** `dartlab.simulate("strategies", code, scenario={...}, overrides={...})`가 사용자 거시 경로, 기준 영업이익률과 업종 탄성을 받아 유지·증설·부채 축소를 비교한다. 시나리오를 생략하면 기존처럼 모든 KR 프리셋을 비교한다. 순현금 평가에 쓰지 않는 할인율·영구성장률 변경은 거부하고 실제 적용한 가정은 결과에 남긴다.
+- **EDGAR 재무 이력 검증.** 최초 공시 기준 재무 상태, 당시 알려진 비율, 다음 분기 공시 행동과 결과를 기존 모델 비교기에 연결했다. 누계 현금흐름의 분기 복원과 결손 사유·근거 표를 포함하며, 결과는 사후 조건부 검증으로만 취급한다.
+
 - **`dartlab.simulate("strategies", code)` 조건부 전략 비교.** 한 회사의 현재 재무 상태에서 유지, 증설, 부채 축소 전략을 모든 KR 프리셋의 같은 경로 위에 굴려 프리셋별 리더, 리더가 뒤집히는 프리셋, 결정이 가장 쉽게 뒤집히는 프리셋을 낸다. 전이 계수와 전략이 명시 가정이라 결과는 항상 조건부이고 추천은 없다. 기존 `dartlab.simulate(code, scenario=...)` 호출은 그대로 `scenario` 축이다.
 - **시뮬레이터 사용자 가정 입력.** `dartlab.simulate(code, scenario={...})` 가 프리셋 하나를 바탕으로 GDP, 기준금리, 원달러 경로 중 일부를 바꾼 사용자 시나리오를 받는다. 세 경로를 모두 주면 10년까지 펼친다. `overrides={...}` 는 기준 WACC, 영구성장률, 기준 영업이익률, 업종 탄성을 바꾼다. 범위 밖이나 모르는 키는 실행 전에 실패하고, 적용한 값은 결과의 `assumptionLedger` 와 노드 근거에 사용자 가정으로 남는다. 결과에 `scenarioKind`, `scenarioBase`, `macroPaths` 가 추가됐다.
 
