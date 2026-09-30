@@ -211,6 +211,17 @@ def testStrictGatePreservesNonBlockingFailure(monkeypatch, capsys):
 
 
 @pytest.mark.unit
+def testMutationGatePreservesErrorsAndUsesListConfiguration():
+    import tomllib
+
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["mutmut"]
+    assert isinstance(config["tests_dir"], list)
+    assert isinstance(config["pytest_add_cli_args_test_selection"], list)
+    assert "runner" not in config
+    assert "|| true" not in GATES["mutation-testing"].cmd
+
+
+@pytest.mark.unit
 def testPreflightIsolatesOutputsAndRestoresEnvironment(monkeypatch, tmp_path):
     from tests import run as entrypoint
 

@@ -539,11 +539,7 @@ GATES: dict[str, Gate] = {
         install_pkg="editable",
         env={"DARTLAB_TEST_LOCKED": "1"},
         setup=("rm -rf .mutmut-cache mutants/",),
-        cmd=(
-            "(mutmut run || true) && "
-            "(mutmut results > mutation-results.txt 2>&1 || true) && "
-            "cat mutation-results.txt | head -100"
-        ),
+        cmd=("mutmut run && mutmut results > mutation-results.txt 2>&1 && head -100 mutation-results.txt"),
         blocking=False,
         timeout_minutes=90,
     ),

@@ -304,8 +304,9 @@ paths_to_mutate = [
     # mappers / reference (1)
     "src/dartlab/reference/mapper.py",
 ]
-tests_dir = "tests/"
-runner = "uv run python -X utf8 -m pytest -x -m unit --no-cov -q"
+tests_dir = ["tests/"]
+pytest_add_cli_args_test_selection = ["-m", "unit and not network and not requires_data and not heavy and not realData and not freshInstall"]
+pytest_add_cli_args = ["-x", "--no-cov", "-q", "--benchmark-disable"]
 # CI 통합은 주간 cron - 매 PR fail gate 는 아님 (시간 비용 큼).
 # 신규 path 가 존재하지 않는 경우 mutmut 가 skip - pyproject 가 ground truth.
 
