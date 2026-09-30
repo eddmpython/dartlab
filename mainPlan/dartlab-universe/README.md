@@ -2,6 +2,8 @@
 
 상태: 제품급 구현 PRD v1.0, 구현 미착수, 2026-07-18 현재 저장소와 HF 실측 기반. 데이터 엔진 우선 원칙과 기존 시스템 무변경 경계를 확정했다. 3D, 공개 경로, RAG 구현은 선행 게이트 통과와 운영자 승인 전까지 금지한다.
 
+2026-09-30 조사: 위 상태는 PRD 작성 당시 기록이다. 현재 `tests/_attempts/dartlabUniverse/`에는 U4 query planner 등을 포함한 실험 코드가 있다. 현재 AI runtime과의 차이, 실제 데이터 질의 결과, 전체 데이터 대화 질의의 남은 과제는 [자연어 질의 조사](10-conversationalQueryResearch.md)에 정리했다. 이 조사는 실험의 제품 승격을 뜻하지 않는다.
+
 ## 한 문장 정의
 
 **DartLab Universe는 HF의 모든 DartLab 데이터, 실존 DartLab 엔진이 호출할 수 있는 모든 데이터와 계산 능력, 모든 블로그 글·이미지·영상을 하나의 주소 가능하고 근거 추적 가능한 지식 공간으로 만드는 전용 데이터 엔진이다.**
@@ -49,6 +51,7 @@ DART 우주, EDGAR 우주, 기업별 우주가 따로 있는 것이 아니다. D
 8. [07-product-grade-slo-security-accessibility.md](07-product-grade-slo-security-accessibility.md): 성능, 복구, 관측성, 보안, 라이선스, 접근성 SLO
 9. [08-implementation-roadmap.md](08-implementation-roadmap.md): 단계별 신규 파일·함수·테스트·인수 기준·롤백·공개 통제
 10. [09-evaluation-decision-ledger.md](09-evaluation-decision-ledger.md): ADR, 위험, 기각안, 전문가 평가, 개선 이력, 100점 루브릭
+11. [10-conversationalQueryResearch.md](10-conversationalQueryResearch.md): 현재 API·데이터 실측, 기준 기업 비교, 대화 질의의 의미·근거 경계와 구현 제안
 
 ## 착수 순서
 
