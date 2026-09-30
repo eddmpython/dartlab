@@ -496,7 +496,14 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
     scope = str(plan.get("scope") or "consolidated")
     if scope not in {"consolidated", "separate"}:
         return ToolResult(False, "scope는 consolidated 또는 separate입니다.", error="invalid_args")
-    table, autoGatherUsed = _fetchTableWithAutoGather(company, topic, scope=scope)
+    rawPeriod = str(plan.get("period") or "").strip().upper()
+    annualRequest = str(plan.get("freq") or "").upper() in {"Y", "FY", "YEAR", "ANNUAL"} or bool(
+        re.fullmatch(r"(?:FY)?20\d{2}(?:\s*(?:-|~|TO|부터)\s*20\d{2})?|RECENT\s*:?\s*\d{1,2}\s*Y", rawPeriod)
+    )
+    # EDGAR 분기는 달력 기준이고 연간은 회계연도 기준이다. 분기를 합쳐 FY로
+    # 이름만 바꾸지 않고 provider가 보유한 연간 원본을 사용한다.
+    freq = "Y" if getattr(company, "market", None) == "US" and annualRequest else "Q"
+    table, autoGatherUsed = _fetchTableWithAutoGather(company, topic, scope=scope, freq=freq)
     if not isinstance(table, pl.DataFrame) or table.height == 0:
         msg = f"{companyName or stockCode} {topic} 데이터를 찾지 못했습니다."
         if autoGatherUsed:
@@ -515,6 +522,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
         table,
         selectedPeriod=requestedPeriod,
         annualYears=annualYears,
+        currency=str(getattr(company, "currency", None) or "KRW"),
     )
     if not summary:
         return ToolResult(
@@ -523,6 +531,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
     includeContext = plan.get("includeContext", _capabilityExecution.COMPANY_PANEL_CONTEXT_DEFAULT)
     if not isinstance(includeContext, bool):
         return ToolResult(False, "includeContext는 true 또는 false입니다.", error="invalid_args")
+    summary["scope"] = scope
     refs = _buildShowRefs(stockCode, companyName, topic, summary, company, includeContext=includeContext)
     summaryMsg = _showSummaryMessage(companyName, stockCode, topic, summary, autoGatherUsed)
     data = _buildShowData(
@@ -543,6 +552,7 @@ def _companyShow(plan: dict[str, Any]) -> ToolResult:
             "stockCode": stockCode,
             "statement": topic,
             "scope": scope,
+            "currency": summary["currency"],
             "metric": row["snakeId"],
             "item": row["item"],
             "period": period,
@@ -614,9 +624,9 @@ def _requestedStatementPeriod(
     if not raw:
         limit = plan.get("limit")
         freq = str(plan.get("freq") or "").strip().upper()
-        if isinstance(limit, int) and 1 <= limit <= 20 and freq in {"Y", "FY", "YEAR", "ANNUAL"}:
+        if freq in {"Y", "FY", "YEAR", "ANNUAL"}:
             years = _completeStatementYears(columns, statement)
-            return None, tuple(years[:limit])
+            return None, tuple(years[:limit] if isinstance(limit, int) and 1 <= limit <= 20 else years)
         return None, ()
     recent = re.fullmatch(r"RECENT\s*:?\s*(\d{1,2})\s*Y", raw)
     if recent:
@@ -632,6 +642,8 @@ def _requestedStatementPeriod(
         return (None, requested) if all(year in complete for year in requested) else (None, ())
     if raw.startswith("FY") and len(raw) == 6:
         raw = raw[2:]
+    if re.fullmatch(r"\d{4}", raw) and raw in columns:
+        return None, (raw,)
     if raw in columns:
         return raw, ()
     if re.fullmatch(r"\d{4}", raw):
@@ -644,6 +656,9 @@ def _requestedStatementPeriod(
 
 def _completeStatementYears(columns: set[str], statement: str) -> list[str]:
     """연간 projection이 가능한 회계연도를 최신순으로 반환한다."""
+    annual = sorted((period for period in columns if re.fullmatch(r"20\d{2}", period)), reverse=True)
+    if annual:
+        return annual
     years = sorted({period[:4] for period in columns if re.fullmatch(r"20\d{2}Q[1-4]", period)}, reverse=True)
     if statement in {"IS", "CF"}:
         return [year for year in years if all(f"{year}Q{quarter}" in columns for quarter in range(1, 5))]
@@ -651,17 +666,17 @@ def _completeStatementYears(columns: set[str], statement: str) -> list[str]:
 
 
 def _fetchTableWithAutoGather(
-    company: Any, topic: str, *, scope: str = "consolidated"
+    company: Any, topic: str, *, scope: str = "consolidated", freq: str = "Q"
 ) -> tuple[pl.DataFrame | None, bool]:
     """company.panel(topic) + 빈 결과 시 자동 update 1회 재시도. (table, autoGatherUsed) 반환."""
     with _quietExecutionNoise():
-        table = statementTable(company, topic, scope=scope)
+        table = statementTable(company, topic, scope=scope, freq=freq)
     if isinstance(table, pl.DataFrame) and table.height > 0:
         return table, False
     if not _AUTO_GATHER_ENABLED or not _tryAutoUpdate(company, "finance"):
         return table, False
     with _quietExecutionNoise():
-        table = statementTable(company, topic, scope=scope)
+        table = statementTable(company, topic, scope=scope, freq=freq)
     return table, True
 
 
@@ -682,31 +697,37 @@ def _buildShowRefs(
     """
     filingMap = buildPeriodToFiling(company)
     latestPeriod = summary["latestPeriod"]
+    scope = summary.get("scope", "consolidated")
+    refCode = f"{stockCode}:separate" if scope == "separate" else stockCode
+    currency = summary.get("currency", "KRW")
+    basis = "fiscal_year" if summary.get("projection") == "annual" else "calendar_quarter"
 
     def enrich(base: dict[str, Any], period: str = latestPeriod) -> dict[str, Any]:
         """payload 에 docRef + confidence (filing_direct=95) + confidenceMethod 부착."""
         out = attachDocRef(base, period, filingMap)
+        out.update(scope=scope, currency=currency, unit=currency, basis=basis)
         out.setdefault("confidence", _FILING_DIRECT_CONFIDENCE)
         out.setdefault("confidenceMethod", "filing_direct")
         return out
 
     tableRef = Ref(
-        id=f"table:{stockCode}:{topic}:{latestPeriod}",
+        id=f"table:{refCode}:{topic}:{latestPeriod}",
         kind="tableRef",
         title=f"{companyName or stockCode} {_STMT_LABELS[topic]} {latestPeriod}",
-        source=f"Company({stockCode}).panel('{topic}')",
+        source=f"Company({stockCode}).panel('{topic}', scope='{scope}')",
         payload=enrich({**summary, "stockCode": stockCode}),
     )
     refs: list[Ref] = [
         tableRef,
         Ref(
-            id=f"execution:Company.panel:{stockCode}:{topic}:{latestPeriod}",
+            id=f"execution:Company.panel:{refCode}:{topic}:{latestPeriod}",
             kind="executionRef",
             title=f"{companyName or stockCode} Company.panel 실행 영수증",
             source="Company.panel",
             payload={
                 "apiRef": "Company.panel",
                 "stockCode": stockCode,
+                "scope": scope,
                 "period": latestPeriod,
                 "metric": topic,
                 "status": "complete",
@@ -719,7 +740,7 @@ def _buildShowRefs(
                 metricId = str(row.get("snakeId") or "value")
                 refs.append(
                     Ref(
-                        id=f"value:{stockCode}:{topic}:{period}:{metricId}",
+                        id=f"value:{refCode}:{topic}:{period}:{metricId}",
                         kind="valueRef",
                         title=f"{row['item']} {period}",
                         source=tableRef.id,
@@ -734,9 +755,6 @@ def _buildShowRefs(
                                     "period": period,
                                     "value": value,
                                     "formatted": (row.get("formatted") or {}).get(period),
-                                    "unit": "KRW",
-                                    "currency": "KRW",
-                                    "basis": "fiscal_year",
                                 },
                                 period,
                             ),
@@ -747,7 +765,7 @@ def _buildShowRefs(
     else:
         refs.extend(
             Ref(
-                id=f"value:{stockCode}:{topic}:{latestPeriod}:{row['snakeId']}",
+                id=f"value:{refCode}:{topic}:{latestPeriod}:{row['snakeId']}",
                 kind="valueRef",
                 title=f"{row['item']} {latestPeriod}",
                 source=tableRef.id,
@@ -774,7 +792,7 @@ def _buildShowRefs(
     for period in summary.get("periods") or [latestPeriod]:
         refs.append(
             Ref(
-                id=f"date:{stockCode}:{topic}:{period}",
+                id=f"date:{refCode}:{topic}:{period}",
                 kind="dateRef",
                 title=f"{_STMT_LABELS[topic]} {period} 기준시점",
                 source=tableRef.id,
@@ -2251,6 +2269,7 @@ def _summarizeStatement(
     *,
     selectedPeriod: str | None = None,
     annualYears: tuple[str, ...] = (),
+    currency: str = "KRW",
 ) -> dict[str, Any] | None:
     periods = [col for col in table.columns if _PERIOD_RE.match(str(col))]
     if not periods:
@@ -2265,7 +2284,9 @@ def _summarizeStatement(
         for row in priorityRows:
             annualValues: dict[str, Any] = {}
             for year, annualPeriod in zip(annualYears, annualPeriods, strict=True):
-                if statement in {"IS", "CF"}:
+                if year in row["values"]:
+                    annualValues[annualPeriod] = row["values"][year]
+                elif statement in {"IS", "CF"}:
                     values = [row["values"].get(f"{year}Q{quarter}") for quarter in range(1, 5)]
                     if any(value is None for value in values):
                         continue
@@ -2297,10 +2318,11 @@ def _summarizeStatement(
         "latestPeriod": latest,
         "periods": periods,
         "projection": projection,
+        "currency": currency,
         "rowCount": table.height,
         "columnCount": len(table.columns),
-        "rows": _projectLatest(priorityRows, latest),
-        "timeseries": _projectTimeseries(priorityRows),
+        "rows": _projectLatest(priorityRows, latest, currency=currency),
+        "timeseries": _projectTimeseries(priorityRows, currency=currency),
     }
 
 
@@ -2345,7 +2367,7 @@ def _findPriorityRows(statement: str, table: pl.DataFrame, periods: list[str]) -
     return out
 
 
-def _projectLatest(priorityRows: list[dict[str, Any]], latest: str) -> list[dict[str, Any]]:
+def _projectLatest(priorityRows: list[dict[str, Any]], latest: str, *, currency: str = "KRW") -> list[dict[str, Any]]:
     """latest period 단일 값 형태. valueRef refs 생성 + 단일 period markdown 용."""
     out: list[dict[str, Any]] = []
     for r in priorityRows:
@@ -2358,20 +2380,20 @@ def _projectLatest(priorityRows: list[dict[str, Any]], latest: str) -> list[dict
                 "item": r["item"],
                 "period": latest,
                 "value": value,
-                "formatted": formatMoney(value),
+                "formatted": formatMoney(value, currency=currency),
             }
         )
     return out
 
 
-def _projectTimeseries(priorityRows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _projectTimeseries(priorityRows: list[dict[str, Any]], *, currency: str = "KRW") -> list[dict[str, Any]]:
     """전 period 시계열 형태. 시계열 markdown + 시간축 질문 답안 용."""
     return [
         {
             "snakeId": r["snakeId"],
             "item": r["item"],
             "values": r["values"],
-            "formatted": {p: formatMoney(v) for p, v in r["values"].items()},
+            "formatted": {p: formatMoney(v, currency=currency) for p, v in r["values"].items()},
         }
         for r in priorityRows
     ]

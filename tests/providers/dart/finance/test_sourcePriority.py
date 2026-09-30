@@ -8,6 +8,23 @@ from dartlab.providers.dart.finance.sourcePriority import applyCfsPriority
 pytestmark = pytest.mark.unit
 
 
+def testSeparateDoesNotSwitchToWiderConsolidatedSheet():
+    """별도 원본이 연결보다 작아도 그 값을 유지하며 누락 시 연결로 바꾸지 않는다."""
+    raw = pl.DataFrame(
+        {
+            "bsns_year": ["2024"] * 3,
+            "reprt_nm": ["1분기"] * 3,
+            "sj_div": ["IS"] * 3,
+            "fs_div": ["OFS", "CFS", "CFS"],
+            "account_id": ["revenue", "revenue", "profit"],
+            "thstrm_amount": ["90", "100", "10"],
+        }
+    )
+    selected = applyCfsPriority(raw, "OFS")
+    assert selected["thstrm_amount"].to_list() == ["90"]
+    assert applyCfsPriority(raw.filter(pl.col("fs_div") == "CFS"), "OFS").is_empty()
+
+
 def test_cfs_priority_falls_back_when_ofs_strictly_dominates_coverage(caplog) -> None:
     """한 줄짜리 불완전 CFS가 더 완전한 OFS 시트 전체를 가리지 않는다."""
     raw = pl.DataFrame(

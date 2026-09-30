@@ -92,11 +92,12 @@ def companyMetrics(company: Any) -> dict[str, Any]:
     return metrics
 
 
-def statementTable(company: Any, topic: str, *, scope: str = "consolidated") -> pl.DataFrame | None:
+def statementTable(company: Any, topic: str, *, scope: str = "consolidated", freq: str = "Q") -> pl.DataFrame | None:
     """동일한 finance owner의 select를 사용해 숫자 조회에서 원문 전체 pivot을 피한다."""
     selector = getattr(company, "select", None)
     if callable(selector):
-        result = selector(topic, scope=scope, strict=False)
+        options = {"freq": freq} if freq != "Q" else {}
+        result = selector(topic, scope=scope, strict=False, **options)
         return result.df if result is not None else None
     return company.panel(topic)
 

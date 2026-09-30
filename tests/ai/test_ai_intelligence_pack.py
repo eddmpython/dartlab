@@ -19,7 +19,7 @@ def test_read_capability_replaces_runtime_intelligence_pack():
 def test_read_skill_replaces_runtime_pack_summary():
     from dartlab.ai.tools.readSkill import readSkill
 
-    result = readSkill("처음 온 외부 시작점")
+    result = readSkill("처음 온 외부 시작점", audience="all")
 
     assert result.ok is True
     assert any(ref.id == "skill:start.dartlabSkillOs" for ref in result.refs)

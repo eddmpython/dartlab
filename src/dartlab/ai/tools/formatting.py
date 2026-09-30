@@ -40,12 +40,14 @@ _EXTERNAL_TEXT_KEYS: tuple[str, ...] = (
 _HTML_TAG_RE = re.compile(r"<[^<>]+>")
 
 
-def formatMoney(value: Any) -> str:
-    """원 → 자동 단위 변환 ("12.3조원" / "456억원" / "789원")."""
+def formatMoney(value: Any, *, currency: str = "KRW") -> str:
+    """금액을 통화와 함께 표시한다. 원화는 조원과 억원 단위로 축약한다."""
     try:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
+    if currency != "KRW":
+        return f"{number:,.0f} {currency}"
     sign = "-" if number < 0 else ""
     number = abs(number)
     if number >= 1_0000_0000_0000:

@@ -190,3 +190,68 @@ def testFactLookupUsesColumnSelectionWithoutContextOrWideBoard():
     assert result.ok
     assert result.data["requestedScope"] == "separate"
     assert any(ref.kind == "valueRef" for ref in result.refs)
+
+
+@pytest.mark.unit
+def testSeparateEvidenceCannotOverwriteConsolidatedEvidence():
+    """같은 지표와 기간의 연결·별도 값이 각각 독립된 근거로 보존된다."""
+    from types import SimpleNamespace
+
+    class Company:
+        """연결과 별도 값이 다른 회사 표본."""
+
+        corpName, stockCode, currency = "테스트", "005930", "KRW"
+
+        def select(self, topic, **kwargs):
+            value = 100.0 if kwargs["scope"] == "consolidated" else 60.0
+            return SimpleNamespace(df=pl.DataFrame({"snakeId": ["sales"], "항목": ["매출액"], "2024Q4": [value]}))
+
+    with (
+        patch("dartlab.ai.tools.engineCall._resolveCompany", return_value=Company()),
+        patch("dartlab.ai.tools.engineCall.buildPeriodToFiling", return_value={}),
+    ):
+        results = [
+            _companyShow({"stockCode": "005930", "topic": "IS", "scope": scope, "includeContext": False})
+            for scope in ("consolidated", "separate")
+        ]
+    assert all(result.ok for result in results)
+    assert {ref.id for ref in results[0].refs}.isdisjoint(ref.id for ref in results[1].refs)
+    values = [next(ref.payload for ref in result.refs if ref.kind == "valueRef") for result in results]
+    assert [(value["scope"], value["value"]) for value in values] == [("consolidated", 100.0), ("separate", 60.0)]
+    assert all(value["basis"] == "calendar_quarter" for value in values)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("period", ["2024", "FY2024", "2023-2024", "recent:2Y", ""])
+def testUsAnnualRequestUsesFiscalOwnerAndCurrency(period):
+    """9월 결산 기업의 달력 분기 합산값을 회계연도 매출로 오인하지 않는다."""
+    from types import SimpleNamespace
+
+    class Company:
+        """달력 분기와 구별되는 연간 원본을 제공하는 미국 회사 표본."""
+
+        corpName, stockCode, market, currency = "Apple", "AAPL", "US", "USD"
+
+        def select(self, topic, **kwargs):
+            assert kwargs["freq"] == "Y"
+            return SimpleNamespace(
+                df=pl.DataFrame(
+                    {"snakeId": ["sales"], "항목": ["매출액"], "2024": [391_035_000_000], "2023": [383_285_000_000]}
+                )
+            )
+
+    with (
+        patch("dartlab.ai.tools.engineCall._resolveCompany", return_value=Company()),
+        patch("dartlab.ai.tools.engineCall.buildPeriodToFiling", return_value={}),
+    ):
+        result = _companyShow(
+            {"stockCode": "AAPL", "topic": "IS", "period": period, "freq": "Y", "includeContext": False}
+        )
+    assert result.ok
+    values = [ref.payload for ref in result.refs if ref.kind == "valueRef"]
+    current = next(value for value in values if value["period"] == "2024FY")
+    assert current["value"] == 391_035_000_000
+    assert current["formatted"] == "391,035,000,000 USD"
+    assert all(value["currency"] == value["unit"] == "USD" for value in values)
+    assert all(value["basis"] == "fiscal_year" for value in values)
+    assert "조원" not in result.data["markdown"]

@@ -19,7 +19,7 @@ def applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
 
     Args:
         df: DART 재무 원본 DataFrame.
-        pref: 선호 원본. ``"CFS"`` 또는 ``"OFS"``.
+        pref: ``"CFS"`` 우선 또는 ``"OFS"`` 별도 원본만 선택.
 
     Returns:
         시트별로 선택된 원본 행만 남긴 DataFrame.
@@ -35,6 +35,11 @@ def applyCfsPriority(df: pl.DataFrame, pref: str) -> pl.DataFrame:
     """
     if "fs_div" not in df.columns:
         return df
+
+    # 별도 요청을 연결의 더 넓은 계정 집합으로 대체하면 다른 회계 실체의
+    # 수치가 된다. 별도가 없을 때도 연결 수치를 별도로 표시하지 않는다.
+    if pref == "OFS":
+        return df.filter(pl.col("fs_div") == "OFS")
 
     available = set(df["fs_div"].drop_nulls().unique().to_list())
     if len(available) <= 1:
