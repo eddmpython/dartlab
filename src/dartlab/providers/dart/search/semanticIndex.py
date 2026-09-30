@@ -18,6 +18,7 @@ from typing import Iterator
 import numpy as np
 import polars as pl
 
+from dartlab.core.hfRetry import retryHfCall
 from dartlab.core.logger import getLogger
 from dartlab.core.utils.fileDigest import fileHash
 from dartlab.providers.dart.search.fieldIndex import _activeIndexDir, _contentIndexDir
@@ -85,7 +86,7 @@ def prepareSemanticModels() -> None:
         ),
     )
     for name, revision, files in models:
-        snapshot_download(name, revision=revision, allow_patterns=files, local_dir=str(_modelDir(name)))
+        retryHfCall(snapshot_download, name, revision=revision, allow_patterns=files, local_dir=str(_modelDir(name)))
 
 
 @lru_cache(maxsize=1)
