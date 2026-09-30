@@ -508,6 +508,8 @@ def searchNgram(
     *,
     corpCode: str | None = None,
     stockCode: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
     limit: int = 10,
 ) -> pl.DataFrame:
     """계층적 검색 — L0 유형 라우팅 + L1 BM25F bincount 융합.
@@ -530,6 +532,8 @@ def searchNgram(
             ``_tokenize`` 가 공백 분리 후 bigram/trigram 생성.
         corpCode: 8 자리 corp_code 로 결과 필터 (선택).
         stockCode: 6 자리 종목코드로 결과 필터 (선택). corpCode 와 동시 지정 가능.
+        start: 접수일 시작 YYYYMMDD. 후보 제한 전에 적용한다.
+        end: 접수일 끝 YYYYMMDD. 양 끝 날짜를 포함한다.
         limit: 반환 문서 수 (default 10). L0 후보는 ``limit * 3`` 까지 스캔.
 
     Returns:
@@ -578,6 +582,9 @@ def searchNgram(
     nDocs = meta.height
 
     from dartlab.core.dataLoader import DART_VIEWER
+    from dartlab.providers.dart.search.fieldIndex import _scopeMask
+
+    mask = _scopeMask(meta, corpCode, stockCode, start=start, end=end)
 
     # L0: 유형 매칭 (임계값 0.2 — 약한 부분 매칭 차단)
     _L0_MIN_SCORE = 0.2
@@ -594,16 +601,14 @@ def searchNgram(
 
     if matchedTypes:
         for typeName, typeScore in matchedTypes:
-            for docId in typeToDocIds[typeName][: limit * 3]:
-                if docId >= nDocs:
-                    continue
-                row = meta.row(docId, named=True)
+            candidateIds = np.asarray(typeToDocIds[typeName], dtype=np.int64)
+            candidateIds = candidateIds[candidateIds < nDocs]
+            if mask is not None:
+                candidateIds = candidateIds[mask[candidateIds]]
+            for docId in candidateIds[: limit * 3]:
+                row = meta.row(int(docId), named=True)
                 rcept = row["rcept_no"]
                 if rcept in seen:
-                    continue
-                if corpCode and row.get("corp_code", "") != corpCode:
-                    continue
-                if stockCode and row.get("stock_code", "") != stockCode:
                     continue
                 seen.add(rcept)
                 reportNm = row.get("report_nm", "")
@@ -634,14 +639,16 @@ def searchNgram(
     if queryStems:
         allMatched = []
         for stemId in queryStems:
-            start = offsets[stemId]
-            end = offsets[stemId + 1]
-            if end > start:
-                allMatched.append(docIds[start:end])
+            postingsStart = offsets[stemId]
+            postingsEnd = offsets[stemId + 1]
+            if postingsEnd > postingsStart:
+                allMatched.append(docIds[postingsStart:postingsEnd])
 
         if allMatched:
             flat = np.concatenate(allMatched)
             counts = np.bincount(flat, minlength=nDocs)
+            if mask is not None:
+                counts = np.where(mask, counts, 0)
 
             nTop = min(limit * 5, nDocs)
             topIndices = np.argpartition(counts, -nTop)[-nTop:]
@@ -656,10 +663,6 @@ def searchNgram(
                 row = meta.row(int(docId), named=True)
                 rcept = row["rcept_no"]
                 if rcept in seen:
-                    continue
-                if corpCode and row.get("corp_code", "") != corpCode:
-                    continue
-                if stockCode and row.get("stock_code", "") != stockCode:
                     continue
 
                 seen.add(rcept)

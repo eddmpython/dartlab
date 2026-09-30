@@ -168,6 +168,7 @@ disclosures = c.filings()    # 로컬 보유 범위. 접수일과 수집 시점 
 `scope="news"`: public 뉴스 헤드라인/본문 lane 만 검색(공시 제외). 뉴스는 `source=news`, `sourceRef=news:{urlHash}`, `dartUrl` = 기사 url. corp 지정 시 0 건(뉴스는 종목 매핑 없음 — title/body 매칭만). allFilings+panel+EDGAR+뉴스가 한 인덱스에 통합되어도 뉴스 의도는 공시로 fallback 하지 않는다.
 
 `corp` 는 종목코드 ("005930") 또는 회사명 ("삼성전자"), `start`/`end` 는 YYYYMMDD, `topK` 기본 10.
+`start`/`end`는 양 끝 날짜를 포함하며 검색 후보 수를 제한하기 전에 적용한다. 지정 기간 밖의 고득점 공시가 많아도 기간 안의 공시가 후보에서 밀려나지 않는다.
 `topK` 는 public `limit` alias 이며, 둘 다 주어지면 `topK` 가 우선한다. query 본문 안에 회사명이 들어간 경우도 `ListingResolver` 로 stockCode facet 을 만든 뒤 랭킹 전에 마스크한다.
 
 ## 호출 패턴

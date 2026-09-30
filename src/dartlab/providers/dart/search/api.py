@@ -93,6 +93,7 @@ def search(
     sourceIntent = detectSourceIntent(query, explicitScope=scope)
     sourceKind = sourceIntent.sourceKind
     retrievalLimit = _retrievalLimit(query, limit, sourceKind=sourceKind)
+    dateRange = {key: value for key, value in (("start", start), ("end", end)) if value}
 
     if scope == "semantic":
         from dartlab.providers.dart.search.semanticIndex import searchSemantic
@@ -110,7 +111,7 @@ def search(
             excludeStockCode=excludedCode,
         )
     elif scope == "title":
-        result = _searchTitle(query, corpCode=corpCode, stockCode=stockCode, limit=limit)
+        result = _searchTitle(query, corpCode=corpCode, stockCode=stockCode, limit=limit, **dateRange)
     elif scope == "content":
         result = _searchContent(
             query,
@@ -118,12 +119,13 @@ def search(
             stockCode=stockCode,
             sourceKind=sourceKind,
             limit=retrievalLimit,
+            **dateRange,
         )
     elif scope == "news":
-        result = _searchNews(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit)
+        result = _searchNews(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit, **dateRange)
     elif scope == "auto":
         if sourceKind == "news":
-            result = _searchNews(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit)
+            result = _searchNews(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit, **dateRange)
         else:
             result = _searchAuto(
                 query,
@@ -131,18 +133,20 @@ def search(
                 stockCode=stockCode,
                 sourceKind=sourceKind,
                 limit=retrievalLimit,
+                **dateRange,
             )
     else:  # both
         if sourceKind == "news":
-            result = _searchNews(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit)
+            result = _searchNews(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit, **dateRange)
         else:
-            titleHits = _searchTitle(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit)
+            titleHits = _searchTitle(query, corpCode=corpCode, stockCode=stockCode, limit=retrievalLimit, **dateRange)
             contentHits = _searchContent(
                 query,
                 corpCode=corpCode,
                 stockCode=stockCode,
                 sourceKind=sourceKind,
                 limit=retrievalLimit,
+                **dateRange,
             )
             titleHits = titleHits.with_columns(pl.lit("title").alias("scope"))
             contentHits = contentHits.with_columns(pl.lit("content").alias("scope"))
@@ -215,29 +219,29 @@ def _looksLikeUsTicker(corp: str | None) -> bool:
     return text[0].isalpha() and all(ch in allowed for ch in text)
 
 
-def _searchTitle(query, *, corpCode, stockCode, limit):
+def _searchTitle(query, *, corpCode, stockCode, limit, **dateRange):
     from dartlab.providers.dart.search.ngramIndex import searchNgram
 
-    return searchNgram(query, corpCode=corpCode, stockCode=stockCode, limit=limit)
+    return searchNgram(query, corpCode=corpCode, stockCode=stockCode, limit=limit, **dateRange)
 
 
-def _searchContent(query, *, corpCode, stockCode, sourceKind=None, limit):
+def _searchContent(query, *, corpCode, stockCode, sourceKind=None, limit, **dateRange):
     from dartlab.providers.dart.search.fieldIndex import searchContent
 
-    return searchContent(query, corpCode=corpCode, stockCode=stockCode, sourceKind=sourceKind, limit=limit)
+    return searchContent(query, corpCode=corpCode, stockCode=stockCode, sourceKind=sourceKind, limit=limit, **dateRange)
 
 
-def _searchNews(query, *, corpCode, stockCode, limit):
+def _searchNews(query, *, corpCode, stockCode, limit, **dateRange):
     """뉴스 전용 — content 인덱스에서 source='news' 행만. corp 지정 시 0 건(뉴스 corp 매핑 없음)."""
     from dartlab.providers.dart.search.fieldIndex import searchContent
 
-    df = searchContent(query, corpCode=corpCode, stockCode=stockCode, sourceKind="news", limit=limit)
+    df = searchContent(query, corpCode=corpCode, stockCode=stockCode, sourceKind="news", limit=limit, **dateRange)
     if df is None or df.height == 0:
         return df
     return df.head(limit)
 
 
-def _searchAuto(query, *, corpCode, stockCode, sourceKind=None, constraintPlan=None, limit):
+def _searchAuto(query, *, corpCode, stockCode, sourceKind=None, constraintPlan=None, limit, **dateRange):
     """auto 모드 — 통합 검색 R* (plain BM25 ⊕ 큐레이션·라우팅 확장 BM25 RRF).
 
     unifiedSearchRecipe honest-gold 실측 확정 레시피. 구어·약어 질의를 동의어/canon 으로 회복하되
@@ -250,6 +254,7 @@ def _searchAuto(query, *, corpCode, stockCode, sourceKind=None, constraintPlan=N
         "stockCode": stockCode,
         "sourceKind": sourceKind,
         "limit": limit,
+        **dateRange,
     }
     if constraintPlan is not None:
         kwargs["constraintPlan"] = constraintPlan

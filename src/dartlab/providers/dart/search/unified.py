@@ -190,6 +190,8 @@ def searchUnified(
     stockCode: str | None = None,
     sourceKind: str | None = None,
     constraintPlan: SemanticConstraintPlan | None = None,
+    start: str | None = None,
+    end: str | None = None,
     limit: int = 10,
 ) -> pl.DataFrame:
     """통합 검색 — plain BM25 ⊕ 확장 BM25 RRF. main+delta 병합 (delta 우선).
@@ -201,6 +203,8 @@ def searchUnified(
         query: 검색어 (자연어 — 구어·약어 허용).
         corpCode: 회사 식별자 corp_code. None 이면 전체.
         stockCode: 종목코드 (6 자리). None 이면 전체.
+        start: 접수일 시작 YYYYMMDD. 후보 제한 전에 적용한다.
+        end: 접수일 끝 YYYYMMDD. 양 끝 날짜를 포함한다.
         limit: 최대 결과 행 수.
 
     Raises:
@@ -250,7 +254,7 @@ def searchUnified(
         idx, meta = segments[name]
         # corp/stock 스코프는 RRF *전* lane 점수에 적용 — "회사 안에서 검색" 의미론.
         # 사후 필터는 전역 top-N 에 못 들면 0건이 되는 결함 (흔한 질의 + 회사 지정).
-        mask = _scopeMask(meta, corpCode, stockCode, sourceKind)
+        mask = _scopeMask(meta, corpCode, stockCode, sourceKind, start=start, end=end)
         constraintMask = semanticScopeMask(meta, constraintPlan)
         if constraintMask is not None:
             mask = constraintMask if mask is None else (mask & constraintMask)

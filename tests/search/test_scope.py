@@ -185,3 +185,69 @@ def test_search_scope_title_works(monkeypatch):
 
     r = dartlab.search("유상증자", scope="title", topK=3)
     assert isinstance(r, pl.DataFrame)
+
+
+@pytest.mark.parametrize("scope", ["auto", "content", "title", "both", "news"])
+def testDateRangeBeforeCandidateLimit(tmp_path, monkeypatch, scope):
+    """기간 밖 고득점 공시가 후보를 채워도 지정 기간의 두 경계 공시를 회수한다."""
+    import polars as pl
+
+    import dartlab
+    from dartlab.providers.dart.search import fieldIndex, ngramIndex, unified
+
+    rows = []
+    for number, date in enumerate(["20260731"] * 100 + ["20260901"] * 100 + ["20260801", "20260831"]):
+        content = "반기보고서 " * 20 if number < 200 else "반기보고서 기업 현황과 재무제표를 설명합니다."
+        rows.append(
+            {
+                "rcept_no": f"{date}{number:06d}",
+                "section_order": 0,
+                "corp_code": "00126380",
+                "corp_name": "삼성전자",
+                "stock_code": "005930",
+                "rcept_dt": date,
+                "report_nm": "반기보고서",
+                "section_title": "",
+                "section_content": content,
+                "content_raw": content,
+                "fetch_status": "ok",
+                "source": "news" if scope == "news" else "allFilings",
+            }
+        )
+    segment = fieldIndex.buildContentSegment(rows, showProgress=False)
+    monkeypatch.setattr(fieldIndex, "_getSegments", lambda: {"main": segment})
+    monkeypatch.setattr(unified, "_getSegments", lambda: {"main": segment})
+    monkeypatch.setattr(unified, "_activeIndexDir", lambda: tmp_path)
+    monkeypatch.setattr(ngramIndex, "_stemIndexDir", lambda: tmp_path)
+    monkeypatch.setattr(ngramIndex, "_cachedIndex", None)
+    monkeypatch.setattr(ngramIndex, "_cachedMeta", None)
+    sourcePath = tmp_path / "filings.parquet"
+    pl.DataFrame(rows).write_parquet(sourcePath)
+    ngramIndex.buildNgramIndex([sourcePath], showProgress=False)
+
+    hits = dartlab.search(
+        "반기보고서",
+        corp=None if scope == "news" else "005930",
+        scope=scope,
+        start="20260801",
+        end="20260831",
+        limit=2,
+    )
+    assert set(hits["rcept_no"]) == {"20260801000200", "20260831000201"}
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "expected"),
+    [
+        ("20260801", None, [False, False, False, True, True]),
+        (None, "20260801", [False, False, True, True, False]),
+        ("20260801", "20260801", [False, False, False, True, False]),
+    ],
+)
+def testDateMaskIncludesBoundsAndExcludesUnknown(start, end, expected):
+    import polars as pl
+
+    from dartlab.providers.dart.search.fieldIndex import _scopeMask
+
+    meta = pl.DataFrame({"rcept_dt": [None, "", "20260731", "20260801", "20260802"]})
+    assert _scopeMask(meta, None, None, start=start, end=end).tolist() == expected

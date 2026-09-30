@@ -814,6 +814,9 @@ def _scopeMask(
     corpCode: str | None,
     stockCode: str | None,
     sourceKind: str | None = None,
+    *,
+    start: str | None = None,
+    end: str | None = None,
 ) -> np.ndarray | None:
     """corp/stock 필터를 랭킹 *전* 스코프 마스크로 변환 — "회사 안에서 검색" 의미론.
 
@@ -834,7 +837,7 @@ def _scopeMask(
     Returns:
         np.ndarray(bool) — 스코프 내 행 True. 필터가 없으면 None.
     """
-    if not corpCode and not stockCode and not sourceKind:
+    if not corpCode and not stockCode and not sourceKind and not start and not end:
         return None
     mask = np.ones(meta.height, dtype=bool)
     if corpCode:
@@ -843,6 +846,15 @@ def _scopeMask(
         mask &= (meta["stock_code"] == stockCode).to_numpy()
     if sourceKind:
         mask &= _sourceMask(meta, sourceKind)
+    if start or end:
+        if "rcept_dt" not in meta.columns:
+            return np.zeros(meta.height, dtype=bool)
+        dates = meta["rcept_dt"].fill_null("")
+        mask &= (dates != "").to_numpy()
+        if start:
+            mask &= (dates >= start).to_numpy()
+        if end:
+            mask &= (dates <= end).to_numpy()
     return mask
 
 
@@ -905,6 +917,8 @@ def searchContent(
     corpCode: str | None = None,
     stockCode: str | None = None,
     sourceKind: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
     limit: int = 10,
 ) -> pl.DataFrame:
     """content 전용 BM25 검색. delta가 있으면 main보다 우선한다.
@@ -925,6 +939,8 @@ def searchContent(
         query: 검색어 (자연어).
         corpCode: 회사 식별자 corp_code. None 이면 전체.
         stockCode: 종목코드 (6 자리). None 이면 전체.
+        start: 접수일 시작 YYYYMMDD. 후보 제한 전에 적용한다.
+        end: 접수일 끝 YYYYMMDD. 양 끝 날짜를 포함한다.
         limit: 최대 결과 행 수.
 
     Returns:
@@ -953,7 +969,7 @@ def searchContent(
             continue
         idx, meta = segments[name]
         scores = _scoreBM25(idx, tokens)
-        mask = _scopeMask(meta, corpCode, stockCode, sourceKind)
+        mask = _scopeMask(meta, corpCode, stockCode, sourceKind, start=start, end=end)
         if mask is not None:
             scores = np.where(mask, scores, 0.0)
         for i in np.argsort(-scores)[: limit * 3]:
