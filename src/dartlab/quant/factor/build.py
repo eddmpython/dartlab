@@ -51,15 +51,17 @@ _RETURN_WINDOW_START = "04-01"
 _RETURN_WINDOW_END = "12-31"
 
 
-def _latestYear(snap: pl.DataFrame, minCount: int = 1000) -> str | None:
+def _latestYear(snap: pl.DataFrame | pl.LazyFrame, minCount: int = 1000) -> str | None:
     """충분한 universe를 가진 가장 최근 연도."""
-    if snap.is_empty():
+    if isinstance(snap, pl.DataFrame) and snap.is_empty():
         return None
     yearCol = "fy" if isEdgarSchema(snap) else "bsns_year"
     # DART finance.parquet 은 회사-연도당 여러 계정 행을 가진 long-form 이다.
     # 행 수를 universe 로 세면 회사 한 곳의 계정 1,000개만으로도 최신 연도가
     # 선택된다. 실제 횡단면 표본인 고유 종목 수로만 완전 연도를 판정한다.
     counts = snap.group_by(yearCol).agg(pl.col("stockCode").n_unique().alias("len")).sort(yearCol, descending=True)
+    if isinstance(counts, pl.LazyFrame):
+        counts = counts.collect(engine="streaming")
     for row in counts.iter_rows(named=True):
         if row["len"] >= minCount:
             y = row[yearCol]

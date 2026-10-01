@@ -9,6 +9,35 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+def testIndexCopyDoesNotBufferEntireArtifact(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from dartlab.providers.dart.search.localUpdate import _copyFile
+
+    source = tmp_path / "source.bin"
+    destination = tmp_path / "stage" / "copy.bin"
+    source.write_bytes(b"binary index\x00" * 1000)
+    monkeypatch.setattr(Path, "read_bytes", lambda _path: pytest.fail("전체 파일 read_bytes 사용"))
+    _copyFile(source, destination)
+    with source.open("rb") as left, destination.open("rb") as right:
+        assert left.read() == right.read()
+
+
+def testSourceRefResolutionKeepsEmptyAndUnindexedEvidenceUnavailable():
+    import polars as pl
+
+    from dartlab.providers.dart.search.localUpdate import injectSourceRefResolution
+
+    rows = [{"expectedSourceRef": "A", "expectedSource": "panel"}]
+    empty = injectSourceRefResolution(rows, {}, pl.DataFrame())
+    assert empty[0]["_refResolved"] is False
+    assert empty[0]["_sourceResolved"] is False
+    meta = pl.DataFrame({"sourceRef": ["A", "B"], "source": ["panel", "news"]})
+    checked = injectSourceRefResolution(rows, {"docLengths": [0, 4]}, meta)
+    assert checked[0]["_refResolved"] is False
+    assert checked[0]["_sourceResolved"] is False
+
+
 def test_import() -> None:
     import dartlab.providers.dart.search.localUpdate as mod
 

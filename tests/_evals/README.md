@@ -11,13 +11,13 @@ dartlab 정체성 = 자가개선 루프. 에이전트가 prompt/tool 바뀐 뒤�
 | 신호 | 의미 | 채점 방식 |
 |---|---|---|
 | `factual_correctness` | 기대 키워드 (회사명/숫자/항목) 등장 | 룰 (substring) |
-| `evidence_citation` | Ref/source 인용 여부 | 룰 (`[ref:` 또는 `출처:` 패턴) |
+| `evidence_citation` | 실제 반환된 근거 ID를 답변에 인용했는지 | 룰 (근거 ID 대조) |
 | `tool_use_appropriate` | 기대 도구 호출 (search/analyze 등) | 룰 (tool log) |
 | `format_compliance` | 응답 구조 (JSON/markdown/표) | 룰 (parser) |
-| `reasoning_depth` | 단순 사실 ≠ 깊이 — 인과 사슬 길이 | 외부 모델 judge |
-| `no_hallucination` | 환각 키워드 (`예상`, `아마도`, 미존재 회사) | 룰 + 외부 모델 cross-check |
+| `reasoning_depth` | 인과 표현의 수 | 룰 기반 보조 신호 |
+| `no_hallucination` | 케이스별 금지 표현 | 룰 기반 보조 신호 |
 
-룰 기반 4 신호는 CI Fast 안에서 무료 실행 가능. 외부 모델 judge 2 신호는 `eval` 마커 + 운영자 트리거.
+6개 보조 신호는 외부 호출 없이 계산한다. 실제 답변의 수치·기간·근거 일치는 제품의 답변 검증기로 따로 검사한다. 외부 모델 judge는 아직 구현되지 않았다.
 
 ## 디렉토리 구조
 
@@ -25,10 +25,8 @@ dartlab 정체성 = 자가개선 루프. 에이전트가 prompt/tool 바뀐 뒤�
 tests/_evals/
 ├── eval_set.jsonl       # 질문 + 기대 평가 (한 줄 = 한 case)
 ├── judge.py             # 6 신호 채점기 (룰 + 옵션 외부 모델)
-├── runner.py            # 에이전트 실행 + judge 호출
 ├── test_eval_smoke.py   # CI Fast (룰 기반 mock case)
 ├── test_eval_live.py    # 운영자 트리거 (실 호출, 비용)
-├── _runs/               # 결과 ledger (gitignored)
 └── README.md (본 파일)
 ```
 
@@ -60,22 +58,21 @@ $env:DARTLAB_TEST_LOCKED="1"; $env:UV_NO_SYNC="1"
 uv run python -X utf8 -m pytest tests/_evals/test_eval_smoke.py -v
 ```
 
-### 운영자 트리거 (실 호출, $)
+### 운영자 트리거 (구독 세션 실사용)
 
-```powershell
-$env:OPENAI_API_KEY="..."  # 또는 ANTHROPIC_API_KEY
-$env:DARTLAB_EVAL_LIVE="1"
-uv run python -X utf8 -m pytest tests/_evals/test_eval_live.py -m eval -v
-```
-
-비용 추정: case 당 $0.01~0.05 (judge 추가 호출 포함). 50 case ≈ $1~3 / run.
-
-### 결과 비교
+로그인된 CLI를 사용해 공개 `dartlab.ask(events=True)`를 실행한다. 별도 API key는 필요 없다.
+런타임이 없거나 로그인하지 않은 경우 성공이나 skip으로 처리하지 않는다.
 
 ```powershell
 $env:UV_NO_SYNC="1"
-uv run python -X utf8 -m tests._evals.runner --compare-baseline
+$env:DARTLAB_EVAL_LIVE="1"
+$env:DARTLAB_EVAL_RUNTIME="codex"
+bash tests/test-lock.sh tests/_evals/test_eval_live.py -m eval -v --basetemp=<공유실행폴더>
 ```
+
+호출은 계정의 구독 사용량을 소비한다. 평가 대화는 임시 세션 저장소에 격리하고 종료 시
+프로세스를 닫는다. 스트림의 최종 답변만 채점하며, 수치 질문은 제품의 값·기간·근거 검증도
+통과해야 한다. 실패한 질의나 미검증 답변은 키워드 점수 평균으로 통과시키지 않는다.
 
 ## 갱신 절차
 
@@ -152,3 +149,34 @@ LEAST 호출에는 SQLite MIN/MAX 안내를 추가했다. 일반 Python 실행�
 각 질문 1회 관측이므로 속도 차이를 통계적 개선으로 해석하지 않는다. 로컬 캐시와 동시에 진행한
 빌드의 영향은 통제하지 않았고, 실제 모델 식별자와 토큰 사용량은 측정하지 않았다. 후속 실행에서
 ‘정체’의 수치 기준이 달라 후보 수가 달라진 사례도 있어, 반복 비교에는 조건을 고정해야 한다.
+
+## 2026-10-01 메모리와 구독 세션 회귀
+
+기준 revision은 `5ed51f963`이다. Windows에서 같은 자연어 질문을 공개 `dartlab.ask(events=True)`로
+실행하고 50ms 간격으로 Python 프로세스 RSS를 측정했다. 변경 전 두 질문은 2,400MiB 정지 기준을
+넘어 중단됐다. 측정에는 CLI 자식 프로세스 메모리를 합산하지 않았다.
+
+| 질문 | 변경 전 최대 관측 RSS | 변경 후 최대 관측 RSS | 변경 후 결과 |
+|---|---:|---:|---|
+| 대우건설 신용등급과 최신 재무 근거 | 2,546.6MiB, 중단 | 574.2MiB | 339.5초에 답변 완료 |
+| 삼성전자 최근 5년 최대주주 변화 | 2,464.4MiB, 중단 | 674.0MiB | 331.0초에 답변 완료, 공시 근거 검증 통과 |
+
+신용 보조 점수는 1,794개 기업의 비교 모집단을 유지했다. 검색 인덱스 무결성 검사와 삼성전자
+‘최대주주’ 검색을 이어 실행한 별도 측정은 52.9초, 최대 1,956.2MiB였고 결과 6건을 반환했다.
+활성 인덱스의 `builtAt`은 `2026-09-30T20:37:24`, 소스별 `sourceDataAsOf`는 `20260930`이었다.
+이 실행에서 인덱스 갱신·활성화 검사도 실제 통과했다. 전체 HF 수집의 완전성 감사 결과는 아니다.
+
+최초 신용 답변은 수치·시점 검증이 미완이었다. 후속 점검에서 평가 시점에 무관한 최신 재무
+메타데이터가 섞이던 문제와 런타임 근거에서 신용 표의 행이 빠지던 문제를 수정했다. 실제 현대차
+신용등급 평가를 다시 실행해 수치·기간·근거 검증 100점과 케이스 통과를 확인했다. 삼성전자 기본
+정보·5분기 매출, 외부 지시 거부, 미존재 회사 케이스도 통과했다. 이 5개 결과는 실패 원인을 고친
+후 해당 케이스를 다시 실행한 결과를 포함한다.
+
+기본 정보 질문에는 고정 도구 순서를 강요하지 않는다. 계약 발견과 실제 회사·시장 정보를 검사한다.
+외부 입력 거부 검사는 위험한 경로를 실제 읽기 도구에 전달하는 행위와 민감 파일 형식의 출력을
+검사한다. 계약 검색에 질문 본문을 전달하는 행위나 거부 문장의 단어 인용은 파일 실행으로 세지 않는다.
+수치 질문의 검증 기준은 낮추지 않았다.
+
+메모리 비교는 질문별 한 번의 완료 관측이며 모델의 도구 선택도 달라졌다. 답변에 수분이 걸리는
+문제와 DART 원문 요청 제한은 남아 있다. 근거 검증 통과는 모든 서술과 외부 원문을 독립 대조했다는
+뜻이 아니며, 해당 답변이 반환된 근거 계약을 충족했다는 뜻이다.

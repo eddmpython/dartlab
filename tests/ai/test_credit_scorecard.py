@@ -111,3 +111,39 @@ def test_historical_scorecard_does_not_mix_latest_factors(monkeypatch: pytest.Mo
         "reasonCode": "historical_factor_asof_unsupported",
         "basePeriod": "2023",
     }
+
+
+def testCreditRefUsesEvaluatedPeriodInsteadOfNewerBalanceSheet(monkeypatch):
+    import importlib
+    from types import SimpleNamespace
+
+    from dartlab.ai.tools.creditScorecard import creditScorecard
+
+    monkeypatch.setattr(
+        "dartlab.ai.tools.creditScorecard.resolveCompanyOrNone",
+        lambda _code: SimpleNamespace(stockCode="005930", corpName="테스트"),
+    )
+    monkeypatch.setattr(
+        importlib.import_module("dartlab.credit.engine"),
+        "evaluateCompany",
+        lambda _company, **_kwargs: {
+            "grade": "dCR-A",
+            "axes": [{"name": "현금흐름", "score": 52.75, "weight": 15}],
+            "latestPeriod": "2024Q4",
+        },
+    )
+    result = creditScorecard("005930", includeFactors=False)
+    assert result.data["period"] == "2024Q4"
+    assert result.data["sourcePeriods"] == {"credit": "2024Q4"}
+    assert next(ref for ref in result.refs if ref.id.endswith(":grade")).payload["period"] == "2024Q4"
+    from dartlab.ai.runtime.answerQuality import evaluateAnswerQuality
+    from dartlab.ai.runtime.outcomeTracking import _evidenceDetails
+
+    refs = _evidenceDetails(result.toDict())
+    table = next(ref for ref in refs if ref["kind"] == "tableRef")
+    assert table["payload"]["rows"][0]["score"] == 52.75
+    answer = (
+        "005930의 2024년 4분기 신용등급은 dCR-A입니다. credit:005930:grade credit:005930:axes credit:005930:date:2024Q4"
+    )
+    quality = evaluateAnswerQuality("005930 신용등급은?", answer, refs, completionSucceeded=True, failed=False)
+    assert quality.passed, quality.issues

@@ -545,6 +545,17 @@ def _isAnnualRequest(plan: dict[str, Any]) -> bool:
 
 def _requestedStatementSummary(company: Any, plan: dict, table: pl.DataFrame, topic: str) -> dict | ToolResult:
     """요청 기간의 존재를 확인하고 기업 통화로 재무 표를 요약한다."""
+    raw = str(plan.get("period") or "").strip().upper()
+    quarterSelection = bool(
+        re.fullmatch(r"20\d{2}Q[1-4]\s*(?:-|~|TO|부터)\s*20\d{2}Q[1-4]|RECENT\s*:?\s*\d{1,2}\s*Q", raw)
+    )
+    if quarterSelection:
+        selected = _filterPanelPeriod(table, raw)
+        if not selected.is_empty():
+            summary = _summarizeStatement(topic, selected, currency=str(getattr(company, "currency", None) or "KRW"))
+            if summary:
+                summary["requestedPeriods"] = summary["periods"]
+            return summary
     requestedPeriod, annualYears = _requestedStatementPeriod(plan, table, topic)
     if str(plan.get("period") or "").strip() and requestedPeriod is None and not annualYears:
         available = [str(column) for column in table.columns if _PERIOD_RE.match(str(column))]
@@ -593,6 +604,8 @@ def _companyPanelTopic(target: str, topic: str, *, period: str = "") -> ToolResu
         )
     with _quietExecutionNoise():
         result = company.panel(topic)
+    if result is None or (isinstance(result, pl.DataFrame) and result.is_empty()):
+        return ToolResult(False, f"Company.panel('{topic}')의 공시 데이터가 없습니다.", error="empty_data")
     if isinstance(result, pl.DataFrame) and period.strip():
         result = _filterPanelPeriod(result, period)
         if result.is_empty():
@@ -608,12 +621,44 @@ def _companyPanelTopic(target: str, topic: str, *, period: str = "") -> ToolResu
 
 def _filterPanelPeriod(frame: pl.DataFrame, period: str) -> pl.DataFrame:
     """long 또는 wide panel 표를 요청 연도/분기로 bounded 필터한다."""
-    normalized = period.strip().upper().replace("FY", "").replace("-", "")
+    normalized = period.strip().upper().replace("FY", "")
     if not normalized:
         return frame
-    if "period" in frame.columns:
-        return frame.filter(pl.col("period").cast(pl.String).str.to_uppercase().str.starts_with(normalized))
-    periodColumns = [column for column in frame.columns if str(column).upper().startswith(normalized)]
+    isLong = "period" in frame.columns
+    available = (
+        frame.get_column("period").drop_nulls().cast(pl.String).unique().to_list()
+        if isLong
+        else [column for column in frame.columns if _PERIOD_RE.match(str(column))]
+    )
+    recent = re.fullmatch(r"RECENT\s*:?\s*(\d{1,2})\s*([YQ])", normalized)
+    quarterRange = re.fullmatch(r"(20\d{2})Q([1-4])\s*(?:-|~|TO|부터)\s*(20\d{2})Q([1-4])", normalized)
+    periodRange = re.fullmatch(r"(20\d{2})\s*(?:-|~|TO|부터)\s*(20\d{2})", normalized)
+    if recent:
+        count = int(recent.group(1))
+        if recent.group(2) == "Q":
+            quarters = sorted((value for value in available if re.fullmatch(r"20\d{2}Q[1-4]", value)), reverse=True)
+            periodColumns = quarters[:count] if 1 <= count <= 80 else []
+        else:
+            years = sorted({value[:4] for value in available}, reverse=True)
+            selectedYears = set(years[:count]) if 1 <= count <= 20 else set()
+            periodColumns = [value for value in available if value[:4] in selectedYears]
+    elif quarterRange:
+        startYear, startQuarter, endYear, endQuarter = map(int, quarterRange.groups())
+        start, end = startYear * 4 + startQuarter - 1, endYear * 4 + endQuarter - 1
+        requested = (
+            {f"{index // 4}Q{index % 4 + 1}" for index in range(start, end + 1)} if 0 <= end - start < 80 else set()
+        )
+        periodColumns = [value for value in available if value in requested] if requested <= set(available) else []
+    elif periodRange:
+        start, end = map(int, periodRange.groups())
+        periodColumns = (
+            [value for value in available if str(start) <= value[:4] <= str(end)] if 0 <= end - start < 20 else []
+        )
+    else:
+        normalized = normalized.replace("-", "")
+        periodColumns = [value for value in available if value.upper().replace("-", "").startswith(normalized)]
+    if isLong:
+        return frame.filter(pl.col("period").cast(pl.String).is_in(periodColumns))
     if not periodColumns:
         return frame.head(0)
     identityColumns = [column for column in frame.columns if not _PERIOD_RE.match(str(column))]
@@ -749,7 +794,7 @@ def _buildShowRefs(
             },
         ),
     ]
-    if summary.get("projection") == "annual":
+    if summary.get("projection") == "annual" or summary.get("requestedPeriods"):
         for row in summary.get("timeseries") or []:
             for period, value in (row.get("values") or {}).items():
                 metricId = str(row.get("snakeId") or "value")

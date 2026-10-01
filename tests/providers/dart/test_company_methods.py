@@ -123,6 +123,23 @@ class TestDiff:
 
 
 class TestTopicSummaries:
+    def testCanonicalPanelNamesAndBoundedPreview(self):
+        from types import SimpleNamespace
+
+        from dartlab.providers.dart.company import Company
+
+        company = SimpleNamespace(
+            _cache={},
+            _hasPanel=True,
+            panel=pl.DataFrame(
+                {"sectionLeaf": ["주주에 관한 사항"], "2025Q4": ["최대주주 " * 1000], "2024Q4": ["과거"]}
+            ),
+        )
+        result = Company.topicSummaries(company)
+        assert result["주주에 관한 사항"].startswith("최대주주")
+        assert len(result["주주에 관한 사항"]) <= 200
+        assert Company.topicSummaries(company) is result
+
     def test_returns_dict(self, mock_company):
         result = mock_company.topicSummaries()
         assert isinstance(result, dict)

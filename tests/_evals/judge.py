@@ -103,19 +103,15 @@ def scoreFactualCorrectness(case: EvalCase, run: AgentRun) -> SignalScore:
     return SignalScore("factual_correctness", score, f"{hits}/{len(expected)} hits")
 
 
-_CITATION_PATTERN = re.compile(r"\[ref:|출처:|source:|`ref:|\(ref:", re.IGNORECASE)
-
-
 def scoreEvidenceCitation(case: EvalCase, run: AgentRun) -> SignalScore:
-    """Ref/출처 인용 패턴 존재."""
+    """실제로 반환된 근거 ID가 답변에 인용됐는지 확인한다."""
     required = case.expected_signals.get("evidence_citation", False)
     if not required:
         return SignalScore("evidence_citation", 1.0, "not required")
-    has_pattern = bool(_CITATION_PATTERN.search(run.output_text))
-    has_refs = bool(run.refs)
-    if has_pattern or has_refs:
-        return SignalScore("evidence_citation", 1.0, "ref/출처 found")
-    return SignalScore("evidence_citation", 0.0, "no ref/출처 citation")
+    cited = [ref for ref in run.refs if re.search(re.escape(ref) + r"(?![\w:])", run.output_text)]
+    if cited:
+        return SignalScore("evidence_citation", 1.0, f"{len(cited)} returned refs cited")
+    return SignalScore("evidence_citation", 0.0, "no returned ref cited")
 
 
 def scoreToolUseAppropriate(case: EvalCase, run: AgentRun) -> SignalScore:
@@ -126,7 +122,7 @@ def scoreToolUseAppropriate(case: EvalCase, run: AgentRun) -> SignalScore:
         if run.tool_calls:
             return SignalScore("tool_use_appropriate", 0.5, f"unexpected tools: {run.tool_calls}")
         return SignalScore("tool_use_appropriate", 1.0, "no tool expected, none called")
-    hits = sum(1 for t in expected if any(t in c for c in run.tool_calls))
+    hits = sum(1 for t in expected if any(t.lower() in c.lower() for c in run.tool_calls))
     score = hits / len(expected)
     return SignalScore("tool_use_appropriate", score, f"{hits}/{len(expected)} expected tools called")
 

@@ -243,8 +243,8 @@ def calcAltmanFactor(
                 reasonCode="finance_snapshot_missing",
                 detail="연간 연결 재무 스냅샷을 사용할 수 없습니다.",
             )
-        snap = extractAnnualConsolidated(lf.collect(engine="streaming"))
-        year = _latestYear(snap)
+        annual = extractAnnualConsolidated(lf)
+        year = _latestYear(annual)
         if year is None:
             return _unavailable(
                 market=resolved_market,
@@ -252,6 +252,34 @@ def calcAltmanFactor(
                 reasonCode="complete_financial_year_missing",
                 detail="고유 종목 수 기준의 완전한 회계연도가 없습니다.",
             )
+        edgar = isEdgarSchema(annual)
+        yearCol = "fy" if edgar else "bsns_year"
+        yearValue = int(year) if edgar else year
+        # 모집단·순위는 보존하되 과거 연도와 사용하지 않는 원문 열을 적재하지 않는다.
+        columns = annual.collect_schema().names()
+        required = (
+            "stockCode",
+            "fy",
+            "bsns_year",
+            "sector",
+            "sj_div",
+            "account_nm",
+            "thstrm_amount",
+            "total_assets",
+            "total_liabilities",
+            "current_assets",
+            "current_liabilities",
+            "retained_earnings",
+            "operating_profit",
+            "total_equity",
+            "total_stockholders_equity",
+            "sales",
+        )
+        cur = (
+            annual.filter(pl.col(yearCol) == yearValue)
+            .select([column for column in required if column in columns])
+            .collect(engine="streaming")
+        )
     except (OSError, ValueError, KeyError, AttributeError, pl.exceptions.PolarsError) as exc:
         log.warning("calcAltmanFactor 재무 스냅샷 실패: %s", type(exc).__name__)
         return _unavailable(
@@ -261,10 +289,6 @@ def calcAltmanFactor(
             detail=f"재무 스냅샷 처리 실패: {type(exc).__name__}",
         )
 
-    edgar = isEdgarSchema(snap)
-    yearCol = "fy" if edgar else "bsns_year"
-    year_val = int(year) if edgar else year
-    cur = snap.filter(pl.col(yearCol) == year_val)
     if cur.is_empty():
         return _unavailable(
             market=resolved_market,
@@ -273,7 +297,7 @@ def calcAltmanFactor(
             detail=f"{year} 회계연도 데이터가 비어 있습니다.",
         )
 
-    company_types = dict(industryByCode) if industryByCode is not None else _companyTypeMap(snap, resolved_market)
+    company_types = dict(industryByCode) if industryByCode is not None else _companyTypeMap(cur, resolved_market)
     market_caps = _fetchYearEndMarketcaps(resolved_market, str(year)) if resolved_variant == "z" else {}
     scores: dict[str, float] = {}
     components_by_code: dict[str, dict] = {}

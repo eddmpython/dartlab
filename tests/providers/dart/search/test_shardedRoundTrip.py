@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 import polars as pl
+import pytest
 
 from dartlab.providers.dart.search.fieldIndex import (
     _decodeVarintStream,
@@ -66,6 +67,49 @@ def test_decode_varint_stream_roundtrip():
         assert out.tolist() == vals
 
 
+@pytest.mark.unit
+def testLargeVarintStreamPreservesValuesAcrossByteBoundary():
+    values = np.tile(np.array([0, 127, 128, 16384, 1 << 27], dtype=np.int64), 150000)
+    raw, _ = _encodeVarintArray(values)
+    np.testing.assert_array_equal(_decodeVarintStream(raw, len(values)), values)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("raw,count", [(b"\x80", 1), (b"\x01\x80", 1), (b"\x01", 0), (b"\x80" * 10 + b"\x00", 1)])
+def testMalformedVarintStreamRejected(raw, count):
+    with pytest.raises(ValueError):
+        _decodeVarintStream(raw, count)
+
+
+@pytest.mark.unit
+def testShardedLoadCrossesTermBatchesWithoutReadingWholePostings(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    size = 4200
+    idx = {
+        "stemDict": {f"term{i}": i for i in range(size)},
+        "offsets": np.arange(size + 1, dtype=np.int64) * 2,
+        "docIds": np.tile(np.array([0, 2], dtype=np.int32), size),
+        "termFreqs": np.tile(np.array([1, 300], dtype=np.int32), size),
+        "docLengths": np.array([size, 0, size * 300], dtype=np.int32),
+        "nDocs": 3,
+        "avgDocLength": size * 301 / 3,
+    }
+    meta = _meta(3)
+    writeSegmentCompanions(idx, meta, "main", tmp_path)
+    saveShardedSegment(idx, meta, "main", tmp_path)
+    original = Path.read_bytes
+
+    def readBytes(path):
+        assert not path.name.endswith(".postings.bin"), "postings 전체 read_bytes 금지"
+        return original(path)
+
+    monkeypatch.setattr(Path, "read_bytes", readBytes)
+    loaded, _ = loadShardedSegment("main", tmp_path)
+    for key in ("offsets", "docIds", "termFreqs", "docLengths"):
+        np.testing.assert_array_equal(loaded[key], idx[key])
+
+
 def test_sharded_roundtrip_and_bm25_parity(tmp_path):
     docs = [
         "삼성전자 반도체 매출 증가 영업이익",
@@ -90,6 +134,10 @@ def test_sharded_roundtrip_and_bm25_parity(tmp_path):
     assert idxS["nDocs"] == idx0["nDocs"]
     assert idxS["stemDict"] == idx0["stemDict"]
     assert metaS.height == len(docs)
+    narrowIdx, narrowMeta = loadShardedSegment("main", tmp_path, metaColumns=("source", "rcept_no"))
+    assert narrowMeta.columns == ["source", "rcept_no"]
+    assert narrowMeta.height == metaS.height
+    np.testing.assert_array_equal(narrowIdx["docIds"], idxS["docIds"])
 
     # BM25 byte-parity (sidecar 복원 idx == 빌더 원본 idx)
     for q in ["반도체 매출", "배당 자사주", "삼성 반도체", "현대차 배당", "HBM 투자", "없는단어"]:

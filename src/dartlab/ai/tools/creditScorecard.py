@@ -17,7 +17,6 @@ from dartlab.ai.contracts import Ref
 from dartlab.core.confidence import baseScore
 from dartlab.core.market import detectMarket
 
-from .companyMetrics import companyMetrics
 from .companyResolve import resolveCompanyOrNone
 from .types import ToolResult
 
@@ -182,8 +181,8 @@ def creditScorecard(
     gradePublished = layout["headline"].get("grade") is not None
     confidence = baseScore("ratio") if gradePublished else 0
     corpName = str(getattr(company, "corpName", None) or "")
-    sourcePeriods = companyMetrics(company).get("sourcePeriods") or {}
-    resolvedPeriod = basePeriod or result.get("basePeriod") or result.get("period") or sourcePeriods.get("BS")
+    resolvedPeriod = basePeriod or result.get("basePeriod") or result.get("latestPeriod") or result.get("period")
+    sourcePeriods = {"credit": str(resolvedPeriod)} if resolvedPeriod else {}
 
     factor_data: dict[str, Any] | None = None
     if includeFactors:
@@ -254,7 +253,7 @@ def creditScorecard(
             kind="tableRef",
             title=f"{corpName or stockCode} " + ("신용 7 축" if gradePublished else "신용 진단"),
             source="creditScorecard",
-            payload=payload,
+            payload={**payload, "rows": layout["sections"]},
         )
     )
     refs.extend(_creditPeriodExecutionRefs(stockCode, corpName, resolvedPeriod, payload["assessmentStatus"]))

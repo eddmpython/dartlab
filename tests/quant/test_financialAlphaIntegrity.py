@@ -185,6 +185,22 @@ def testLatestYearCountsCompaniesNotLongFormRows() -> None:
     )
 
     assert _latestYear(snap, minCount=2) == "2024"
+    assert _latestYear(snap.lazy(), minCount=2) == "2024"
+
+
+def testTargetAltmanKeepsMarketPercentileAndAnnualProjection(monkeypatch):
+    rows = [
+        _financeRow("A", operating_profit=1.0),
+        _financeRow("B", operating_profit=5.0),
+        _financeRow("C", operating_profit=10.0),
+        _financeRow("B", fy=2023, operating_profit=100.0),
+    ]
+    _patchSnapshot(monkeypatch, rows)
+    market = calcAltmanFactor(market="US", variant="zpp")
+    target = calcAltmanFactor(market="US", variant="zpp", stockCode="B")
+    assert target["score"] == market["scores"]["B"] == 2.89
+    assert target["universe"] == 3
+    assert target["percentile"] < 100
 
 
 def testBeneishAllPublicPathsStayUnavailable() -> None:

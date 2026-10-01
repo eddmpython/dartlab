@@ -262,6 +262,7 @@ def _qualitativeValueBinds(prose: str, value: str) -> bool:
 
 def _financialAmounts(prose: str) -> list[tuple[float, float]]:
     """한국 공시 답변의 원, 만, 억, 조 표기를 값과 표시 반올림 허용폭으로 바꾼다."""
+    prose = prose.replace("\u2212", "-")
     scales = {"만": 10_000.0, "억": 100_000_000.0, "조": 1_000_000_000_000.0}
     amounts: list[tuple[float, float]] = []
 
@@ -280,7 +281,7 @@ def _financialAmounts(prose: str) -> list[tuple[float, float]]:
     for match in compoundPattern.finditer(prose):
         major, _majorTolerance = parse(match.group(1), scales["조"])
         minor, minorTolerance = parse(match.group(2), scales["억"])
-        amounts.append((major + minor, minorTolerance))
+        amounts.append((major - minor if match.group(1).startswith("-") else major + minor, minorTolerance))
 
     rangePattern = re.compile(
         r"(?<![\w.])(-?\d[\d,]*(?:\.\d+)?)\s*(?:~|〜|\u2013|\u2014)\s*"

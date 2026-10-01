@@ -61,6 +61,15 @@ def testFinancialTableBindsOnlyExplicitMoneyUnit():
     assert "value_binding_mismatch" in wrong.issues
 
 
+def testFinancialMinusSignAndNegativeCompoundAmounts():
+    from dartlab.ai.runtime.answerQualityParser import _financialAmounts
+
+    amounts = _financialAmounts("영업현금흐름은 \u22127462억원, 누적은 \u22121조 2151억원이다.")
+    assert (-746200000000, 50000000) in amounts
+    assert (-1215100000000, 50000000) in amounts
+    assert not any(value == -784900000000 for value, _tolerance in amounts)
+
+
 def testQuantitativeAnswerBindsExactValueAndPeriodOutsideCitationIds():
     answer = (
         "2026년 1분기 매출은 133,873,444,000,000원이다. "

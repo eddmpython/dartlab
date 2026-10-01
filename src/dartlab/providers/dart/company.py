@@ -1217,7 +1217,7 @@ class Company:
         summaries.update(_FINANCE_SUMMARIES)
 
         # panel topic 요약 - 최신 기간 첫 텍스트 200자
-        textWide = self._panelTextWide() if self._hasPanel else None
+        textWide = self.panel if self._hasPanel else None
         if textWide is not None and not textWide.is_empty():
             periodCols = sorted(
                 [c for c in textWide.columns if _isPeriodColumn(c)],
@@ -1226,7 +1226,10 @@ class Company:
             topicCol = "topic" if "topic" in textWide.columns else "sectionLeaf"
             if topicCol in textWide.columns and periodCols:
                 seen: set[str] = set()
-                for row in textWide.iter_rows(named=True):
+                previews = textWide.select(
+                    topicCol, *[pl.col(column).cast(pl.String).str.slice(0, 220) for column in periodCols]
+                )
+                for row in previews.iter_rows(named=True):
                     topic = str(row.get(topicCol) or "").strip()
                     if not topic or topic in seen or topic in summaries:
                         continue

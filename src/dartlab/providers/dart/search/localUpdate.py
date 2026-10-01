@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from pathlib import Path
 from typing import Any
@@ -450,7 +451,7 @@ def _fileSources(manifest: dict[str, Any]) -> dict[str, str]:
 
 def _copyFile(src: Path, dst: Path) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_bytes(src.read_bytes())
+    shutil.copyfile(src, dst)
 
 
 def _canaryErrors(indexDir: Path, rawQueries: Any) -> list[str]:
@@ -461,7 +462,11 @@ def _canaryErrors(indexDir: Path, rawQueries: Any) -> list[str]:
     try:
         from dartlab.providers.dart.search.fieldIndex import _scoreBM25, loadSegment, tokenizeContent
 
-        loaded = [segment for name in ("main", "delta") if (segment := loadSegment(name, indexDir)) is not None]
+        loaded = [
+            segment
+            for name in ("main", "delta")
+            if (segment := loadSegment(name, indexDir, metaColumns=("source",))) is not None
+        ]
         if not loaded:
             return ["canary:mainLoad"]
     except Exception:  # noqa: BLE001 — corrupt artifacts must not activate.
@@ -510,37 +515,40 @@ def injectSourceRefResolution(rows: Any, idx: Any, meta: Any) -> list[dict[str, 
         >>> callable(injectSourceRefResolution)
         True
     """
+    import polars as pl
+
     from dartlab.providers.dart.search.canaryPack import _expectedSourceRefs
 
     docLengths = idx.get("docLengths") if hasattr(idx, "get") else None
-    cols = getattr(meta, "columns", [])
-    refs = meta["sourceRef"].to_list() if "sourceRef" in cols else [None] * meta.height
-    rcepts = meta["rcept_no"].to_list() if "rcept_no" in cols else [None] * meta.height
-    sources = meta["source"].to_list() if "source" in cols else [None] * meta.height
-    refToDoc: dict[str, int] = {}
-    sourcesIndexed: set[str] = set()
-    for docId in range(int(meta.height)):
-        indexed = docLengths is None or int(docLengths[docId]) > 0
-        key = str(refs[docId] or rcepts[docId] or "")
-        if key and key not in refToDoc:
-            refToDoc[key] = docId
-        src = str(sources[docId] or "")
-        if src and indexed:
-            sourcesIndexed.add(src)
 
-    def _resolved(expectedRefs: set[str]) -> bool:
-        for ref in expectedRefs:
-            docId = refToDoc.get(ref)
-            if docId is not None and (docLengths is None or int(docLengths[docId]) > 0):
-                return True
-        return False
+    def column(name: str) -> pl.Expr:
+        """누락한 메타데이터 열을 빈 문자열로 처리한다."""
+        return pl.col(name).cast(pl.String).fill_null("") if name in meta.columns else pl.lit("")
+
+    expected = {ref for row in rows for ref in _expectedSourceRefs(row)}
+    refs = (
+        meta.with_columns(
+            pl.when(column("sourceRef") != "").then(column("sourceRef")).otherwise(column("rcept_no")).alias("ref"),
+            column("source").alias("source"),
+        )
+        .select("ref", "source")
+        .head(meta.height)
+        .with_columns(pl.lit(True).alias("indexed") if docLengths is None else pl.Series("indexed", docLengths) > 0)
+    )
+    sourcesIndexed = set(refs.filter(pl.col("indexed"))["source"].unique().to_list()) - {""}
+    resolvedRefs = set(
+        refs.filter(pl.col("ref").is_in(expected))
+        .unique(subset="ref", keep="first", maintain_order=True)
+        .filter(pl.col("indexed"))["ref"]
+        .to_list()
+    )
 
     out: list[dict[str, Any]] = []
     for row in rows:
         enrichedRow = dict(row)
         expectedRefs = _expectedSourceRefs(row)
         if expectedRefs:
-            enrichedRow["_refResolved"] = _resolved(expectedRefs)
+            enrichedRow["_refResolved"] = bool(expectedRefs & resolvedRefs)
         # source-lane 도 결정론: expectedSource 가 색인된 doc 을 가진 source 인가(랭킹 무관). 보일러플레이트
         # self-query 가 top-K 를 못 채워도 source 가 색인돼 있으면 lane 무결성은 통과해야 한다.
         expectedSource = str(row.get("expectedSource") or row.get("source") or "").strip()
@@ -559,11 +567,18 @@ def _sourceCanaryPackErrors(indexDir: Path, rawRows: Any) -> list[str]:
         if not isinstance(row, dict):
             return ["invalid:sourceCanaryPackRow"]
     try:
+        import numpy as np
+
         from dartlab.providers.dart.search.canaryPack import evaluateCanaryPackRows
         from dartlab.providers.dart.search.fieldIndex import _scoreBM25, _segmentRowKey, loadSegment, tokenizeContent
         from dartlab.providers.dart.search.fieldIndexRebuild import _effectiveSegmentMeta
 
-        segments = {name: segment for name in ("main", "delta") if (segment := loadSegment(name, indexDir)) is not None}
+        metaColumns = ("sourceRef", "rcept_no", "section_order", "source", "deleted")
+        segments = {
+            name: segment
+            for name in ("main", "delta")
+            if (segment := loadSegment(name, indexDir, metaColumns=metaColumns)) is not None
+        }
         if "main" not in segments:
             return ["sourceCanary:mainLoad"]
     except Exception:  # noqa: BLE001 — corrupt artifacts must not activate.
@@ -574,7 +589,7 @@ def _sourceCanaryPackErrors(indexDir: Path, rawRows: Any) -> list[str]:
         segments.get("main", ({}, None))[1],
         segments.get("delta", ({}, None))[1],
     )
-    enriched = injectSourceRefResolution(rawRows, {"docLengths": [1] * effectiveMeta.height}, effectiveMeta)
+    enriched = injectSourceRefResolution(rawRows, {}, effectiveMeta)
     deltaKeys = {
         _segmentRowKey(row) for row in (segments["delta"][1].iter_rows(named=True) if "delta" in segments else [])
     }
@@ -583,26 +598,31 @@ def _sourceCanaryPackErrors(indexDir: Path, rawRows: Any) -> list[str]:
         query = str(row.get("query") or row.get("q") or "")
         tokens = tokenizeContent(query)
         candidates: list[tuple[float, dict[str, Any]]] = []
+        topK = int(row.get("topK") or 10)
         for name in ("delta", "main"):
             if name not in segments or not tokens:
                 continue
             idx, meta = segments[name]
             scores = _scoreBM25(idx, tokens)
-            for docId in sorted(range(len(scores)), key=lambda i: float(scores[i]), reverse=True):
+            kept = 0
+            for docId in np.argsort(-scores, kind="stable"):
                 score = float(scores[docId])
                 if score <= 0:
                     break
-                metaRow = dict(meta.row(docId, named=True))
+                metaRow = dict(meta.row(int(docId), named=True))
                 if bool(metaRow.get("deleted")) or (name == "main" and _segmentRowKey(metaRow) in deltaKeys):
                     continue
                 candidates.append((score, metaRow))
+                kept += 1
+                if kept >= topK:
+                    break
         ranked = [
             {
                 "source": metaRow.get("source") or "",
                 "sourceRef": metaRow.get("sourceRef") or metaRow.get("rcept_no") or "",
                 "answerable": True,
             }
-            for _, metaRow in sorted(candidates, key=lambda item: item[0], reverse=True)[: int(row.get("topK") or 10)]
+            for _, metaRow in sorted(candidates, key=lambda item: item[0], reverse=True)[:topK]
         ]
         resultsByQuery[query] = ranked
     report = evaluateCanaryPackRows(enriched, resultsByQuery)

@@ -255,3 +255,65 @@ def testUsAnnualRequestUsesFiscalOwnerAndCurrency(period):
     assert all(value["currency"] == value["unit"] == "USD" for value in values)
     assert all(value["basis"] == "fiscal_year" for value in values)
     assert "조원" not in result.data["markdown"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "period,expected",
+    [
+        ("2023~2024", ["2023Q4", "2024Q1", "2024Q4"]),
+        ("2023-2024", ["2023Q4", "2024Q1", "2024Q4"]),
+        ("recent:2Y", ["2024Q1", "2024Q4", "2025Q2"]),
+        ("2024-Q1", ["2024Q1"]),
+        ("FY2024", ["2024Q1", "2024Q4"]),
+        ("2025~2023", []),
+        ("recent:0Y", []),
+        ("2000~2025", []),
+        ("2026", []),
+    ],
+)
+def testPanelDisclosurePeriodSelectionUsesAvailableYears(period, expected):
+    from dartlab.ai.tools.engineCall import _filterPanelPeriod
+
+    periods = ["2023Q4", "2024Q1", "2024Q4", "2025Q2"]
+    long = pl.DataFrame({"period": periods, "text": ["주주"] * len(periods)})
+    wide = pl.DataFrame({"sectionLeaf": ["주주"], **{value: [value] for value in periods}})
+    selectedLong = _filterPanelPeriod(long, period)
+    selectedWide = _filterPanelPeriod(wide, period)
+    assert sorted(selectedLong["period"].to_list()) == expected
+    if expected:
+        assert selectedWide.columns == ["sectionLeaf", *expected]
+    else:
+        assert selectedWide.is_empty()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("period", ["2025Q2~2026Q2", "2025Q2-2026Q2", "recent:5Q"])
+def testQuarterRangePreservesIndividualFlows(period):
+    from types import SimpleNamespace
+
+    from dartlab.ai.tools.engineCall import _buildShowRefs, _requestedStatementSummary
+
+    periods = ["2026Q2", "2026Q1", "2025Q4", "2025Q3", "2025Q2", "2025Q1"]
+    table = pl.DataFrame({"snakeId": ["sales"], "항목": ["매출액"], **{p: [i + 1.0] for i, p in enumerate(periods)}})
+    result = _requestedStatementSummary(SimpleNamespace(currency="KRW"), {"period": period}, table, "IS")
+    assert result["periods"] == periods[:5]
+    assert result["projection"] == "period"
+    assert result["timeseries"][0]["values"] == {p: i + 1.0 for i, p in enumerate(periods[:5])}
+    with patch("dartlab.ai.tools.engineCall.buildPeriodToFiling", return_value={}):
+        refs = _buildShowRefs("005930", "삼성전자", "IS", result, object(), includeContext=False)
+    values = [ref.payload for ref in refs if ref.kind == "valueRef"]
+    assert {value["period"] for value in values} == set(periods[:5])
+    assert all(value["basis"] == "calendar_quarter" for value in values)
+
+
+@pytest.mark.unit
+def testQuarterRangeWithMissingQuarterIsExplicitError():
+    from types import SimpleNamespace
+
+    from dartlab.ai.tools.engineCall import _requestedStatementSummary
+
+    table = pl.DataFrame({"snakeId": ["sales"], "항목": ["매출액"], "2025Q4": [10.0], "2025Q2": [20.0]})
+    result = _requestedStatementSummary(SimpleNamespace(currency="KRW"), {"period": "2025Q2~2025Q4"}, table, "IS")
+    assert not result.ok
+    assert result.error == "period_not_found"

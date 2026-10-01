@@ -435,7 +435,7 @@ def _encodeVarintArray(vals: np.ndarray) -> tuple[bytes, np.ndarray]:
     return out.tobytes(), nbytes
 
 
-def _decodeVarintStream(raw: bytes, count: int) -> np.ndarray:
+def _decodeVarintStream(raw: bytes | memoryview, count: int) -> np.ndarray:
     """``_encodeVarintArray`` 의 역연산 — 연접 LEB128 varint 바이트열을 ``count`` 개 int64 로 벡터 디코드.
 
     각 바이트는 자신이 속한 값 그룹(continuation 비트 0 = 그룹 끝)을 ``cumsum`` 으로 식별하고,
@@ -460,8 +460,32 @@ def _decodeVarintStream(raw: bytes, count: int) -> np.ndarray:
         >>> _decodeVarintStream(b, 3).tolist()
         [1, 300, 5]
     """
-    if count == 0:
+    if count == 0 and not raw:
         return np.zeros(0, dtype=np.int64)
+    if not raw or raw[-1] & 0x80:
+        raise ValueError("끝나지 않은 varint stream")
+    blockBytes = 1024 * 1024
+    if len(raw) > blockBytes:
+        result = np.empty(count, dtype=np.int64)
+        cursor = 0
+        written = 0
+        view = memoryview(raw)
+        while cursor < len(raw):
+            end = min(cursor + blockBytes, len(raw))
+            while end > cursor and raw[end - 1] & 0x80:
+                end -= 1
+            if end == cursor:
+                raise ValueError("유효한 경계가 없는 varint stream")
+            chunk = view[cursor:end]
+            chunkCount = int(np.count_nonzero((np.frombuffer(chunk, dtype=np.uint8) & 0x80) == 0))
+            if written + chunkCount > count:
+                raise ValueError("varint stream 값 개수가 기대 개수를 초과")
+            result[written : written + chunkCount] = _decodeVarintStream(chunk, chunkCount)
+            written += chunkCount
+            cursor = end
+        if written != count:
+            raise ValueError(f"varint stream 값 개수 {written} != 기대 {count}")
+        return result
     b = np.frombuffer(raw, dtype=np.uint8)
     isLast = (b & 0x80) == 0
     lastPos = np.nonzero(isLast)[0]  # 각 값의 마지막 바이트 위치
@@ -470,18 +494,26 @@ def _decodeVarintStream(raw: bytes, count: int) -> np.ndarray:
     groupStart = np.empty(count, dtype=np.int64)
     groupStart[0] = 0
     groupStart[1:] = lastPos[:-1] + 1
+    if np.any(lastPos - groupStart >= 9):
+        raise ValueError("int64 범위를 초과한 varint stream")
     valueIndex = np.cumsum(isLast.astype(np.int64)) - isLast.astype(np.int64)  # 바이트별 0-based 값 그룹
     shift = (np.arange(len(b), dtype=np.int64) - groupStart[valueIndex]) * 7
     contrib = (b & 0x7F).astype(np.int64) << shift
     return np.add.reduceat(contrib, groupStart)
 
 
-def loadShardedSegment(name: str = "main", inDir: Path | None = None, *, includeEvidenceText: bool = False):
+def loadShardedSegment(
+    name: str = "main",
+    inDir: Path | None = None,
+    *,
+    includeEvidenceText: bool = False,
+    metaColumns: tuple[str, ...] | None = None,
+):
     """STORED sidecar(postings/terms/docLengths.bin)에서 CSR 인덱스를 무손실 복원 — npz 없이 로드.
 
-    ``saveShardedSegment`` 의 역연산. ``postings.bin`` 전체를 ``_decodeVarintStream`` 으로 한 번에 디코드한
-    뒤 term 별로 [gap×df][tf×df] 로 분리하고, term 경계마다 절대 docId 로 reset 되는 gap 을 세그먼트
-    cumsum 으로 docIds 복원한다. 반환 idx 는 ``loadSegment`` 와 동일 키라 ``_scoreBM25`` 가
+    ``saveShardedSegment`` 의 역연산. term 묶음마다 varint를 복원하고 최종 CSR 배열에 바로 쓴다.
+    전체 postings의 int64 중간 배열과 term별 repeat 배열을 만들지 않는다.
+    term 경계마다 gap 누적합을 초기화한다. 반환 idx 는 ``loadSegment`` 와 동일 키라 ``_scoreBM25`` 가
     그대로 소비(랭킹 불변·byte-parity). meta/info 는 ``loadSegment`` 와 동일하게 parquet/json 에서 읽는다.
 
     Sig:
@@ -491,6 +523,7 @@ def loadShardedSegment(name: str = "main", inDir: Path | None = None, *, include
         name: 세그먼트 이름("main").
         inDir: 인덱스 디렉터리. None 이면 ``_contentIndexDir()``.
         includeEvidenceText: True 면 evidenceText 컬럼까지 meta 로드.
+        metaColumns: 검증에 필요한 열만 지정한다. None이면 기본 검색 메타데이터를 읽는다.
 
     Returns:
         tuple[dict, pl.DataFrame] 또는 None — sidecar(postings.bin) 부재 시 None.
@@ -515,29 +548,36 @@ def loadShardedSegment(name: str = "main", inDir: Path | None = None, *, include
     nPost = int(offsets[-1])
     docLengths = np.frombuffer((inDir / f"{name}.docLengths.bin").read_bytes(), dtype=np.uint32).astype(np.int32)
 
-    if nPost == 0:
-        docIds = np.zeros(0, dtype=np.int32)
-        termFreqs = np.zeros(0, dtype=np.int32)
-    else:
-        # postings.bin = term0[gap×df0 | tf×df0] term1[...] ... (stemId 순 연접). 전체를 한 번에 디코드.
-        values = _decodeVarintStream(postingsPath.read_bytes(), 2 * nPost)
-        perTerm = 2 * df
-        termOfValue = np.repeat(np.arange(nTerms, dtype=np.int64), perTerm)
-        cumStart = np.zeros(nTerms, dtype=np.int64)
-        np.cumsum(perTerm[:-1], out=cumStart[1:])
-        within = np.arange(2 * nPost, dtype=np.int64) - cumStart[termOfValue]
-        isGap = within < df[termOfValue]  # term 내 앞 df 개=gap, 뒤 df 개=tf
-        gaps = values[isGap]
-        termFreqs = values[~isGap].astype(np.int32)
-        # term 경계마다 첫 gap=절대 docId(reset) → 세그먼트 cumsum 으로 docIds 복원.
-        full = np.cumsum(gaps)
-        startIdx = offsets[:-1]
-        prevIdx = np.where(startIdx > 0, startIdx - 1, 0)
-        baseVals = np.where(startIdx > 0, full[prevIdx], 0)
-        docIds = (full - np.repeat(baseVals, df)).astype(np.int32)
+    docIds = np.empty(nPost, dtype=np.int32)
+    termFreqs = np.empty(nPost, dtype=np.int32)
+    byteEnds = terms[:, 0].astype(np.int64) + terms[:, 1].astype(np.int64) + terms[:, 2]
+    with postingsPath.open("rb") as postings:
+        first = 0
+        while first < nTerms:
+            byteStart = int(terms[first, 0])
+            stop = max(first + 1, int(np.searchsorted(byteEnds, byteStart + 1024 * 1024, side="right")))
+            stop = min(stop, first + 4096)
+            byteCount = int(byteEnds[stop - 1]) - byteStart
+            postings.seek(byteStart)
+            raw = postings.read(byteCount)
+            if len(raw) != byteCount:
+                raise ValueError("잘린 postings stream")
+            values = _decodeVarintStream(raw, 2 * int(offsets[stop] - offsets[first]))
+            cursor = 0
+            for term in range(first, stop):
+                start, end = int(offsets[term]), int(offsets[term + 1])
+                size = end - start
+                np.cumsum(values[cursor : cursor + size], out=docIds[start:end])
+                termFreqs[start:end] = values[cursor + size : cursor + 2 * size]
+                cursor += 2 * size
+            first = stop
 
     metaPath = inDir / f"{name}_meta.parquet"
-    meta = pl.read_parquet(metaPath, columns=_segmentMetaColumns(metaPath, includeEvidenceText=includeEvidenceText))
+    columns = _segmentMetaColumns(metaPath, includeEvidenceText=includeEvidenceText)
+    if metaColumns is not None:
+        schema = pl.read_parquet_schema(metaPath)
+        columns = [column for column in metaColumns if column in schema]
+    meta = pl.read_parquet(metaPath, columns=columns)
     idx = {
         "stemDict": stemDict,
         "offsets": offsets,
@@ -686,6 +726,7 @@ def loadSegment(
     inDir: Path | None = None,
     *,
     includeEvidenceText: bool = False,
+    metaColumns: tuple[str, ...] | None = None,
 ) -> tuple[dict, pl.DataFrame] | None:
     """세그먼트를 디스크에서 로드. 파일이 없으면 None.
 
@@ -694,6 +735,7 @@ def loadSegment(
         inDir: 인자.
         includeEvidenceText: True 면 긴 evidenceText 컬럼까지 로드. 기본 검색 경로는
             slim meta 만 로드해 full index RSS 를 낮춘다.
+        metaColumns: 지정하면 스키마에 있는 해당 열만 읽는다. 검증 과정의 원문 적재를 피한다.
 
     Raises:
         없음.
@@ -707,7 +749,7 @@ def loadSegment(
     inDir = inDir or _contentIndexDir()
     # compact-only(P2): postings SSOT = STORED sidecar 단독(npz 폐기). postings.bin 부재면 None.
     if (inDir / f"{name}.postings.bin").exists():
-        return loadShardedSegment(name, inDir, includeEvidenceText=includeEvidenceText)
+        return loadShardedSegment(name, inDir, includeEvidenceText=includeEvidenceText, metaColumns=metaColumns)
     return None
 
 

@@ -47,7 +47,7 @@ def test_factualCorrectness_full_hit() -> None:
     run = AgentRun(
         case_id=case.id,
         output_text="삼성전자(005930)는 KOSPI 상장 기업입니다.",
-        tool_calls=["company.listing"],
+        tool_calls=["ReadSkill", "EngineCall:listing"],
     )
     score = scoreFactualCorrectness(case, run)
     assert score.score == 1.0
@@ -74,6 +74,7 @@ def test_evidenceCitation_required_and_present() -> None:
         case_id=case.id,
         output_text="삼성전자 매출 분기별 [ref: 005930.finance.2024Q4]",
         tool_calls=["finance.select"],
+        refs=["005930.finance.2024Q4"],
     )
     score = scoreEvidenceCitation(case, run)
     assert score.score == 1.0
@@ -95,7 +96,7 @@ def test_toolUseAppropriate_expected_called() -> None:
     run = AgentRun(
         case_id=case.id,
         output_text="...",
-        tool_calls=["finance.select", "analyze.trend"],
+        tool_calls=["EngineCall:Company.panel"],
     )
     score = scoreToolUseAppropriate(case, run)
     assert score.score == 1.0
@@ -174,7 +175,7 @@ def test_judgeRule_aggregate() -> None:
     run = AgentRun(
         case_id=case.id,
         output_text="삼성전자(005930)는 KOSPI 상장 기업입니다.",
-        tool_calls=["company.listing"],
+        tool_calls=["ReadSkill", "EngineCall:listing"],
     )
     result = judgeRule(case, run)
     assert result.aggregate >= 0.95  # 모든 신호 통과
@@ -189,10 +190,48 @@ def test_judgeRule_partial_failure_isolated() -> None:
     run = AgentRun(
         case_id=case.id,
         output_text="삼성전자는 KOSDAQ 입니다.",  # 환각 + 사실 부정확
-        tool_calls=["company.listing"],
+        tool_calls=["ReadSkill", "EngineCall:listing"],
     )
     result = judgeRule(case, run)
     halluc = result.signal("no_hallucination")
     assert halluc is not None and halluc.score == 0.0
     # 다른 신호는 별도 평가됨 (aggregate < 1.0 이지만 isolated 보고 가능)
     assert result.aggregate < 1.0
+
+
+@pytest.mark.parametrize(
+    "answer,refs",
+    [("출처: 공시", ["table:real"]), ("[ref:table:invented]", ["table:real"]), ("[table:real:other]", ["table:real"])],
+)
+def testCitationRequiresReturnedIdentityInAnswer(answer, refs):
+    case = next(case for case in loadEvalSet(_EVAL_SET) if case.id == "samsung_finance_5q_v1")
+    assert scoreEvidenceCitation(case, AgentRun(case.id, answer, refs=refs)).score == 0
+
+
+def testNativeEvalConsumesFinalChunksAndClosesRuntime(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    from tests._evals.test_eval_live import _runAgentForCase
+
+    closed = []
+    done = {"refs": [{"id": "value:actual", "kind": "valueRef"}], "responseMeta": {"responseStatus": "ok"}}
+
+    def ask(question, **kwargs):
+        assert question == "매출은?"
+        assert kwargs["events"] is True
+        assert kwargs["cwd"] == tmp_path
+        yield SimpleNamespace(kind="delta", data={"text": "중복하면 안 되는 실시간 조각"})
+        yield SimpleNamespace(kind="tool_result", data={"name": "EngineCall", "input": {"apiRef": "Company.panel"}})
+        yield SimpleNamespace(kind="chunk", data={"text": "매출 100원 value:actual"})
+        yield SimpleNamespace(kind="done", data=done)
+
+    monkeypatch.setattr("dartlab.ask", ask)
+    monkeypatch.setattr(
+        "dartlab.ai.runtime.engine.getRuntimeEngine", lambda: SimpleNamespace(close=lambda: closed.append(True))
+    )
+    run = _runAgentForCase("매출은?", cwd=tmp_path)
+    assert run.output_text == "매출 100원 value:actual"
+    assert run.tool_calls == ["EngineCall:Company.panel"]
+    assert run.refs == ["value:actual"]
+    assert run.raw["responseMeta"]["responseStatus"] == "ok"
+    assert closed == [True]

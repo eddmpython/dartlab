@@ -13,6 +13,7 @@ corporateAggregate, quant ranking/screening/earningsMomentum 등에서 사용.
 from __future__ import annotations
 
 import logging
+from typing import overload
 
 import polars as pl
 
@@ -67,26 +68,36 @@ def isEdgarSchema(df: pl.DataFrame | pl.LazyFrame) -> bool:
     return "fy" in cols and "fs_nm" not in cols
 
 
-def extractAnnualConsolidated(df: pl.DataFrame) -> pl.DataFrame:
+@overload
+def extractAnnualConsolidated(df: pl.DataFrame) -> pl.DataFrame: ...
+
+
+@overload
+def extractAnnualConsolidated(df: pl.LazyFrame) -> pl.LazyFrame: ...
+
+
+def extractAnnualConsolidated(df: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame | pl.LazyFrame:
     """연간 연결 재무 데이터 추출 — DART/EDGAR 자동 분기.
 
     Parameters
     ----------
-    df : pl.DataFrame
-        scan finance.parquet 전체.
+    df : pl.DataFrame | pl.LazyFrame
+        scan finance.parquet 데이터 또는 지연 실행 계획.
 
     Returns
     -------
-    pl.DataFrame
+    pl.DataFrame | pl.LazyFrame
         DART: 연결재무제표 + 4분기 행만.
         EDGAR: 그대로 반환 (이미 연간 연결 기준).
+        입력의 eager/lazy 형태를 유지한다.
     """
     if isEdgarSchema(df):
         return df
     # DART
-    if "fs_nm" in df.columns:
+    columns = df.collect_schema().names() if isinstance(df, pl.LazyFrame) else df.columns
+    if "fs_nm" in columns:
         return df.filter((pl.col("fs_nm") == "연결재무제표") & (pl.col("reprt_nm") == "4분기"))
-    if "fs_div" in df.columns:
+    if "fs_div" in columns:
         return df.filter(pl.col("fs_div") == "CFS")
     return df
 
