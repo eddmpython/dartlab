@@ -395,12 +395,11 @@ _CHAPTER_TITLES: dict[str, str] = {
 }
 
 _CHAPTER_ORDER: dict[str, int] = {chapter: idx for idx, chapter in enumerate(_CHAPTER_TITLES, start=1)}
-_TOPIC_META_COLUMNS = frozenset({"chapter", "sectionLeaf", "blockLeaf", "topic", "source", "disclosureKey", "scope"})
 _FINANCE_TOPICS = ("BS", "IS", "CIS", "CF", "SCE", "ratios")
 
 
 def _buildPanelTopicRows(textWide: pl.DataFrame | None) -> tuple[list[dict[str, Any]], set[str]]:
-    """panel text wide에서 topic 요약 행과 중복 방지 집합을 만든다."""
+    """사용자가 조회하는 panel wide에서 topic과 실제 가용 기간을 집계한다."""
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
     if textWide is None or textWide.is_empty():
@@ -410,8 +409,13 @@ def _buildPanelTopicRows(textWide: pl.DataFrame | None) -> tuple[list[dict[str, 
     if topicCol is None:
         return rows, seen
 
-    periodCols = [name for name in textWide.columns if name not in _TOPIC_META_COLUMNS]
-    for row in textWide.iter_rows(named=True):
+    periodCols = [name for name in textWide.columns if _isPeriodColumn(name)]
+    grouped = textWide.group_by(topicCol, maintain_order=True).agg(
+        pl.col("chapter").first() if "chapter" in textWide.columns else pl.lit("").alias("chapter"),
+        pl.len().alias("blocks"),
+        *[(pl.col(period).is_not_null() & (pl.col(period) != "")).any().alias(period) for period in periodCols],
+    )
+    for row in grouped.iter_rows(named=True):
         topic = row.get(topicCol)
         if not isinstance(topic, str) or not topic.strip() or topic in seen:
             continue
@@ -423,9 +427,9 @@ def _buildPanelTopicRows(textWide: pl.DataFrame | None) -> tuple[list[dict[str, 
                 "chapter": chapterRaw.split(".", 1)[0].split()[0] if chapterRaw else "",
                 "topic": topic,
                 "source": "panel",
-                "blocks": 1,
-                "periods": sum(1 for period in periodCols if row.get(period) not in (None, "")),
-                "latestPeriod": None,
+                "blocks": row["blocks"],
+                "periods": sum(bool(row[period]) for period in periodCols),
+                "latestPeriod": max((period for period in periodCols if row[period]), default=None),
             }
         )
     return rows, seen
@@ -3687,8 +3691,8 @@ class Company:
         if cacheHit:
             return cached
 
-        # panel topic catalog - panel text wide 에서 유도 (docs topicManifest 은퇴).
-        rows, seen = _buildPanelTopicRows(self._panelTextWide())
+        # 조회와 같은 정렬 후 이름을 사용한다. 정렬 전 옛 제목은 panel(key)로 찾을 수 없다.
+        rows, seen = _buildPanelTopicRows(self.panel)
         combined = rows + _buildFinanceTopicRows(
             self.stockCode,
             available=self._hasFinanceParquet,

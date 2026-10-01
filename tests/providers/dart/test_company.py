@@ -6,6 +6,34 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+def testTopicsUsePublicPanelAndAggregateCoverage():
+    from types import SimpleNamespace
+
+    from dartlab.providers.dart.company import Company
+
+    panel = pl.DataFrame(
+        {
+            "sectionLeaf": ["최신 제목", "최신 제목"],
+            "chapter": ["II. 사업의 내용", "II. 사업의 내용"],
+            "leafType": ["text", "table"],
+            "2024Q4": ["과거 본문", None],
+            "2025Q4": [None, "최신 본문"],
+        }
+    )
+    company = SimpleNamespace(panel=panel, _cache={}, _hasFinanceParquet=False, stockCode="005930")
+    catalog = Company.topics.fget(company)
+    assert catalog.height == 1
+    assert catalog.row(0, named=True) == {
+        "order": 0,
+        "chapter": "II",
+        "topic": "최신 제목",
+        "source": "panel",
+        "blocks": 2,
+        "periods": 2,
+        "latestPeriod": "2025Q4",
+    }
+
+
 def test_imports():
     try:
         import dartlab.providers.dart.company  # noqa: F401

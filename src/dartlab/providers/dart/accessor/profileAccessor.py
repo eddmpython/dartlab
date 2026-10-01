@@ -417,7 +417,7 @@ class _ProfileAccessor:
 
         Capabilities:
             - facts (long) 에서 topic 별 row 추출 → source 별 group_by + priority max.
-            - panel text wide row 추가 ("panel-text:topic:period" payload).
+            - 공개 panel과 같은 정렬된 행을 추적 ("panel-text:topic:period" payload).
             - period 명시 시 ``rawPeriod`` 정규화 후 filter.
             - 출처 list 를 (priority, source) 내림차순 정렬 → primary + fallback 분리.
             - 출처 1 개 이상 있으면 dict, 없으면 None.
@@ -473,9 +473,9 @@ class _ProfileAccessor:
         """
         from dartlab.providers.dart.sectionPeriod import rawPeriod
 
-        requestedPeriod = rawPeriod(period) if isinstance(period, str) else period
+        requestedPeriod = rawPeriod(period.strip().replace("-Q", "Q")) if isinstance(period, str) else period
         facts = self.facts
-        docsSections = self._company._panelTextWide()
+        docsSections = self._company.panel
 
         sources: list[dict[str, Any]] = []
 
@@ -494,22 +494,34 @@ class _ProfileAccessor:
                 )
                 sources.extend(grouped.iter_rows(named=True))
 
-        if docsSections is not None and topic in docsSections["topic"].to_list():
-            row = docsSections.filter(pl.col("topic") == topic)
+        topicCol = "sectionLeaf" if docsSections is not None and "sectionLeaf" in docsSections.columns else "topic"
+        if docsSections is not None and topicCol in docsSections.columns:
+            row = docsSections.filter(pl.col(topicCol) == topic)
             if not row.is_empty():
                 periodCols = [c for c in docsSections.columns if _isPeriodColumn(c)]
-                if requestedPeriod is not None and requestedPeriod in periodCols:
-                    value = row.item(0, requestedPeriod)
-                    if value is not None:
-                        sources.append(
-                            {
-                                "source": "panel",
-                                "rows": 1,
-                                "payloadRef": f"panel-text:{topic}:{requestedPeriod}",
-                                "summary": str(value)[:400],
-                                "priority": 100,
-                            }
-                        )
+                selectedPeriods = sorted(
+                    [col for col in periodCols if requestedPeriod is None or rawPeriod(col) == requestedPeriod],
+                    reverse=True,
+                )
+                panelSource: dict[str, Any] | None = None
+                for selectedPeriod in selectedPeriods:
+                    values = row[selectedPeriod].drop_nulls()
+                    values = values.filter(values != "")
+                    if values.is_empty():
+                        continue
+                    if panelSource is None:
+                        panelSource = {
+                            "source": "panel",
+                            "rows": 0,
+                            "payloadRef": f"panel-text:{topic}:{selectedPeriod}",
+                            "summary": str(values[0])[:400],
+                            "priority": 100,
+                            "periods": [],
+                        }
+                    panelSource["rows"] += len(values)
+                    panelSource["periods"].append(selectedPeriod)
+                if panelSource is not None:
+                    sources.append(panelSource)
 
         if not sources:
             return None

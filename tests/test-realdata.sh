@@ -18,8 +18,9 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REAL_DATA_DIR="$REPO_ROOT/tests/realData"
+cd "$REPO_ROOT" || exit 1
 
 SINGLE_MODE=0
 if [ "${1:-}" = "--single" ]; then
@@ -42,9 +43,13 @@ if [ "$SINGLE_MODE" = "1" ] || { [ $# -ge 1 ] && [ -f "$1" ]; }; then
 fi
 
 # 기본 = 파일별 분리 실행
-MARKER_ARG="${*:--m realData}"
-TEST_FILES=$(ls "$REAL_DATA_DIR"/test_*.py 2>/dev/null | sort)
-if [ -z "$TEST_FILES" ]; then
+MARKER_ARGS=("$@")
+if [ $# -eq 0 ]; then
+    MARKER_ARGS=(-m realData)
+fi
+shopt -s nullglob
+TEST_FILES=("$REAL_DATA_DIR"/test_*.py)
+if [ ${#TEST_FILES[@]} -eq 0 ]; then
     echo "[test-realdata] tests/realData/test_*.py 없음" >&2
     exit 1
 fi
@@ -54,13 +59,13 @@ TOTAL_FAIL=0
 TOTAL_SKIP=0
 FAILED_FILES=()
 
-for f in $TEST_FILES; do
+for f in "${TEST_FILES[@]}"; do
     rel="${f#$REPO_ROOT/}"
     echo ""
     echo "================================================================"
     echo "[test-realdata] $rel"
     echo "================================================================"
-    bash "$SCRIPT_DIR/test-lock.sh" "$rel" $MARKER_ARG -v --tb=short
+    bash "$SCRIPT_DIR/test-lock.sh" "$rel" "${MARKER_ARGS[@]}" -v --tb=short
     rc=$?
     if [ $rc -eq 0 ]; then
         TOTAL_PASS=$((TOTAL_PASS + 1))

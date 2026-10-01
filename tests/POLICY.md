@@ -94,6 +94,7 @@ tests/
 - 2+ 엔진 cross-cutting → 최상단 또는 `tests/integration/` (별도 폴더 생성 시 본 SSOT 갱신)
 - 메타 검증 (audit/ast/docstring) → `tests/audit/`
 - 회귀 baseline 시나리오 → `tests/realData/`
+- 공개 topic 전수 검사는 현재 `Company.topics`에서 대상을 얻는다. 빈 등록부의 자동 skip은 전수 검증 근거가 아니다. 데이터가 있는데 공개 목록이 비면 실패하며, 각 topic의 본문과 출처를 실제로 조회한다.
 - private (운영자 internal) → `tests/_{name}/` (언더스코어 prefix)
 
 `__init__.py` 는 basename 충돌 방지용 (같은 이름 `test_engine.py` 가 여러 폴더에 존재 → pytest rootdir 해석 충돌). 신규 폴더 생성 시 **빈 `__init__.py` 필수**.
