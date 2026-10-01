@@ -272,11 +272,25 @@ def test_score_earnings_actual(tmp_path):
     assert all(s.error is None for s in scores)
 
 
-def test_issue_and_score_credit_stay_probability(tmp_path):
-    from dartlab.simulate.expectationCycle import issueCredit
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "issuedAt,targetPeriod,quarterEnd,observedAt,scoreMonth",
+    [
+        ("2026-09-30T12:00+00:00", "2026Q4", "2026-12", "2027-01-15", "2027-02"),
+        ("2026-10-01T12:00+00:00", "2027Q1", "2027-03", "2027-04-15", "2027-05"),
+        ("2026-12-31T12:00+00:00", "2027Q1", "2027-03", "2027-04-15", "2027-05"),
+        ("2027-01-01T12:00+00:00", "2027Q2", "2027-06", "2027-07-15", "2027-08"),
+    ],
+)
+def test_issue_and_score_credit_stay_probability(
+    tmp_path, monkeypatch, issuedAt, targetPeriod, quarterEnd, observedAt, scoreMonth
+):
+    from dartlab.simulate import expectationCycle
+
+    monkeypatch.setattr(expectationCycle, "_nowUtc", lambda: issuedAt)
 
     hist = {"005930": [{"timestamp": "2026-06-30", "grade": "dCR-AA"}]}
-    rows, skipped = issueCredit(
+    rows, skipped = expectationCycle.issueCredit(
         ["005930", "222222"],
         live=True,
         baseDir=tmp_path,
@@ -286,14 +300,14 @@ def test_issue_and_score_credit_stay_probability(tmp_path):
     assert len(rows) == 1 and "222222" in skipped
     r = rows[0]
     assert r.kind == "direction" and r.direction["predicted"] == "stay" and r.direction["prob"] == 0.9
-    target = r.targetPeriod  # 발행월 다음 분기
+    assert r.targetPeriod == targetPeriod
+    assert scoreDue(now=quarterEnd, baseDir=tmp_path, monthlyBySeries={}, historyByCode=hist) == []
     # 분기말 후 등급 유지 -> actual "stay", brier = (0.9-1)^2
-    histAfter = {"005930": hist["005930"] + [{"timestamp": "2027-01-15", "grade": "dCR-AA"}]}
-    scores = scoreDue(now="2027-02", baseDir=tmp_path, monthlyBySeries={}, historyByCode=histAfter)
+    histAfter = {"005930": hist["005930"] + [{"timestamp": observedAt, "grade": "dCR-AA"}]}
+    scores = scoreDue(now=scoreMonth, baseDir=tmp_path, monthlyBySeries={}, historyByCode=histAfter)
     creditScores = [s for s in scores if s.expectationId.startswith("credit.")]
     assert len(creditScores) == 1 and creditScores[0].brier is not None
     assert abs(creditScores[0].brier - 0.01) < 1e-9
-    assert target.endswith("Q") is False  # sanity: "YYYYQn" 형식
 
 
 def test_issue_and_score_price_direction(tmp_path):
