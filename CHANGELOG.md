@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **전체 검증 누락 차단.** Git 훅을 `.githooks`로 통일하고 push 전에 정식 preflight를 실행한다. 전체 tier 실행은 모든 실제 데이터 shard를 검사하며, 실패나 실행 계획을 통과로 표시하지 않는다. 배포는 CI Full과 Nightly 검증을 모두 기다린다.
 - **검증 산출물 격리.** 로컬 preflight의 임시 smoke 결과가 작업 중인 결과 파일을 덮어쓰지 않게 했다.
 - **Windows 검증 인코딩.** 하위 Python에도 UTF-8 설정을 전달해 한글 훅 출력을 CP949로 해독하다가 테스트가 실패하는 문제를 수정했다.
+- **변이 검증 실행 문맥.** 패키지와 pytest 플러그인 누락을 수정하고 존재하는 표적과 동작 테스트를 명시했다. 고정 smoke 점수를 전체 변이 검증 점수로 표현하지 않는다.
+- **고정 의존성 보안 검사.** 설치판뿐 아니라 개발·선택 의존성을 포함한 Python 및 npm lockfile도 검사하고 PyJWT·urllib3·virtualenv·DOMPurify·undici의 취약한 고정 버전을 갱신했다.
 - **릴리즈 첨부 파일 보존.** 배포 job의 checkout을 산출물 다운로드 앞으로 옮겨 wheel·sdist·SBOM이 지워지지 않게 했다. 필수 첨부 파일이 없으면 GitHub Release 발행 단계가 실패한다.
 
 ## [0.12.0] - 2026-10-01

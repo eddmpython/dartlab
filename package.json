@@ -16,7 +16,7 @@
 		"postcss": "8.5.25",
 		"nanoid": "3.3.18",
 		"sharp": "0.35.4",
-		"dompurify": "3.4.13",
+		"dompurify": "3.4.16",
 		"adm-zip": "0.6.1"
 	},
 	"engines": {

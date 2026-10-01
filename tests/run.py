@@ -294,11 +294,10 @@ GATES: dict[str, Gate] = {
     "security": Gate(
         name="security",
         tier="fast",
-        deps=("pip-audit",),
+        deps=("pip-audit", "uv"),
         install_pkg="editable",
-        # T2-2 — baseline allowlist + blocking 승격 후속. 현재 known CVE 가 0 일 때만 strict 안전.
-        # pip-audit --ignore-vuln <ID> 옵션으로 baseline 부채 원장 적용 가능.
-        cmd="pip-audit --strict --desc on",
+        # 새 설치판과 lockfile은 버전이 다를 수 있다. Python과 두 npm lock을 모두 검사한다.
+        cmd="python -X utf8 tests/audit/securityAudit.py",
         blocking=False,  # T2-2 — baseline 구축 후 blocking=True 승격
     ),
     "deps-check": Gate(
@@ -540,11 +539,13 @@ GATES: dict[str, Gate] = {
     "mutation-testing": Gate(
         name="mutation-testing",
         tier="nightly",
-        deps=("pytest", "pytest-asyncio", "hypothesis", "mutmut>=3.0"),
+        deps=(*PYTEST_CORE, "pytest-benchmark", "mutmut==3.8.0"),
         install_pkg="editable",
         env={"DARTLAB_TEST_LOCKED": "1"},
         setup=("rm -rf .mutmut-cache mutants/",),
-        cmd=("mutmut run && mutmut results > mutation-results.txt 2>&1 && head -100 mutation-results.txt"),
+        cmd=(
+            "mutmut run --max-children 2 && mutmut results > mutation-results.txt 2>&1 && head -100 mutation-results.txt"
+        ),
         blocking=False,
         timeout_minutes=90,
     ),

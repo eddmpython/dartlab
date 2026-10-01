@@ -304,7 +304,7 @@ uv run python -X utf8 -m hypothesis write dartlab.core.naming > tests/_drafts/te
 
 **ROI 표적**: `typing.Any` 시그니처는 약함 (raise 안 함만 검증). 구체 타입 (`int`, `str`, `Decimal`) 인자가 ROI 높음.
 
-### Track 5 — Mutation testing — ★★★★★ **도입 완료 (mutation score 100%)**
+### Track 5: Mutation testing
 
 "테스트가 통과한다" 가 아니라 "테스트가 깨진 코드를 잡는다" 를 측정.
 
@@ -314,10 +314,14 @@ uv run python -X utf8 -m hypothesis write dartlab.core.naming > tests/_drafts/te
 | Self-test | `tests/audit/test_mutationSmoke.py` (7 종 — pattern 존재 · score 계산) |
 | CI Fast job | `.github/workflows/ci-fast.yml` `mutation-smoke` (~35 초, 100% killed 강제) |
 | Nightly 확장 sweep | `mutmut` Linux runner — `.github/workflows/ci-nightly.yml` `mutation-testing` job |
-| 자작 mutmut 설정 | `pyproject.toml [tool.mutmut]` (대상 = `src/dartlab/core/{formatting, cache, naming}`) |
+| mutmut 설정 | `pyproject.toml [tool.mutmut]`의 `only_mutate`가 표적 정본. 전체 패키지를 복사하고 표적의 동작·성질 테스트를 실행한다. |
 | Oracle 테스트 표면 | `tests/core/test_formatting.py` (60 종) + `tests/core/test_ratios_metamorphic.py` (19 종) |
 | 결과 artifact | CI nightly `mutation-results` (mutation-results.txt) — 30 일 보관 |
 | 본 PR baseline | **7/7 killed (100% mutation score)** |
+
+7개 고정 변형의 smoke 점수를 Nightly 전체 점수로 해석하지 않는다. 이전 설정의 존재하지 않는
+21개 경로는 검증 범위에서 제거했다. 실제 존재하던 10개 표적 파일은 유지하며, 검사 중 실패·생존·미검증 결과를 별도로 확인한다.
+Polars가 초기화된 프로세스를 fork하지 않도록 mutmut 3.8.0의 `forkserver`와 `none` warmup을 사용한다.
 
 **Windows 호환** — `mutationSmoke.py` 가 직접 AST 텍스트 replace 후 `sys.executable` 로 pytest 호출. mutmut Linux 의존 회피.
 

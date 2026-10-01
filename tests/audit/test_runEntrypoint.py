@@ -215,10 +215,31 @@ def testMutationGatePreservesErrorsAndUsesListConfiguration():
     import tomllib
 
     config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["mutmut"]
-    assert isinstance(config["tests_dir"], list)
+    assert "tests_dir" not in config
     assert isinstance(config["pytest_add_cli_args_test_selection"], list)
     assert "runner" not in config
     assert "|| true" not in GATES["mutation-testing"].cmd
+
+
+@pytest.mark.unit
+def testMutationIncludesPackageContextAndExistingTargets():
+    import tomllib
+
+    from packaging.requirements import Requirement
+
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["mutmut"]
+    roots = [(REPO_ROOT / path).resolve() for path in config["source_paths"]]
+    for dependency in ("src/dartlab/__init__.py", "src/dartlab/core/dataLoader.py", "src/dartlab/core/memory.py"):
+        assert any((REPO_ROOT / dependency).resolve().is_relative_to(root) for root in roots)
+    assert config["only_mutate"]
+    assert all((REPO_ROOT / target).is_file() for target in config["only_mutate"])
+    for target in config["pytest_add_cli_args_test_selection"]:
+        if target.startswith("tests/"):
+            assert (REPO_ROOT / target).exists()
+    plugins = {Requirement(dependency).name for dependency in GATES["mutation-testing"].deps}
+    assert {"pytest-cov", "pytest-benchmark"} <= plugins
+    assert config["process_isolation"] == "forkserver"
+    assert config["forkserver_warmup"] == "none"
 
 
 @pytest.mark.unit
