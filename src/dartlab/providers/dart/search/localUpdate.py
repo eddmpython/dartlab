@@ -522,7 +522,20 @@ def injectSourceRefResolution(rows: Any, idx: Any, meta: Any) -> list[dict[str, 
     docLengths = idx.get("docLengths") if hasattr(idx, "get") else None
 
     def column(name: str) -> pl.Expr:
-        """누락한 메타데이터 열을 빈 문자열로 처리한다."""
+        """누락한 메타데이터 열을 빈 문자열로 처리한다.
+
+        Args:
+            name: 읽을 메타데이터 열 이름.
+
+        Returns:
+            null을 빈 문자열로 치환한 문자열 식.
+
+        Raises:
+            None.
+
+        Example:
+            column("sourceRef")
+        """
         return pl.col(name).cast(pl.String).fill_null("") if name in meta.columns else pl.lit("")
 
     expected = {ref for row in rows for ref in _expectedSourceRefs(row)}
