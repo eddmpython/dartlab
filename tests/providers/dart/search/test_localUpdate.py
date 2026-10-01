@@ -136,6 +136,45 @@ def _writeManifestWithSourceCanary(outDir, rows):
     )
 
 
+def testLoadActiveSearchManifestRequiresCompletePointedArtifact(tmp_path):
+    from dartlab.providers.dart.search.localUpdate import loadActiveSearchManifest, writeActivePointer
+
+    base = tmp_path / "contentIndex"
+    active = base / "_staging" / "active"
+    active.mkdir(parents=True)
+    _writeRealSegment(active)
+    _writeManifest(active)
+    _writeManifest(base)
+    flatManifest = json.loads((base / "manifest.json").read_text(encoding="utf-8"))
+    flatManifest["builtAt"] = "2027-01-01T00:00:00"
+    (base / "manifest.json").write_text(json.dumps(flatManifest), encoding="utf-8")
+
+    assert loadActiveSearchManifest(base) is None
+    writeActivePointer(base, "_staging/active")
+    assert loadActiveSearchManifest(base)["builtAt"] == "2026-06-15T00:00:00"
+    (active / "main.postings.bin").unlink()
+    assert loadActiveSearchManifest(base) is None
+
+
+def testSelfcheckLocalIndexRejectsCanaryMissAndUnreadablePostings(tmp_path):
+    from dartlab.providers.dart.search.localUpdate import selfcheckLocalIndex
+
+    _writeRealSegment(tmp_path)
+    _writeManifestWithCanary(tmp_path, ["유상증자"])
+    assert selfcheckLocalIndex(tmp_path) == {"valid": True, "errors": [], "manifestValid": True}
+
+    _writeManifestWithCanary(tmp_path, ["없는단어"])
+    missingEvidence = selfcheckLocalIndex(tmp_path)
+    assert missingEvidence["valid"] is False
+    assert "canaryMiss:없는단어" in missingEvidence["errors"]
+
+    _writeManifestWithCanary(tmp_path, ["유상증자"])
+    (tmp_path / "main.postings.bin").write_bytes(b"\x80")
+    corrupt = selfcheckLocalIndex(tmp_path)
+    assert corrupt["valid"] is False
+    assert "loadSmoke:main" in corrupt["errors"]
+
+
 def test_activate_staged_index_writes_active_pointer(tmp_path):
     from dartlab.providers.dart.search.localUpdate import activateStagedIndex, resolveActiveIndexDir
 
