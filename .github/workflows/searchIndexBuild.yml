@@ -237,8 +237,15 @@ jobs:
           DARTLAB_SEARCH_EXPECTED_SOURCES: ${{ inputs.expected_sources || 'allFilings,dartPanel,edgarPanel,newsPublic' }}
 
       - name: Build content index + stage candidate
-        run: uv run python .github/scripts/search/buildSearchMain.py
+        # 러너가 메모리 고갈로 강제 종료되면 버퍼에 남은 로그와 피크가 함께 사라진다(2026-10-07~11 실측: 3 분 넘게
+        # 출력 없이 끊김). 출력을 바로 흘리고 30 초마다 사용 메모리를 남겨 실패 run 에서도 근거가 보이게 한다.
+        run: |
+          ( while sleep 30; do echo "[mem] $(free -m | awk '/^Mem:/ {print "used=" $3 "MB avail=" $7 "MB"}')"; done ) &
+          sampler=$!
+          trap 'kill "$sampler" 2>/dev/null || true' EXIT
+          uv run python .github/scripts/search/buildSearchMain.py
         env:
+          PYTHONUNBUFFERED: "1"
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           DARTLAB_SEARCH_EXPECTED_SOURCES: ${{ inputs.expected_sources || 'allFilings,dartPanel,edgarPanel,newsPublic' }}
           DARTLAB_SEARCH_MAIN_MODE: ${{ inputs.build_mode || 'catalog' }}

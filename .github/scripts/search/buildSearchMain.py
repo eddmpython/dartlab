@@ -287,7 +287,10 @@ def _buildMainFromCatalog(mainMode: str) -> int | None:
         return -3
     forceFull = needsMain or (requestedCompaction and compactionAllowed)
     if forceFull:
-        catalog = _loadCatalog(currentCatalogPath)
+        # canonical parquet 는 경로로 넘겨 catalog 전체를 메모리에 올리지 않고 묶음씩 읽힌다.
+        catalog = (
+            currentCatalogPath if isCanonicalCatalogParquet(currentCatalogPath) else _loadCatalog(currentCatalogPath)
+        )
         nDocs = rebuildMainFromCatalog(catalog, tier="full", showProgress=True)
         clearDeltaSegment(tier="full")
         shutil.copyfile(currentCatalogPath, mainCatalogPath)
@@ -486,7 +489,7 @@ def _buildLiteFromCatalog(currentCatalog: str, sinceDate: str) -> int:
         raise RuntimeError("lite main baseline 부재 + catalog compaction 메모리 예산 초과")
     forceFull = needsMain or (requestedCompaction and compactionAllowed)
     if forceFull:
-        liteCatalog = _loadCatalog(nextCatalogPath)
+        liteCatalog = nextCatalogPath if isCanonicalCatalogParquet(nextCatalogPath) else _loadCatalog(nextCatalogPath)
         nLite = rebuildMainFromCatalog(liteCatalog, tier="lite", showProgress=True)
         clearDeltaSegment(tier="lite")
         shutil.copyfile(nextCatalogPath, mainCatalogPath)

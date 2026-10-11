@@ -228,23 +228,26 @@ class _IncrementalBuilder:
         """
         nDocs = len(self._docLengths)
         nStems = len(self.stemToId)
-        sids = np.frombuffer(self._pSid, dtype=np.int32)
-        dids = np.frombuffer(self._pDid, dtype=np.int32)
-        tfs = np.frombuffer(self._pTf, dtype=np.int32)
         offsets = np.zeros(nStems + 1, dtype=np.int64)
+        # 정렬된 사본을 하나 만들 때마다 원본 열을 바로 놓아 peak 를 낮춘다(view 를 먼저 지워야 버퍼가 풀린다).
+        sids = np.frombuffer(self._pSid, dtype=np.int32)
         if sids.size:
             order = np.argsort(sids, kind="stable")  # stemId 기준 그룹화
+            np.cumsum(np.bincount(sids, minlength=nStems), out=offsets[1:])
+            del sids
+            self._pSid = array.array("i")
+            dids = np.frombuffer(self._pDid, dtype=np.int32)
             docIds = np.ascontiguousarray(dids[order])
+            del dids
+            self._pDid = array.array("i")
+            tfs = np.frombuffer(self._pTf, dtype=np.int32)
             termFreqs = np.ascontiguousarray(tfs[order])
-            counts = np.bincount(sids, minlength=nStems)
-            np.cumsum(counts, out=offsets[1:])
-            del order, counts
+            del tfs, order
         else:
+            del sids
             docIds = np.zeros(0, dtype=np.int32)
             termFreqs = np.zeros(0, dtype=np.int32)
         docLengths = np.frombuffer(self._docLengths, dtype=np.int32).copy()
-        # 메모리 해제 (array.array 버퍼 + frombuffer view 참조 해제)
-        del sids, dids, tfs
         self._pSid = self._pDid = self._pTf = array.array("i")
         self._docLengths = array.array("i")
         return {
@@ -361,7 +364,7 @@ def _weightedIndexText(row: dict, content: str) -> str:
 # ── 저장/로드 ──
 
 
-def writeSegmentCompanions(idx: dict, meta: pl.DataFrame, name: str, outDir: Path | None = None) -> None:
+def writeSegmentCompanions(idx: dict, meta: pl.DataFrame | Path, name: str, outDir: Path | None = None) -> None:
     """세그먼트 동반물(stems/info/meta.parquet)을 디스크에 저장 — postings 표현(npz)은 쓰지 않는다.
 
     compact-only(P2): postings SSOT 는 STORED sidecar(``saveShardedSegment``) 단독. 본 함수는
@@ -370,7 +373,7 @@ def writeSegmentCompanions(idx: dict, meta: pl.DataFrame, name: str, outDir: Pat
 
     Args:
         idx: 인덱스 dict (stemDict/nDocs/avgDocLength 사용).
-        meta: doc 순 meta DataFrame.
+        meta: doc 순 meta DataFrame, 또는 빌드 경로가 이미 흘려 쓴 meta parquet 경로(자리가 다르면 옮긴다).
         name: 세그먼트 이름("main").
         outDir: 출력 디렉터리. None 이면 ``_contentIndexDir()``.
 
@@ -387,7 +390,12 @@ def writeSegmentCompanions(idx: dict, meta: pl.DataFrame, name: str, outDir: Pat
         json.dumps(idx["stemDict"], ensure_ascii=False),
         encoding="utf-8",
     )
-    meta.write_parquet(outDir / f"{name}_meta.parquet")
+    metaPath = outDir / f"{name}_meta.parquet"
+    if isinstance(meta, Path):
+        if meta.resolve() != metaPath.resolve():
+            meta.replace(metaPath)
+    else:
+        meta.write_parquet(metaPath)
     (outDir / f"{name}_info.json").write_text(
         json.dumps(
             {
@@ -607,7 +615,7 @@ _SHARD_META_FIELDS = (
 _SHARD_SNIPPET_LIMIT = 400
 
 
-def saveShardedSegment(idx: dict, meta: pl.DataFrame, name: str = "main", outDir: Path | None = None) -> dict:
+def saveShardedSegment(idx: dict, meta: pl.DataFrame | Path, name: str = "main", outDir: Path | None = None) -> dict:
     """range-friendly sidecar(postings/terms/docLengths/meta).bin = postings SSOT (compact-only, npz 폐기).
 
     DEFLATE npz 는 임의 위치 디코딩 불가(브라우저 range fetch 불능)라, CSR 을 STORED(비압축 컨테이너)
@@ -616,11 +624,11 @@ def saveShardedSegment(idx: dict, meta: pl.DataFrame, name: str = "main", outDir
     doc 의 meta 범위만 HTTP range 로 받아 full BM25 와 동일한 결과를 낸다(검증: byte-range=full overlap 1.0).
 
     Sig:
-        saveShardedSegment(idx: dict, meta: pl.DataFrame, name: str = "main", outDir: Path | None = None) -> dict
+        saveShardedSegment(idx: dict, meta: pl.DataFrame | Path, name: str = "main", outDir: Path | None = None) -> dict
 
     Args:
         idx: ``loadSegment``/빌더의 인덱스 dict (offsets/docIds/termFreqs/docLengths/stemDict/nDocs/avgDocLength).
-        meta: doc_id 순(row i = doc i) 메타 DataFrame. ``_SHARD_META_FIELDS`` + snippet(evidenceText/text) 컬럼 사용.
+        meta: doc_id 순(row i = doc i) 메타 DataFrame 또는 meta parquet 경로. ``_SHARD_META_FIELDS`` + snippet(evidenceText/text) 컬럼 사용.
         name: 세그먼트 이름 ("main" 또는 "delta").
         outDir: 출력 디렉터리. None 이면 ``_contentIndexDir()``.
 
@@ -638,57 +646,49 @@ def saveShardedSegment(idx: dict, meta: pl.DataFrame, name: str = "main", outDir
     outDir = outDir or _contentIndexDir()
     outDir.mkdir(parents=True, exist_ok=True)
     offsets = np.asarray(idx["offsets"], dtype=np.int64)
-    docIds = np.asarray(idx["docIds"])
-    termFreqs = np.asarray(idx["termFreqs"])
     docLengths = np.asarray(idx["docLengths"], dtype=np.int64)
     nTerms = len(offsets) - 1
 
     # postings.bin: term 별 [docId delta-gap varint][termFreq varint] 블록 연접.
-    gaps = np.empty(len(docIds), dtype=np.int64)
-    if len(docIds):
-        gaps[1:] = np.diff(docIds.astype(np.int64))
-        gaps[0] = int(docIds[0])
-        gaps[offsets[1:-1]] = docIds[offsets[1:-1]]  # term 경계 = 절대 docId 로 reset
-    gapBytes, gapNb = _encodeVarintArray(gaps)
-    tfBytes, tfNb = _encodeVarintArray(termFreqs)
-    gapCum = np.zeros(len(docIds) + 1, dtype=np.int64)
-    tfCum = np.zeros(len(docIds) + 1, dtype=np.int64)
-    np.cumsum(gapNb, out=gapCum[1:])
-    np.cumsum(tfNb, out=tfCum[1:])
-    postings = bytearray()
-    termRecs = np.zeros((nTerms, 4), dtype=np.uint32)  # byteStart, gapLen, tfLen, df
-    for t in range(nTerms):
-        s, e = int(offsets[t]), int(offsets[t + 1])
-        g0, g1, f0, f1 = int(gapCum[s]), int(gapCum[e]), int(tfCum[s]), int(tfCum[e])
-        start = len(postings)
-        postings += gapBytes[g0:g1]
-        postings += tfBytes[f0:f1]
-        termRecs[t] = (start, g1 - g0, f1 - f0, e - s)
-    (outDir / f"{name}.postings.bin").write_bytes(bytes(postings))
+    termRecs, postingsLen = _writePostings(
+        outDir / f"{name}.postings.bin", offsets, np.asarray(idx["docIds"]), np.asarray(idx["termFreqs"])
+    )
     (outDir / f"{name}.terms.bin").write_bytes(termRecs.tobytes())  # stemId 순 uint32×4
     (outDir / f"{name}.docLengths.bin").write_bytes(np.minimum(docLengths, 0xFFFFFFFF).astype(np.uint32).tobytes())
 
     # meta.bin: doc 별 카드(JSON) + metaOffsets.bin(uint64×(nDocs+1)) — top-k 만 range fetch.
-    metaCols = [c for c in _SHARD_META_FIELDS if c in meta.columns]
-    snippetCol = "evidenceText" if "evidenceText" in meta.columns else ("text" if "text" in meta.columns else None)
-    metaBlob = bytearray()
+    columns = _metaColumns(meta)
+    metaCols = [c for c in _SHARD_META_FIELDS if c in columns]
+    snippetCol = "evidenceText" if "evidenceText" in columns else ("text" if "text" in columns else None)
+    selectExprs: list[pl.Expr] = [pl.col(c) for c in metaCols]
+    if snippetCol:
+        selectExprs.append(
+            pl.col(snippetCol).cast(pl.Utf8).fill_null("").str.slice(0, _SHARD_SNIPPET_LIMIT).alias("__snippet")
+        )
+    readCols = metaCols + ([snippetCol] if snippetCol else [])
+    # 카드를 행 묶음 단위로 만들어 파일에 바로 쓴다. 전체 meta 를 dict 로 펼치거나 blob 을 메모리에 모으지 않는다.
     metaOff = [0]
-    sel = meta.select(metaCols + ([snippetCol] if snippetCol else []))
-    for row in sel.iter_rows(named=True):
-        card = {k: row.get(k) for k in metaCols}
-        if snippetCol:
-            sn = row.get(snippetCol) or ""
-            card["snippet"] = str(sn)[:_SHARD_SNIPPET_LIMIT]
-        metaBlob += json.dumps(card, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-        metaOff.append(len(metaBlob))
-    (outDir / f"{name}.meta.bin").write_bytes(bytes(metaBlob))
+    metaLen = 0
+    with (outDir / f"{name}.meta.bin").open("wb") as fh:
+        for batch in _metaBatches(meta, readCols):
+            part = batch.select(selectExprs)
+            chunk = bytearray()
+            for row in part.iter_rows(named=True):
+                card = {k: row[k] for k in metaCols}
+                if snippetCol:
+                    card["snippet"] = row["__snippet"]
+                chunk += json.dumps(card, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+                metaOff.append(metaLen + len(chunk))
+            fh.write(chunk)
+            metaLen += len(chunk)
+            del part, chunk
     (outDir / f"{name}.metaOffsets.bin").write_bytes(np.asarray(metaOff, dtype=np.uint64).tobytes())
 
     files = {
-        f"{name}.postings.bin": len(postings),
+        f"{name}.postings.bin": postingsLen,
         f"{name}.terms.bin": int(termRecs.nbytes),
         f"{name}.docLengths.bin": len(docLengths) * 4,
-        f"{name}.meta.bin": len(metaBlob),
+        f"{name}.meta.bin": metaLen,
         f"{name}.metaOffsets.bin": len(metaOff) * 8,
     }
     (outDir / f"{name}.search_meta.json").write_text(
@@ -709,16 +709,110 @@ def saveShardedSegment(idx: dict, meta: pl.DataFrame, name: str = "main", outDir
     )
     if name == "delta":
         overrideCols = [
-            column
-            for column in ("docKey", "sourceRef", "rcept_no", "section_order", "deleted")
-            if column in meta.columns
+            column for column in ("docKey", "sourceRef", "rcept_no", "section_order", "deleted") if column in columns
         ]
-        overrides = meta.select(overrideCols).to_dicts() if overrideCols else []
-        (outDir / "delta_overrides.json").write_text(
-            json.dumps(overrides, ensure_ascii=False, separators=(",", ":")),
-            encoding="utf-8",
-        )
+        _writeOverrides(outDir / "delta_overrides.json", meta, overrideCols)
     return {**files, "nDocs": int(idx["nDocs"]), "nTerms": nTerms}
+
+
+# 블록 하나에 담는 posting 수와 meta 카드 행 수. varint 인코딩이 posting 당 수십 byte 의 임시 배열을
+# 만들므로 전체를 한 번에 인코딩하면 1억 posting 에서 수 GB 가 된다(2026-10 Search Index Build runner 강제 종료).
+_POSTINGS_BLOCK = 1 << 22
+_SHARD_META_BATCH = 100_000
+
+
+def _metaColumns(meta: pl.DataFrame | Path) -> list[str]:
+    """meta 열 이름. parquet 경로면 스키마만 읽는다."""
+    if isinstance(meta, Path):
+        import pyarrow.parquet as pq
+
+        return list(pq.read_schema(meta).names)
+    return list(meta.columns)
+
+
+def _metaBatches(meta: pl.DataFrame | Path, columns: list[str]):
+    """meta 를 행 묶음으로 돌려준다. parquet 경로는 pyarrow 로 묶음씩 읽어 그 묶음만 메모리에 둔다.
+
+    Polars 스캔을 묶음으로 받으면 여러 묶음을 앞서 붙잡아 180 만 행 meta 에서 4.7GB 를 썼다(2026-10-12 실측,
+    pyarrow 묶음 읽기는 2.5GB 이하).
+    """
+    if isinstance(meta, Path):
+        import pyarrow.parquet as pq
+
+        for batch in pq.ParquetFile(meta).iter_batches(batch_size=_SHARD_META_BATCH, columns=columns):
+            yield pl.from_arrow(batch)
+        return
+    yield from meta.select(columns).iter_slices(_SHARD_META_BATCH)
+
+
+def _writePostings(
+    path: Path, offsets: np.ndarray, docIds: np.ndarray, termFreqs: np.ndarray
+) -> tuple[np.ndarray, int]:
+    """postings.bin 을 term 묶음 블록 단위로 인코딩해 쓴다. 출력 바이트는 전체 일괄 인코딩과 같다.
+
+    Args:
+        path: 출력 파일.
+        offsets: CSR offsets(int64, 길이 nTerms+1).
+        docIds: term 순으로 정렬된 docId.
+        termFreqs: docIds 와 같은 순서의 term frequency.
+
+    Returns:
+        ``(termRecs, totalBytes)``. termRecs 는 term 별 (byteStart, gapLen, tfLen, df) uint32.
+
+    Raises:
+        OSError: 파일을 쓸 수 없을 때.
+
+    Example:
+        >>> callable(_writePostings)
+        True
+    """
+    nTerms = len(offsets) - 1
+    termRecs = np.zeros((nTerms, 4), dtype=np.uint32)  # byteStart, gapLen, tfLen, df
+    written = 0
+    with path.open("wb") as fh:
+        t0 = 0
+        while t0 < nTerms:
+            s0 = int(offsets[t0])
+            t1 = int(np.searchsorted(offsets, s0 + _POSTINGS_BLOCK, side="right")) - 1
+            t1 = min(max(t1, t0 + 1), nTerms)
+            s1 = int(offsets[t1])
+            ids = np.asarray(docIds[s0:s1], dtype=np.int64)
+            gaps = np.empty(len(ids), dtype=np.int64)
+            if len(ids):
+                gaps[1:] = np.diff(ids)
+                starts = offsets[t0:t1] - s0
+                starts = starts[starts < len(ids)]
+                gaps[starts] = ids[starts]  # term 경계 = 절대 docId 로 reset
+            gapBytes, gapNb = _encodeVarintArray(gaps)
+            tfBytes, tfNb = _encodeVarintArray(termFreqs[s0:s1])
+            del ids, gaps
+            gapCum = np.zeros(s1 - s0 + 1, dtype=np.int64)
+            tfCum = np.zeros(s1 - s0 + 1, dtype=np.int64)
+            np.cumsum(gapNb, out=gapCum[1:])
+            np.cumsum(tfNb, out=tfCum[1:])
+            block = bytearray()
+            for t in range(t0, t1):
+                s, e = int(offsets[t]) - s0, int(offsets[t + 1]) - s0
+                g0, g1, f0, f1 = int(gapCum[s]), int(gapCum[e]), int(tfCum[s]), int(tfCum[e])
+                termRecs[t] = (written + len(block), g1 - g0, f1 - f0, e - s)
+                block += gapBytes[g0:g1]
+                block += tfBytes[f0:f1]
+            fh.write(block)
+            written += len(block)
+            t0 = t1
+    return termRecs, written
+
+
+def _writeOverrides(path: Path, meta: pl.DataFrame | Path, columns: list[str]) -> None:
+    """delta_overrides.json 을 행 묶음 단위로 쓴다. ``json.dumps(list)`` 와 같은 바이트다."""
+    with path.open("w", encoding="utf-8") as fh:
+        fh.write("[")
+        first = True
+        for part in _metaBatches(meta, columns) if columns else ():
+            for row in part.iter_rows(named=True):
+                fh.write(("" if first else ",") + json.dumps(row, ensure_ascii=False, separators=(",", ":")))
+                first = False
+        fh.write("]")
 
 
 def loadSegment(

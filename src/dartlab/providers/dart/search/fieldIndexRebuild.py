@@ -13,6 +13,7 @@ import json
 import math
 import re
 import time
+from collections.abc import Iterator
 from pathlib import Path
 
 import numpy as np
@@ -267,7 +268,7 @@ def rebuildMain(
 
 
 def rebuildMainFromCatalog(
-    catalogRows: pl.DataFrame,
+    catalogRows: pl.DataFrame | str | Path,
     *,
     tier: str = "full",
     showProgress: bool = True,
@@ -275,7 +276,8 @@ def rebuildMainFromCatalog(
     """main 세그먼트를 source catalog snapshot 에서 빌드한다.
 
     Args:
-        catalogRows: Source manifest snapshot 에서 합쳐진 catalog rows.
+        catalogRows: Source manifest snapshot 에서 합쳐진 catalog rows, 또는 canonical catalog parquet 경로.
+            경로면 catalog 를 메모리에 올리지 않고 행 묶음씩 읽는다(compaction 경로).
         tier: ``"full"`` 또는 ``"lite"`` 출력 tier.
         showProgress: True 면 progress 로그.
 
@@ -289,56 +291,46 @@ def rebuildMainFromCatalog(
         >>> callable(rebuildMainFromCatalog)
         True
     """
-    import gc
-
-    from dartlab.providers.dart.search.fieldIndex import (
-        CONTENT_LIMIT,
-        _contentIndexDir,
-        _IncrementalBuilder,
-        clearCache,
-    )
+    from dartlab.providers.dart.search.fieldIndex import _contentIndexDir, clearCache
 
     saveDir = _contentIndexDir() if tier == "full" else _contentIndexDir(tier)
-    builder = _IncrementalBuilder()
-    metaRecs: list[dict] = []
-    for row in catalogRows.iter_rows(named=True):
-        if bool(row.get("deleted")):
-            continue
-        content = str(row.get("searchText") or "")[:CONTENT_LIMIT]
-        builder.addDoc(content)
-        source = str(row.get("source") or "")
-        metaRecs.append(
-            {
-                "docKey": str(row.get("docKey") or ""),
-                "rcept_no": str(row.get("rceptNo") or row.get("sourceRef") or ""),
-                "section_order": int(row.get("sectionOrder") or 0),
-                "corp_code": str(row.get("corpCode") or ""),
-                "corp_name": str(row.get("companyName") or ""),
-                "stock_code": str(row.get("stockCode") or row.get("ticker") or ""),
-                "rcept_dt": str(row.get("date") or ""),
-                "report_nm": str(row.get("reportName") or ""),
-                "section_title": str(row.get("title") or row.get("sectionKey") or ""),
-                "text": content[:500],
-                "evidenceText": str(row.get("searchText") or "")[:EVIDENCE_TEXT_LIMIT],
-                "source": _runtimeSourceFromCatalog(source),
-                "sourceRef": str(row.get("sourceRef") or ""),
-                "sourceDataAsOf": str(row.get("sourceDataAsOf") or row.get("date") or ""),
-                "contentLen": len(content),
-                "url": str(row.get("url") or "") if source == "newsPublic" else "",
-                "deleted": False,
-            }
-        )
-    if not metaRecs:
+    cols = _rowColumns(catalogRows)
+    raw = _strOf(cols, "searchText")
+    content = raw.str.slice(0, _contentLimit())
+    source = _strOf(cols, "source")
+    meta = [
+        _strOf(cols, "docKey").alias("docKey"),
+        _strOf(cols, "rceptNo", "sourceRef").alias("rcept_no"),
+        _intOf(cols, "sectionOrder").alias("section_order"),
+        _strOf(cols, "corpCode").alias("corp_code"),
+        _strOf(cols, "companyName").alias("corp_name"),
+        _strOf(cols, "stockCode", "ticker").alias("stock_code"),
+        _strOf(cols, "date").alias("rcept_dt"),
+        _strOf(cols, "reportName").alias("report_nm"),
+        _strOf(cols, "title", "sectionKey").alias("section_title"),
+        content.str.slice(0, 500).alias("text"),
+        raw.str.slice(0, EVIDENCE_TEXT_LIMIT).alias("evidenceText"),
+        _runtimeSourceExpr(source).alias("source"),
+        _strOf(cols, "sourceRef").alias("sourceRef"),
+        _strOf(cols, "sourceDataAsOf", "date").alias("sourceDataAsOf"),
+        content.str.len_chars().cast(pl.Int64).alias("contentLen"),
+        pl.when(source == "newsPublic").then(_strOf(cols, "url")).otherwise(pl.lit("")).alias("url"),
+        pl.lit(False).alias("deleted"),
+    ]
+    nDocs = _buildSegmentFromRows(
+        _rowBatches(catalogRows, cols),
+        keep=~_boolOf(cols, "deleted"),
+        content=content,
+        meta=meta,
+        name="main",
+        saveDir=saveDir,
+    )
+    if nDocs == 0:
         writeIndexManifest(saveDir, tier=tier, buildCommand="rebuildMain.catalog.empty")
         return 0
-    idx = builder.finalize()
-    meta = pl.DataFrame(metaRecs)
-    saveSegmentWithSidecar(idx, meta, "main", saveDir)
     writeIndexManifest(saveDir, tier=tier, buildCommand="rebuildMain.catalog")
     clearCache()
-    del metaRecs, meta
-    gc.collect()
-    return idx["nDocs"]
+    return nDocs
 
 
 def rebuildDeltaFromCatalog(
@@ -366,14 +358,7 @@ def rebuildDeltaFromCatalog(
         >>> callable(rebuildDeltaFromCatalog)
         True
     """
-    import gc
-
-    from dartlab.providers.dart.search.fieldIndex import (
-        CONTENT_LIMIT,
-        _contentIndexDir,
-        _IncrementalBuilder,
-        clearCache,
-    )
+    from dartlab.providers.dart.search.fieldIndex import _contentIndexDir, clearCache
 
     saveDir = _contentIndexDir() if tier == "full" else _contentIndexDir(tier)
     _removeSegmentArtifacts(saveDir, "delta")
@@ -381,40 +366,168 @@ def rebuildDeltaFromCatalog(
         clearCache()
         return 0
 
-    builder = _IncrementalBuilder()
-    metaRecs: list[dict] = []
-    for row in deltaRows.iter_rows(named=True):
-        deleted = bool(row.get("deleted"))
-        content = "" if deleted else str(row.get("section_content") or row.get("searchText") or "")[:CONTENT_LIMIT]
-        builder.addDoc(content)
-        metaRecs.append(
-            {
-                "docKey": str(row.get("docKey") or ""),
-                "rcept_no": str(row.get("rcept_no") or row.get("rceptNo") or row.get("sourceRef") or ""),
-                "section_order": int(row.get("section_order") or row.get("sectionOrder") or 0),
-                "corp_code": str(row.get("corp_code") or row.get("corpCode") or ""),
-                "corp_name": str(row.get("corp_name") or row.get("companyName") or ""),
-                "stock_code": str(row.get("stock_code") or row.get("stockCode") or row.get("ticker") or ""),
-                "rcept_dt": str(row.get("rcept_dt") or row.get("date") or ""),
-                "report_nm": str(row.get("report_nm") or row.get("reportName") or ""),
-                "section_title": str(row.get("section_title") or row.get("title") or row.get("sectionKey") or ""),
-                "text": content[:500],
-                "evidenceText": str(row.get("section_content") or row.get("searchText") or "")[:EVIDENCE_TEXT_LIMIT],
-                "source": _runtimeSourceFromCatalog(str(row.get("source") or "")),
-                "sourceRef": str(row.get("sourceRef") or ""),
-                "sourceDataAsOf": str(row.get("sourceDataAsOf") or row.get("rcept_dt") or row.get("date") or ""),
-                "contentLen": len(content),
-                "url": str(row.get("url") or ""),
-                "deleted": deleted,
-            }
-        )
-    idx = builder.finalize()
-    meta = pl.DataFrame(metaRecs)
-    saveSegmentWithSidecar(idx, meta, "delta", saveDir)
+    cols = deltaRows.columns
+    deleted = _boolOf(cols, "deleted")
+    raw = _strOf(cols, "section_content", "searchText")
+    content = pl.when(deleted).then(pl.lit("")).otherwise(raw.str.slice(0, _contentLimit()))
+    meta = [
+        _strOf(cols, "docKey").alias("docKey"),
+        _strOf(cols, "rcept_no", "rceptNo", "sourceRef").alias("rcept_no"),
+        _intOf(cols, "section_order", "sectionOrder").alias("section_order"),
+        _strOf(cols, "corp_code", "corpCode").alias("corp_code"),
+        _strOf(cols, "corp_name", "companyName").alias("corp_name"),
+        _strOf(cols, "stock_code", "stockCode", "ticker").alias("stock_code"),
+        _strOf(cols, "rcept_dt", "date").alias("rcept_dt"),
+        _strOf(cols, "report_nm", "reportName").alias("report_nm"),
+        _strOf(cols, "section_title", "title", "sectionKey").alias("section_title"),
+        content.str.slice(0, 500).alias("text"),
+        raw.str.slice(0, EVIDENCE_TEXT_LIMIT).alias("evidenceText"),
+        _runtimeSourceExpr(_strOf(cols, "source")).alias("source"),
+        _strOf(cols, "sourceRef").alias("sourceRef"),
+        _strOf(cols, "sourceDataAsOf", "rcept_dt", "date").alias("sourceDataAsOf"),
+        content.str.len_chars().cast(pl.Int64).alias("contentLen"),
+        _strOf(cols, "url").alias("url"),
+        deleted.alias("deleted"),
+    ]
+    nDocs = _buildSegmentFromRows(
+        _rowBatches(deltaRows, cols), keep=None, content=content, meta=meta, name="delta", saveDir=saveDir
+    )
     clearCache()
-    del metaRecs, meta
+    return nDocs
+
+
+# catalog 행을 이만큼씩 빌더에 넣는다. 행마다 dict 를 만들어 전체 meta 를 Python 객체로 쌓던 방식은
+# 변경분 105 만 행에서 runner 메모리(16GB)를 넘겨 빌드가 매번 강제 종료됐다(2026-10-07 이후).
+_FEED_BATCH = 20_000
+
+
+def _contentLimit() -> int:
+    from dartlab.providers.dart.search.fieldIndex import CONTENT_LIMIT
+
+    return CONTENT_LIMIT
+
+
+def _buildSegmentFromRows(
+    batches: Iterator[pl.DataFrame],
+    *,
+    keep: pl.Expr | None,
+    content: pl.Expr,
+    meta: list[pl.Expr],
+    name: str,
+    saveDir: Path,
+) -> int:
+    """catalog 행 묶음을 한 번 읽으며 빌더에 넣고 meta parquet 를 이어 쓴 뒤 세그먼트를 저장한다.
+
+    메모리에는 posting 배열과 현재 묶음만 남는다. 행마다 dict 를 만들거나 전체 meta 를 DataFrame 으로
+    모으지 않는다. postings·meta.bin·overrides 는 행 dict 방식과 같은 바이트이고, meta parquet 는 같은 표다.
+
+    Args:
+        batches: doc 순서의 catalog 행 묶음.
+        keep: 색인에 넣을 행 조건. None 이면 전부.
+        content: 색인할 본문 식.
+        meta: meta 열 식(``_RUNTIME_META_COLUMNS`` + evidenceText 순서).
+        name: 세그먼트 이름("main" 또는 "delta").
+        saveDir: 출력 디렉터리.
+
+    Returns:
+        색인한 문서 수. 0 이면 세그먼트를 쓰지 않는다.
+
+    Raises:
+        OSError: 세그먼트 파일을 쓸 수 없을 때.
+
+    Example:
+        >>> callable(_buildSegmentFromRows)
+        True
+    """
+    import gc
+
+    import pyarrow.parquet as pq
+
+    from dartlab.providers.dart.search.fieldIndex import _IncrementalBuilder
+
+    saveDir.mkdir(parents=True, exist_ok=True)
+    metaPath = saveDir / f"{name}_meta.parquet"
+    builder = _IncrementalBuilder()
+    writer = None
+    try:
+        for raw in batches:
+            part = raw.filter(keep) if keep is not None else raw
+            if part.is_empty():
+                continue
+            for text in part.select(content.alias("__content")).get_column("__content").to_list():
+                builder.addDoc(text)
+            table = part.select(meta).to_arrow()
+            if writer is None:
+                writer = pq.ParquetWriter(metaPath, table.schema, compression="zstd")
+            writer.write_table(table)
+            del raw, part, table
+    finally:
+        if writer is not None:
+            writer.close()
+    idx = builder.finalize()
+    del builder
     gc.collect()
-    return idx["nDocs"]
+    if idx["nDocs"] == 0:
+        return 0
+    saveSegmentWithSidecar(idx, metaPath, name, saveDir)
+    nDocs = idx["nDocs"]
+    del idx
+    gc.collect()
+    return nDocs
+
+
+def _rowColumns(rows: pl.DataFrame | str | Path) -> list[str]:
+    """catalog 행의 열 이름. 경로면 parquet 스키마만 읽는다."""
+    if isinstance(rows, pl.DataFrame):
+        return list(rows.columns)
+    import pyarrow.parquet as pq
+
+    return list(pq.read_schema(rows).names)
+
+
+def _rowBatches(rows: pl.DataFrame | str | Path, columns: list[str]) -> Iterator[pl.DataFrame]:
+    """catalog 행을 묶음으로 돌려준다. 경로는 pyarrow 로 묶음씩 읽어 그 묶음만 메모리에 둔다.
+
+    Polars 스캔을 묶음으로 받으면 여러 묶음을 앞서 붙잡아 180 만 행 catalog 에서 11.9GB 를 썼다
+    (2026-10-12 실측, pyarrow 묶음 읽기는 2.5GB).
+    """
+    if isinstance(rows, pl.DataFrame):
+        yield from rows.iter_slices(_FEED_BATCH)
+        return
+    import pyarrow.parquet as pq
+
+    for batch in pq.ParquetFile(rows).iter_batches(batch_size=_FEED_BATCH, columns=columns):
+        yield pl.from_arrow(batch)
+
+
+def _strOf(columns: list[str], *names: str) -> pl.Expr:
+    """``str(row.get(a) or row.get(b) or "")`` 와 같은 열 식. 없는 열은 건너뛰고 null·빈 값은 다음 열로 넘긴다."""
+    expr: pl.Expr = pl.lit("")
+    for column in reversed([name for name in names if name in columns]):
+        value = pl.col(column).cast(pl.Utf8)
+        expr = pl.when(value.is_not_null() & (value != "")).then(value).otherwise(expr)
+    return expr
+
+
+def _intOf(columns: list[str], *names: str) -> pl.Expr:
+    """``int(row.get(a) or row.get(b) or 0)`` 와 같은 열 식."""
+    expr: pl.Expr = pl.lit(0, dtype=pl.Int64)
+    for column in reversed([name for name in names if name in columns]):
+        value = pl.col(column).cast(pl.Int64, strict=False)
+        expr = pl.when(value.is_not_null() & (value != 0)).then(value).otherwise(expr)
+    return expr
+
+
+def _boolOf(columns: list[str], name: str) -> pl.Expr:
+    """``bool(row.get(name))`` 와 같은 열 식."""
+    if name not in columns:
+        return pl.lit(False)
+    return pl.col(name).cast(pl.Boolean, strict=False).fill_null(False)
+
+
+def _runtimeSourceExpr(source: pl.Expr) -> pl.Expr:
+    """``_runtimeSourceFromCatalog`` 의 열 식."""
+    return source.replace({"dartPanel": "panel", "edgarPanel": "edgar-panel", "newsPublic": "news"})
 
 
 def _removeSegmentArtifacts(base: Path, segment: str) -> None:
@@ -1032,7 +1145,7 @@ def indexPublishNames(base: str | Path, *, requireExists: bool = True) -> list[s
     return names + extras
 
 
-def _buildSearchSidecar(idx: dict, meta: pl.DataFrame, name: str, saveDir: Path | None = None) -> None:
+def _buildSearchSidecar(idx: dict, meta: pl.DataFrame | Path, name: str, saveDir: Path | None = None) -> None:
     """range-fetch sidecar 동거 생성 — 실패해도 엔진 인덱스 빌드는 보존(additive·fail-safe)."""
     from dartlab.providers.dart.search.fieldIndex import saveShardedSegment
 
@@ -1042,7 +1155,9 @@ def _buildSearchSidecar(idx: dict, meta: pl.DataFrame, name: str, saveDir: Path 
         _log.warning("[sidecar] %s 빌드 실패(검색 range-fetch 비활성): %s", name, exc)
 
 
-def saveSegmentWithSidecar(idx: dict, meta: pl.DataFrame, name: str = "main", saveDir: Path | None = None) -> None:
+def saveSegmentWithSidecar(
+    idx: dict, meta: pl.DataFrame | Path, name: str = "main", saveDir: Path | None = None
+) -> None:
     """세그먼트 저장 **단일 choke point**(유일 writer) — 동반물(stems/info/parquet) + STORED sidecar.
 
     compact-only(P2): postings SSOT = sidecar 단독(npz 폐기). 빌드 경로(rebuildMain/rebuildMainFromCatalog)·
@@ -1050,7 +1165,7 @@ def saveSegmentWithSidecar(idx: dict, meta: pl.DataFrame, name: str = "main", sa
 
     Args:
         idx: 인덱스 dict.
-        meta: doc 순 meta DataFrame.
+        meta: doc 순 meta DataFrame, 또는 빌드 경로가 흘려 쓴 meta parquet 경로.
         name: 세그먼트 이름("main").
         saveDir: 출력 디렉터리.
 
@@ -1064,9 +1179,11 @@ def saveSegmentWithSidecar(idx: dict, meta: pl.DataFrame, name: str = "main", sa
         >>> callable(saveSegmentWithSidecar)
         True
     """
-    from dartlab.providers.dart.search.fieldIndex import writeSegmentCompanions
+    from dartlab.providers.dart.search.fieldIndex import _contentIndexDir, writeSegmentCompanions
 
     writeSegmentCompanions(idx, meta, name, saveDir)  # stems/info/meta.parquet (npz 없음)
+    if isinstance(meta, Path):  # companions 가 제자리로 옮긴 meta parquet 를 sidecar 가 읽는다
+        meta = (saveDir or _contentIndexDir()) / f"{name}_meta.parquet"
     _buildSearchSidecar(idx, meta, name, saveDir)  # postings/terms/docLengths/meta.bin (=SSOT)
 
 
