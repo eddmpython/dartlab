@@ -4,11 +4,12 @@ name: Search Index Build
 # content 인덱스 월간 main + 일간 누적 delta 빌드와 HF 업로드 (full + lite tier).
 #
 # main 기준 changed-set과 tombstone을 누적 delta 하나로 교체해 fan-out을 고정한다.
-# 월간 force_full은 메모리 예산 안에서만 main을 압축하고, 대형 입력은 OOM 없이 delta 경로를 유지한다.
+# 누적 delta가 active의 25%를 넘으면 일간 실행도 main을 압축한다. 빌드는 catalog를 행 묶음으로 읽어
+# 메모리가 행 수를 따르고(180만 행 7.8GB), 행 수 예산을 넘는 입력만 delta 경로를 유지한다.
 #
 # 트리거:
 #   - 매일 KST 04:00 (cron 0 19)     — 증분(이전 catalog 대비 변화 0 이면 manifest pointer 만 re-point)
-#   - 매월 1일 KST 05:00 (cron 0 20 1) — 메모리 예산형 compaction 요청(no-change 단락 비활성)
+#   - 매월 1일 KST 05:00 (cron 0 20 1): compaction 요청(no-change 단락 비활성, release 게이트)
 #   - 4 source sync 완료 직후 (workflow_run) — 증분
 #   - 수동 (workflow_dispatch) — build_mode / force_full / gate 선택
 #

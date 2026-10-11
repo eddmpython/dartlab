@@ -275,10 +275,10 @@ def _buildMainFromCatalog(mainMode: str) -> int | None:
     mainCatalogPath = outDir / "main_catalog_snapshot.parquet"
     _bootstrapMainCatalog(outDir, mainCatalogPath, previousCatalog)
     needsMain = not mainCatalogPath.exists() or not (outDir / "main.postings.bin").exists()
-    requestedCompaction = _envFlag("FORCE_FULL")
+    requestedCompaction = not needsMain and _compactionRequested(mainCatalogPath, currentCatalogPath, "main")
     compactionAllowed = _catalogCompactionAllowed(currentCatalogPath)
     if requestedCompaction and not compactionAllowed and not needsMain:
-        print("[main] 월간 compaction 연기 — catalog가 메모리 예산을 초과해 누적 delta 경로 유지")
+        print("[main] compaction 연기: catalog 행 수가 메모리 예산을 초과해 누적 delta 경로 유지")
     if needsMain and not compactionAllowed:
         print(
             "[main] ✗ 기존 main과 정합한 catalog baseline이 없고 catalog가 메모리 예산을 초과함 — "
@@ -348,15 +348,44 @@ def _bootstrapMainCatalog(outDir: Path, target: Path, preferred: str | Path | No
 
 
 def _catalogCompactionAllowed(path: Path) -> bool:
-    """Bound full catalog materialization by compressed input size."""
+    """main compaction 의 메모리 예산을 catalog 행 수로 잡는다.
+
+    빌드는 catalog 를 행 묶음으로 읽고 posting 배열만 메모리에 남겨, 피크가 압축 파일 크기가 아니라 행 수를
+    따른다(2026-10-12 실측: 180 만 행 7.8GB). 예전 압축 크기 128MB 예산은 도입 당일 catalog 가 이미 359MB 라
+    compaction 이 한 번도 돌지 못했고, 누적 delta 가 105 만 행까지 커져 delta 빌드가 runner 메모리를 넘겼다.
+    """
     if _envFlag("DARTLAB_SEARCH_ALLOW_UNBOUNDED_COMPACTION"):
         return True
-    maxMb = float(os.environ.get("DARTLAB_SEARCH_MAX_COMPACTION_INPUT_MB", "128"))
-    sizeMb = path.stat().st_size / 1024 / 1024
-    if sizeMb <= maxMb:
+    maxRows = int(os.environ.get("DARTLAB_SEARCH_MAX_COMPACTION_ROWS", "3000000"))
+    if path.suffix.lower() != ".parquet":
         return True
-    print(f"[main] compaction 입력 {sizeMb:.1f}MB > 예산 {maxMb:.1f}MB")
+    import pyarrow.parquet as pq
+
+    rows = pq.ParquetFile(path).metadata.num_rows
+    if rows <= maxRows:
+        return True
+    print(f"[main] compaction 입력 {rows:,}행 > 예산 {maxRows:,}행")
     return False
+
+
+def _compactionRequested(mainCatalogPath: Path, currentCatalogPath: Path, label: str) -> bool:
+    """FORCE_FULL 이거나 누적 delta 가 active 대비 임계를 넘으면 main compaction 을 요청한다.
+
+    월간 compaction 은 release 게이트 뒤에 있어 반영되지 않는 달이 있었다. 일간 실행이 delta 크기를 보고
+    스스로 접어 delta 빌드의 입력을 묶는다. 임계는 env ``DARTLAB_SEARCH_AUTO_COMPACTION_RATIO``(기본 0.25).
+    """
+    if _envFlag("FORCE_FULL"):
+        return True
+    from dartlab.providers.dart.search.catalogDeltaIo import catalogDeltaSummaryFromPaths, isCanonicalCatalogParquet
+
+    if not (isCanonicalCatalogParquet(mainCatalogPath) and isCanonicalCatalogParquet(currentCatalogPath)):
+        return False
+    summary = catalogDeltaSummaryFromPaths(mainCatalogPath, currentCatalogPath)
+    deltaRows = int(summary["newDocs"]) + int(summary["changedDocs"]) + int(summary["deletedDocs"])
+    ratio = deltaRows / max(1, int(summary["totalCurrentDocs"]))
+    limit = float(os.environ.get("DARTLAB_SEARCH_AUTO_COMPACTION_RATIO", "0.25"))
+    print(f"[{label}] 누적 delta {deltaRows:,}행 = active 의 {ratio:.1%} (compaction 임계 {limit:.0%})")
+    return ratio > limit
 
 
 def _activeCatalogRows(catalog) -> int:
@@ -480,7 +509,7 @@ def _buildLiteFromCatalog(currentCatalog: str, sinceDate: str) -> int:
     mainCatalogPath = liteDir / "main_catalog_snapshot.parquet"
     _bootstrapMainCatalog(liteDir, mainCatalogPath, liteDir / "catalog_snapshot.parquet")
     needsMain = not mainCatalogPath.exists() or not (liteDir / "main.postings.bin").exists()
-    requestedCompaction = _envFlag("FORCE_FULL")
+    requestedCompaction = not needsMain and _compactionRequested(mainCatalogPath, nextCatalogPath, "lite")
     compactionAllowed = _catalogCompactionAllowed(nextCatalogPath)
     if requestedCompaction and not compactionAllowed and not needsMain:
         print("[lite] compaction 연기 — 누적 delta 경로 유지")

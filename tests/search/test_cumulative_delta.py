@@ -103,6 +103,8 @@ def test_build_script_keeps_main_bytes_unchanged_on_daily_catalog_change(tmp_pat
     monkeypatch.setenv("DARTLAB_SEARCH_SOURCE_MANIFESTS", str(manifestPath))
     monkeypatch.setenv("DARTLAB_SEARCH_EXPECTED_SOURCES", "allFilings")
     monkeypatch.delenv("FORCE_FULL", raising=False)
+    # 문서 2 개 중 1 개 변경은 50% 다. 자동 compaction 임계를 넘기지 않게 올려 일간 delta 경로만 본다.
+    monkeypatch.setenv("DARTLAB_SEARCH_AUTO_COMPACTION_RATIO", "0.9")
 
     monkeypatch.setenv("DARTLAB_SEARCH_CURRENT_CATALOG", str(basePath))
     assert mod._buildMainFromCatalog("catalog") == 2
@@ -116,3 +118,82 @@ def test_build_script_keeps_main_bytes_unchanged_on_daily_catalog_change(tmp_pat
     assert (outDir / "delta.postings.bin").exists()
     assert (outDir / "catalog_snapshot.parquet").read_bytes() == currentPath.read_bytes()
     assert (outDir / "main_catalog_snapshot.parquet").read_bytes() == basePath.read_bytes()
+
+
+def test_build_script_compacts_main_when_cumulative_delta_exceeds_ratio(tmp_path, monkeypatch) -> None:
+    """누적 delta 가 active 대비 임계를 넘으면 일간 실행도 main 을 압축하고 delta 를 비운다.
+
+    압축 크기 128MB 예산 시절에는 compaction 이 한 번도 돌지 못해 delta 가 105 만 행까지 쌓였다(2026-10).
+    """
+    import dartlab.config as cfg
+    from dartlab.providers.dart.search.catalog import normalizeCatalogRows
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path / "data"))
+    basePath = tmp_path / "base.parquet"
+    currentPath = tmp_path / "current.parquet"
+    normalizeCatalogRows(
+        [{"source": "allFilings", "rcept_no": f"R{i}", "text": f"document {i}", "date": "20260701"} for i in range(4)]
+    ).write_parquet(basePath)
+    normalizeCatalogRows(
+        [{"source": "allFilings", "rcept_no": f"R{i}", "text": f"document {i}", "date": "20260701"} for i in range(4)]
+        + [
+            {"source": "allFilings", "rcept_no": f"N{i}", "text": f"new filing {i}", "date": "20261010"}
+            for i in range(2)
+        ]
+    ).write_parquet(currentPath)
+    manifestPath = tmp_path / "allFilings.source_manifest.json"
+    manifestPath.write_text(
+        json.dumps(
+            {
+                "source": "allFilings",
+                "sourceVersion": "v1",
+                "schemaVersion": "2026-07",
+                "snapshotScope": "full",
+                "dataAsOf": "20261010",
+                "builtAt": "2026-10-10T00:00:00Z",
+                "files": [{"path": "x.parquet", "rowCount": 6}],
+                "totalRows": 6,
+                "changedRows": 2,
+                "deletedRows": 0,
+                "producer": "test",
+            }
+        ),
+        encoding="utf-8",
+    )
+    script = Path(__file__).resolve().parents[2] / ".github" / "scripts" / "search" / "buildSearchMain.py"
+    spec = importlib.util.spec_from_file_location("buildSearchMainCompactionTest", script)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    monkeypatch.setenv("DARTLAB_SEARCH_SOURCE_MANIFESTS", str(manifestPath))
+    monkeypatch.setenv("DARTLAB_SEARCH_EXPECTED_SOURCES", "allFilings")
+    monkeypatch.delenv("FORCE_FULL", raising=False)
+    monkeypatch.setenv("DARTLAB_SEARCH_AUTO_COMPACTION_RATIO", "0.25")
+
+    monkeypatch.setenv("DARTLAB_SEARCH_CURRENT_CATALOG", str(basePath))
+    assert mod._buildMainFromCatalog("catalog") == 4
+    outDir = Path(cfg.dataDir) / "dart" / "contentIndex"
+
+    monkeypatch.setenv("DARTLAB_SEARCH_CURRENT_CATALOG", str(currentPath))
+    assert mod._buildMainFromCatalog("catalog") == 6  # 2/6 = 33% > 25%
+
+    assert not (outDir / "delta.postings.bin").exists()
+    assert json.loads((outDir / "main_info.json").read_text(encoding="utf-8"))["nDocs"] == 6
+    assert (outDir / "main_catalog_snapshot.parquet").read_bytes() == currentPath.read_bytes()
+
+
+def test_compaction_budget_counts_rows_not_compressed_bytes(tmp_path, monkeypatch) -> None:
+    import polars as pl
+
+    script = Path(__file__).resolve().parents[2] / ".github" / "scripts" / "search" / "buildSearchMain.py"
+    spec = importlib.util.spec_from_file_location("buildSearchMainBudgetTest", script)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    path = tmp_path / "catalog.parquet"
+    pl.DataFrame({"searchText": ["본문" * 5000] * 50}).write_parquet(path)
+    monkeypatch.delenv("DARTLAB_SEARCH_ALLOW_UNBOUNDED_COMPACTION", raising=False)
+    monkeypatch.setenv("DARTLAB_SEARCH_MAX_COMPACTION_ROWS", "100")
+    assert mod._catalogCompactionAllowed(path) is True
+    monkeypatch.setenv("DARTLAB_SEARCH_MAX_COMPACTION_ROWS", "10")
+    assert mod._catalogCompactionAllowed(path) is False
