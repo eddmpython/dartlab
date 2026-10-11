@@ -442,3 +442,22 @@ def testGetJsonRecoversWhenNonJsonBodyIsTransient(monkeypatch) -> None:
 
     monkeypatch.setattr(c._session, "get", fakeGet)
     assert c.getJson("list.json", params={})["status"] == "000"
+
+
+def testCurrentKeyReturnsConfiguredKey() -> None:
+    """currentKey 는 다음 요청에 쓸 키를 돌려준다(키 로테이션 상태 확인용)."""
+    from dartlab.gather.dart.client import DartClient
+
+    c = DartClient(apiKeys=["KEY_A", "KEY_B"])
+    assert c.currentKey in {"KEY_A", "KEY_B"}
+
+
+def testFetchProviderMakeClientAndResolveKeys() -> None:
+    """providers seam 의 makeClient·resolveKeys 는 gather DartClient 와 키 해석을 그대로 쓴다."""
+    from dartlab.gather.dart.client import DartClient, _DartFetchProvider
+
+    provider = _DartFetchProvider()
+    assert provider.resolveKeys(apiKeys=["KEY_A", "KEY_B"]) == ["KEY_A", "KEY_B"]
+    client = provider.makeClient(apiKeys=["KEY_A"], requestsPerMinute=120)
+    assert isinstance(client, DartClient)
+    assert client.currentKey == "KEY_A"
