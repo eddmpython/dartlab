@@ -179,11 +179,51 @@ def test_classify_failure_reads_failed_log_before_summary(monkeypatch):
     assert calls == [["run", "view", "123", "--log-failed"]]
 
 
-def test_classify_timeout_wins_over_unrelated_429(monkeypatch):
+def test_classify_connect_timeout_wins_over_unrelated_429(monkeypatch):
+    """연결 단계 timeout 은 job timeout 이 아니라 외부 연결 불통이다(같은 줄의 'timed out' 에 밀리지 않는다)."""
     mod = _loadMonitor()
     logText = "dependency build 429 records\nTraceback\nhttpx.ConnectTimeout: connection timed out"
     monkeypatch.setattr(mod, "_gh", lambda *a, **k: logText)
-    assert mod._classifyFailure(123) == "timeout/cancelled"
+    assert mod._classifyFailure(123) == mod.EXTERNAL_CONNECT
+
+
+@pytest.mark.parametrize(
+    "logText,expected",
+    [
+        # 실패 티커 목록의 OOMA·BOOM 은 메모리 부족 신호가 아니다(2026-09 #166 오분류).
+        ("EdgarBatchCollectionError: 7713 tickers failed: AAPL, BOOM, OOMA, ZM", "code/기타"),
+        ("process exited: Killed\n##[error]Process completed with exit code 137.", "메모리/디스크 (runner)"),
+        ("ValueError: corpCode.xml 다운로드 실패 (ZIP 손상): File is not a zip file", None),
+        ("DART 연결 실패 ConnectTimeout: timed out, 4.9초 후 재시도 (1/5)", None),
+        ("dartZip archive: RemoteProtocolError: Server disconnected without sending a response.", None),
+    ],
+)
+def test_classify_log_word_boundaries_and_external_labels(logText, expected):
+    mod = _loadMonitor()
+    if expected is None:
+        expected = mod.EXTERNAL_DART if "corpcode" in logText.lower() else mod.EXTERNAL_CONNECT
+    assert mod._classifyLog(logText.lower()) == expected
+
+
+@pytest.mark.parametrize("shape,label", [("killed", "RUNNER_LOST"), ("noSteps", "RUNNER_UNAVAILABLE")])
+def test_failure_run_shape_classifies_runner_problems(monkeypatch, shape, label):
+    """step 이 취소된 채 실패한 run 은 러너 강제 종료, step 0 개 실패 run 은 러너 미확보다. 로그를 받기 전에 가른다."""
+    mod = _loadMonitor()
+    calls: list[list[str]] = []
+
+    def fakeGh(args, **_kwargs):
+        calls.append(args)
+        return shape if args[0] == "api" else "The operation was canceled."
+
+    monkeypatch.setattr(mod, "_gh", fakeGh)
+    assert mod._classifyFailure(123, "failure") == getattr(mod, label)
+    assert all(args[0] == "api" for args in calls)
+
+
+def test_failure_run_with_failed_step_reads_log(monkeypatch):
+    mod = _loadMonitor()
+    monkeypatch.setattr(mod, "_gh", lambda args, **_kwargs: "steps" if args[0] == "api" else "Traceback: KeyError")
+    assert mod._classifyFailure(123, "failure") == "code/기타"
 
 
 def test_classify_uses_last_specific_failure_signal(monkeypatch):
@@ -440,6 +480,146 @@ def test_triage_first_attempt_failure_stays_transient():
     got = mod._triage(runs)
     assert got["state"] == "transient"
     assert got["attempt"] == 1
+
+
+def test_skipped_runs_do_not_break_failure_streak():
+    """상위 실패로 생긴 skipped 사이에 낀 실패도 연속 실패다(2026-10 Search Index Build 재실행 반복)."""
+    mod = _loadMonitor()
+    runs = [
+        {"conclusion": "failure", "status": "completed", "databaseId": 4, "url": "u4"},
+        {"conclusion": "skipped", "status": "completed", "databaseId": 3, "url": "u3"},
+        {"conclusion": "failure", "status": "completed", "databaseId": 2, "url": "u2"},
+        {"conclusion": "success", "status": "completed", "databaseId": 1, "url": "u1"},
+    ]
+    assert mod._triage(runs)["state"] == "persistent"
+
+
+def test_latest_skipped_does_not_hide_ongoing_failure():
+    """최신이 skipped 여도 그 앞이 연속 실패면 장애다. 옛 판정은 4 일째 장애를 [pass] 로 찍었다."""
+    mod = _loadMonitor()
+    now = datetime(2026, 10, 11, 8, 13, tzinfo=timezone.utc)
+    runs = [
+        {"conclusion": "skipped", "status": "completed", "databaseId": 3, "createdAt": "2026-10-11T08:13:00Z"},
+        {"conclusion": "failure", "status": "completed", "databaseId": 2, "createdAt": "2026-10-10T22:15:00Z"},
+        {"conclusion": "failure", "status": "completed", "databaseId": 1, "createdAt": "2026-10-10T19:40:00Z"},
+    ]
+    got = mod._triage(runs, maxGapHours=30, now=now)
+    assert got["state"] == "persistent"
+    assert got["dataStalled"] is True
+
+
+@pytest.mark.parametrize("prev,expected", [("success", "transient"), ("failure", "persistent")])
+def test_rerun_in_progress_keeps_failure_open(prev, expected):
+    """감사가 건 재실행이 도는 동안은 정상이 아니다. 닫았다가 재실행 실패 시 새 번호로 다시 열던 반복 방지."""
+    mod = _loadMonitor()
+    runs = [
+        {"conclusion": None, "status": "in_progress", "databaseId": 2, "url": "u2", "attempt": 2},
+        {"conclusion": prev, "status": "completed", "databaseId": 1, "url": "u1", "attempt": 1},
+    ]
+    got = mod._triage(runs)
+    assert got["state"] == expected
+    assert got["inFlight"] is True
+    assert got["runId"] == 2
+
+
+def test_new_run_in_progress_inherits_unresolved_failure():
+    mod = _loadMonitor()
+    runs = [
+        {"conclusion": None, "status": "queued", "databaseId": 3, "url": "u3", "attempt": 1},
+        {"conclusion": "failure", "status": "completed", "databaseId": 2, "url": "u2", "attempt": 2},
+        {"conclusion": "success", "status": "completed", "databaseId": 1, "url": "u1", "attempt": 1},
+    ]
+    got = mod._triage(runs)
+    assert got["state"] == "persistent"
+    assert got["inFlight"] is True
+
+
+def test_triggered_run_for_stale_workflow_keeps_stale_without_retrigger():
+    """cron 누락으로 트리거한 run 이 도는 동안에도 누락 판정을 유지한다(#182 0.6 분 닫힘)."""
+    mod = _loadMonitor()
+    now = datetime(2026, 10, 5, 11, 30, tzinfo=timezone.utc)
+    runs = [
+        {
+            "conclusion": None,
+            "status": "in_progress",
+            "databaseId": 2,
+            "url": "u2",
+            "createdAt": "2026-10-05T11:29:00Z",
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 1,
+            "url": "u1",
+            "createdAt": "2026-10-02T17:00:00Z",
+        },
+    ]
+    got = mod._triage(runs, maxGapHours=54, now=now)
+    assert got["state"] == "stale"
+    assert got["inFlight"] is True
+
+
+def test_new_run_after_success_is_running():
+    mod = _loadMonitor()
+    runs = [
+        {"conclusion": None, "status": "in_progress", "databaseId": 2, "url": "u2", "attempt": 1},
+        {"conclusion": "success", "status": "completed", "databaseId": 1, "url": "u1", "attempt": 1},
+    ]
+    assert mod._triage(runs)["state"] == "running"
+
+
+def test_failure_window_classifies_previous_attempt_of_running_rerun(monkeypatch):
+    mod = _loadMonitor()
+    seen: list[tuple] = []
+    monkeypatch.setattr(
+        mod, "_classifyFailure", lambda runId, conclusion="", attempt=None: seen.append((runId, attempt)) or "x"
+    )
+    got = mod._classifyFailureWindow(
+        [
+            {"conclusion": None, "status": "in_progress", "databaseId": 7, "url": "u7", "attempt": 2},
+            {"conclusion": "success", "databaseId": 6, "url": "u6"},
+        ]
+    )
+    assert seen == [(7, 1)]
+    assert got["classification"] == "x"
+
+
+def test_main_does_not_rerun_or_close_while_rerun_runs(monkeypatch):
+    """main 은 진행 중 재실행을 다시 걸지 않고, 열린 이슈를 닫지 않고 갱신한다."""
+    mod = _loadMonitor()
+    monkeypatch.setattr(mod, "MONITORED_WORKFLOWS", ["Data Sync"])
+    monkeypatch.setattr(
+        mod,
+        "_recentRuns",
+        lambda name: [
+            {"conclusion": None, "status": "in_progress", "databaseId": 2, "url": "u2", "attempt": 2},
+            {"conclusion": "success", "status": "completed", "databaseId": 1, "url": "u1", "attempt": 1},
+        ],
+    )
+    monkeypatch.setattr(mod, "_classifyFailure", lambda *a, **k: "code/기타")
+    monkeypatch.setattr(mod, "_auditFreshness", lambda: None)
+    monkeypatch.setattr(mod, "_ensureLabel", lambda: None)
+    monkeypatch.setattr(mod, "_findOpenIssue", lambda: 186)
+    monkeypatch.setattr(mod, "_rerunFailed", lambda runId: pytest.fail("진행 중 재실행을 다시 걸었다"))
+    monkeypatch.setattr(mod, "_triggerWorkflow", lambda name: pytest.fail("트리거를 다시 걸었다"))
+    calls: list[list[str]] = []
+    monkeypatch.setattr(mod, "_gh", lambda args, **_kwargs: calls.append(args) or "")
+    mod.main()
+    assert calls and calls[0][:2] == ["issue", "edit"]
+    assert not any(args[:2] == ["issue", "close"] for args in calls)
+
+
+def test_data_audit_ignores_skipped_workflow_run_completion():
+    """skipped 완료가 짝 감사를 깨워 진행 중 재실행을 보고 이슈를 닫던 경로를 막는다."""
+    workflow = (ROOT / ".github" / "workflows" / "dataAudit.yml").read_text(encoding="utf-8")
+    assert "github.event.workflow_run.conclusion != 'skipped'" in workflow
+
+
+def test_gov_index_stale_threshold_exceeds_weekend_gap():
+    """평일 전용 cron 의 정상 주말 간격(실측 약 68.5h)을 넘겨야 매 주말 오탐 이슈가 없다."""
+    mod = _loadMonitor()
+    assert mod.STALE_AFTER_HOURS["Gov Index Sync (Bulk)"] > 70
+    assert mod.STALE_AFTER_HOURS["Gov Price Sync (Bulk)"] > 45
 
 
 def test_should_rerun_blocks_second_attempt():

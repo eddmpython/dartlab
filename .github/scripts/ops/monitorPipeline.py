@@ -4,7 +4,11 @@ gh CLI로 각 워크플로우의 최근 실행을 조회한다. **실패는 단�
 알린다**(운영자 가시성 우선 — 조용히 삼키지 않음). 단발 transient 실패는 알림과 **동시에 자동
 재실행**(rerun)해 자가치유를 시도하고 Issue 에 "단발 — 자동 재실행 중"으로, **연속 2회+**
 (persistent)는 "연속 — 조치 필요"로 표시해 심각도를 구분한다. 실패 로그/주석에서 원인(메모리/
-디스크·HF 429·timeout·code)을 분류해 actionable 하게 적고, 전부 정상이면 열린 Issue 를 닫는다.
+디스크·HF 429·timeout·외부 연결·code)을 분류해 actionable 하게 적는다.
+
+skipped run(상위 실패로 조건부 job 이 건너뛴 run)은 판정에서 뺀다. 건강 신호가 아니다. 재실행이나
+자동 트리거한 run 이 진행 중이면 직전 실패·누락 판정을 유지하고, 완료된 성공을 확인한 뒤에만 Issue 를
+닫는다(진행 중을 정상으로 보고 닫았다가 재실행 실패 시 새 번호로 다시 여는 반복 방지).
 
 감시 대상 = **scheduled(cron) 데이터/자동화 파이프라인 전체**. 새 scheduled 워크플로우를
 추가하면 여기 name 도 등록해야 그 실패가 알림된다(미등록 = 조용한 실패).
@@ -16,6 +20,7 @@ gh CLI로 각 워크플로우의 최근 실행을 조회한다. **실패는 단�
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 import traceback
@@ -55,7 +60,11 @@ MONITORED_WORKFLOWS = [
 ]
 
 FAILURE_LABEL = "pipeline-failure"
-RECENT_N = 5
+# skipped 를 걸러낸 뒤에도 마지막 성공이 창 안에 남도록 넉넉히 받는다. Search Index Build 는 상위 실패마다
+# skipped run 이 생겨 5 건 창이 skipped 로 채워졌고, 4 일째 장애를 [pass] 로 판정했다(2026-10-11 실측).
+RECENT_N = 20
+# 연속 실패 원인 분류는 최근 이만큼만 로그를 받는다(실패 run 마다 수 MB 로그 조회).
+CLASSIFY_N = 5
 _OK_CONCLUSIONS = ("success", "skipped")
 
 # 데이터 신선도 축. run 결론이 전부 초록이어도 HF panel 에 최신 정기보고서가 없으면 알린다.
@@ -181,10 +190,14 @@ def _auditFreshness() -> dict | None:
 # **opt-in** — 여기 등록된 워크플로우만 staleness 검사(미등록=실패 감지만). 값 = 정상 최대 간격(주말 포함)+여유.
 # 새 등록 시 그 cron 의 정상 최대 간격을 넘겨 잡아야 정상 주말 갭 오탐(false-positive)이 없다.
 STALE_AFTER_HOURS: dict[str, float] = {
-    # gov = 평일(1-5) 발행 + 토 derive. 정상 최대 간격 = 토 run(~22:10 KST) → 월 13:40 KST ≈ 39.5h. 42h=+2.5h 여유.
-    # 월 cron 드랍 시 화 05:00 KST 감사에서 age ~55h>42h → stale 감지+자동 트리거. 월 05:00 정상치(~31h)는 미탐.
-    "Gov Price Sync (Bulk)": 42,
-    "Gov Index Sync (Bulk)": 42,
+    # 간격은 명목 cron 시각이 아니라 실제 발화 시각으로 잡는다. 2026-08-27 이후 저장소 전체 schedule 이
+    # 명목보다 4~7 시간(최대 11 시간) 늦게 발화한다. 감사는 workflow_run 완료마다 돌아 임계를 넘는 즉시 판정한다.
+    # gov price = 평일 발행 + 토 derive. 실측 최대 간격 = 토 '10 13' 발화(17:13Z) → 월 '40 4' 발화(11:50Z) ≈ 42.6h.
+    # 54h = 발화 지연 흔들림 여유. 월 cron 이 둘 다 드랍되면 월 늦은 오후 UTC 에 stale 감지+자동 트리거.
+    "Gov Price Sync (Bulk)": 54,
+    # gov index = 평일 전용('20 4', '20 11'). 금 첫 발화(~15Z) → 월 첫 발화(~11:30Z) ≈ 68.5h 가 정상 주말 간격이다.
+    # 42h 시절에는 매 주말 정상 갭을 stale 로 잡아 일요일마다 이슈와 bot dispatch 가 났다(2026-09-06, 10-11 실측).
+    "Gov Index Sync (Bulk)": 75,
     # 검색 인덱스 = 매일 04:00 KST 증분(+ source sync workflow_run). 정상 최대 간격 ~24h.
     # 30h = +6h 여유. cron 드랍(성공기록만 남고 며칠 안 돎)을 staleness 로 감지. 실패(RED)는
     # MONITORED_WORKFLOWS 가 이미 잡지만, schedule 드랍은 이 임계 없이는 미탐(2026-06 하루 RED 교훈).
@@ -217,21 +230,48 @@ STALE_AFTER_HOURS: dict[str, float] = {
 # "The operation was canceled." 가 따라온다. 위치 기반 분류는 뒤에 오는 결과 문구에 밀려
 # 원인을 잃으므로 이 신호만 위치와 무관하게 우선한다 (2026-08 Data Sync 오판 교훈).
 JOB_TIMEOUT = "job timeout (실행시간 초과)"
+EXTERNAL_CONNECT = "외부 연결 불통 (DART·공공 API)"
+EXTERNAL_DART = "외부: OpenDART 오류 응답 (점검·한도·키)"
 
+# 값은 정규식(소문자 로그 대상). 짧은 단어는 단어 경계로 묶는다. 부분일치 시절에는 실패 티커 목록의
+# OOMA·BOOM 이 'oom' 에 걸려 EDGAR 배치 실패를 메모리 부족으로 적었다(2026-09 #166).
+# 같은 줄에 여러 신호가 있으면 이 dict 의 앞쪽 라벨이 이긴다. "httpx.ConnectTimeout: timed out" 은
+# job timeout 이 아니라 외부 연결 불통이다.
 _SIG = {
-    JOB_TIMEOUT: ("exceeded the maximum execution time",),
-    "메모리/디스크 (runner)": ("lost communication", "out of memory", "killed", "no space left", "oom"),
-    "timeout/cancelled": ("timed out", "timeout", "connecttimeout", "connect timeout", "cancel"),
-    "HF directory file limit": ("too many files per directory", "can only contain up to 10000 files"),
-    "HF rate-limit (429)": (
-        "http 429",
-        "status code: 429",
-        "429 client error",
-        "too many requests",
-        "rate limit",
-        "retry this action",
+    JOB_TIMEOUT: (r"exceeded the maximum execution time",),
+    EXTERNAL_DART: (r"corpcode\.xml 다운로드 실패", r"\bdartapierror\b"),
+    EXTERNAL_CONNECT: (
+        r"\bconnect ?timeout\b",
+        r"\bconnecterror\b",
+        r"dart 연결 실패",
+        r"server disconnected without sending a response",
     ),
+    "HF directory file limit": (r"too many files per directory", r"can only contain up to 10000 files"),
+    "HF rate-limit (429)": (
+        r"\bhttp 429\b",
+        r"status code: 429",
+        r"\b429 client error",
+        r"too many requests",
+        r"rate limit",
+        r"retry this action",
+    ),
+    "메모리/디스크 (runner)": (
+        r"lost communication",
+        r"out of memory",
+        r"\boom[- ]?kill",
+        r"exit code 137",
+        r"\bkilled\b",
+        r"no space left",
+    ),
+    "timeout/cancelled": (r"timed out", r"\btimeout\b", r"\bcancel"),
 }
+_SIG_PATTERNS = {label: tuple(re.compile(p) for p in patterns) for label, patterns in _SIG.items()}
+
+# job 이 step 을 시작하지 못하거나, 실행 중이던 step 이 취소된 채 job 이 실패로 끝난 run. 로그 문구가 아니라
+# job/step 결론 모양으로 가른다. 후자는 사용자 취소(run cancelled)도 job timeout(run cancelled)도 아니다.
+# 2026-10 Search Index Build 실측: 빌드 step 이 출력 없이 끊기고 "The operation was canceled." 만 남았다.
+RUNNER_UNAVAILABLE = "러너 미확보 (GitHub 측)"
+RUNNER_LOST = "runner 강제 종료 (메모리 고갈 추정)"
 
 
 def _gh(args: list[str], *, check: bool = True) -> str:
@@ -304,15 +344,31 @@ def _isQueueEvicted(runId: int, conclusion: str) -> bool:
     return _runStartedJobCount(runId) == 0
 
 
-def _classifyFailure(runId: int, conclusion: str = "") -> str:
+def _failedJobShape(runId: int, attempt: int | None = None) -> str:
+    """실패 job 의 모양. noSteps(step 0 개, 러너 미확보) · killed(step 이 취소된 채 실패) · steps · unknown."""
+    path = f"repos/{{owner}}/{{repo}}/actions/runs/{runId}"
+    path += f"/attempts/{attempt}/jobs" if attempt else "/jobs"
+    jq = (
+        '[.jobs[] | select(.conclusion == "failure")] as $f'
+        ' | if ($f | length) == 0 then "none"'
+        ' elif any($f[]; (.steps | length) == 0) then "noSteps"'
+        ' elif any($f[]; any(.steps[]; .conclusion == "cancelled")) then "killed"'
+        ' else "steps" end'
+    )
+    raw = _gh(["api", path, "--jq", jq], check=False).strip()
+    return raw if raw in ("none", "noSteps", "killed", "steps") else "unknown"
+
+
+def _classifyFailure(runId: int, conclusion: str = "", attempt: int | None = None) -> str:
     """실패 run 의 원인 분류 — gh run view 출력(잡+ANNOTATIONS)에서 시그니처 매칭.
 
     Args:
         runId: 실패한 run 의 databaseId.
-        conclusion: run 의 conclusion. cancelled 면 큐 축출 여부를 먼저 가린다.
+        conclusion: run 의 conclusion. cancelled 면 큐 축출을, failure 면 러너 미확보·강제 종료를 먼저 가린다.
+        attempt: 특정 attempt 를 분류할 때(재실행이 진행 중인 run 의 직전 attempt). None 이면 최신 attempt.
 
     Returns:
-        분류 라벨 (메모리/디스크 · HF rate-limit · timeout · code/기타 · unknown).
+        분류 라벨 (메모리/디스크 · HF rate-limit · timeout · 외부 연결 · runner · code/기타 · unknown).
 
     Raises:
         없음 — gh 실패/빈 출력은 'unknown' 으로 흡수.
@@ -323,41 +379,69 @@ def _classifyFailure(runId: int, conclusion: str = "") -> str:
     """
     if _isQueueEvicted(runId, conclusion):
         return QUEUE_EVICTED
-    out = _gh(["run", "view", str(runId), "--log-failed"], check=False).lower()
+    if conclusion == "failure":
+        shape = _failedJobShape(runId, attempt)
+        if shape == "noSteps":
+            return RUNNER_UNAVAILABLE
+        if shape == "killed":
+            return RUNNER_LOST
+    view = ["run", "view", str(runId)] + (["--attempt", str(attempt)] if attempt else [])
+    out = _gh([*view, "--log-failed"], check=False).lower()
     if not out:
-        out = _gh(["run", "view", str(runId)], check=False).lower()
+        out = _gh(view, check=False).lower()
     if not out:
         return "unknown"
     return _classifyLog(out)
 
 
 def _classifyLog(out: str) -> str:
-    """실패 로그에서 가장 뒤에 나타난 구체 원인 시그니처를 고른다.
+    """실패 로그에서 가장 뒤 줄에 나타난 구체 원인 시그니처를 고른다.
 
-    단 job timeout 은 뒤따르는 취소 문구가 결과일 뿐이므로 위치와 무관하게 먼저 확정한다.
+    단 job timeout 은 뒤따르는 취소 문구가 결과일 뿐이므로 위치와 무관하게 먼저 확정한다. 같은 줄에 신호가
+    여럿이면 ``_SIG`` 앞쪽 라벨이 이긴다.
     """
-    if any(signature in out for signature in _SIG[JOB_TIMEOUT]):
+    if any(pattern.search(out) for pattern in _SIG_PATTERNS[JOB_TIMEOUT]):
         return JOB_TIMEOUT
-    matches = [
-        (out.rfind(signature), label)
-        for label, signatures in _SIG.items()
-        for signature in signatures
-        if signature in out
-    ]
-    if matches:
-        return max(matches, key=lambda item: item[0])[1]
-    return "code/기타"
+    order = list(_SIG_PATTERNS)
+    best: tuple[int, int, str] | None = None
+    for label, patterns in _SIG_PATTERNS.items():
+        for pattern in patterns:
+            last = None
+            for last in pattern.finditer(out):
+                pass
+            if last is None:
+                continue
+            key = (out.rfind("\n", 0, last.start()), -order.index(label), label)
+            if best is None or key > best:
+                best = key
+    return best[2] if best else "code/기타"
+
+
+def _dropSkipped(runs: list[dict]) -> list[dict]:
+    """skipped run 을 뺀 목록. 전부 skipped 면 원래 목록(판정 근거가 그것뿐이다)."""
+    kept = [run for run in runs if run.get("conclusion") != "skipped"]
+    return kept or runs
 
 
 def _classifyFailureWindow(runs: list[dict]) -> dict:
-    """최근 연속 실패 전체를 분류해 최신 한 건이 이전 원인을 덮지 않게 한다."""
+    """최근 연속 실패 전체를 분류해 최신 한 건이 이전 원인을 덮지 않게 한다.
+
+    skipped 는 연속 실패를 끊지 않는다. 재실행이 진행 중인 run 은 직전 attempt 를 분류하고, 새로 시작한
+    run(attempt 1)이 진행 중이면 그 뒤의 완료 run 부터 본다. 로그 조회는 최근 CLASSIFY_N 건까지.
+    """
     history: list[dict] = []
-    for run in runs:
+    for run in _dropSkipped(runs):
         conclusion = run.get("conclusion")
-        if conclusion in (*_OK_CONCLUSIONS, "", None):
-            break
+        attempt = int(run.get("attempt") or 1)
         runId = run.get("databaseId")
-        cause = _classifyFailure(runId, conclusion or "") if runId else "unknown"
+        if conclusion in ("", None):
+            if not history and attempt >= 2 and runId:
+                cause = _classifyFailure(runId, "failure", attempt - 1)
+                history.append({"runId": runId, "url": run.get("url", "-"), "cause": cause})
+            continue
+        if conclusion in _OK_CONCLUSIONS or len(history) >= CLASSIFY_N:
+            break
+        cause = _classifyFailure(runId, conclusion) if runId else "unknown"
         history.append({"runId": runId, "url": run.get("url", "-"), "cause": cause})
     if not history:
         return {"classification": "unknown", "causeHistory": []}
@@ -472,6 +556,9 @@ def _triage(runs: list[dict], *, maxGapHours: float | None = None, now: datetime
     if not runs:
         return {"state": "no_runs", "conclusion": "-", "url": "-", "runId": None}
 
+    # skipped 는 상위 실패로 job 이 건너뛴 run 이다. 성공으로 읽으면 실패 연속이 끊겨 연속 실패를 단발로
+    # 오판하고(재실행 반복), 최신이 skipped 면 장애 중인 워크플로를 [pass] 로 판정한다.
+    runs = _dropSkipped(runs)
     nowTs = now or datetime.now(timezone.utc)
     # 최신 run 의 결론과 무관하게 "마지막 성공 이후 경과"를 항상 계산한다.
     # 옛 판정은 최신이 성공일 때만 staleness 를 봐서, 연속 실패 중에는 데이터가 며칠 멈춰도
@@ -489,13 +576,18 @@ def _triage(runs: list[dict], *, maxGapHours: float | None = None, now: datetime
     runId = latest.get("databaseId")
 
     if status == "in_progress" or conclusion == "":
-        return {"state": "running", "conclusion": status or "in_progress", "url": url, "runId": runId}
+        return _triageInFlight(runs, maxGapHours=maxGapHours, now=nowTs, lastSuccessAge=lastSuccessAge)
     if conclusion in _OK_CONCLUSIONS:
         # 최신이 성공이어도 cron cadence 보다 오래됐으면 stale(GitHub 가 스케줄 run 을 기록없이 드랍).
         if maxGapHours is not None:
             age = _ageHours(latest.get("createdAt"), nowTs)
             if age is not None and age > maxGapHours:
-                return {"state": "stale", "conclusion": f"{conclusion} · {age:.0f}h 경과", "url": url, "runId": runId}
+                return {
+                    "state": "stale",
+                    "conclusion": f"{conclusion} · 마지막 성공 {age:.0f}h 전",
+                    "url": url,
+                    "runId": runId,
+                }
             # skipped 만 이어지는 경우: run 은 최신이어도 실제 성공은 오래됐을 수 있다.
             if lastSuccessAge is not None and lastSuccessAge > maxGapHours:
                 return {
@@ -526,6 +618,56 @@ def _triage(runs: list[dict], *, maxGapHours: float | None = None, now: datetime
     if maxGapHours is not None and (lastSuccessAge is None or lastSuccessAge > maxGapHours):
         result["dataStalled"] = True
     return result
+
+
+def _triageInFlight(
+    runs: list[dict], *, maxGapHours: float | None, now: datetime, lastSuccessAge: float | None
+) -> dict:
+    """최신 run 이 진행 중일 때의 판정. 직전 실패·누락이 해소되지 않았으면 그 판정을 유지한다.
+
+    진행 중을 곧바로 running 으로 돌리면 감사가 자기가 건 재실행(또는 cron 누락 트리거)을 정상으로 보고 Issue 를
+    닫고, 재실행이 실패하면 새 번호로 다시 연다(2026-10-08 #186 닫힘 뒤 19 분 만에 #187). 결과에
+    ``inFlight=True`` 를 붙여 main 이 재실행·트리거를 다시 걸지 않게 한다.
+
+    Args:
+        runs: skipped 를 뺀 최근 실행 목록(최신순). runs[0] 이 진행 중.
+        maxGapHours: staleness 임계.
+        now: 기준 시각.
+        lastSuccessAge: 마지막 성공 이후 경과(h).
+
+    Returns:
+        ``_triage`` 와 같은 모양의 dict. 해소되지 않은 실패가 없으면 state=running.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> _triageInFlight([{"status": "in_progress"}], maxGapHours=None, now=datetime.now(timezone.utc),
+        ...                 lastSuccessAge=None)["state"]
+        'running'
+    """
+    latest = runs[0]
+    status = latest.get("status") or "in_progress"
+    base = {"url": latest.get("url", "-"), "runId": latest.get("databaseId"), "inFlight": True}
+    attempt = int(latest.get("attempt") or 1)
+    if attempt >= 2:
+        # 재실행 진행 중. 이 run 의 직전 attempt 가 실패했다. 결과가 나올 때까지 실패로 남긴다.
+        prevConclusion = runs[1].get("conclusion") if len(runs) > 1 else "success"
+        prevFailed = prevConclusion not in (*_OK_CONCLUSIONS, "", None)
+        result = {
+            **base,
+            "state": "persistent" if prevFailed else "transient",
+            "conclusion": f"재실행 {attempt}회째 {status}",
+            "attempt": attempt,
+            "lastSuccessAgeHours": lastSuccessAge,
+        }
+        if prevFailed and maxGapHours is not None and (lastSuccessAge is None or lastSuccessAge > maxGapHours):
+            result["dataStalled"] = True
+        return result
+    earlier = _triage(runs[1:], maxGapHours=maxGapHours, now=now) if len(runs) > 1 else None
+    if earlier and earlier["state"] in ("persistent", "transient", "stale"):
+        return {**earlier, **base, "conclusion": f"{earlier['conclusion']} · 다음 실행 {status}"}
+    return {"state": "running", "conclusion": status, "url": base["url"], "runId": base["runId"]}
 
 
 def _ensureLabel() -> None:
@@ -603,9 +745,19 @@ def main():
         if triage["state"] in ("persistent", "transient"):
             entry.update(_classifyFailureWindow(runs))
 
+        inFlight = bool(triage.get("inFlight"))
         if triage["state"] == "persistent":
             persistent.append(entry)
             icon = "FAIL×N"
+        elif triage["state"] == "transient" and inFlight:
+            # 재실행(또는 다음 실행)이 이미 돌고 있다. 다시 걸지 않고, 결과가 나올 때까지 실패로 남긴다.
+            entry["reran"] = True
+            retried.append(entry)
+            icon = "retry-running"
+        elif triage["state"] == "stale" and inFlight:
+            entry["triggered"] = True
+            stale.append(entry)
+            icon = "stale→running"
         elif triage["state"] == "transient":
             # 큐 축출은 파이프라인 실패가 아니고 실패 job 도 없다. rerun 은 항상 실패하므로
             # 시도하지 않고, 데이터가 실제로 밀리면 staleness 축이 재트리거를 맡는다.

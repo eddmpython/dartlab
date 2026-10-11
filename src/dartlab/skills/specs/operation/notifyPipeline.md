@@ -49,7 +49,7 @@ forbidden:
   - reports.parquet(라이브 whole-file)에 전이력 누적 (1.5MB 게이트 초과, history.parquet 별도)
   - graph 회귀 (BRIEF/WORK 고정노드) 또는 파이썬 파서 JS 재구현
   - 시뮬레이터에 rcept 키 아카이브 직결 (corpCode 에서 stock_code 브리지 없이 orphan)
-lastUpdated: '2026-08-14'
+lastUpdated: '2026-10-12'
 ---
 
 ## 역할
@@ -94,9 +94,16 @@ lastUpdated: '2026-08-14'
 - 허브는 전건 발송실패(sent=0 && failed>0)·구독자0 시 nonce 롤백(다음 cron 재시도). 러너는 body.failed 를 전건=RED·부분=warning 으로 표면화(조용한 미발화 종료).
 - 딥링크: newIpo `/terminal?ipo=1`, newOrders `/terminal?sym={code}`.
 
-## 헬스체크 (Data Audit, 매일 05시 KST)
+## 헬스체크 (Data Audit, 매일 05시 KST + 감시 대상 완료마다)
 
-`monitorPipeline.py`(`operation.observability`)가 scheduled 파이프라인 전체의 실패와 cron drop 을 감시해 pipeline-failure Issue 로 알린다. Data Audit은 매일 05시 KST 정기 감사에 더해 감시 대상 workflow의 `completed` 이벤트마다 전체 상태를 다시 판정한다. 자동 재실행이 끝난 직후 같은 이슈를 갱신하거나 닫으므로 복구 전 상태가 다음 날까지 남지 않는다. "Notify Watch" 등록 상태:
+`monitorPipeline.py`(`operation.observability`)가 scheduled 파이프라인 전체의 실패와 cron drop 을 감시해 pipeline-failure Issue 로 알린다. Data Audit은 매일 05시 KST 정기 감사에 더해 감시 대상 workflow의 `completed` 이벤트마다 전체 상태를 다시 판정한다(하루 수십 회). 판정 규칙:
+
+- **skipped 제외**: 상위 실패로 조건부 job 이 건너뛴 run 은 건강 신호가 아니다. 판정에서 빼고, skipped 로 끝난 완료는 감사를 깨우지 않는다.
+- **진행 중 유지**: 감사가 건 재실행이나 cron drop 트리거 run 이 진행 중이면 직전 실패·누락 판정을 유지하고 다시 걸지 않는다. Issue 는 완료된 성공을 확인한 뒤에만 닫힌다. 진행 중을 정상으로 읽고 닫았다가 재실행이 실패하면 새 번호로 다시 여는 반복을 막는다.
+- **원인 표시**: 외부 연결 불통(DART·공공 API), OpenDART 오류 응답, runner 강제 종료(step 이 취소된 채 job 실패), 러너 미확보를 job timeout·코드 오류와 구분해 적는다. 분류는 표시용이고 재실행 판단은 run 모양(startup_failure, 큐 축출, 재실행 여부, 연속 실패)으로 한다.
+- **stale 임계**: 명목 cron 시각이 아니라 실제 발화 간격으로 잡는다. 저장소 전체 schedule 이 명목보다 수 시간 늦게 발화한다.
+
+"Notify Watch" 등록 상태:
 
 - **실패 감지**: MONITORED_WORKFLOWS 등록. bake genuine-failure 는 위 assert 스텝이 job RED 로 만들어 여기서 잡힌다.
 - **cron drop 감지**: STALE_AFTER_HOURS 80h(금~월 72h 주말 갭 초과) 등록. 3일+ 연속 스케줄 누락(퍼블릭 IPO SSOT 동결) 시 stale 감지·자동 트리거(nonce 멱등이라 오탐 무해).
@@ -129,6 +136,6 @@ lastUpdated: '2026-08-14'
 
 ## 검증
 
-- 러너: `.github/scripts/notify/test_watch.py`(16, screenAlert 멤버십 포함) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(34, Notify Watch staleness · concurrency 큐 축출 · 데이터 정지 판정).
+- 러너: `.github/scripts/notify/test_watch.py`(16, screenAlert 멤버십 포함) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(60, Notify Watch staleness · concurrency 큐 축출 · 데이터 정지 판정 · skipped 제외 · 재실행 진행 중 유지 · 원인 분류 단어 경계).
 - 실측: 실 DART 발행사 build 로 reports + history 2파일 산출 확인. 첫 빌드는 baseline 없어 history==live.
 - 감사: 5차원 적대검증(wf_47c0b9eb 확증 10) + 파이프라인 적합성(wf_2af24a25). 상세 원장 05 §감사.
