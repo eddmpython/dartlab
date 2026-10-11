@@ -132,6 +132,29 @@ def parseDartStatusBody(content: bytes | None) -> tuple[str, str] | None:
         ('800', 'm')
         >>> parseDartStatusBody(b"PK\\x03\\x04") is None
         True
+
+    Capabilities:
+        - 파일 엔드포인트 응답에서 OpenDART 상태 코드와 메시지를 읽는다.
+        - ZIP 본문과 상태 본문을 구분한다.
+
+    AIContext:
+        DART 수집기가 점검·한도·키 오류를 원인 그대로 보고하고 키를 바꿀지 정할 때 쓰는 내부 해석기다.
+
+    Guide:
+        네트워크 호출은 ``DartClient.getBytes`` 에 맡기고, 이미 받은 bytes 의 상태 판정에만 쓴다.
+
+    When:
+        corpCode.xml·document.xml 응답이 ZIP 이 아닐 때 원인을 알아야 할 때.
+
+    How:
+        앞 4KB 에서 ``<status>``·``<message>`` 태그를 정규식으로 읽는다.
+
+    Requires:
+        - OpenDART 파일 엔드포인트의 XML 상태 본문 형식.
+
+    SeeAlso:
+        - ``DartClient.getBytes``: XML 020 이면 이 함수로 판정해 키를 바꾼다.
+        - ``allFilingsDocument.parseDocumentResponse``: document.xml 본문부재(013/014) 판정.
     """
     if not content or content[:2] == b"PK":
         return None
