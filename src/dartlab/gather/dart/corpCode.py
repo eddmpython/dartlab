@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import threading
+import time
 import xml.etree.ElementTree as ET
 import zipfile
 from datetime import datetime
@@ -15,8 +16,9 @@ from pathlib import Path
 
 import polars as pl
 
-from dartlab.core.dartClient import DartClient
+from dartlab.core.dartClient import DartApiError, DartClient
 from dartlab.core.market import isKrStockCode, normalizeKrCode
+from dartlab.gather.dart.client import parseDartStatusBody
 
 # 캐시 경로: ~/.dartlab/corpCode.parquet
 _CACHE_DIR = Path.home() / ".dartlab"
@@ -24,6 +26,10 @@ _CACHE_FILE = _CACHE_DIR / "corpCode.parquet"
 _CACHE_MAX_AGE_HOURS = 24
 _memCache: pl.DataFrame | None = None
 _memCacheLock = threading.Lock()
+# 다운로드 실패를 이 시간(초) 동안 기억해 같은 예외를 다시 낸다. 종목마다 corp_code 를 찾는 루프가
+# 실패할 때마다 다시 받아, 점검 중 한 run 에서 corpCode.xml 을 112~144 회 요청했다(2026-08·10 실측).
+_FAILURE_MEMO_SEC = 120.0
+_lastFailure: tuple[float, Exception] | None = None
 
 
 def _isCacheFresh() -> bool:
@@ -43,6 +49,10 @@ def _downloadCorpCodes(client: DartClient) -> pl.DataFrame:
         zf = zipfile.ZipFile(io.BytesIO(raw))
         xmlData = zf.read("CORPCODE.xml")
     except (zipfile.BadZipFile, KeyError) as e:
+        # ZIP 대신 온 OpenDART 상태 본문이면 그 상태(800 점검·020 한도·901 키 만료 등)를 그대로 드러낸다.
+        status = parseDartStatusBody(raw)
+        if status is not None:
+            raise DartApiError(status[0], f"corpCode.xml 다운로드 실패: {status[1]}") from e
         raise ValueError(f"corpCode.xml 다운로드 실패 (ZIP 손상): {e}") from e
 
     try:
@@ -124,7 +134,7 @@ def loadCorpCodes(client: DartClient, refresh: bool = False) -> pl.DataFrame:
         TargetMarkets:
             - KR (DART) corp_code.
     """
-    global _memCache
+    global _memCache, _lastFailure
 
     if not refresh and _memCache is not None:
         return _memCache
@@ -137,7 +147,14 @@ def loadCorpCodes(client: DartClient, refresh: bool = False) -> pl.DataFrame:
             _memCache = pl.read_parquet(_CACHE_FILE)
             return _memCache
 
-        df = _downloadCorpCodes(client)
+        if _lastFailure is not None and time.monotonic() - _lastFailure[0] < _FAILURE_MEMO_SEC:
+            raise _lastFailure[1]
+        try:
+            df = _downloadCorpCodes(client)
+        except Exception as exc:
+            _lastFailure = (time.monotonic(), exc)
+            raise
+        _lastFailure = None
 
         _CACHE_DIR.mkdir(parents=True, exist_ok=True)
         df.write_parquet(_CACHE_FILE)

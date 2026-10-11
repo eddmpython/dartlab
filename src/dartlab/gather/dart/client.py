@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import random
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -102,7 +103,46 @@ _ERROR_MESSAGES: dict[str, str] = {
     "100": "필드 오류",
     "800": "시스템 점검 중",
     "900": "정의되지 않은 오류",
+    "901": "개인정보 보유기간이 만료된 API 키",
 }
+
+_STATUS_RE = re.compile(rb"<status>\s*(\d{3})\s*</status>")
+_MESSAGE_RE = re.compile(rb"<message>(.*?)</message>", re.S)
+
+
+def parseDartStatusBody(content: bytes | None) -> tuple[str, str] | None:
+    """OpenDART 파일 엔드포인트가 ZIP 대신 돌려준 상태 본문에서 ``(status, message)`` 를 읽는다.
+
+    corpCode.xml·document.xml 같은 파일 엔드포인트는 오류를 HTTP 200 + ``application/xml``
+    ``<result><status>NNN</status><message>...</message></result>`` 로 돌려준다. 이 본문을 해석하지
+    않으면 점검(800)·한도(020)·키 만료(901)가 모두 "ZIP 손상" 으로 뭉개지고, 020 이 와도 키를
+    바꾸지 못한다(2026-08·10 OpenDART 점검 기간 실측).
+
+    Args:
+        content: 응답 bytes.
+
+    Returns:
+        ``(status, message)``. ZIP(``PK``)이거나 상태 태그가 없으면 None.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> parseDartStatusBody(b"<result><status>800</status><message>m</message></result>")
+        ('800', 'm')
+        >>> parseDartStatusBody(b"PK\\x03\\x04") is None
+        True
+    """
+    if not content or content[:2] == b"PK":
+        return None
+    head = content[:4096]
+    match = _STATUS_RE.search(head)
+    if match is None:
+        return None
+    status = match.group(1).decode("ascii")
+    msgMatch = _MESSAGE_RE.search(head)
+    message = msgMatch.group(1).decode("utf-8", "replace").strip() if msgMatch else ""
+    return status, message or _ERROR_MESSAGES.get(status, "알 수 없는 오류")
 
 
 class DartClient:
@@ -372,6 +412,7 @@ class DartClient:
         url = f"{BASE_URL}/{endpoint}"
         cooldownAttempts = 0
         maxCooldownAttempts = max(2 * len(self._slots), 4)
+        nonJsonFailures = 0
         while cooldownAttempts < maxCooldownAttempts:
             slot, sleepFor = self._acquireSlot()
             if sleepFor > 0:
@@ -382,7 +423,25 @@ class DartClient:
                     merged.update(params)
                 resp = self._getWithTransientRetry(url, merged, 30)
                 resp.raise_for_status()
-                data = resp.json()
+                try:
+                    data = resp.json()
+                except ValueError:
+                    # 200 인데 JSON 이 아닌 본문(빈 본문·점검 HTML·XML 상태). 예전엔 JSONDecodeError 가 그대로
+                    # 새어 키 루프와 감시가 원인을 못 읽었다(2026-10-10 Data Sync). XML 상태면 그 상태로,
+                    # 아니면 짧게 재시도한 뒤 DartApiError 로 올린다.
+                    parsed = parseDartStatusBody(resp.content)
+                    data = {"status": parsed[0], "message": parsed[1]} if parsed else None
+                    if data is None:
+                        nonJsonFailures += 1
+                        if nonJsonFailures < _TRANSIENT_RETRIES:
+                            time.sleep(_TRANSIENT_BACKOFF_SEC * (2 ** (nonJsonFailures - 1)))
+                            continue
+                        snippet = resp.content[:120].decode("utf-8", "replace").replace("\n", " ")
+                        raise DartApiError(
+                            "900",
+                            f"JSON 이 아닌 응답 (HTTP {resp.status_code}, "
+                            f"{resp.headers.get('Content-Type', '-')}, {len(resp.content)} bytes): {snippet!r}",
+                        ) from None
                 status = data.get("status", "000")
                 if status == "000":
                     return data
@@ -486,6 +545,17 @@ class DartClient:
                     if status != "000":
                         msg = data.get("message", _ERROR_MESSAGES.get(status, "알 수 없는 오류"))
                         raise DartApiError(status, msg)
+                    return resp.content
+                # 파일 엔드포인트는 오류를 XML 상태 본문으로 준다. 020 이면 JSON 과 같이 이 키를 쉬게 하고
+                # 다음 키로 넘어간다. 그 밖의 상태(013/014 본문부재·800 점검 등)는 본문 그대로 돌려준다.
+                # document.xml 소비자가 013/014 본문으로 no_body 를 판정하기 때문이다.
+                parsed = parseDartStatusBody(resp.content)
+                if parsed is not None and parsed[0] == "020":
+                    self._markCoolDown(slot)
+                    cooldownAttempts += 1
+                    if self._allSlotsCoolingDown():
+                        time.sleep(1.0)
+                    continue
                 return resp.content
             finally:
                 self._releaseSlot(slot)

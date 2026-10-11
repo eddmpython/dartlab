@@ -384,6 +384,34 @@ def test_panel_rcept_reconcile_recovers_truncation(monkeypatch) -> None:
     assert calls["build"]["uploadEvery"] == dartZip._PANEL_UPLOAD_EVERY  # panel 업로드는 빌드 안 checkpoint
 
 
+def test_panel_rcept_reconcile_passes_corp_code_to_full_history(monkeypatch) -> None:
+    """전이력 조회에는 공시목록 행의 corp_code 를 넘긴다. 종목코드 변환용 corpCode.xml 을 받지 않는다."""
+    import polars as pl
+
+    from dartlab.gather.dart import disclosure
+    from dartlab.pipeline.stages import panelRceptReconcile
+
+    monkeypatch.setattr(
+        disclosure,
+        "listFilings",
+        lambda client, corp=None, start=None, end=None, **kw: pl.DataFrame(
+            {
+                "stock_code": ["000T"],
+                "corp_code": ["00123456"],
+                "rcept_no": ["20260515000010"],
+                "report_nm": ["분기보고서 (2026.03)"],
+            }
+        ),
+    )
+    _wireReconcile(monkeypatch, panelHave={"000T": {"20260515000010"}}, built=[])
+    seen: list[str] = []
+    monkeypatch.setattr(panelRceptReconcile, "_fullPeriodicRcepts", lambda client, code: seen.append(code) or set())
+
+    panelRceptReconcile.runPanelRceptReconcile(upload=False)
+
+    assert seen == ["00123456"]
+
+
 def test_panel_rcept_reconcile_heals_in_chunks_tar_before_panel(monkeypatch) -> None:
     """heal 은 _HEAL_CHUNK 종목씩 "원본 tar 번들, 그다음 panel 빌드" 순으로 닫힌다.
 

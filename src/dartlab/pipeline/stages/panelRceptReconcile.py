@@ -154,7 +154,7 @@ def _fullPeriodicRcepts(client, code: str) -> set[str]:
 
     Args:
         client: 인증된 DartClient.
-        code: 종목코드.
+        code: 8자리 corp_code(권장) 또는 종목코드. 종목코드면 corpCode.xml 로 변환한다.
 
     Returns:
         전이력 정기 rcept ``set`` (조회/필터 실패 시 빈 set).
@@ -264,6 +264,13 @@ def runPanelRceptReconcile(
         if codeFilter is not None and sc not in codeFilter:
             continue
         cand.setdefault(sc, set()).add(str(rc))
+    # 공시목록 행에 이미 corp_code 가 있다. 전이력 조회에 넘기면 종목코드 변환용 corpCode.xml 을 받지 않는다
+    # (점검 중 종목마다 받다 실패해 run 하나에서 112 회 요청한 경로).
+    corpOf: dict[str, str] = {}
+    if "corp_code" in filt.columns:
+        for sc, cc in filt.select(["stock_code", "corp_code"]).iter_rows():
+            if sc and cc:
+                corpOf.setdefault(sc.strip(), str(cc).strip())
 
     if not cand:
         res.report.ok = 1
@@ -300,7 +307,7 @@ def runPanelRceptReconcile(
     suspects = sorted(sc for sc, have in panelHave.items() if len(have) <= truncSuspect)
     truncated = 0
     for sc in suspects:
-        fullMiss = _fullPeriodicRcepts(client, sc) - panelHave[sc]
+        fullMiss = _fullPeriodicRcepts(client, corpOf.get(sc, sc)) - panelHave[sc]
         if len(fullMiss) > len(missingByCode.get(sc, set())):
             truncated += 1
         if fullMiss:

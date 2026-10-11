@@ -328,3 +328,117 @@ def testConnectAndTransientFailuresAreCountedSeparately(monkeypatch) -> None:
     assert out["status"] == "000"
     assert calls["n"] == 5  # 연결 실패 2회(<3) + 5xx 2회(<3) 뒤 성공
     assert waits == [5.0, 0.5, 15.0, 1.0]
+
+
+# ── OpenDART 상태 본문(XML) 해석 ─────────────────────────────────────────
+# 파일 엔드포인트(corpCode.xml·document.xml)는 오류를 HTTP 200 + application/xml 상태 본문으로 준다.
+# 예전 getBytes 는 JSON 만 검사해 점검(800)·한도(020)가 모두 "ZIP 손상" 으로 뭉개졌다(2026-08·10 실측).
+
+
+class _FakeXmlResp:
+    status_code = 200
+    headers = {"Content-Type": "application/xml;charset=UTF-8"}
+
+    def __init__(self, status: str, message: str = "m") -> None:
+        self.content = f"<result><status>{status}</status><message>{message}</message></result>".encode()
+
+    def raise_for_status(self) -> None:
+        pass
+
+    def json(self) -> dict:
+        raise ValueError("Expecting value: line 1 column 1 (char 0)")
+
+
+def testParseDartStatusBodyReadsXmlStatusAndSkipsZip() -> None:
+    from dartlab.gather.dart.client import parseDartStatusBody
+
+    assert parseDartStatusBody(_FakeXmlResp("800", "시스템 점검").content) == ("800", "시스템 점검")
+    assert parseDartStatusBody(b"PK\x03\x04") is None
+    assert parseDartStatusBody(b"") is None
+    assert parseDartStatusBody(b"<html>maintenance</html>") is None
+
+
+def testGetBytesRotatesKeyOnXmlRateLimit(monkeypatch) -> None:
+    """XML 로 온 020 도 JSON 과 같이 그 키를 쉬게 하고 다음 키로 받는다."""
+    from dartlab.gather.dart import client as clientMod
+
+    monkeypatch.setattr(clientMod.time, "sleep", lambda *_a, **_k: None)
+    c = clientMod.DartClient(apiKeys=["KEY_A", "KEY_B"])
+    used: list[str] = []
+
+    def fakeGet(url, params=None, timeout=None):
+        used.append(params["crtfc_key"])
+        return _FakeXmlResp("020") if params["crtfc_key"] == "KEY_A" else _FakeBytesResp()
+
+    monkeypatch.setattr(c._session, "get", fakeGet)
+    assert c.getBytes("corpCode.xml") == _FakeBytesResp.content
+    assert "KEY_A" in used and used[-1] == "KEY_B"
+
+
+def testGetBytesReturnsNoBodyStatusUnchanged(monkeypatch) -> None:
+    """013/014 본문은 document.xml 소비자가 no_body 판정에 쓴다. 예외로 바꾸지 않고 그대로 돌려준다."""
+    from dartlab.gather.dart import client as clientMod
+
+    monkeypatch.setattr(clientMod.time, "sleep", lambda *_a, **_k: None)
+    c = clientMod.DartClient(apiKey="DUMMY")
+    body = _FakeXmlResp("014")
+    monkeypatch.setattr(c._session, "get", lambda url, params=None, timeout=None: body)
+    assert c.getBytes("document.xml", {"rcept_no": "1"}) == body.content
+
+
+def testGetJsonRaisesStatusFromXmlBody(monkeypatch) -> None:
+    """JSON 엔드포인트가 XML 상태 본문을 주면 JSONDecodeError 대신 그 상태의 DartApiError 를 낸다."""
+    from dartlab.core.dartClient import DartApiError
+    from dartlab.gather.dart import client as clientMod
+
+    monkeypatch.setattr(clientMod.time, "sleep", lambda *_a, **_k: None)
+    c = clientMod.DartClient(apiKey="DUMMY")
+    monkeypatch.setattr(c._session, "get", lambda url, params=None, timeout=None: _FakeXmlResp("800", "점검"))
+    with pytest.raises(DartApiError) as excInfo:
+        c.getJson("list.json", params={})
+    assert excInfo.value.status == "800"
+
+
+def testGetJsonRetriesThenRaisesOnNonJsonBody(monkeypatch) -> None:
+    """빈 본문·HTML 같은 비JSON 200 은 짧게 재시도한 뒤 DartApiError 로 올린다(JSONDecodeError 누수 차단)."""
+    from dartlab.core.dartClient import DartApiError
+    from dartlab.gather.dart import client as clientMod
+
+    monkeypatch.setattr(clientMod.time, "sleep", lambda *_a, **_k: None)
+    c = clientMod.DartClient(apiKey="DUMMY")
+
+    class _Empty(_FakeXmlResp):
+        def __init__(self) -> None:
+            self.content = b""
+
+    calls = {"n": 0}
+
+    def fakeGet(url, params=None, timeout=None):
+        calls["n"] += 1
+        return _Empty() if calls["n"] < clientMod._TRANSIENT_RETRIES + 5 else _FakeJsonResp()
+
+    monkeypatch.setattr(c._session, "get", fakeGet)
+    with pytest.raises(DartApiError) as excInfo:
+        c.getJson("list.json", params={})
+    assert excInfo.value.status == "900"
+    assert calls["n"] == clientMod._TRANSIENT_RETRIES
+
+
+def testGetJsonRecoversWhenNonJsonBodyIsTransient(monkeypatch) -> None:
+    from dartlab.gather.dart import client as clientMod
+
+    monkeypatch.setattr(clientMod.time, "sleep", lambda *_a, **_k: None)
+    c = clientMod.DartClient(apiKey="DUMMY")
+
+    class _Empty(_FakeXmlResp):
+        def __init__(self) -> None:
+            self.content = b""
+
+    calls = {"n": 0}
+
+    def fakeGet(url, params=None, timeout=None):
+        calls["n"] += 1
+        return _Empty() if calls["n"] == 1 else _FakeJsonResp()
+
+    monkeypatch.setattr(c._session, "get", fakeGet)
+    assert c.getJson("list.json", params={})["status"] == "000"
