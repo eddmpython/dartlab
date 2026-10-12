@@ -255,35 +255,63 @@ def test_evaluate_query_gold_rows_accepts_dynamic_news_semantic_hit() -> None:
     assert report["metrics"]["exactDocHit10"] == 0.0
 
 
-def test_evaluate_query_gold_rows_keeps_body_query_exact() -> None:
-    from dartlab.providers.dart.search.qualityGate import evaluateQueryGoldRows
-
-    rows = [
+def _topicGold(query: str, target: str) -> list[dict]:
+    return [
         {
-            "query": "환율 리스크 사업보고서 본문",
-            "target": "filing",
+            "query": query,
+            "target": target,
             "expectedSourceRef": "dart:panel:expected#section=0",
             "goldOrigin": "real",
             "reviewStatus": "reviewed",
         }
     ]
-    results = {
-        "환율 리스크 사업보고서 본문": [
-            {
-                "source": "panel",
-                "sourceRef": "dart:panel:wrong#section=0",
-                "report_nm": "사업보고서",
-                "text": "환율 리스크",
-                "answerable": True,
-            }
-        ]
+
+
+def test_evaluate_query_gold_rows_body_topic_needs_topic_words_not_report_type() -> None:
+    from dartlab.providers.dart.search.qualityGate import evaluateQueryGoldRows
+
+    query = "환율 리스크 사업보고서 본문"
+    reportOnly = {
+        "source": "panel",
+        "sourceRef": "dart:panel:report-only#section=0",
+        "report_nm": "사업보고서 (2025.12)",
+        "text": "환율 변동",
+        "answerable": True,
     }
-
-    report = evaluateQueryGoldRows(rows, results, minRows=1, requiredTargets=("filing",))
-
-    assert report["releaseEligible"] is False
+    report = evaluateQueryGoldRows(_topicGold(query, "filing"), {query: [reportOnly]}, minRows=1)
     assert report["rows"][0]["matchMode"] == "miss"
-    assert report["metrics"]["docHit10"] == 0.0
+
+    edgar = {**reportOnly, "source": "edgar-panel", "text": "환율 리스크"}
+    report = evaluateQueryGoldRows(_topicGold(query, "filing"), {query: [edgar]}, minRows=1)
+    assert report["rows"][0]["matchMode"] == "miss"
+
+    covered = {**reportOnly, "text": "환율 리스크 관리"}
+    report = evaluateQueryGoldRows(_topicGold(query, "filing"), {query: [covered]}, minRows=1)
+    assert report["rows"][0]["matchMode"] == "semantic"
+    assert report["metrics"]["exactDocHit10"] == 0.0
+
+
+def test_evaluate_query_gold_rows_edgar_topic_reads_chunk_evidence() -> None:
+    import json
+
+    from dartlab.providers.dart.search.qualityGate import evaluateQueryGoldRows
+
+    query = "EDGAR goodwill impairment risk"
+    cards = [{"label": "chunk", "value": "evidenceText", "evidence": "Notes: Goodwill, Impairment, Risk Management"}]
+    row = {
+        "source": "edgar-panel",
+        "sourceRef": "edgar:panel:other#section=0",
+        "report_nm": "10-K (2025Q4)",
+        "text": "UNITED STATES SECURITIES AND EXCHANGE COMMISSION",
+        "fieldCards": json.dumps(cards),
+        "answerable": True,
+    }
+    report = evaluateQueryGoldRows(_topicGold(query, "edgar"), {query: [row]}, minRows=1)
+    assert report["rows"][0]["matchMode"] == "semantic"
+
+    dart = {**row, "source": "panel", "sourceRef": "dart:panel:other#section=0"}
+    report = evaluateQueryGoldRows(_topicGold(query, "edgar"), {query: [dart]}, minRows=1)
+    assert report["rows"][0]["matchMode"] == "miss"
 
 
 def test_evaluate_query_gold_rows_reports_metrics_by_kind_for_edgar() -> None:

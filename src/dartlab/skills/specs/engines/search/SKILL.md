@@ -241,9 +241,19 @@ DART panel catalog는 HF 원문과 마지막 반영 파일의 SHA256을 대조�
 그 이전 보고서가 모두 검색된다는 증거가 아니다. 상세 발행 경계는
 [데이터 반영 계약](/skills/operation.dataLineage)을 따른다.
 
+패널 catalog 문서는 보고서마다 한 건이다. 검색 색인은 본문 앞 1,500자만 읽으므로 문서는 회사명과
+보고서명, 사업 본문 첫머리, 주석 제목, 나머지 섹션 순으로 4,000자 안에 만든다. DART는 표지에서
+보고서 종류와 법인 형태를 뗀 회사명을 읽고, EDGAR는 항목 번호로 묶어 한 항목이 앞부분을 차지하지
+않게 하며 `Note N` 주석 제목을 모은다. 확인서만 담긴 정정공시는 남은 블록을 이어 문서 수와
+`sourceRef`를 유지한다. 문서를 만드는 방식이 바뀌면 `PANEL_SOURCE_VERSION`을 올린다. 원격 대조는
+이전 manifest의 `sourceVersion`이 다르면 모든 패널 파일을 다시 넣으므로 DART와 EDGAR의 모든 panel
+catalog 작업은 `--reconcile-remote-source`로 실행한다.
+
 Hard-negative gate 는 same-company-different-year, sibling filing, report-type mismatch, news/filing confusion, EDGAR/DART confusion, panel/filing confusion, noAnswer missing-event rows 를 포함한다. current-data candidate 360 rows 에서 metric/noAnswer gate 가 통과해도 `goldOrigin` 과 `reviewStatus` 가 real/reviewed 계열이 아니면 release evidence 로 보지 않는다. 2026-06-18 기준 current-data 360행은 `overallReadyRate=0.9806`, `exactDocHit10=0.9667`, `hardNegativeWinRate=0.9667`, `noAnswerFalseAcceptRate=0.0` 으로 metric gate 를 통과했지만 reviewer-approved 상태가 아니라 `releaseReady=false` 다.
 
 Search Index Build 의 월간 예약 run 은 release 게이트를 돌려 real query-log 품질과 release 준비도를 기록하지만, 실패로 치는 것은 운영 준비(ops)가 깨졌을 때뿐이다. 운영자가 수동으로 돌리는 release 게이트는 기준(0.9) 미달이면 실패한다. 2026-08-01·09-01·10-01 월간 run 은 `overallReadyRate` 0.65·0.56·0.55 로 매달 빨갛게 끝나 파이프라인 장애로 보고되고 promote 도 건너뛰었다. 품질 하락 자체는 별도 개선 과제다.
+
+query-log gold 평가는 기본으로 각 행의 `reviewedAt`까지 접수된 문서만 검색한다(`--as-of reviewed`). 정답은 그날 있던 문서 가운데서 골랐으므로, 그 뒤에 들어온 같은 주제 문서가 정답을 밀어낸 놓침을 품질 저하로 세지 않는다. 날짜 제한 없는 값은 `--as-of now`로 함께 본다. 회사 없이 주제만 묻는 본문 공시와 EDGAR 질의는 정답셋이 고른 문서가 아니어도, 같은 시장(DART는 panel·allFilings, EDGAR는 edgar-panel)의 문서가 제목과 스니펫, `fieldCards`의 근거 조각에 주제어를 75% 이상(주제어가 2개 이하면 전부) 담으면 의미 일치로 센다. 보고서 종류와 출처를 가리키는 말(사업보고서, 주석, 본문, EDGAR, 10-K 등)은 주제어에서 뺀다. 정확 일치는 `exactDocHit10`으로 따로 보고한다. 2026-10-13에 받은 색인(패널 문서 재생성 전)으로 잰 값은 정답 날짜 기준 `overallReadyRate=0.7925`(공시 0.870, 뉴스 1.0, EDGAR 0.25, noAnswer 1.0, `exactDocHit10=0.4149`), 날짜 제한 없이 0.7547이다. EDGAR가 낮은 것은 그 색인의 EDGAR 문서가 표지 글이기 때문이다. 패널 재생성 뒤 색인 빌드가 끝나면 release 게이트를 수동으로 한 번 돌려 실제 값을 이 절에 기록한다.
 
 운영자가 실제 품질 후보를 쌓을 때는 새 API 를 만들지 않고 기존 `dartlab.search(...)` 를 그대로 쓴다. `DARTLAB_SEARCH_QUERY_LOG=1` 이면 `{dartlab.dataDir}/search/queryLogRaw.jsonl` 에 raw candidate row 를 남긴다. 각 row 는 `goldOrigin=userLog`, `reviewStatus=candidate`, top sourceRef/source/answerability/dataAsOf 를 가진다. 이 raw row 는 reviewer label 이 붙기 전까지 release gold 가 아니며, `prepareSearchGold.py` 를 거쳐 reviewed real gold 로 승격돼야 한다.
 

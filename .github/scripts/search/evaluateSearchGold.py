@@ -23,6 +23,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--required-targets", default="filing,news,noAnswer")
     parser.add_argument("--allow-proxy-query-log", action="store_true")
     parser.add_argument("--fail-on-ineligible", action="store_true")
+    parser.add_argument(
+        "--as-of",
+        choices=("reviewed", "now"),
+        default="reviewed",
+        help="reviewed: search only documents filed by each row's reviewedAt. now: no date limit.",
+    )
     args = parser.parse_args(argv)
 
     from dartlab.providers.dart.search.qualityGate import (
@@ -35,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     goldRows = loadQueryGold(args.gold)
     resultsByQuery = _loadResultsByQuery(args.results_json)
     if resultsByQuery is None:
-        resultsByQuery = _runSearch(goldRows, limit=args.limit, scope=args.scope)
+        resultsByQuery = _runSearch(goldRows, limit=args.limit, scope=args.scope, asOfReviewed=args.as_of == "reviewed")
 
     requiredTargets = [part.strip() for part in args.required_targets.split(",") if part.strip()]
     report = evaluateQueryGoldRows(
@@ -86,7 +92,14 @@ def _resultKeys(item: Mapping[str, Any]) -> list[str]:
     return keys
 
 
-def _runSearch(goldRows: list[dict[str, Any]], *, limit: int, scope: str) -> dict[str, list[dict[str, Any]]]:
+def _runSearch(
+    goldRows: list[dict[str, Any]], *, limit: int, scope: str, asOfReviewed: bool = True
+) -> dict[str, list[dict[str, Any]]]:
+    """정답셋 질의를 검색한다.
+
+    정답은 검토한 날 존재하던 문서 가운데서 골랐으므로, 기본은 그날까지 접수된 문서만 검색한다.
+    그 뒤에 들어온 같은 주제의 새 문서가 정답을 밀어내 생기는 놓침을 품질 저하로 세지 않기 위해서다.
+    """
     from dartlab.providers.dart.search.api import search
 
     out: dict[str, list[dict[str, Any]]] = {}
@@ -94,7 +107,8 @@ def _runSearch(goldRows: list[dict[str, Any]], *, limit: int, scope: str) -> dic
         query = str(row.get("query") or "")
         if query in out:
             continue
-        out[query] = search(query, limit=limit, scope=scope).to_dicts()
+        end = str(row.get("reviewedAt") or "")[:10].replace("-", "") if asOfReviewed else ""
+        out[query] = search(query, limit=limit, scope=scope, end=end or None).to_dicts()
     return out
 
 

@@ -510,7 +510,63 @@ def _anySemanticMatch(gold: Mapping[str, Any], results: Sequence[Mapping[str, An
     target = normalizeTargetKind(gold)
     if target == "news":
         return _anySemanticNewsMatch(gold, results)
-    return _anySemanticFilingEventMatch(gold, results)
+    if target == "filing" and _isEventTitleQuery(str(gold.get("query") or "")):
+        return _anySemanticFilingEventMatch(gold, results)
+    if target in _TOPIC_SOURCE_CLASSES:
+        return _anySemanticTopicMatch(gold, results, target=target)
+    return False
+
+
+# 회사 없이 주제만 묻는 본문·EDGAR 질의는 같은 주제를 다룬 보고서가 수천 건이라 정답셋이 고른 두 건만
+# 맞다고 볼 수 없다. 같은 시장의 문서가 근거에 주제어를 거의 모두 담을 때만 의미 일치로 센다.
+_TOPIC_SOURCE_CLASSES = {"filing": {"panel", "allFilings"}, "edgar": {"edgar"}}
+_TOPIC_ROUTING_WORDS = (
+    "사업보고서",
+    "분기보고서",
+    "반기보고서",
+    "사업의 내용",
+    "주석",
+    "본문",
+    "원문",
+    "공시",
+    "edgar",
+    "10-k",
+    "10-q",
+)
+_TOPIC_STOP_TOKENS = {"and", "the", "of", "for", "in", "on", "to"}
+_TOPIC_MIN_COVERAGE = 0.75
+
+
+def _anySemanticTopicMatch(gold: Mapping[str, Any], results: Sequence[Mapping[str, Any]], *, target: str) -> bool:
+    from dartlab.providers.dart.search.fieldIndex import tokenizeContent
+    from dartlab.providers.dart.search.semanticConstraints import rowSourceClass
+
+    topic = str(gold.get("query") or "").lower()
+    for word in _TOPIC_ROUTING_WORDS:
+        topic = topic.replace(word, " ")
+    tokens = [token for token in dict.fromkeys(tokenizeContent(topic)) if token not in _TOPIC_STOP_TOKENS]
+    if not tokens:
+        return False
+    need = 1.0 if len(tokens) <= 2 else _TOPIC_MIN_COVERAGE
+    classes = _TOPIC_SOURCE_CLASSES[target]
+    for row in results:
+        if not _isAnswerable(row) or rowSourceClass(row) not in classes:
+            continue
+        if _tokenCoverage(tokens, set(tokenizeContent(_rowEvidence(row)))) >= need:
+            return True
+    return False
+
+
+def _rowEvidence(row: Mapping[str, Any]) -> str:
+    """제목, 저장 스니펫, 사용자에게 보이는 질의 중심 근거 조각을 잇는다."""
+    parts = [str(row.get(key) or "") for key in ("report_nm", "section_title", "title", "snippet", "text")]
+    cards = row.get("fieldCards")
+    if isinstance(cards, str):
+        cards = json.loads(cards) if cards.startswith("[") else []
+    for card in cards if isinstance(cards, list) else []:
+        if isinstance(card, Mapping) and card.get("label") == "chunk":
+            parts.append(str(card.get("evidence") or ""))
+    return " ".join(parts)
 
 
 def _semanticFilingEventMatch(gold: Mapping[str, Any], row: Mapping[str, Any]) -> bool:
@@ -521,8 +577,7 @@ def _semanticFilingEventMatch(gold: Mapping[str, Any], row: Mapping[str, Any]) -
     if sourceFamily(str(row.get("source") or "")) != "filing":
         return False
     query = str(gold.get("query") or "")
-    evidence = " ".join(str(row.get(key) or "") for key in ("report_nm", "section_title", "title", "snippet", "text"))
-    return _queryEvidenceTokenCoverage(query, evidence) >= 0.5
+    return _queryEvidenceTokenCoverage(query, _rowEvidence(row)) >= 0.5
 
 
 def _anySemanticNewsMatch(gold: Mapping[str, Any], results: Sequence[Mapping[str, Any]]) -> bool:
@@ -534,10 +589,7 @@ def _anySemanticNewsMatch(gold: Mapping[str, Any], results: Sequence[Mapping[str
     for row in results:
         if not _isAnswerable(row) or sourceFamily(str(row.get("source") or "")) != "news":
             continue
-        evidence = " ".join(
-            str(row.get(key) or "") for key in ("report_nm", "section_title", "title", "snippet", "text")
-        )
-        if _queryEvidenceTokenCoverage(query, evidence) >= 0.6:
+        if _queryEvidenceTokenCoverage(query, _rowEvidence(row)) >= 0.6:
             return True
     return False
 
