@@ -301,3 +301,44 @@ def test_postings_block_boundaries_do_not_change_bytes(tmp_path, monkeypatch) ->
     assert wholeLen == smallLen
     assert (tmp_path / "whole.bin").read_bytes() == (tmp_path / "small.bin").read_bytes()
     assert np.array_equal(whole, small)
+
+
+def test_sidecar_failure_is_raised_and_partial_files_removed(tmp_path, monkeypatch) -> None:
+    """sidecar 는 postings 의 유일한 표현이라 실패를 삼키면 postings 없는 세그먼트가 성공으로 남는다.
+
+    실패하면 이 세그먼트의 sidecar 를 지우고 예외를 올린다. MemoryError 도 그대로 올린다.
+    """
+    import pytest
+
+    from dartlab.providers.dart.search import fieldIndex, fieldIndexRebuild
+
+    def halfWritten(idx, meta, name, outDir):
+        (outDir / f"{name}.postings.bin").write_bytes(b"partial")
+        raise MemoryError("sidecar")
+
+    monkeypatch.setattr(fieldIndex, "saveShardedSegment", halfWritten)
+    (tmp_path / "main.terms.bin").write_bytes(b"old build")
+
+    with pytest.raises(MemoryError):
+        fieldIndexRebuild._buildSearchSidecar({}, tmp_path / "main_meta.parquet", "main", tmp_path)
+    assert not (tmp_path / "main.postings.bin").exists()
+    assert not (tmp_path / "main.terms.bin").exists()
+
+
+def test_meta_sink_streams_batches_and_matches_dataframe(tmp_path) -> None:
+    """옛 rebuildMain 의 meta 를 묶음마다 이어 써도 한 번에 만든 표와 같다. 행이 없으면 열만 있는 파일."""
+    import polars as pl
+
+    from dartlab.providers.dart.search.fieldIndexRebuild import _LEGACY_META_SCHEMA, _MetaSink
+
+    rows = [
+        {key: (i if dtype == pl.Int64 else f"{key}{i}") for key, dtype in _LEGACY_META_SCHEMA.items()} for i in range(5)
+    ]
+    sink = _MetaSink(tmp_path / "main_meta.parquet", batchSize=2)
+    for row in rows:
+        sink.append(row)
+    written = pl.read_parquet(sink.close())
+    assert written.equals(pl.DataFrame(rows, schema=_LEGACY_META_SCHEMA))
+
+    empty = pl.read_parquet(_MetaSink(tmp_path / "empty.parquet").close())
+    assert empty.height == 0 and list(empty.columns) == list(_LEGACY_META_SCHEMA)

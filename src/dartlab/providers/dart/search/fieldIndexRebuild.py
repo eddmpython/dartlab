@@ -126,7 +126,9 @@ def rebuildMain(
     if contentLimit is None:
         contentLimit = CONTENT_LIMIT
     builder = _IncrementalBuilder()
-    metaRecs: list[dict] = []
+    # meta 행은 묶음마다 parquet 로 흘려 쓴다. 전 코퍼스 행 dict 를 메모리에 모으면 delta 재빌드처럼
+    # 러너 메모리를 넘긴다(2026-10-07~11 Search Index Build 강제 종료). catalog 경로와 같은 방식이다.
+    metaRecs = _MetaSink(saveDir / "main_meta.parquet")
     totalDocs = 0
 
     # panel 통합 시 allFilings 메타(content_raw 제외 경량)를 먼저 dict 로 — panel 롤업 문서의 표시 메타 보강용.
@@ -252,11 +254,10 @@ def rebuildMain(
         _log.info(f"[main] 축적 완료: {totalDocs:,} 문서, finalize 시작")
 
     idx = builder.finalize()
-    meta = pl.DataFrame(metaRecs)
-    del metaRecs
+    metaPath = metaRecs.close()
     gc.collect()
 
-    saveSegmentWithSidecar(idx, meta, "main", saveDir)
+    saveSegmentWithSidecar(idx, metaPath, "main", saveDir)
     clearCache()
     writeIndexManifest(saveDir, tier=tier, buildCommand="rebuildMain")
 
@@ -405,6 +406,73 @@ def _contentLimit() -> int:
     from dartlab.providers.dart.search.fieldIndex import CONTENT_LIMIT
 
     return CONTENT_LIMIT
+
+
+# 옛 rebuildMain 의 세 입력(공시 본문, panel 롤업, 뉴스)이 내는 meta 열. 셋이 같은 열을 낸다.
+_LEGACY_META_SCHEMA = {
+    "rcept_no": pl.Utf8,
+    "section_order": pl.Int64,
+    "corp_code": pl.Utf8,
+    "corp_name": pl.Utf8,
+    "stock_code": pl.Utf8,
+    "rcept_dt": pl.Utf8,
+    "report_nm": pl.Utf8,
+    "section_title": pl.Utf8,
+    "text": pl.Utf8,
+    "evidenceText": pl.Utf8,
+    "source": pl.Utf8,
+    "sourceDataAsOf": pl.Utf8,
+    "contentLen": pl.Int64,
+    "url": pl.Utf8,
+}
+
+
+class _MetaSink:
+    """옛 rebuildMain 의 meta 행을 묶음마다 parquet 로 이어 쓴다. ``append`` 는 list 와 같고, ``close`` 가 경로를 준다.
+
+    Args:
+        path: 쓸 meta parquet 경로.
+        batchSize: 한 번에 쓰는 행 수.
+
+    Example:
+        >>> sink = _MetaSink(Path("main_meta.parquet"))  # doctest: +SKIP
+        >>> sink.append({...}); sink.close()  # doctest: +SKIP
+    """
+
+    def __init__(self, path: Path, batchSize: int = _FEED_BATCH) -> None:
+        self.path = path
+        self._batchSize = batchSize
+        self._rows: list[dict] = []
+        self._writer = None
+
+    def append(self, row: dict) -> None:
+        """meta 행 하나를 받는다. 묶음이 차면 파일에 쓴다."""
+        self._rows.append(row)
+        if len(self._rows) >= self._batchSize:
+            self._flush()
+
+    def _flush(self) -> None:
+        import pyarrow.parquet as pq
+
+        if not self._rows:
+            return
+        table = pl.DataFrame(self._rows, schema=_LEGACY_META_SCHEMA, strict=False).to_arrow()
+        if self._writer is None:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self._writer = pq.ParquetWriter(self.path, table.schema, compression="zstd")
+        self._writer.write_table(table)
+        self._rows = []
+
+    def close(self) -> Path:
+        """남은 행을 쓰고 파일을 닫는다. 행이 하나도 없으면 열만 있는 빈 parquet 를 쓴다."""
+        self._flush()
+        if self._writer is None:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            pl.DataFrame(schema=_LEGACY_META_SCHEMA).write_parquet(self.path)
+        else:
+            self._writer.close()
+            self._writer = None
+        return self.path
 
 
 def _buildSegmentFromRows(
@@ -1145,14 +1213,33 @@ def indexPublishNames(base: str | Path, *, requireExists: bool = True) -> list[s
     return names + extras
 
 
+# sidecar 6 종. compact-only 이후 postings 의 유일한 표현이다.
+_SIDECAR_SUFFIXES = (
+    ".postings.bin",
+    ".terms.bin",
+    ".docLengths.bin",
+    ".meta.bin",
+    ".metaOffsets.bin",
+    ".search_meta.json",
+)
+
+
 def _buildSearchSidecar(idx: dict, meta: pl.DataFrame | Path, name: str, saveDir: Path | None = None) -> None:
-    """range-fetch sidecar 동거 생성 — 실패해도 엔진 인덱스 빌드는 보존(additive·fail-safe)."""
-    from dartlab.providers.dart.search.fieldIndex import saveShardedSegment
+    """postings SSOT 인 sidecar 를 쓴다. 실패하면 이 세그먼트의 sidecar 를 지우고 예외를 그대로 올린다.
+
+    npz 가 있던 시절에는 sidecar 가 range-fetch 용 보조물이라 실패를 경고로 삼켰다. compact-only 이후
+    sidecar 가 postings 의 유일한 표현이 되어, 삼키면 postings 없는(또는 이전 빌드와 섞인) 세그먼트가 성공으로
+    남고 manifest 는 있는 파일만 적는다. MemoryError 도 여기서 올려 빌드를 실패시킨다.
+    """
+    from dartlab.providers.dart.search.fieldIndex import _contentIndexDir, saveShardedSegment
 
     try:
         saveShardedSegment(idx, meta, name, saveDir)
-    except Exception as exc:  # noqa: BLE001 — sidecar 실패가 엔진 빌드를 깨면 안 됨(검색 range-fetch만 비활성)
-        _log.warning("[sidecar] %s 빌드 실패(검색 range-fetch 비활성): %s", name, exc)
+    except BaseException:
+        outDir = saveDir or _contentIndexDir()
+        for suffix in _SIDECAR_SUFFIXES:
+            (outDir / f"{name}{suffix}").unlink(missing_ok=True)
+        raise
 
 
 def saveSegmentWithSidecar(
@@ -1173,7 +1260,7 @@ def saveSegmentWithSidecar(
         None.
 
     Raises:
-        없음 (sidecar 실패는 fail-safe).
+        Exception: 동반물 또는 sidecar(postings SSOT) 쓰기 실패. 부분 sidecar 는 지운 뒤 올린다.
 
     Example:
         >>> callable(saveSegmentWithSidecar)
