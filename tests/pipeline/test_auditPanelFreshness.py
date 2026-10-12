@@ -138,7 +138,9 @@ def test_monitor_freshness_entry_breach_is_persistent():
     assert entry["samples"] == result["samples"]
     body = monitor._buildIssueBody([entry], [entry], [], [])
     assert "데이터 신선도 누락 표본" in body and "000A" in body
-    assert monitor._issueTitle([entry], []) == f"Pipeline failure: {audit.AUDIT_NAME}"
+    assert "최근 실행 기록에 성공 없음" not in body
+    assert monitor._issueTitle([entry]) == f"Pipeline failure: {audit.AUDIT_NAME}"
+    assert monitor._alertReason(entry) == "데이터 정지"
 
 
 def test_monitor_freshness_entry_ok_is_not_failure():

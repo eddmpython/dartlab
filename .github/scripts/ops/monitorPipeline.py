@@ -133,6 +133,7 @@ def _freshnessEntry(result: dict, *, auditName: str, describe) -> dict:
         "url": FRESHNESS_URL,
         "runId": None,
         "samples": list(result.get("samples") or []),
+        "dataStalled": state == "persistent",
     }
 
 
@@ -738,10 +739,11 @@ def _alertReason(entry: dict) -> str | None:
         ('연속 실패', '재실행 불가')
     """
     state = entry.get("state")
-    if state == "persistent":
-        return "연속 실패"
+    # 실패가 이어지는 중에 데이터까지 멈췄으면 더 무거운 쪽(데이터 정지)으로 적는다. 신선도 감사 breach 도 여기다.
     if state == "stale" or entry.get("dataStalled"):
         return "데이터 정지"
+    if state == "persistent":
+        return "연속 실패"
     # 재실행을 못 건 단발(startup_failure, 재실행 요청 실패)은 아무것도 회복을 시도하지 않는다. 큐 축출은
     # 실패 job 이 없어 재실행 대상이 아니고, 데이터가 밀리면 stale 축이 잡는다.
     if state == "transient" and not entry.get("reran") and not entry.get("evicted"):
@@ -968,13 +970,18 @@ def _buildIssueBody(
     if persistent:
         lines.append("\n### 연속 실패 (조치 필요)")
     for f in persistent:
+        # 신선도 entry 는 run 기록이 없어(lastSuccessAgeHours 키 없음) conclusion 이 정지를 설명한다.
+        stall = ""
+        if f.get("dataStalled") and "lastSuccessAgeHours" in f:
+            age = f["lastSuccessAgeHours"]
+            stall = (
+                f" · **데이터 정지: 마지막 성공 {age:.0f}h 전**"
+                if age is not None
+                else " · **데이터 정지: 최근 실행 기록에 성공 없음**"
+            )
         lines.append(
             f"- **{f['name']}**: `{f['conclusion']}` · 원인: **{f.get('classification', 'unknown')}**"
-            + (
-                f" · **데이터 정지: 마지막 성공 {f['lastSuccessAgeHours']:.0f}h 전**"
-                if f.get("dataStalled") and f.get("lastSuccessAgeHours") is not None
-                else (" · **데이터 정지: 최근 실행 기록에 성공 없음**" if f.get("dataStalled") else "")
-            )
+            + stall
             + f" · [로그]({f['url']})"
         )
 

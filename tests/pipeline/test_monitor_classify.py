@@ -587,15 +587,29 @@ def test_failure_window_classifies_previous_attempt_of_running_rerun(monkeypatch
 
 
 def test_main_does_not_rerun_or_close_while_rerun_runs(monkeypatch):
-    """main 은 진행 중 재실행을 다시 걸지 않고, 열린 이슈를 닫지 않고 갱신한다."""
+    """main 은 진행 중 재실행을 다시 걸지 않고, 열린 이슈를 닫지 않고 본문만 갱신한다."""
     mod = _loadMonitor()
     monkeypatch.setattr(mod, "MONITORED_WORKFLOWS", ["Data Sync"])
     monkeypatch.setattr(
         mod,
         "_recentRuns",
         lambda name: [
-            {"conclusion": None, "status": "in_progress", "databaseId": 2, "url": "u2", "attempt": 2},
-            {"conclusion": "success", "status": "completed", "databaseId": 1, "url": "u1", "attempt": 1},
+            {
+                "conclusion": None,
+                "status": "in_progress",
+                "databaseId": 2,
+                "url": "u2",
+                "attempt": 2,
+                "createdAt": _iso(1),
+            },
+            {
+                "conclusion": "success",
+                "status": "completed",
+                "databaseId": 1,
+                "url": "u1",
+                "attempt": 1,
+                "createdAt": _iso(13),
+            },
         ],
     )
     monkeypatch.setattr(mod, "_classifyFailure", lambda *a, **k: "code/기타")
@@ -607,8 +621,9 @@ def test_main_does_not_rerun_or_close_while_rerun_runs(monkeypatch):
     calls: list[list[str]] = []
     monkeypatch.setattr(mod, "_gh", lambda args, **_kwargs: calls.append(args) or "")
     mod.main()
-    assert calls and calls[0][:2] == ["issue", "edit"]
-    assert not any(args[:2] == ["issue", "close"] for args in calls)
+    edits = [args for args in calls if args[:2] == ["issue", "edit"]]
+    assert edits and "--body" in edits[0] and "--title" not in edits[0]
+    assert not any(args[:2] in (["issue", "close"], ["issue", "create"]) for args in calls)
 
 
 def test_data_audit_ignores_skipped_workflow_run_completion():
@@ -676,6 +691,7 @@ def test_rerun_rescues_counts_only_rerun_successes_inside_window():
         ({"state": "transient", "reran": False}, "재실행 불가"),
         ({"state": "transient", "reran": True, "dataStalled": True}, "데이터 정지"),
         ({"state": "persistent"}, "연속 실패"),
+        ({"state": "persistent", "dataStalled": True}, "데이터 정지"),
         ({"state": "stale", "triggered": True}, "데이터 정지"),
         ({"state": "ok", "rescues": [{}] * 3}, "반복 재실행"),
         ({"state": "running", "rescues": [{}] * 2}, None),
