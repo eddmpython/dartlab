@@ -167,9 +167,63 @@ def _mayCloseIssue(freshness: dict | None, issueBody: str) -> bool:
     return freshness is not None and freshness.get("state") == "ok"
 
 
-def _issueBody(number: int) -> str:
-    """열린 Issue 본문(조회 실패는 빈 문자열)."""
-    return _gh(["issue", "view", str(number), "--json", "body", "--jq", ".body"], check=False)
+def _issueView(number: int) -> dict:
+    """열린 Issue 의 title·body(조회 실패는 빈 dict)."""
+    raw = _gh(["issue", "view", str(number), "--json", "title,body"], check=False)
+    try:
+        view = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        return {}
+    return view if isinstance(view, dict) else {}
+
+
+# 열린 Issue 에 한 번이라도 올라온 워크플로 이름. 본문을 매번 새로 쓰므로 숨김 표지로 이어 간다.
+ISSUE_NAMES_MARKER = "<!-- pipeline-monitor workflows: "
+
+
+def _issueNames(body: str) -> list[str]:
+    """Issue 본문의 숨김 표지에서 이 사건에 올라온 워크플로 이름을 읽는다(순수 함수). 표지가 없으면 빈 list.
+
+    Args:
+        body: Issue 본문.
+
+    Returns:
+        처음 올라온 순서의 워크플로 이름 list.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> _issueNames(ISSUE_NAMES_MARKER + "A | B -->")
+        ['A', 'B']
+    """
+    for line in (body or "").splitlines():
+        if line.startswith(ISSUE_NAMES_MARKER) and line.rstrip().endswith("-->"):
+            inner = line.rstrip()[len(ISSUE_NAMES_MARKER) : -3]
+            return [name.strip() for name in inner.split(" | ") if name.strip()]
+    return []
+
+
+def _mergeNames(previous: list[str], alerting: list[dict]) -> list[str]:
+    """열린 Issue 의 이름 뒤에 이번 Issue 대상 이름을 처음 나온 순서로 덧붙인다(순수 함수).
+
+    Args:
+        previous: ``_issueNames`` 로 읽은 기존 이름.
+        alerting: ``_alertReason`` 이 있는 entry list.
+
+    Returns:
+        중복 없는 이름 list.
+
+    Raises:
+        없음.
+
+    Example:
+        >>> _mergeNames(["A"], [{"name": "B"}, {"name": "A"}])
+        ['A', 'B']
+    """
+    names = list(previous)
+    names += [entry["name"] for entry in alerting if entry["name"] not in names]
+    return names
 
 
 def _auditFreshness() -> dict | None:
@@ -814,11 +868,17 @@ def _updateIssue(number: int, title: str, body: str) -> None:
     _gh(["issue", "edit", str(number), "--title", title, "--body", body])
 
 
-def _issueTitle(alerting: list[dict]) -> str:
-    """Issue 대상 entry 로 만든 제목. 반복 재실행뿐이면 'Pipeline 반복 재실행', 그 밖에는 'Pipeline failure'.
+def _issueTitle(alerting: list[dict], names: list[str] | None = None, previousTitle: str = "") -> str:
+    """Issue 제목. 반복 재실행뿐이면 'Pipeline 반복 재실행', 그 밖에는 'Pipeline failure'.
+
+    열린 Issue 를 갱신할 때 이미 회복한 워크플로 이름을 지우지 않는다. 지우면 사건 하나가 마지막 실패 이름으로만
+    남는다(2026-10-02, 10-08 Search Index Build 로 열린 #176, #186 이 Original SSOT Sync 로 이름이 바뀌었다).
+    한 번 실패로 연 Issue 는 반복 재실행만 남아도 실패 표기를 유지한다. 현재 상태는 본문 표가 보여 준다.
 
     Args:
         alerting: ``_alertReason`` 이 있는 entry list.
+        names: 제목에 올릴 이름(``_mergeNames`` 결과). None 이면 alerting 이름.
+        previousTitle: 갱신하는 Issue 의 기존 제목. 새 Issue 면 빈 문자열.
 
     Returns:
         100자 이내 Issue 제목. 워크플로우가 많아 길면 개수 요약으로 축약.
@@ -832,11 +892,14 @@ def _issueTitle(alerting: list[dict]) -> str:
         >>> _issueTitle([{"name": "Gov Index Sync (Bulk)", "state": "ok", "rescues": [{}, {}, {}]}])
         'Pipeline 반복 재실행: Gov Index Sync (Bulk)'
     """
-    onlyEscalated = all(_alertReason(entry) == ESCALATED for entry in alerting)
-    prefix = "Pipeline 반복 재실행" if onlyEscalated else "Pipeline failure"
-    title = f"{prefix}: " + ", ".join(entry["name"] for entry in alerting)
+    names = names if names is not None else [entry["name"] for entry in alerting]
+    failure = previousTitle.startswith("Pipeline failure") or any(
+        _alertReason(entry) != ESCALATED for entry in alerting
+    )
+    prefix = "Pipeline failure" if failure else "Pipeline 반복 재실행"
+    title = f"{prefix}: " + ", ".join(names)
     if len(title) > 100:
-        title = f"{prefix}: {len(alerting)}개 워크플로우"
+        title = f"{prefix}: {len(names)}개 워크플로우"
     return title
 
 
@@ -918,16 +981,22 @@ def main():
     retrying = any(entry.get("reran") for entry in retried)
     _ensureLabel()
     openIssue = _findOpenIssue()
-    mayClose = bool(openIssue) and not alerting and not retrying and _mayCloseIssue(freshness, _issueBody(openIssue))
+    previous = _issueView(openIssue) if openIssue else {}
+    names = _mergeNames(_issueNames(previous.get("body", "")), alerting)
+    mayClose = bool(openIssue) and not alerting and not retrying and _mayCloseIssue(freshness, previous.get("body", ""))
     action = _issueAction(alerting=bool(alerting), retrying=retrying, openIssue=openIssue, mayClose=mayClose)
     counts = f"Issue 대상 {len(alerting)} · 연속 {len(persistent)} · 누락 {len(stale)} · 단발 {len(retried)}"
-    body = _buildIssueBody(statuses, persistent, retried, stale) if action in ("create", "update", "keep") else ""
+    body = (
+        _buildIssueBody(statuses, persistent, retried, stale, names) if action in ("create", "update", "keep") else ""
+    )
 
     if action == "create":
-        out = _gh(["issue", "create", "--title", _issueTitle(alerting), "--body", body, "--label", FAILURE_LABEL])
+        out = _gh(
+            ["issue", "create", "--title", _issueTitle(alerting, names), "--body", body, "--label", FAILURE_LABEL]
+        )
         print(f"[monitor] Issue 생성 ({counts}): {out}")
     elif action == "update":
-        _updateIssue(openIssue, _issueTitle(alerting), body)
+        _updateIssue(openIssue, _issueTitle(alerting, names, previous.get("title", "")), body)
         print(f"[monitor] 기존 Issue #{openIssue} 갱신 ({counts})")
     elif action == "keep" and retrying:
         _gh(["issue", "edit", str(openIssue), "--body", body])
@@ -946,9 +1015,16 @@ def main():
 
 
 def _buildIssueBody(
-    statuses: list[dict], persistent: list[dict], retried: list[dict], stale: list[dict] | None = None
+    statuses: list[dict],
+    persistent: list[dict],
+    retried: list[dict],
+    stale: list[dict] | None = None,
+    names: list[str] | None = None,
 ) -> str:
-    """Issue 본문 생성. 연속 실패, 스케줄 누락, 반복 재실행, 단발 재실행 현황과 원인 분류."""
+    """Issue 본문 생성. 연속 실패, 스케줄 누락, 반복 재실행, 단발 재실행 현황과 원인 분류.
+
+    names 가 있으면 끝에 숨김 표지로 남겨 다음 갱신이 이 사건에 올라온 워크플로 이름을 잇게 한다.
+    """
     stale = stale or []
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
@@ -1030,6 +1106,8 @@ def _buildIssueBody(
         f"최근 {RESCUE_WINDOW_HOURS // 24}일 {RESCUE_ESCALATE}회 이상 재실행 회복, 재실행 불가 단발에만 연다. "
         "단발 실패는 자동 재실행만 한다. 모두 해소되면 자동으로 닫힌다."
     )
+    if names:
+        lines.append(ISSUE_NAMES_MARKER + " | ".join(names) + " -->")
     return "\n".join(lines)
 
 

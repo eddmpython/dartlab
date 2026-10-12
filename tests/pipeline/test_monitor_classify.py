@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -283,6 +284,25 @@ def test_issue_title_truncates_when_many():
     title = mod._issueTitle(many)
     assert len(title) <= 100
     assert "10개 워크플로우" in title
+
+
+def test_issue_title_keeps_failure_prefix_once_opened_as_failure():
+    """실패로 연 Issue 는 반복 재실행만 남아도 실패 표기를 유지하고, 반대 방향은 실패로 올린다."""
+    mod = _loadMonitor()
+    escalated = {"name": "A", "state": "ok", "rescues": [{}] * 3}
+    assert mod._issueTitle([escalated], ["B", "A"], "Pipeline failure: B") == "Pipeline failure: B, A"
+    failing = {"name": "B", "state": "persistent"}
+    assert mod._issueTitle([failing], ["A", "B"], "Pipeline 반복 재실행: A") == "Pipeline failure: A, B"
+
+
+def test_issue_names_round_trip_through_body():
+    """본문을 매번 새로 써도 숨김 표지로 이 사건의 워크플로 이름이 이어진다."""
+    mod = _loadMonitor()
+    names = mod._mergeNames(["Search Index Build"], [{"name": "Original SSOT Sync"}, {"name": "Search Index Build"}])
+    assert names == ["Search Index Build", "Original SSOT Sync"]
+    body = mod._buildIssueBody([], [], [], [], names)
+    assert mod._issueNames(body) == names
+    assert mod._issueNames("표지 없는 옛 본문") == []
 
 
 # ─── MONITORED_WORKFLOWS 커버리지 (미등록 = 조용한 실패 가드) ──────────
@@ -891,3 +911,51 @@ def test_main_closes_issue_when_nothing_needs_action(monkeypatch):
     calls, _ = _patchMain(monkeypatch, mod, runs, openIssue=187)
     mod.main()
     assert any(args[:3] == ["issue", "close", "187"] for args in calls)
+
+
+def test_main_update_keeps_workflows_already_in_open_issue(monkeypatch):
+    """#186 은 Search Index Build 로 열렸다가 Original SSOT Sync 가 실패하자 제목이 그것으로 바뀌었다.
+    갱신은 이미 올라온 워크플로 이름을 지우지 않는다."""
+    mod = _loadMonitor()
+    runs = [
+        {
+            "conclusion": "failure",
+            "status": "completed",
+            "databaseId": 3,
+            "url": "u3",
+            "attempt": 2,
+            "createdAt": _iso(1),
+        },
+        {
+            "conclusion": "failure",
+            "status": "completed",
+            "databaseId": 2,
+            "url": "u2",
+            "attempt": 1,
+            "createdAt": _iso(13),
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 1,
+            "url": "u1",
+            "attempt": 1,
+            "createdAt": _iso(25),
+        },
+    ]
+    calls, _ = _patchMain(monkeypatch, mod, runs, openIssue=186)
+    view = json.dumps(
+        {
+            "title": "Pipeline failure: Search Index Build",
+            "body": "옛 본문\n" + mod.ISSUE_NAMES_MARKER + "Search Index Build -->",
+        }
+    )
+    monkeypatch.setattr(
+        mod, "_gh", lambda args, **_kwargs: calls.append(args) or (view if args[:2] == ["issue", "view"] else "")
+    )
+    mod.main()
+    edits = [args for args in calls if args[:2] == ["issue", "edit"]]
+    assert edits
+    assert edits[0][edits[0].index("--title") + 1] == "Pipeline failure: Search Index Build, Data Sync"
+    body = edits[0][edits[0].index("--body") + 1]
+    assert mod._issueNames(body) == ["Search Index Build", "Data Sync"]
