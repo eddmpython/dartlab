@@ -19,7 +19,7 @@ import polars as pl
 from dartlab.gather import getDefaultGather
 from dartlab.gather.sources.brokerage.config import enabledBrokers
 from dartlab.gather.sources.brokerage.fetch import _healthProblems, _lastFetchOutcomes, _networkFailures
-from dartlab.gather.sources.brokerage.io import writeMonthly
+from dartlab.gather.sources.brokerage.io import seedMonthsFromHf, writeMonthly
 from dartlab.pipeline.changed import writeChanged
 from dartlab.pipeline.hfUpload import uploadCategoryToHf
 
@@ -93,6 +93,9 @@ def main() -> int:
 
     gather = getDefaultGather()
     df = gather.brokerageReports()
+    # 러너는 빈 디스크다. 같은 달 HF 파일을 먼저 받아 병합 base 로 둔다(없으면 그 달 파일을 첫 페이지로 덮어씀).
+    seeded = seedMonthsFromHf(df)
+    print(f"[brokerageReports] HF 병합 base: {seeded}", flush=True)
     changed = writeMonthly(df)
     writeChanged(_CATEGORY, changed)
     print(f"[brokerageReports] {df.height} rows · {len(changed)} months changed: {changed}", flush=True)
