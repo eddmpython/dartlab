@@ -446,7 +446,20 @@ class _MetaSink:
         self._writer = None
 
     def append(self, row: dict) -> None:
-        """meta 행 하나를 받는다. 묶음이 차면 파일에 쓴다."""
+        """meta 행 하나를 받는다. 묶음이 차면 파일에 쓴다.
+
+        Args:
+            row: ``_LEGACY_META_SCHEMA`` 열을 가진 meta 행.
+
+        Returns:
+            None.
+
+        Raises:
+            OSError: meta parquet 를 쓸 수 없을 때.
+
+        Example:
+            >>> sink.append({"rcept_no": "20240101000001", "section_order": 0})  # doctest: +SKIP
+        """
         self._rows.append(row)
         if len(self._rows) >= self._batchSize:
             self._flush()
@@ -464,7 +477,18 @@ class _MetaSink:
         self._rows = []
 
     def close(self) -> Path:
-        """남은 행을 쓰고 파일을 닫는다. 행이 하나도 없으면 열만 있는 빈 parquet 를 쓴다."""
+        """남은 행을 쓰고 파일을 닫는다. 행이 하나도 없으면 열만 있는 빈 parquet 를 쓴다.
+
+        Returns:
+            Path: 다 쓴 meta parquet 경로.
+
+        Raises:
+            OSError: meta parquet 를 쓸 수 없을 때.
+
+        Example:
+            >>> sink.close()  # doctest: +SKIP
+            WindowsPath('.../main_meta.parquet')
+        """
         self._flush()
         if self._writer is None:
             self.path.parent.mkdir(parents=True, exist_ok=True)
