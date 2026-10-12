@@ -330,6 +330,41 @@ def test_edgar_full_hf_directory_publishes_updates_and_holds_new_ciks(monkeypatc
     assert any("발행 보류" in failure and "3/3" in failure for failure in result.report.failures)
 
 
+def test_edgar_finance_stmt_holds_new_tickers_when_hf_directory_is_full(monkeypatch, tmp_path):
+    """financeStmt 도 edgar/finance 와 같은 디렉터리 한도 가드를 쓴다. 갱신은 올리고 신규는 보류해 실패로 드러낸다.
+
+    ticker 단위라 universe 를 떠난 종목 파일이 남아 쌓인다(2026-10-12 financeStmt 6,907, finance 5,810).
+    """
+    import polars as pl
+    import pytest
+
+    import dartlab.config as cfg
+    import dartlab.pipeline.hfUpload as hfUpload
+    import dartlab.pipeline.seed as seed
+    import dartlab.pipeline.stages.edgar as stage
+    from dartlab.providers.edgar.finance import terminalStmt
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(stage, "_HF_DIR_FILE_LIMIT", 2)
+    monkeypatch.setattr(stage, "_cikToTicker", lambda: {"0000000001": "AAA", "0000000002": "NEW"})
+    monkeypatch.setattr("dartlab.company.Company", lambda ticker: ticker)
+    monkeypatch.setattr(terminalStmt, "bakeTerminalFinance", lambda ticker, company: pl.DataFrame({"v": [1]}))
+    monkeypatch.setattr(
+        seed,
+        "listRemoteFiles",
+        lambda category, token=None: {"edgar/financeStmt/AAA.parquet": 1, "edgar/financeStmt/OLD.parquet": 1},
+    )
+    uploads: list[list[str]] = []
+    monkeypatch.setattr(
+        hfUpload, "uploadCategoryToHf", lambda category, *, changedFiles, token=None: uploads.append(changedFiles) or 1
+    )
+
+    with pytest.raises(RuntimeError, match="financeStmt HF 디렉터리 2/2"):
+        stage._bakeTerminalFinanceStmt(["0000000001.parquet", "0000000002.parquet"], upload=True, token=None)
+    assert uploads == [["AAA.parquet"]]
+
+
 def test_edgar_republish_is_capped_per_run_and_carried_over(monkeypatch, tmp_path):
     """누락분 재발행은 run 당 상한까지만 올리고 나머지는 원장으로 다음 run 에 넘긴다. universe 밖은 버린다."""
     local = ["0000000001.parquet", "0000000002.parquet", "0000000003.parquet", "0000000099.parquet"]

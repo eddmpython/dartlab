@@ -114,9 +114,20 @@ def _bakeTerminalFinanceStmt(changedFin: list[str], *, upload: bool, token) -> i
         writeChanged("edgarFinanceStmt", changedStmt)
         if upload:
             from dartlab.pipeline.hfUpload import uploadCategoryToHf
+            from dartlab.pipeline.seed import listRemoteFiles
 
-            n = uploadCategoryToHf("edgarFinanceStmt", changedFiles=changedStmt, token=token)
-            print(f"[pipeline] edgar financeStmt HF 발행: {n}개 (universe 변경분)", flush=True)
+            # edgar/finance 와 같은 디렉터리 한도 가드. ticker 단위라 universe 를 떠난 종목 파일이 남아 쌓인다
+            # (2026-10-12 6,907 개, edgar/finance 5,810 개). 한도를 넘길 신규는 보류하고 실패로 드러낸다.
+            remote = {rel.rsplit("/", 1)[-1] for rel in listRemoteFiles("edgarFinanceStmt", token=token)}
+            publishable, blocked = _splitByHfCapacity(changedStmt, remote)
+            if publishable:
+                n = uploadCategoryToHf("edgarFinanceStmt", changedFiles=publishable, token=token)
+                print(f"[pipeline] edgar financeStmt HF 발행: {n}개 (universe 변경분)", flush=True)
+            if blocked:
+                raise RuntimeError(
+                    f"edgar/financeStmt HF 디렉터리 {len(remote)}/{_HF_DIR_FILE_LIMIT} 파일로 신규 {len(blocked)}건"
+                    f" 발행 보류 (universe 밖 잔존 파일 정리 필요): {blocked[:5]}"
+                )
     return nOk
 
 
@@ -179,7 +190,13 @@ def _splitByHfCapacity(files: list[str], remote: set[str]) -> tuple[list[str], l
     """HF 디렉터리 한도 안에서 (발행 가능, 보류할 신규) 로 나눈다. 입력 순서를 유지한다.
 
     이미 HF 에 있는 파일의 갱신은 파일 수를 늘리지 않으므로 항상 발행한다. 신규 파일은 남은 자리만큼만.
+    한도의 80% 를 넘으면 경고를 남겨 보류가 시작되기 전에 정리할 시간을 준다.
     """
+    if len(remote) >= _HF_DIR_FILE_LIMIT * 0.8:
+        print(
+            f"::warning::HF 디렉터리 파일 {len(remote)}/{_HF_DIR_FILE_LIMIT}. universe 밖 잔존 파일 정리 필요",
+            flush=True,
+        )
     room = max(_HF_DIR_FILE_LIMIT - len(remote), 0)
     publishable: list[str] = []
     blocked: list[str] = []

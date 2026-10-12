@@ -48,8 +48,11 @@ def test_deploy_edgar_to_h_f_callable() -> None:
     assert callable(deployEdgarToHF)
 
 
-def test_scan_deploy_uses_one_cas_commit_for_parquet_and_aggregates(tmp_path: Path, monkeypatch):
-    """scan parquet와 US JSON 두 개를 같은 parent_commit 기반 HF commit으로 발행한다."""
+def test_scan_deploy_uses_one_commit_for_parquet_and_aggregates(tmp_path: Path, monkeypatch):
+    """scan parquet와 US JSON 두 개를 한 HF commit 으로 발행한다. 저장소 head 를 parent_commit 으로 걸지 않는다.
+
+    head 고정은 다른 경로 writer 의 커밋에도 412 로 실패했다(2026-09-05 35433222447).
+    """
     import huggingface_hub
 
     import dartlab.config as cfg
@@ -89,7 +92,7 @@ def test_scan_deploy_uses_one_cas_commit_for_parquet_and_aggregates(tmp_path: Pa
 
     assert result == {"scan": 11}
     assert len(calls) == 1
-    assert calls[0]["parent_commit"] == "parent-sha"
+    assert "parent_commit" not in calls[0]
     paths = {operation.path_in_repo for operation in calls[0]["operations"]}
     assert paths == {
         *(f"edgar/scan/artifact-{index}.parquet" for index in range(8)),

@@ -5,7 +5,7 @@ SEC 자체 벌크(`companyfacts.zip` daily + 분기 `{Y}q{Q}.zip`) 가 원본이
 사용자 PC 에서 자동 다운로드·변환하므로 HF 미러링은 낭비 + rate limit 원인.
 
 HF 에 올리는 것은 **dartlab 파생물** 만:
-- `scan` → edgar/scan + US terminal aggregate (검증된 cohort 단일 CAS commit)
+- `scan` → edgar/scan + US terminal aggregate (검증된 cohort 단일 commit)
 - `docs` → edgar/docs  (submissions API HTML 섹션 파싱 결과, PR-E7 안전 게이트 통과 후 폐기 대상)
 - `sections` → edgar/sections  (period-sharded SSOT, plan delegated-prancing-tower PR-E3)
 
@@ -103,7 +103,7 @@ def deployEdgarToHF(
 ) -> dict[str, int]:
     """EDGAR 파생 데이터를 HuggingFace datasets repo에 category 단위로 배포한다.
 
-    scan은 prebuild 계약 검증 후 terminal aggregate와 함께 단일 CAS commit으로
+    scan은 prebuild 계약 검증 후 terminal aggregate와 함께 단일 commit으로
     발행한다. 나머지 카테고리는 단일 upload_folder commit으로 발행한다.
 
     Parameters
@@ -273,14 +273,15 @@ def deployEdgarToHF(
             operations.extend(
                 CommitOperationAdd(path_in_repo=repoPath, path_or_fileobj=str(path)) for path, repoPath in aggregates
             )
-            parentCommit = retryHfCall(api.repo_info, repo_id=HF_REPO, repo_type="dataset").sha
+            # 단일 커밋이라 cohort 는 원자적으로 바뀐다. 예전엔 원격 head 를 parent_commit 으로 걸었는데, head 는
+            # 저장소 전체 기준이라 다른 경로의 writer(EDGAR 본문 동기화 등)가 업로드 사이에 커밋하면 412 로 실패했다
+            # (2026-09-05 35433222447). 이 cohort 경로를 쓰는 곳은 본 배포뿐이고 edgarSync 가 직렬화한다.
             retryHfCall(
                 api.create_commit,
                 repo_id=HF_REPO,
                 repo_type="dataset",
                 operations=operations,
                 commit_message=msg,
-                parent_commit=parentCommit,
             )
             result[cat] = len(operations)
             _log.info(f"[deploy] {cat}: {len(operations)}개 cohort 파일 업로드 완료 (단일 커밋)")
