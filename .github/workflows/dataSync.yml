@@ -48,7 +48,7 @@ jobs:
   # ── Job 1: finance + report (list.json 기반, ~30분) ──
   sync-finance-report:
     if: ${{ github.event.inputs.mode != 'full' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     # 90 -> 180. 정기보고서 마감 주에는 report 대상이 2700 종목대로 뛴다(2026-08-19 실측 2717).
     # 엔드포인트 복구 전에는 전량 실패라 저장이 없어 85 분에 잘렸고, 복구 후에는 실제 수집과
     # 저장을 하므로 종목당 시간이 늘어난다. checkpoint 업로드를 배치 단위로 바꾼 뒤 추정
@@ -187,7 +187,7 @@ jobs:
   # ── Job 2 (workflow_dispatch full 전용): 88분기 차집합 (heavy) ──
   full-collect:
     if: ${{ github.event.inputs.mode == 'full' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 300
     concurrency:
       group: hf-dart-push

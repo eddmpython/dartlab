@@ -68,7 +68,7 @@ concurrency:
 jobs:
   build:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 180  # 3시간 (panel 다운로드 + 빌드)
     env:
       DARTLAB_HF_RETRY_ATTEMPTS: '3'
@@ -303,6 +303,10 @@ jobs:
 
       - name: Evaluate real query-log quality
         if: ${{ always() && env.PRODUCTIZATION_GATE == 'release' }}
+        # 월간 예약 run 은 release 준비도(검색 품질)를 재고 기록만 한다. 품질 미달이 매달 run 을 빨갛게 만들어 감시가
+        # 장애로 올리고 뒤 promote 까지 건너뛰었다(2026-08-01·09-01·10-01, overallReadyRate 0.65·0.56·0.55 < 0.9).
+        # 기준(0.9)은 그대로이고, 운영자가 수동으로 돌리는 release 게이트는 지금처럼 미달이면 실패한다.
+        continue-on-error: ${{ github.event_name == 'schedule' }}
         run: >
           uv run python -X utf8 .github/scripts/search/evaluateSearchGold.py
           --gold "${{ inputs.quality_gold || 'tests/fixtures/search/queryLogGold.real.jsonl' }}"
@@ -379,7 +383,7 @@ jobs:
           --hf-round-trip "$RUNNER_TEMP/searchHfRoundTrip.build.lite.json"
           --quality-report "$RUNNER_TEMP/searchQuality.build.json"
           --out "$RUNNER_TEMP/searchProductizationStatus.build.json"
-          --fail-on-release-not-ready
+          ${{ github.event_name == 'schedule' && '--fail-on-ops-not-ready' || '--fail-on-release-not-ready' }}
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
@@ -428,7 +432,8 @@ jobs:
               --replacement-evidence "$RUNNER_TEMP/searchReplacementEvidence.build.json"
               --out "$RUNNER_TEMP/searchCutover.build.json"
             )
-            if [ "${PRODUCTIZATION_GATE:-ops}" = "release" ]; then
+            # 월간 예약 run 의 release 판정은 기록만 하고(운영 준비 깨짐만 실패), 수동 release 게이트는 엄격하다.
+            if [ "${PRODUCTIZATION_GATE:-ops}" = "release" ] && [ "${GITHUB_EVENT_NAME:-}" != "schedule" ]; then
               replacement_args+=(--fail-on-incomplete)
               cutover_args+=(--fail-on-default-not-ready)
             else

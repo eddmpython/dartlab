@@ -37,7 +37,7 @@ permissions:
 # engines.data — 모든 HF push 워크플로우는 단일 그룹으로 직렬화 (sliding-window 429 회피).
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 120
     # job 레벨 concurrency 를 쓴다. 워크플로 레벨은 run 생성 즉시 큐를 점유하고, GitHub 은
     # 그룹당 pending 을 1 개만 유지해 새 트리거가 오면 기존 pending 을 취소한다

@@ -68,7 +68,7 @@ jobs:
     # skipped 로 끝난 workflow_run(상위 실패로 조건부 job 이 건너뛴 run)은 새 판정 근거가 없다. 이 완료가
     # 감사를 한 번 더 깨워, 직전 감사가 건 재실행을 진행 중으로 읽고 이슈를 닫던 짝 감사의 원인이었다.
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'skipped' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     # 10 -> 30. 신선도 감사(공시목록 1회 + 종목당 HF rceptNo range read 수천 건, 8 스레드)가 보통 5 분,
     # HF 가 느린 날엔 예산(15 분)까지 쓴다. 2026-08-22 실측: 연결 끊김 재시도가 겹쳐 20 분에 잘렸다.
     timeout-minutes: 30
@@ -92,6 +92,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           # 신선도 감사는 일일 cron·수동·panel 생산자(Original SSOT Sync) 완료 때만. 그 밖의 workflow_run 은 run 감시만.
           DARTLAB_FRESHNESS_AUDIT: ${{ (github.event_name != 'workflow_run' || github.event.workflow_run.name == 'Original SSOT Sync') && '1' || '0' }}

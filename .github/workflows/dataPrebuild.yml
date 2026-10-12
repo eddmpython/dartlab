@@ -35,7 +35,7 @@ jobs:
   # ── 증분: Data Sync 직후 / dispatch(full=false). panel 변경분만 ──
   prebuild-scan:
     if: ${{ (github.event_name == 'workflow_run' && (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.full != 'true') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 180
     # job 레벨 concurrency 를 쓴다. 워크플로 레벨은 run 생성 즉시 큐를 점유하고, GitHub 은 그룹당
     # pending 을 1 개만 유지해 새 트리거가 오면 기존 pending 을 취소한다(cancel-in-progress 무관).
@@ -139,7 +139,7 @@ jobs:
   # ── full: 주간 / dispatch(full=true). 전 종목 panel seed (디스크 확보) ──
   prebuild-full:
     if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.full == 'true') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 180
     concurrency:
       group: hf-dart-push

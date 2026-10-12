@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-shards:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 300
     strategy:
       fail-fast: false
@@ -35,7 +35,8 @@ jobs:
 
       - name: Build all-listed-company shard
         env:
-          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           SHARD: ${{ matrix.shard }}
         run: |
           set -euo pipefail
@@ -58,7 +59,7 @@ jobs:
 
   publish:
     needs: build-shards
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6

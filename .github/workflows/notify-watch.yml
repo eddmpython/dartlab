@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   watch:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
@@ -49,6 +49,7 @@ jobs:
         run: uv run python -X utf8 .github/scripts/sync/buildIpoReports.py
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           PYTHONUNBUFFERED: "1"
 
@@ -56,6 +57,7 @@ jobs:
         run: uv run python -X utf8 .github/scripts/notify/watch.py --topics "${{ github.event.inputs.topics || 'newIpo,newOrders' }}" ${{ github.event.inputs.dryRun == 'true' && '--dry-run' || '' }}
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           PUSHHUB_URL: ${{ vars.VITE_PUSHHUB_URL }}
           PUSHHUB_SEND_TOKEN: ${{ secrets.PUSHHUB_SEND_TOKEN }}
           PYTHONUNBUFFERED: "1"

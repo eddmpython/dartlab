@@ -409,6 +409,20 @@ def test_search_index_build_workflow_is_single_folded_pipeline() -> None:
     assert "buildSearchDelta.py" not in text
 
 
+def test_monthly_scheduled_release_gate_records_quality_without_failing_the_pipeline() -> None:
+    """월간 예약 run 은 release 준비도를 재고 기록만 한다. 수동 release 게이트는 미달이면 실패한다.
+
+    2026-08-01·09-01·10-01 월간 run 이 품질 미달(overallReadyRate 0.65·0.56·0.55 < 0.9)로 매달 빨갛게 끝나
+    감시가 장애 이슈로 올렸고 뒤 promote 까지 건너뛰었다.
+    """
+    text = Path(".github/workflows/searchIndexBuild.yml").read_text(encoding="utf-8")
+    quality = text[text.index("- name: Evaluate real query-log quality") :]
+    quality = quality[: quality.index("- name: Promote verified")]
+    assert "continue-on-error: ${{ github.event_name == 'schedule' }}" in quality
+    assert "github.event_name == 'schedule' && '--fail-on-ops-not-ready' || '--fail-on-release-not-ready'" in text
+    assert '[ "${GITHUB_EVENT_NAME:-}" != "schedule" ]' in text
+
+
 def test_search_index_build_workflow_keeps_legacy_bootstrap_operator_only() -> None:
     """build_mode=legacy 일 때만 raw HF 풀 + canonical catalog 부트스트랩(disaster recovery)."""
     text = Path(".github/workflows/searchIndexBuild.yml").read_text(encoding="utf-8")

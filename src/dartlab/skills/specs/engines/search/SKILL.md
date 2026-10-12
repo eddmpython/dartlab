@@ -243,6 +243,8 @@ DART panel catalog는 HF 원문과 마지막 반영 파일의 SHA256을 대조�
 
 Hard-negative gate 는 same-company-different-year, sibling filing, report-type mismatch, news/filing confusion, EDGAR/DART confusion, panel/filing confusion, noAnswer missing-event rows 를 포함한다. current-data candidate 360 rows 에서 metric/noAnswer gate 가 통과해도 `goldOrigin` 과 `reviewStatus` 가 real/reviewed 계열이 아니면 release evidence 로 보지 않는다. 2026-06-18 기준 current-data 360행은 `overallReadyRate=0.9806`, `exactDocHit10=0.9667`, `hardNegativeWinRate=0.9667`, `noAnswerFalseAcceptRate=0.0` 으로 metric gate 를 통과했지만 reviewer-approved 상태가 아니라 `releaseReady=false` 다.
 
+Search Index Build 의 월간 예약 run 은 release 게이트를 돌려 real query-log 품질과 release 준비도를 기록하지만, 실패로 치는 것은 운영 준비(ops)가 깨졌을 때뿐이다. 운영자가 수동으로 돌리는 release 게이트는 기준(0.9) 미달이면 실패한다. 2026-08-01·09-01·10-01 월간 run 은 `overallReadyRate` 0.65·0.56·0.55 로 매달 빨갛게 끝나 파이프라인 장애로 보고되고 promote 도 건너뛰었다. 품질 하락 자체는 별도 개선 과제다.
+
 운영자가 실제 품질 후보를 쌓을 때는 새 API 를 만들지 않고 기존 `dartlab.search(...)` 를 그대로 쓴다. `DARTLAB_SEARCH_QUERY_LOG=1` 이면 `{dartlab.dataDir}/search/queryLogRaw.jsonl` 에 raw candidate row 를 남긴다. 각 row 는 `goldOrigin=userLog`, `reviewStatus=candidate`, top sourceRef/source/answerability/dataAsOf 를 가진다. 이 raw row 는 reviewer label 이 붙기 전까지 release gold 가 아니며, `prepareSearchGold.py` 를 거쳐 reviewed real gold 로 승격돼야 한다.
 
 ## 기본 실행 순서

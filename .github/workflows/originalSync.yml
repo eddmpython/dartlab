@@ -66,7 +66,7 @@ permissions:
 jobs:
   dart-zip:
     if: ${{ github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'dart-zip' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     # 150 -> 240. 정기보고서 마감 주에는 변경 종목이 평시의 30 배 가까이 뛴다
     # (2026-08-12 85 종목 -> 2026-08-19 2448 종목 실측). 그 주에 dart-zip 과
     # dart-reconcile 이 둘 다 정확히 150 분에 잘렸다. 업로드를 배치 커밋으로 바꿔
@@ -91,6 +91,7 @@ jobs:
       - name: DART 정기 zip archive + seed + panel 빌드 + HF
         env:
           DART_API_KEYS: ${{ secrets.DART_API_KEYS }}
+          DARTLAB_DART_CONNECT_RETRY_ATTEMPTS: '6'  # OpenDART TCP 연결 불통(수 분) 대비, 약 4분 긴 백오프 재시도
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SYNC_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '7' }}
           PANEL_WORKERS: '2'
@@ -101,7 +102,7 @@ jobs:
   dart-reconcile:
     needs: dart-zip  # 자가 축출 차단 — 한 번에 한 dart job 만 hf-dart-push 요청
     if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'dart-reconcile') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 240
     concurrency:
       group: hf-dart-push  # 메인 public repo(panel) + private(dartOriginal) push → dart-zip 와 직렬(412 회피)
@@ -132,7 +133,7 @@ jobs:
   dart-catalog:
     needs: [dart-zip, dart-reconcile]
     if: ${{ !cancelled() && (github.event_name == 'schedule' || contains(fromJSON('["all", "dart-zip", "dart-reconcile", "dart-catalog"]'), github.event.inputs.jobs)) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 180
     concurrency:
       group: hf-dart-push
@@ -174,7 +175,7 @@ jobs:
   allfilings:
     needs: dart-catalog  # 원문과 catalog 반영 뒤 실행. 상위 실패는 !cancelled()로 격리한다.
     if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'allfilings') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 90
     concurrency:
       group: hf-dart-push  # 메인 public repo 동거 → dart-zip/dataSync 와 직렬(412 회피)
@@ -238,7 +239,7 @@ jobs:
   allfilings-backfill:
     needs: allfilings  # 명시 dispatch 전용. 자동 백필은 allFilingsBackfill.yml 이 담당.
     if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && github.event.inputs.jobs == 'allfilings-backfill' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     timeout-minutes: 75
     concurrency:
       group: hf-dart-push  # 메인 public repo 동거 → forward/dart-zip 와 직렬(412 회피)
@@ -308,7 +309,7 @@ jobs:
 
   edgar:
     if: ${{ github.event_name == 'schedule' || github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'edgar' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정. ubuntu-latest 는 2026-10-19 부터 Ubuntu 26 (CI 가 먼저 검증)
     # full-rebuild(EDGAR_FULL_REBUILD=1)는 resumable(ledger)+배치 upload 라 timeout 취소돼도 진행분 보존.
     # 350 = GitHub job 한도(360) 근처로 run 당 처리량↑. 증분(기본)은 수분이라 영향 없음.
     # 코드 시간가드 EDGAR_REBUILD_DEADLINE_MIN(기본 320)이 이보다 작아 upload/ledger 여유 확보.
