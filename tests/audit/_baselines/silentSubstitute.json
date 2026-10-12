@@ -92,7 +92,7 @@
     "src/dartlab/gather/dart/dart.py::documentText",
     "src/dartlab/gather/dart/document.py::buildTargetsFromFilingList",
     "src/dartlab/gather/edgar/bulk.py::convertBulkToParquets",
-    "src/dartlab/gather/original/dart/collect.py::_writeZip",
+    "src/dartlab/gather/original/dart.py::_writeZip",
     "src/dartlab/gather/original/edgar/submissions.py::_browseEdgarCik",
     "src/dartlab/gather/sources/damodaran.py::_fetchHtml",
     "src/dartlab/gather/sources/gdelt.py::_docDomain",

@@ -876,7 +876,7 @@ def test_dartzip_full_rebuild_flag_routes_build(monkeypatch, tmp_path) -> None:
         (d / "20250101000001.zip").write_bytes(b"PK\x03\x04")  # 신규 zip → newZipsByCode 차분 포착
         return {"changedCodes": ["AAA"]}
 
-    monkeypatch.setattr("dartlab.gather.original.dart.collect.archiveDartOriginals", fakeArchive)
+    monkeypatch.setattr("dartlab.gather.original.dart.archiveDartOriginals", fakeArchive)
     monkeypatch.setattr(dartZip, "_seedChangedFromHf", lambda codes, *, token: (1, {"AAA"}))
     monkeypatch.setattr("dartlab.providers.dart.panel.build.panelXbrlRefPath", lambda: tmp_path / "ref.parquet")
 

@@ -5,8 +5,12 @@
 ``docs/``, 비정기는 ``allFilings/`` 로 분리(panel/refScan 혼입 차단). 이미 있는
 zip 은 skip(idempotent). zip 저장은 ``.tmp`` → ``os.replace`` atomic.
 
-``allFilingsCollector``(parquet content_raw)와 공존 — 본 모듈은 원본 zip 백업,
+``allFilingsCollector``(parquet content_raw)와 공존한다. 본 모듈은 원본 zip 백업,
 저쪽은 파생 parquet. 둘은 독립.
+
+``list.json``·``document.xml`` 은 공용 ``DartClient`` 로 부른다. 예전에는 같은 키풀 로직을 복제한 전용
+client 를 썼는데 전송·연결 재시도가 없어, 응답 없는 끊김 한 번에 archive 전체가 죽었다(2026-10-02, 10-08,
+10-11 Original SSOT Sync dart-zip). 공용 client 는 재시도, XML 상태 본문 해석, XML 020 키 로테이션을 갖는다.
 """
 
 from __future__ import annotations
@@ -17,9 +21,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 from dartlab.core.logger import getLogger
+from dartlab.gather.dart.client import DartClient
 
-from ..paths import dartDocsDir, dartFilingsDir
-from .client import OriginalDartClient
+from .paths import dartDocsDir, dartFilingsDir
 
 _log = getLogger(__name__)
 
@@ -75,11 +79,11 @@ def _isPeriodic(reportNm: str) -> bool:
     return any(p in reportNm for p in _PERIODIC_PATTERNS)
 
 
-def _writeZip(client: OriginalDartClient, rceptNo: str, outPath) -> str:
+def _writeZip(client: DartClient, rceptNo: str, outPath) -> str:
     """단일 rcept document.xml → zip 파일 atomic write.
 
     Args:
-        client: OriginalDartClient.
+        client: DartClient. 013/014 XML 상태 본문은 예외가 아니라 bytes 로 돌려받는다.
         rceptNo: 14자리 접수번호.
         outPath: 저장 경로(``Path``).
 
@@ -150,8 +154,9 @@ def archiveDartOriginals(
         dict[str, int] — ``{"ok", "noBody", "skipped", "error", "days"}`` 집계.
 
     Raises:
-        OriginalDartClientError: DART 키 0개 또는 전 키 한도 소진.
-        ValueError: 날짜 형식 또는 scope 값 오류.
+        DartApiError: 전 키 한도 소진(020) 또는 list.json 오류 상태.
+        httpx.HTTPError: list.json 전송·연결 재시도 소진.
+        ValueError: DART 키 0개, 날짜 형식 또는 scope 값 오류.
 
     Example:
         >>> archiveDartOriginals("20260601", "20260603", scope="nonperiodic")  # doctest: +SKIP
@@ -163,7 +168,7 @@ def archiveDartOriginals(
 
     SeeAlso:
         - ``providers.edgar.panel.build`` — EDGAR 는 raw ``.txt`` 저장 없이 panel 을 직접 빌드.
-        - ``OriginalDartClient`` — 본 함수의 fetch backend.
+        - ``gather.dart.client.DartClient``: 본 함수의 fetch backend.
         - ``providers.dart.openapi.allFilingsCollector`` — 공존하는 parquet 수집(별개).
 
     Requires:
@@ -198,61 +203,58 @@ def archiveDartOriginals(
     if scope not in ("all", "periodic", "nonperiodic"):
         raise ValueError(f"scope 는 all/periodic/nonperiodic: {scope!r}")
 
-    client = OriginalDartClient()
+    client = DartClient()
     stats: dict[str, object] = {"ok": 0, "noBody": 0, "skipped": 0, "error": 0, "days": 0}
     classSet = set(corpClasses)
     changedCodes: set[str] = set()  # 신규 zip 받은 종목 (panel 증분 재빌드 대상)
 
-    try:
-        for day in _iterDays(start, end):
-            rows = _collectDayRows(client, day, classSet)
-            if not rows:
+    for day in _iterDays(start, end):
+        rows = _collectDayRows(client, day, classSet)
+        if not rows:
+            continue
+        stats["days"] += 1
+
+        skippedBefore = int(stats["skipped"])  # 일별 skip 산출용(stats 는 전 기간 누적)
+        targets = []  # (rceptNo, outPath, stockCode)
+        for row in rows:
+            reportNm = row.get("report_nm", "") or ""
+            periodic = _isPeriodic(reportNm)
+            if scope == "periodic" and not periodic:
                 continue
-            stats["days"] += 1
-
-            skippedBefore = int(stats["skipped"])  # 일별 skip 산출용(stats 는 전 기간 누적)
-            targets = []  # (rceptNo, outPath, stockCode)
-            for row in rows:
-                reportNm = row.get("report_nm", "") or ""
-                periodic = _isPeriodic(reportNm)
-                if scope == "periodic" and not periodic:
-                    continue
-                if scope == "nonperiodic" and periodic:
-                    continue
-                stockCode = (row.get("stock_code", "") or "").strip()
-                if not stockCode:
-                    continue  # 비상장 filer(빈 stock_code) — 본 universe 밖
-                rceptNo = row.get("rcept_no", "")
-                if not rceptNo:
-                    continue
-                outDir = dartDocsDir(stockCode) if periodic else dartFilingsDir(stockCode)
-                outPath = outDir / f"{rceptNo}.zip"
-                if outPath.exists():
-                    stats["skipped"] += 1
-                    continue
-                targets.append((rceptNo, outPath, stockCode))
-
-            if not targets:
-                if showProgress:
-                    _log.info("[%s] 신규 0 (skip %d)", day, int(stats["skipped"]) - skippedBefore)
+            if scope == "nonperiodic" and periodic:
                 continue
+            stockCode = (row.get("stock_code", "") or "").strip()
+            if not stockCode:
+                continue  # 비상장 filer(빈 stock_code)는 본 universe 밖
+            rceptNo = row.get("rcept_no", "")
+            if not rceptNo:
+                continue
+            outDir = dartDocsDir(stockCode) if periodic else dartFilingsDir(stockCode)
+            outPath = outDir / f"{rceptNo}.zip"
+            if outPath.exists():
+                stats["skipped"] += 1
+                continue
+            targets.append((rceptNo, outPath, stockCode))
 
-            # changed 마킹은 zip 이 *실제로 써진*(ok) 종목만 — fetch 실패(error/no_body)는 제외.
-            # 큐잉 시점 마킹이면 일시 fetch 실패가 panel 재빌드+원본 tar 덮어쓰기(부분이력)를 유발(데이터 손실).
-            okBefore, noBodyBefore, errBefore = int(stats["ok"]), int(stats["noBody"]), int(stats["error"])
-            changedCodes |= _fetchDayTargets(client, targets, workers, stats)
+        if not targets:
             if showProgress:
-                # stats 는 전 기간 누적 — 일별 값은 (당일 후 − 당일 전) 차분, 마지막 항만 누적 ok.
-                _log.info(
-                    "[%s] ok=%d noBody=%d error=%d (누적 ok=%d)",
-                    day,
-                    int(stats["ok"]) - okBefore,
-                    int(stats["noBody"]) - noBodyBefore,
-                    int(stats["error"]) - errBefore,
-                    stats["ok"],
-                )
-    finally:
-        client.close()
+                _log.info("[%s] 신규 0 (skip %d)", day, int(stats["skipped"]) - skippedBefore)
+            continue
+
+        # changed 마킹은 zip 이 *실제로 써진*(ok) 종목만. fetch 실패(error/no_body)는 제외.
+        # 큐잉 시점 마킹이면 일시 fetch 실패가 panel 재빌드+원본 tar 덮어쓰기(부분이력)를 유발(데이터 손실).
+        okBefore, noBodyBefore, errBefore = int(stats["ok"]), int(stats["noBody"]), int(stats["error"])
+        changedCodes |= _fetchDayTargets(client, targets, workers, stats)
+        if showProgress:
+            # stats 는 전 기간 누적이라 일별 값은 (당일 후 − 당일 전) 차분, 마지막 항만 누적 ok.
+            _log.info(
+                "[%s] ok=%d noBody=%d error=%d (누적 ok=%d)",
+                day,
+                int(stats["ok"]) - okBefore,
+                int(stats["noBody"]) - noBodyBefore,
+                int(stats["error"]) - errBefore,
+                stats["ok"],
+            )
 
     stats["changedCodes"] = sorted(changedCodes)
     if showProgress:
@@ -262,11 +264,11 @@ def archiveDartOriginals(
     return stats
 
 
-def _collectDayRows(client: OriginalDartClient, day: str, classSet: set[str]) -> list[dict]:
-    """하루치 list.json 전 페이지 수집 + corpClass 필터.
+def _collectDayRows(client: DartClient, day: str, classSet: set[str]) -> list[dict]:
+    """하루치 list.json 전 페이지 수집 + corpClass 필터. 013(결과 없음)은 빈 dict 로 받아 빈 list.
 
     Args:
-        client: OriginalDartClient.
+        client: DartClient.
         day: 일자 YYYYMMDD.
         classSet: 허용 법인구분 set.
 
@@ -282,7 +284,8 @@ def _collectDayRows(client: OriginalDartClient, day: str, classSet: set[str]) ->
     rows: list[dict] = []
     page = 1
     while True:
-        data = client.getFilingsPage(bgnDe=day, endDe=day, pageNo=page)
+        params = {"bgn_de": day, "end_de": day, "page_no": str(page), "page_count": "100"}
+        data = client.getJson("list.json", params, emptyOn013=True)
         pageRows = data.get("list", []) or []
         if not pageRows:
             break
@@ -297,7 +300,7 @@ def _collectDayRows(client: OriginalDartClient, day: str, classSet: set[str]) ->
 
 
 def _fetchDayTargets(
-    client: OriginalDartClient,
+    client: DartClient,
     targets: list[tuple[str, object, str]],
     workers: int,
     stats: dict[str, int],
@@ -305,7 +308,7 @@ def _fetchDayTargets(
     """하루치 신규 target 을 ThreadPool 로 document.xml fetch + write.
 
     Args:
-        client: OriginalDartClient(스레드 안전).
+        client: DartClient(스레드 안전).
         targets: ``[(rceptNo, outPath, stockCode), ...]``.
         workers: 워커 수.
         stats: 누적 집계 dict(in-place 갱신).

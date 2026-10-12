@@ -143,7 +143,6 @@ _ALLOWLIST_FILES: frozenset[str] = frozenset(
         "gather/edgar/batch.py",
         # DART API 키 .env 파서 — env var 가 1차 소스, .env 부재 = 멀티키 0 = 빈 list 정상.
         "gather/dart/keys.py",
-        "gather/original/dart/keys.py",
         # pipeline changed 매니페스트 / hash 스냅샷 — 옵셔널 산출물. 부재 = "변경 없음"/"첫 실행" 정상.
         "pipeline/changed.py",
         "pipeline/hashing.py",

@@ -466,7 +466,7 @@ def runDartZip(
         StageResult(category='dartOriginal', ...)
     """
     import dartlab.config as cfg
-    from dartlab.gather.original.dart.collect import archiveDartOriginals
+    from dartlab.gather.original.dart import archiveDartOriginals
     from dartlab.providers.dart.panel.build import buildPanelAll, panelXbrlRefPath
 
     days = int(os.environ.get("SYNC_LOOKBACK_DAYS") or "7")
