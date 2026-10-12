@@ -110,7 +110,7 @@ def _seedChangedFromHf(codes: list[str], *, token: str | None) -> tuple[int, set
     tok = _resolveHfToken(token)
     remote = _hfFileSet(repo, token=tok)  # spurious 404 vs 진짜 신규 구분 oracle
 
-    def seedOne(code: str) -> tuple[str, bool, bool]:
+    def _seedOne(code: str) -> tuple[str, bool, bool]:
         """종목 하나의 tar 를 받아 풀고 (code, 추출 성공, safe) 를 돌려준다. 분기는 전부 안에서 처리한다."""
         try:
             local = retryHfCall(
@@ -153,7 +153,7 @@ def _seedChangedFromHf(codes: list[str], *, token: str | None) -> tuple[int, set
     n = 0
     safe: set[str] = set()
     with ThreadPoolExecutor(max_workers=_SEED_WORKERS, thread_name_prefix="tar-seed") as executor:
-        for seededCode, extractedOk, isSafe in executor.map(seedOne, codes):
+        for seededCode, extractedOk, isSafe in executor.map(_seedOne, codes):
             n += int(extractedOk)
             if isSafe:
                 safe.add(seededCode)
@@ -198,7 +198,7 @@ def _seedPanelFromHf(codes: list[str], *, token: str | None) -> tuple[int, set[s
     tok = _resolveHfToken(token)
     remote = _hfFileSet(repo, token=tok)  # spurious 404 vs 진짜 신규 구분 oracle
 
-    def seedOne(code: str) -> tuple[str, bool, bool]:
+    def _seedOne(code: str) -> tuple[str, bool, bool]:
         """종목 하나의 panel parquet 를 merge base 로 받아 (code, 받음, safe) 를 돌려준다."""
         try:
             retryHfCall(  # HF read SSOT(core.hfRetry). 429/503/504 단일 백오프
@@ -221,7 +221,7 @@ def _seedPanelFromHf(codes: list[str], *, token: str | None) -> tuple[int, set[s
     n = 0
     safe: set[str] = set()
     with ThreadPoolExecutor(max_workers=_SEED_WORKERS, thread_name_prefix="panel-seed") as executor:
-        for seededCode, fetchedOk, isSafe in executor.map(seedOne, codes):
+        for seededCode, fetchedOk, isSafe in executor.map(_seedOne, codes):
             n += int(fetchedOk)
             if isSafe:
                 safe.add(seededCode)
@@ -415,7 +415,7 @@ def _buildPanelIncremental(
     pending: list[str] = []  # merge 완료 · HF 미업로드(checkpoint 대기)
     failed = 0
 
-    def flushUpload(*, final: bool) -> None:
+    def _flushUpload(*, final: bool) -> None:
         """merge 가 끝나 대기 중인 종목이 uploadEvery 에 찼거나(final 이면 남은 전부) panel 을 HF 에 올린다."""
         nonlocal pending
         if uploadEvery is None or not pending or (not final and len(pending) < uploadEvery):
@@ -441,7 +441,7 @@ def _buildPanelIncremental(
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="panel-incremental") as executor:
         running: set[Future[tuple[str, dict[str, int] | None, Exception | None]]] = set()
 
-        def submitNext() -> None:
+        def _submitNext() -> None:
             """다음 종목 하나만 executor 에 넣는다(입력 소진이나 마감이면 아무것도 안 한다)."""
             if deadline is not None and time.monotonic() >= deadline:
                 return
@@ -450,7 +450,7 @@ def _buildPanelIncremental(
                 running.add(executor.submit(buildOne, code))
 
         for _ in range(workers):
-            submitNext()
+            _submitNext()
         while running:
             future = next(as_completed(running))
             running.remove(future)
@@ -462,9 +462,9 @@ def _buildPanelIncremental(
             elif out:
                 built.append(code)
                 pending.append(code)
-                flushUpload(final=False)
-            submitNext()
-    flushUpload(final=True)
+                _flushUpload(final=False)
+            _submitNext()
+    _flushUpload(final=True)
     left = sum(1 for _ in queue)
     if left:
         # 실패가 아니다. 남은 종목의 신규 rcept 는 HF panel 에 없으므로 reconcile 이 누락으로 잡아 이어 받는다.
