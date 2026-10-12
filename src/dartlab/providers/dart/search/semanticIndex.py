@@ -176,7 +176,7 @@ def _sourceRows(path: Path, source: str) -> Iterator[dict]:
     """기존 catalog identity를 보존하고 로컬 panel의 뒤쪽 block까지 투영한다."""
     import pyarrow.parquet as pq
 
-    from dartlab.providers.dart.search.sourceCatalog import _sourceDataAsOfFromPanelRow, _stripPanelText
+    from dartlab.providers.dart.search.panelCatalog import _sourceDataAsOfFromPanelRow, _stripPanelText
 
     parquet = pq.ParquetFile(path)
     for batch in parquet.iter_batches(batch_size=1024):

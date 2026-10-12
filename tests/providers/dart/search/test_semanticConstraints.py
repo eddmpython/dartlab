@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import polars as pl
 
+from dartlab.providers.dart.search.facetPlanner import QueryFacets
 from dartlab.providers.dart.search.semanticConstraints import (
     SemanticConstraintPlan,
+    compileActiveSemanticMapper,
     compileSemanticMapperFromRows,
     matchSemanticAlias,
     planSemanticConstraints,
     rankBySemanticConstraints,
     rowSourceClass,
+    scoreSemanticConstraintEvidence,
+    semanticConstraintViolations,
     semanticScopeMask,
 )
 
@@ -377,3 +381,37 @@ def test_row_source_class_normalizes_runtime_sources() -> None:
     assert rowSourceClass({"source": "allFilings"}) == "allFilings"
     assert rowSourceClass({"source": "panel"}) == "panel"
     assert rowSourceClass({"source": "edgar-panel"}) == "edgar"
+
+
+def test_constraint_plan_violations_and_evidence_lane_follow_the_plan() -> None:
+    plan = SemanticConstraintPlan(QueryFacets(stockCode="AAPL", years=("2026",)), sourceClasses=("edgar",))
+    assert plan.hasConstraints
+    assert not SemanticConstraintPlan(QueryFacets()).hasConstraints
+
+    assert (
+        semanticConstraintViolations({"source": "edgar-panel", "stock_code": "AAPL", "rcept_dt": "20260101"}, plan)
+        == []
+    )
+    assert semanticConstraintViolations({"source": "panel", "stock_code": "005930", "rcept_dt": "20260101"}, plan) == [
+        "constraintMismatch:sourceClass",
+        "facetMismatch:stockCode",
+    ]
+    assert semanticConstraintViolations({"source": "panel"}, None) == []
+
+    meta = pl.DataFrame(
+        {"source": ["edgar-panel", "panel"], "stock_code": ["AAPL", "005930"], "rcept_dt": ["20260101", "20260101"]}
+    )
+    scores = scoreSemanticConstraintEvidence(meta, plan)
+    assert scores[0] > scores[1]
+    assert not scoreSemanticConstraintEvidence(meta, None).any()
+
+
+def test_active_mapper_compiles_from_loaded_segments(monkeypatch) -> None:
+    from dartlab.providers.dart.search import fieldIndex
+
+    meta = pl.DataFrame(
+        {"source": ["edgar-panel"], "sourceRef": ["edgar:panel:1"], "corp_name": ["AAPL"], "stock_code": ["AAPL"]}
+    )
+    monkeypatch.setattr(fieldIndex, "_getSegments", lambda: {"main": ({}, meta)})
+
+    assert compileActiveSemanticMapper().aliases["aapl"].dominantSourceClass == "edgar"

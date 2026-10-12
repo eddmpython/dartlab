@@ -55,11 +55,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hf-prefix", default="dart/searchCatalog", help="HF path prefix for uploaded artifacts.")
     args = parser.parse_args(argv)
 
-    from dartlab.providers.dart.search.sourceCatalog import (
-        PANEL_CATALOG_SOURCES,
-        PANEL_SOURCE_VERSION,
-        discoverSourceFiles,
-    )
+    from dartlab.providers.dart.search.panelCatalog import PANEL_CATALOG_SOURCES, PANEL_SOURCE_VERSION
+    from dartlab.providers.dart.search.sourceCatalog import discoverSourceFiles
 
     if not args.source_version:
         args.source_version = PANEL_SOURCE_VERSION if args.source in PANEL_CATALOG_SOURCES else "v1"

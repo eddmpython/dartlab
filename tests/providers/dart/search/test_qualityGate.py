@@ -255,6 +255,16 @@ def test_evaluate_query_gold_rows_accepts_dynamic_news_semantic_hit() -> None:
     assert report["metrics"]["exactDocHit10"] == 0.0
 
 
+def test_normalize_target_kind_maps_source_aliases() -> None:
+    from dartlab.providers.dart.search.qualityGate import normalizeTargetKind
+
+    assert normalizeTargetKind({"targetKind": "edgar-panel"}) == "edgar"
+    assert normalizeTargetKind({"target": "panel"}) == "filing"
+    assert normalizeTargetKind({"kind": "no-answer"}) == "noAnswer"
+    assert normalizeTargetKind({"target": "news"}) == "news"
+    assert normalizeTargetKind({}) == "filing"
+
+
 def _topicGold(query: str, target: str) -> list[dict]:
     return [
         {

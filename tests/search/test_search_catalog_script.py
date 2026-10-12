@@ -27,7 +27,8 @@ def test_remoteReconciliationMergesAllBatchesBeforePublish(tmp_path, monkeypatch
     import huggingface_hub
 
     from dartlab.pipeline import searchCatalog
-    from dartlab.providers.dart.search.sourceCatalog import PANEL_SOURCE_VERSION, writeSourceCatalogArtifacts
+    from dartlab.providers.dart.search.panelCatalog import PANEL_SOURCE_VERSION
+    from dartlab.providers.dart.search.sourceCatalog import writeSourceCatalogArtifacts
 
     module = _loadBuildSearchCatalogScript()
     first = tmp_path / "005930.parquet"
