@@ -90,6 +90,35 @@ def test_seed_skips_hf_tree_resolve_404(tmp_path, monkeypatch):
     assert total == 1
 
 
+def test_download_retries_dropped_connection(tmp_path, monkeypatch):
+    """응답 없는 끊김은 urllib 가 URLError 로 감싸지 않는다. 재시도해야 Deploy Landing 시드가 살아남는다(2026-10-12)."""
+    import http.client
+    import io
+    import urllib.request
+
+    from dartlab.pipeline import seed as seedmod
+
+    responses: list = [
+        http.client.RemoteDisconnected("Remote end closed connection without response"),
+        ConnectionResetError("reset"),
+        io.BytesIO(b"PAR1data"),
+    ]
+
+    def fakeUrlopen(req, timeout):
+        result = responses.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(urllib.request, "urlopen", fakeUrlopen)
+    monkeypatch.setattr(seedmod.time, "sleep", lambda _s: None)
+
+    dest = tmp_path / "map" / "a.json"
+    assert seedmod._download("https://huggingface.co/x", dest, None) == 8
+    assert dest.read_bytes() == b"PAR1data"
+    assert responses == []
+
+
 def test_is_fresh(tmp_path):
     """_isFresh — 존재 + size 일치만 True."""
     from dartlab.pipeline.seed import _isFresh

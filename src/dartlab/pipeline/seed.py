@@ -34,6 +34,7 @@ def _download(url: str, dest: Path, token: str | None, timeout: int = 60) -> int
         >>> _download("https://example/x", Path("/tmp/x"), None)  # doctest: +SKIP
         1024
     """
+    import http.client
     import urllib.error
     import urllib.request
 
@@ -80,7 +81,9 @@ def _download(url: str, dest: Path, token: str | None, timeout: int = 60) -> int
                 time.sleep(wait)
                 continue
             raise
-        except (urllib.error.URLError, TimeoutError) as e:
+        # 응답 없는 끊김(RemoteDisconnected, ConnectionResetError)과 본문 중단(IncompleteRead)은 urllib 가
+        # URLError 로 감싸지 않고 그대로 올린다. 그래서 재시도 없이 Deploy Landing 시드 단계가 죽었다(2026-10-12).
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as e:
             if attempt == maxRetries - 1:
                 raise
             wait = min(15.0 * (2**attempt), 120.0)
