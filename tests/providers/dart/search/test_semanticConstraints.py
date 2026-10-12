@@ -41,6 +41,51 @@ def test_plan_promotes_ticker_alias_to_edgar_source_constraint() -> None:
     assert plan.sourceReason == "aliasDominantEdgar"
 
 
+def test_korean_query_treats_common_filing_acronym_as_term_not_us_ticker() -> None:
+    """한국 공시에 흔한 약어(HBM)를 미국 티커로 읽어 EDGAR 로 좁히지 않는다. 진짜 티커(ADI·AAPL)는 그대로다.
+
+    2026-10-13 "반도체 HBM 투자 사업의 내용" 이 Hudbay Minerals(HBM) 40-F 만 돌려줬다.
+    """
+    mapper = compileSemanticMapperFromRows(
+        [
+            {"source": "edgar-panel", "sourceRef": "edgar:panel:h", "corp_name": "HBM", "stock_code": "HBM"},
+            {"source": "edgar-panel", "sourceRef": "edgar:panel:a", "corp_name": "ADI", "stock_code": "ADI"},
+            {"source": "edgar-panel", "sourceRef": "edgar:panel:p", "corp_name": "AAPL", "stock_code": "AAPL"},
+        ]
+    )
+    frequency = {"hbm": 175, "adi": 5, "aapl": 0}.get
+
+    hbm = planSemanticConstraints("반도체 HBM 투자 사업의 내용", mapper=mapper, krFilingFrequency=frequency)
+    assert hbm.matchedAlias == "" and hbm.facets.stockCode is None
+    assert hbm.sourceClasses == ("panel",)
+
+    adi = planSemanticConstraints("ADI 2026 분기보고서", mapper=mapper, krFilingFrequency=frequency)
+    assert adi.facets.stockCode == "ADI" and adi.sourceClasses == ("edgar",)
+    aapl = planSemanticConstraints("AAPL 위험요인", mapper=mapper, krFilingFrequency=frequency)
+    assert aapl.facets.stockCode == "AAPL" and aapl.sourceClasses == ("edgar",)
+    english = planSemanticConstraints("HBM 10-K risk factors", mapper=mapper, krFilingFrequency=frequency)
+    assert english.facets.stockCode == "HBM"
+
+
+def test_periodic_report_query_routes_to_panel_not_original_filings() -> None:
+    """정기보고서는 panel 에만 있다. "사업보고서 제출" 이 "제출" 때문에 allFilings 로 좁혀져 감사보고서제출만 나왔다."""
+    mapper = compileSemanticMapperFromRows([])
+    for query in ("사업보고서 제출", "분기보고서 제출", "반기보고서 제출"):
+        assert planSemanticConstraints(query, mapper=mapper).sourceClasses == ("panel",)
+    assert planSemanticConstraints("감사보고서 제출", mapper=mapper).sourceClasses == ("allFilings",)
+
+
+def test_kr_filing_doc_frequency_counts_only_korean_filing_sources() -> None:
+    import numpy as np
+
+    from dartlab.providers.dart.search.semanticConstraints import krFilingDocFrequency
+
+    idx = {"stemDict": {"hbm": 0}, "offsets": np.array([0, 3]), "docIds": np.array([0, 1, 2])}
+    meta = pl.DataFrame({"source": ["allFilings", "edgar-panel", "panel"]})
+    assert krFilingDocFrequency("hbm", {"main": (idx, meta)}) == 2
+    assert krFilingDocFrequency("aapl", {"main": (idx, meta)}) == 0
+
+
 def test_plan_matches_short_and_hyphenated_edgar_tickers() -> None:
     mapper = compileSemanticMapperFromRows(
         [

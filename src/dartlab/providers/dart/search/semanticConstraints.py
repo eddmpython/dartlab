@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 
 import numpy as np
 import polars as pl
@@ -24,6 +24,15 @@ _EDGAR_TERMS: tuple[str, ...] = ("edgar", "10-k", "10k", "10-q", "10q", "8-k", "
 _PANEL_TERMS: tuple[str, ...] = ("panel", "파케", "parquet")
 _BODY_SOURCE_TERMS: tuple[str, ...] = ("본문", "주석", "사업의 내용", "위험요인", "md&a", "risk")
 _FILING_ORIGINAL_TERMS: tuple[str, ...] = ("공시 원문", "공시원문", "제출", "접수", "결정", "변경")
+# 정기보고서(사업·분기·반기)는 원문 공시(allFilings)가 아니라 panel 에만 있다. "사업보고서 제출" 이 "제출" 때문에
+# allFilings 로 좁혀져 감사보고서제출만 나왔다(2026-10-13 gold 재측정).
+_PERIODIC_REPORT_TERMS: tuple[str, ...] = ("사업보고서", "분기보고서", "반기보고서")
+# 한국 공시에 흔한 영문 약어(HBM, OLED, KT 등)가 미국 티커와 겹친다. 한글 질의에서 이런 별칭을 EDGAR 회사로 읽으면
+# 검색 범위가 EDGAR 로 좁혀져 엉뚱한 회사만 나왔다("반도체 HBM 투자 사업의 내용" -> Hudbay Minerals 40-F).
+# 한국 공시(allFilings·panel)에 이만큼 이상 나오는 토큰은 회사가 아니라 용어로 본다. 2026-10-13 full 인덱스 실측:
+# hbm 175·oled 1,646·kt 3,103 대 aapl 0·nvda 0·adi 5·amd 35·mu 56.
+_KR_TERM_MIN_FILING_DF = 100
+_KR_FILING_SOURCES: tuple[str, ...] = ("allFilings", "panel")
 _PHASE_DECISION_TERMS: tuple[str, ...] = ("결정",)
 _PHASE_RESULT_TERMS: tuple[str, ...] = ("결과", "완료", "종료보고서")
 _PHASE_MEETING_NOTICE_TERMS: tuple[str, ...] = ("소집공고",)
@@ -233,6 +242,7 @@ def planSemanticConstraints(
     stockCode: str | None = None,
     sourceIntent: SourceIntent | str | None = None,
     mapper: SemanticMapper | None = None,
+    krFilingFrequency: Callable[[str], int] | None = None,
 ) -> SemanticConstraintPlan:
     """Build a constraint plan for ranking and answerability.
 
@@ -242,6 +252,8 @@ def planSemanticConstraints(
         stockCode: Explicit stock code or ticker, if supplied by public API.
         sourceIntent: Source family intent detected by ``sourceIntent``.
         mapper: Optional precompiled mapper.
+        krFilingFrequency: 토큰이 한국 공시(allFilings·panel) 몇 건에 나오는지. 한글 질의의 영문 약어를 미국
+            티커로 읽을지 가르는 데 쓴다(``krFilingDocFrequency``). None 이면 이 판정을 건너뛴다.
 
     Returns:
         SemanticConstraintPlan: Query facets plus concrete source-class constraints.
@@ -257,6 +269,8 @@ def planSemanticConstraints(
     mapper = mapper or compileActiveSemanticMapper()
     base = planQueryFacets(query, corpCode=corpCode, stockCode=stockCode)
     alias = matchSemanticAlias(query, mapper)
+    if alias is not None and krFilingFrequency is not None and _isKoreanTermAlias(query, alias, krFilingFrequency):
+        alias = None
     mergedStockCode = base.stockCode or (alias.stockCode if alias else None)
     aliasCorpCode = alias.corpCode if alias and not mergedStockCode else None
     mergedCorpCode = base.corpCode or aliasCorpCode
@@ -537,9 +551,49 @@ def _sourceClassesForQuery(
         return ("panel",), "explicitPanel"
     if _hasAny(text, _BODY_SOURCE_TERMS):
         return ("panel",), "bodyEvidence"
+    if _hasAny(text, _PERIODIC_REPORT_TERMS) and "감사보고서" not in text:
+        return ("panel",), "periodicReport"
     if _hasAny(text, _FILING_ORIGINAL_TERMS):
         return ("allFilings",), "filingOriginal"
     return (), ""
+
+
+def _isKoreanTermAlias(query: str, alias: AliasProfile, krFilingFrequency: Callable[[str], int]) -> bool:
+    """한글 질의의 영문 별칭이 미국 티커가 아니라 한국 공시에 흔한 용어인지(HBM, OLED, KT 등)."""
+    if alias.dominantSourceClass != "edgar" or not _HANGUL_RUN_RE.search(str(query or "")):
+        return False
+    text = " ".join(str(query or "").lower().split())
+    if _hasAny(text, _EDGAR_TERMS) or not (alias.alias.isascii() and alias.alias.isalpha()):
+        return False
+    return krFilingFrequency(alias.alias) >= _KR_TERM_MIN_FILING_DF
+
+
+def krFilingDocFrequency(token: str, segments: Mapping[str, tuple[dict, pl.DataFrame]]) -> int:
+    """토큰이 나오는 한국 공시(allFilings·panel) 문서 수를 세그먼트 postings 에서 센다.
+
+    Args:
+        token: 소문자 영문 토큰(``tokenizeContent`` 와 같은 꼴).
+        segments: ``fieldIndex._getSegments`` 결과.
+
+    Returns:
+        int: 한국 공시 문서 수. 토큰이 없으면 0.
+
+    Raises:
+        None.
+
+    Example:
+        >>> krFilingDocFrequency("hbm", {})
+        0
+    """
+    total = 0
+    for idx, meta in segments.values():
+        stemId = idx.get("stemDict", {}).get(token)
+        if stemId is None or "source" not in meta.columns:
+            continue
+        start, end = int(idx["offsets"][stemId]), int(idx["offsets"][stemId + 1])
+        sources = meta.get_column("source").to_numpy()[np.asarray(idx["docIds"][start:end])]
+        total += int(np.isin(sources, _KR_FILING_SOURCES).sum())
+    return total
 
 
 def _rowAliases(*, companyName: str, stockCode: str, corpCode: str) -> set[str]:

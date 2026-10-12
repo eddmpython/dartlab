@@ -15,6 +15,7 @@ ARCHITECTURE §7.5) — 본 모듈은 실측 완료된 content lane 만 담는�
 
 from __future__ import annotations
 
+import dataclasses
 import re
 
 import numpy as np
@@ -35,6 +36,7 @@ from dartlab.providers.dart.search.router import loadRouterModel, routeCanon
 from dartlab.providers.dart.search.semanticConstraints import (
     SemanticConstraintPlan,
     compileSemanticMapper,
+    krFilingDocFrequency,
     planSemanticConstraints,
     rankBySemanticConstraints,
     scoreSemanticConstraintEvidence,
@@ -227,7 +229,13 @@ def searchUnified(
         )
     if constraintPlan is None:
         mapper = compileSemanticMapper(segments)
-        constraintPlan = planSemanticConstraints(query, corpCode=corpCode, stockCode=stockCode, mapper=mapper)
+        constraintPlan = planSemanticConstraints(
+            query,
+            corpCode=corpCode,
+            stockCode=stockCode,
+            mapper=mapper,
+            krFilingFrequency=lambda token: krFilingDocFrequency(token, segments),
+        )
     corpCode = corpCode or constraintPlan.facets.corpCode
     stockCode = stockCode or constraintPlan.facets.stockCode
 
@@ -244,6 +252,15 @@ def searchUnified(
     else:
         candidateLimit = limit * 3
 
+    # 출처 범위 제한이 이 인덱스의 어느 세그먼트에도 해당 문서가 없으면 결과가 0 건이 된다(예: 정기보고서를 panel 로
+    # 보냈는데 옛 로컬 인덱스는 정기보고서를 allFilings 에 둠). 그때는 범위 제한을 풀고 전체에서 찾는다.
+    constraintMasks = {name: semanticScopeMask(meta, constraintPlan) for name, (_, meta) in segments.items()}
+    if any(mask is not None for mask in constraintMasks.values()) and not any(
+        mask is not None and mask.any() for mask in constraintMasks.values()
+    ):
+        constraintMasks = {name: None for name in constraintMasks}
+        constraintPlan = dataclasses.replace(constraintPlan, sourceClasses=(), sourceReason="")
+
     allHits: list[dict] = []
     deltaKeys: set[tuple[str, str, str]] = {
         _rowKey(row) for row in (segments["delta"][1].iter_rows(named=True) if "delta" in segments else [])
@@ -255,7 +272,7 @@ def searchUnified(
         # corp/stock 스코프는 RRF *전* lane 점수에 적용 — "회사 안에서 검색" 의미론.
         # 사후 필터는 전역 top-N 에 못 들면 0건이 되는 결함 (흔한 질의 + 회사 지정).
         mask = _scopeMask(meta, corpCode, stockCode, sourceKind, start=start, end=end)
-        constraintMask = semanticScopeMask(meta, constraintPlan)
+        constraintMask = constraintMasks.get(name)
         if constraintMask is not None:
             mask = constraintMask if mask is None else (mask & constraintMask)
         plain = _scoreBM25(idx, tokens)
