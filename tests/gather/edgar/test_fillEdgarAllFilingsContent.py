@@ -169,5 +169,149 @@ def test_main_survives_one_429_on_metadata_download(monkeypatch, tmp_path):
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", fakeDownload)
     monkeypatch.setattr(huggingface_hub, "HfApi", lambda token=None: api)
 
-    assert mod.main([]) == 0
+    assert mod.main(["--revisit-days", "0"]) == 0
     assert len(downloads) == 2
+
+
+# ─── 재방문과 하루치 마감 (2026-10-09 85 분 정지 · 2026-10-12 표본 11% error 행) ───
+
+
+def test_scan_slice_rotates_through_published_days():
+    """날마다 다음 구간을 보고, 한 바퀴를 돌면 처음으로 돌아온다."""
+    scanSlice = _module().scanSlice
+    done = [f"d{i}" for i in range(5)]
+    assert scanSlice(done, 2, ordinal=0) == ["d0", "d1"]
+    assert scanSlice(done, 2, ordinal=1) == ["d2", "d3"]
+    assert scanSlice(done, 2, ordinal=2) == ["d4", "d0"]
+    assert scanSlice(done, 9, ordinal=3) == done
+    assert scanSlice([], 2, ordinal=1) == []
+
+
+def test_plan_work_puts_revisit_after_forward():
+    """최신 미충전(피드 신선도) 다음에 재방문, 그다음 과거 backfill."""
+    planWork = _module().planWork
+    assert planWork(["f1", "f2", "b1"], ["r1", "f2"], forwardDays=2) == ["f1", "f2", "r1", "b1"]
+    assert planWork([], ["r1"], forwardDays=3) == ["r1"]
+
+
+def test_has_error_rows_reads_only_footer_minimum(tmp_path):
+    """상태값은 error < no_body < ok 라 footer 최솟값만 보면 error 행이 남은 날을 가른다."""
+    import polars as pl
+    import pyarrow.parquet as pq
+
+    hasErrorRows = _module().hasErrorRows
+    clean = tmp_path / "clean.parquet"
+    pl.DataFrame({"accessionNo": ["a", "b"], "fetch_status": ["ok", "no_body"]}).write_parquet(clean)
+    dirty = tmp_path / "dirty.parquet"
+    pl.DataFrame({"accessionNo": ["a", "b"], "fetch_status": ["ok", "error"]}).write_parquet(dirty)
+    assert hasErrorRows(pq.ParquetFile(clean).metadata) is False
+    assert hasErrorRows(pq.ParquetFile(dirty).metadata) is True
+
+
+def _metaFile(tmp_path, days: list[str]):
+    import polars as pl
+
+    path = tmp_path / "recent.parquet"
+    pl.DataFrame(
+        {
+            "accessionNo": [f"a{i}" for i in range(len(days))],
+            "stockCode": ["AAPL"] * len(days),
+            "filingDate": days,
+            "url": [f"https://sec.gov/{i}" for i in range(len(days))],
+        }
+    ).write_parquet(path)
+    return path
+
+
+def test_main_revisits_published_day_with_error_rows(monkeypatch, tmp_path):
+    """footer 에 error 가 남은 발행일은 HF 발행본을 받아 병합 base 로 두고 다시 채워 올린다."""
+    import huggingface_hub
+    import polars as pl
+
+    import dartlab.config as cfg
+
+    mod = _module()
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    metaPath = _metaFile(tmp_path, ["20260101"])
+    published = tmp_path / "published.parquet"
+    pl.DataFrame({"accessionNo": ["a0"], "fetch_status": ["error"]}).write_parquet(published)
+    downloads: list[str] = []
+
+    def fakeDownload(repo, filename, **kwargs):
+        downloads.append(filename)
+        return str(metaPath)
+
+    class _Fs:
+        def __init__(self, token=None):
+            pass
+
+        def open(self, path, mode):
+            return open(published, mode)
+
+    uploads: list[str] = []
+
+    class _Api(_FakeApi):
+        def upload_file(self, **kwargs):
+            uploads.append(kwargs["path_in_repo"])
+
+    filled: list[str] = []
+
+    def fakeFill(dayMeta, outPath, **kwargs):
+        filled.append(outPath.name)
+        return pl.DataFrame({"accessionNo": ["a0"], "fetch_status": ["ok"]})
+
+    api = _Api([_Entry("edgar/allFilingsContent/20260101.parquet")])
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fakeDownload)
+    monkeypatch.setattr(huggingface_hub, "HfFileSystem", _Fs)
+    monkeypatch.setattr(huggingface_hub, "HfApi", lambda token=None: api)
+    monkeypatch.setattr(mod, "fillContentDay", fakeFill)
+
+    assert mod.main([]) == 0
+    assert "edgar/allFilingsContent/20260101.parquet" in downloads
+    assert filled == ["20260101.parquet"]
+    assert uploads == ["edgar/allFilingsContent/20260101.parquet"]
+
+
+def test_main_exits_nonzero_after_consecutive_error_trip(monkeypatch, tmp_path):
+    """연속 오류로 멈춘 run 은 exit 1 로 끝나 감시가 새 러너로 재실행한다. 남은 날은 시작하지 않는다."""
+    import huggingface_hub
+    import polars as pl
+
+    import dartlab.config as cfg
+    from dartlab.gather.edgar.allFilingsContent import STOP_TRIP
+
+    mod = _module()
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    metaPath = _metaFile(tmp_path, ["20260101", "20260102"])
+
+    class _Api(_FakeApi):
+        def upload_file(self, **kwargs):
+            pass
+
+    filled: list[str] = []
+
+    def fakeFill(dayMeta, outPath, *, reasons, **kwargs):
+        filled.append(outPath.name)
+        reasons[STOP_TRIP] += 1
+        return pl.DataFrame({"accessionNo": ["a"], "fetch_status": ["error"]})
+
+    api = _Api(_hfError(404))
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", lambda *a, **k: str(metaPath))
+    monkeypatch.setattr(huggingface_hub, "HfApi", lambda token=None: api)
+    monkeypatch.setattr(mod, "fillContentDay", fakeFill)
+
+    assert mod.main(["--forward-days", "2"]) == 1
+    assert len(filled) == 1
+
+
+def test_hard_deadline_default_leaves_upload_margin_under_job_timeout():
+    """하루치 마감(기본 105 분) 뒤 마지막 업로드까지 job 상한(120 분) 안에 들어가야 취소가 없다."""
+    import re
+
+    workflow = (_SCRIPT.parents[2] / "workflows" / "edgarFilingsContentSync.yml").read_text(encoding="utf-8")
+    timeout = int(re.search(r"timeout-minutes:\s*(\d+)", workflow).group(1))
+    script = _SCRIPT.read_text(encoding="utf-8")
+    hard = float(re.search(r'"--hard-minutes",\s*type=float,\s*default=([\d.]+)', script).group(1))
+    assert hard + 10 <= timeout

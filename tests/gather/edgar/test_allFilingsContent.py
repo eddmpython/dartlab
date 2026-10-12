@@ -51,3 +51,63 @@ def test_error_when_403_5xx_or_exception():
     assert getFilingBody("http://x", client=_Client(_Resp(403)))[1] == "error"  # rate/forbidden
     assert getFilingBody("http://x", client=_Client(_Resp(500)))[1] == "error"  # 서버 오류
     assert getFilingBody("http://x", client=_Client(httpx.ConnectError("boom")))[1] == "error"  # 예외
+
+
+def test_error_reasons_are_counted():
+    """error 원인을 세어 로그로 남긴다. 2026-10-09 run 은 85 분 무엇에 막혔는지 가를 수 없었다."""
+    from collections import Counter
+
+    from dartlab.gather.edgar.allFilingsContent import getFilingBody
+
+    reasons: Counter = Counter()
+    getFilingBody("http://x", client=_Client(_Resp(429)), reasons=reasons)
+    getFilingBody("http://x", client=_Client(httpx.ReadTimeout("slow")), reasons=reasons)
+    assert reasons == Counter({"HTTP 429": 1, "ReadTimeout": 1})
+
+
+def _dayMeta(n: int):
+    import polars as pl
+
+    return pl.DataFrame(
+        {
+            "accessionNo": [f"a{i:03d}" for i in range(n)],
+            "stockCode": ["AAPL"] * n,
+            "filingDate": ["20260105"] * n,
+            "url": [f"http://x/{i}" for i in range(n)],
+        }
+    )
+
+
+def test_fill_content_day_stops_at_deadline_and_marks_rest_error(monkeypatch, tmp_path):
+    """마감이 지나면 fetch 를 멈추고 남은 행을 error(재시도 대상)로 남긴다. 재방문이 footer 로 찾는다."""
+    import time
+    from collections import Counter
+
+    from dartlab.gather.edgar import allFilingsContent as mod
+
+    monkeypatch.setattr(mod, "getFilingBody", lambda *a, **k: pytest.fail("마감 뒤 fetch 했다"))
+    reasons: Counter = Counter()
+    out = mod.fillContentDay(_dayMeta(3), tmp_path / "d.parquet", deadline=time.monotonic() - 1, reasons=reasons)
+    assert out["fetch_status"].to_list() == ["error"] * 3
+    assert reasons[mod.STOP_DEADLINE] == 3
+
+
+def test_fill_content_day_trips_after_consecutive_errors(monkeypatch, tmp_path):
+    """error 가 연달아 tripAfter 건이면 멈추고, 남은 행은 error 로 남긴다(SEC 차단 추정)."""
+    from collections import Counter
+
+    from dartlab.gather.edgar import allFilingsContent as mod
+
+    calls: list[str] = []
+
+    def fakeBody(url, *, client, reasons=None, **_):
+        calls.append(url)
+        return None, "error"
+
+    monkeypatch.setattr(mod, "getFilingBody", fakeBody)
+    monkeypatch.setattr(mod, "_PACE_SECONDS", 0)
+    reasons: Counter = Counter()
+    out = mod.fillContentDay(_dayMeta(10), tmp_path / "d.parquet", tripAfter=4, reasons=reasons)
+    assert len(calls) == 4
+    assert out.height == 10 and set(out["fetch_status"].to_list()) == {"error"}
+    assert reasons[mod.STOP_TRIP] == 6
