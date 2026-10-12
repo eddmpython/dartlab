@@ -3,13 +3,14 @@
 ``_triage`` 가 연속 2회+ 실패를 persistent(조치 필요), 첫 실패를 transient(자동 재실행)로
 구분 판정하는지 + ``_classifyFailure`` 시그니처 분류 + ``_issueTitle`` 제목 + 모든 scheduled
 파이프라인이 MONITORED_WORKFLOWS 에 등록됐는지(미등록=조용한 실패 가드) 검증한다.
-정책: 단발이든 연속이든 **모든 실패를 알린다**(단발은 auto-rerun 병행, 가시성 우선).
+정책(2026-10-12): 단발 실패는 자동 재실행만 하고 Issue 를 열지 않는다. Issue 는 연속 실패, 데이터 정지,
+7 일 3 회 이상 재실행 회복, 재실행 불가 단발에만 연다.
 """
 
 from __future__ import annotations
 
 import importlib.util
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -49,7 +50,7 @@ def test_triage_ok():
 
 
 def test_triage_transient_first_failure():
-    """최신 실패 + 직전 성공 = transient (자동 재실행 + 알림 — 단발도 surface)."""
+    """최신 실패 + 직전 성공 = transient (자동 재실행, 회복되면 Issue 없음)."""
     mod = _loadMonitor()
     runs = [
         {"conclusion": "failure", "status": "completed", "databaseId": 2, "url": "u2"},
@@ -256,29 +257,30 @@ def test_update_issue_refreshes_title_and_body(monkeypatch):
     assert calls == [["issue", "edit", "82", "--title", "새 원인", "--body", "새 본문"]]
 
 
-# ─── _issueTitle (연속 vs 단발 표기) ──────────────────────────────────
+# ─── _issueTitle (실패 vs 반복 재실행 표기) ──────────────────────────
 
 
 def test_issue_title_persistent():
-    """연속 실패 있으면 'Pipeline failure: …' (조치 필요 톤)."""
     mod = _loadMonitor()
-    title = mod._issueTitle([{"name": "Original SSOT Sync"}], [])
+    title = mod._issueTitle([{"name": "Original SSOT Sync", "state": "persistent"}])
     assert title == "Pipeline failure: Original SSOT Sync"
 
 
-def test_issue_title_transient_only():
-    """단발 실패뿐이면 '(자동 재실행 중)' 표기 — 알림은 하되 심각도 구분."""
+def test_issue_title_escalated_only():
+    """반복 재실행만 있으면 실패가 아니라 반복 재실행으로 적는다(지금은 초록인 워크플로)."""
     mod = _loadMonitor()
-    title = mod._issueTitle([], [{"name": "Macro Data Sync (Bulk)"}])
-    assert title.startswith("Pipeline failure (자동 재실행 중):")
-    assert "Macro Data Sync (Bulk)" in title
+    rescues = [{"conclusion": "success", "attempt": 2}] * 3
+    title = mod._issueTitle([{"name": "Gov Index Sync (Bulk)", "state": "ok", "rescues": rescues}])
+    assert title == "Pipeline 반복 재실행: Gov Index Sync (Bulk)"
+    mixed = mod._issueTitle([{"name": "A", "state": "ok", "rescues": rescues}, {"name": "B", "state": "stale"}])
+    assert mixed == "Pipeline failure: A, B"
 
 
 def test_issue_title_truncates_when_many():
     """워크플로우가 많아 100자 초과면 개수 요약으로 축약."""
     mod = _loadMonitor()
-    many = [{"name": f"Very Long Workflow Name Number {i}"} for i in range(10)]
-    title = mod._issueTitle(many, [])
+    many = [{"name": f"Very Long Workflow Name Number {i}", "state": "persistent"} for i in range(10)]
+    title = mod._issueTitle(many)
     assert len(title) <= 100
     assert "10개 워크플로우" in title
 
@@ -643,3 +645,233 @@ def test_queue_eviction_counts_jobs_that_started_steps(monkeypatch):
     assert mod._isQueueEvicted(123, "cancelled") is True
     jq = calls[0][calls[0].index("--jq") + 1]
     assert "steps" in jq and "length" in jq
+
+
+# ─── Issue 정책: 단발은 조용히 재실행, 조치가 필요할 때만 Issue (2026-10-12) ──────────
+
+
+def _iso(hoursAgo: float, now: datetime | None = None) -> str:
+    base = now or datetime.now(timezone.utc)
+    return (base - timedelta(hours=hoursAgo)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def test_rerun_rescues_counts_only_rerun_successes_inside_window():
+    mod = _loadMonitor()
+    now = datetime(2026, 9, 25, 12, tzinfo=timezone.utc)
+    runs = [
+        {"conclusion": "success", "attempt": 2, "createdAt": _iso(3, now)},
+        {"conclusion": "success", "attempt": 1, "createdAt": _iso(27, now)},
+        {"conclusion": "failure", "attempt": 2, "createdAt": _iso(51, now)},
+        {"conclusion": "success", "attempt": 3, "createdAt": _iso(75, now)},
+        {"conclusion": "success", "attempt": 2, "createdAt": _iso(169, now)},
+    ]
+    assert [run["attempt"] for run in mod._rerunRescues(runs, now)] == [2, 3]
+
+
+@pytest.mark.parametrize(
+    "entry,expected",
+    [
+        ({"state": "transient", "reran": True}, None),
+        ({"state": "transient", "evicted": True}, None),
+        ({"state": "transient", "reran": False}, "재실행 불가"),
+        ({"state": "transient", "reran": True, "dataStalled": True}, "데이터 정지"),
+        ({"state": "persistent"}, "연속 실패"),
+        ({"state": "stale", "triggered": True}, "데이터 정지"),
+        ({"state": "ok", "rescues": [{}] * 3}, "반복 재실행"),
+        ({"state": "running", "rescues": [{}] * 2}, None),
+        ({"state": "ok"}, None),
+        ({"state": "unknown"}, None),
+    ],
+)
+def test_alert_reason_opens_issue_only_when_action_needed(entry, expected):
+    mod = _loadMonitor()
+    assert mod._alertReason(entry) == expected
+
+
+@pytest.mark.parametrize(
+    "alerting,retrying,openIssue,mayClose,expected",
+    [
+        (True, False, None, False, "create"),
+        (True, True, 9, False, "update"),
+        (False, True, None, False, "none"),
+        (False, True, 9, False, "keep"),
+        (False, False, 9, False, "keep"),
+        (False, False, 9, True, "close"),
+        (False, False, None, True, "none"),
+    ],
+)
+def test_issue_action(alerting, retrying, openIssue, mayClose, expected):
+    mod = _loadMonitor()
+    got = mod._issueAction(alerting=alerting, retrying=retrying, openIssue=openIssue, mayClose=mayClose)
+    assert got == expected
+
+
+def test_rerun_in_progress_keeps_data_stall_signal():
+    """단발 재실행 중에도 데이터가 임계를 넘게 멈췄으면 Issue 대상으로 남는다."""
+    mod = _loadMonitor()
+    now = datetime(2026, 10, 12, 12, tzinfo=timezone.utc)
+    runs = [
+        {"conclusion": None, "status": "in_progress", "databaseId": 2, "attempt": 2, "createdAt": _iso(1, now)},
+        {"conclusion": "success", "status": "completed", "databaseId": 1, "attempt": 1, "createdAt": _iso(50, now)},
+    ]
+    got = mod._triage(runs, maxGapHours=30, now=now)
+    assert got["state"] == "transient"
+    assert mod._alertReason({**got, "reran": True}) == "데이터 정지"
+
+
+def _patchMain(monkeypatch, mod, runs, *, openIssue=None, rerunOk=True):
+    monkeypatch.setattr(mod, "MONITORED_WORKFLOWS", ["Data Sync"])
+    monkeypatch.setattr(mod, "_recentRuns", lambda name: runs)
+    monkeypatch.setattr(mod, "_classifyFailure", lambda *a, **k: mod.EXTERNAL_CONNECT)
+    monkeypatch.setattr(mod, "_auditFreshness", lambda: None)
+    monkeypatch.setattr(mod, "_ensureLabel", lambda: None)
+    monkeypatch.setattr(mod, "_findOpenIssue", lambda: openIssue)
+    reruns: list[int] = []
+    monkeypatch.setattr(mod, "_rerunFailed", lambda runId: reruns.append(runId) or rerunOk)
+    monkeypatch.setattr(mod, "_triggerWorkflow", lambda name: True)
+    calls: list[list[str]] = []
+    monkeypatch.setattr(mod, "_gh", lambda args, **_kwargs: calls.append(args) or "")
+    return calls, reruns
+
+
+def test_main_reruns_single_failure_without_opening_issue(monkeypatch):
+    """재실행 한 번에 회복되던 외부 연결 불통이 Issue 26 건 중 16 건이었다. 단발은 재실행만 건다."""
+    mod = _loadMonitor()
+    runs = [
+        {
+            "conclusion": "failure",
+            "status": "completed",
+            "databaseId": 2,
+            "url": "u2",
+            "attempt": 1,
+            "createdAt": _iso(1),
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 1,
+            "url": "u1",
+            "attempt": 1,
+            "createdAt": _iso(13),
+        },
+    ]
+    calls, reruns = _patchMain(monkeypatch, mod, runs)
+    mod.main()
+    assert reruns == [2]
+    assert not any(args[:2] in (["issue", "create"], ["issue", "edit"]) for args in calls)
+
+
+def test_main_opens_issue_when_rerun_cannot_start(monkeypatch):
+    mod = _loadMonitor()
+    runs = [
+        {
+            "conclusion": "failure",
+            "status": "completed",
+            "databaseId": 2,
+            "url": "u2",
+            "attempt": 1,
+            "createdAt": _iso(1),
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 1,
+            "url": "u1",
+            "attempt": 1,
+            "createdAt": _iso(13),
+        },
+    ]
+    calls, _ = _patchMain(monkeypatch, mod, runs, rerunOk=False)
+    mod.main()
+    created = [args for args in calls if args[:2] == ["issue", "create"]]
+    assert created and created[0][created[0].index("--title") + 1] == "Pipeline failure: Data Sync"
+
+
+def test_main_opens_issue_when_rerun_also_fails(monkeypatch):
+    mod = _loadMonitor()
+    runs = [
+        {
+            "conclusion": "failure",
+            "status": "completed",
+            "databaseId": 2,
+            "url": "u2",
+            "attempt": 2,
+            "createdAt": _iso(1),
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 1,
+            "url": "u1",
+            "attempt": 1,
+            "createdAt": _iso(13),
+        },
+    ]
+    calls, reruns = _patchMain(monkeypatch, mod, runs)
+    mod.main()
+    assert reruns == []
+    assert any(args[:2] == ["issue", "create"] for args in calls)
+
+
+def test_main_escalates_repeated_rescues_even_when_latest_is_green(monkeypatch):
+    """EDGAR Data Sync (Bulk) 09-22~25 처럼 매일 재실행으로만 살아나면 단발이 아니다."""
+    mod = _loadMonitor()
+    runs = [
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 4,
+            "url": "u4",
+            "attempt": 2,
+            "createdAt": _iso(2),
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 3,
+            "url": "u3",
+            "attempt": 2,
+            "createdAt": _iso(14),
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 2,
+            "url": "u2",
+            "attempt": 2,
+            "createdAt": _iso(26),
+        },
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 1,
+            "url": "u1",
+            "attempt": 1,
+            "createdAt": _iso(38),
+        },
+    ]
+    calls, reruns = _patchMain(monkeypatch, mod, runs)
+    mod.main()
+    assert reruns == []
+    created = [args for args in calls if args[:2] == ["issue", "create"]]
+    assert created
+    assert created[0][created[0].index("--title") + 1] == "Pipeline 반복 재실행: Data Sync"
+    body = created[0][created[0].index("--body") + 1]
+    assert "반복 재실행" in body and "(u4)" in body
+
+
+def test_main_closes_issue_when_nothing_needs_action(monkeypatch):
+    mod = _loadMonitor()
+    runs = [
+        {
+            "conclusion": "success",
+            "status": "completed",
+            "databaseId": 1,
+            "url": "u1",
+            "attempt": 1,
+            "createdAt": _iso(2),
+        },
+    ]
+    calls, _ = _patchMain(monkeypatch, mod, runs, openIssue=187)
+    mod.main()
+    assert any(args[:3] == ["issue", "close", "187"] for args in calls)

@@ -98,6 +98,7 @@ lastUpdated: '2026-10-12'
 
 `monitorPipeline.py`(`operation.observability`)가 scheduled 파이프라인 전체의 실패와 cron drop 을 감시해 pipeline-failure Issue 로 알린다. Data Audit은 매일 05시 KST 정기 감사에 더해 감시 대상 workflow의 `completed` 이벤트마다 전체 상태를 다시 판정한다(하루 수십 회). 판정 규칙:
 
+- **Issue 대상**: 단발 실패(직전 성공 뒤 첫 실패)는 자동 재실행만 하고 Issue 를 열지 않는다. Issue 는 연속 실패(재실행 실패 포함), 데이터 정지(stale 임계 초과·신선도 감사 breach), 최근 7일 3회 이상 재실행으로만 회복, 재실행을 걸 수 없는 단발(startup_failure 등)에만 연다. 반복 재실행 Issue 는 7일 창에서 회복 횟수가 3회 아래로 내려가면 저절로 닫힌다.
 - **skipped 제외**: 상위 실패로 조건부 job 이 건너뛴 run 은 건강 신호가 아니다. 판정에서 빼고, skipped 로 끝난 완료는 감사를 깨우지 않는다.
 - **진행 중 유지**: 감사가 건 재실행이나 cron drop 트리거 run 이 진행 중이면 직전 실패·누락 판정을 유지하고 다시 걸지 않는다. Issue 는 완료된 성공을 확인한 뒤에만 닫힌다. 진행 중을 정상으로 읽고 닫았다가 재실행이 실패하면 새 번호로 다시 여는 반복을 막는다.
 - **원인 표시**: 외부 연결 불통(DART·공공 API), OpenDART 오류 응답, runner 강제 종료(step 이 취소된 채 job 실패), 러너 미확보를 job timeout·코드 오류와 구분해 적는다. 분류는 표시용이고 재실행 판단은 run 모양(startup_failure, 큐 축출, 재실행 여부, 연속 실패)으로 한다.
@@ -136,6 +137,6 @@ lastUpdated: '2026-10-12'
 
 ## 검증
 
-- 러너: `.github/scripts/notify/test_watch.py`(16, screenAlert 멤버십 포함) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(60, Notify Watch staleness · concurrency 큐 축출 · 데이터 정지 판정 · skipped 제외 · 재실행 진행 중 유지 · 원인 분류 단어 경계).
+- 러너: `.github/scripts/notify/test_watch.py`(16, screenAlert 멤버십 포함) · 허브 vitest `infra/workers/pushHub`(24, /active 재크로싱 포함) · 베이크 `tests/sync/test_buildIpoReports.py`(4, 누적·dedup) · scan `tests/scan/test_ipo.py`(5) · 모니터 `tests/pipeline/test_monitor_classify.py`(84, Notify Watch staleness · concurrency 큐 축출 · 데이터 정지 판정 · skipped 제외 · 재실행 진행 중 유지 · 원인 분류 단어 경계 · Issue 대상 판정과 반복 재실행).
 - 실측: 실 DART 발행사 build 로 reports + history 2파일 산출 확인. 첫 빌드는 baseline 없어 history==live.
 - 감사: 5차원 적대검증(wf_47c0b9eb 확증 10) + 파이프라인 적합성(wf_2af24a25). 상세 원장 05 §감사.

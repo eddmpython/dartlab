@@ -68,7 +68,7 @@ repo 의 `scripts/` (build/dev/audit 도구) 와 *별개* — `.github/scripts/`
 
 | 스크립트 | 역할 | 호출 workflow |
 |---|---|---|
-| [ops/monitorPipeline.py](ops/monitorPipeline.py) | 파이프라인 health check (실패 잡 issue 자동 생성) | `dataAudit.yml` |
+| [ops/monitorPipeline.py](ops/monitorPipeline.py) | 파이프라인 health check (단발 실패 자동 재실행, 조치 필요 실패만 issue) | `dataAudit.yml` |
 | [ops/planRealdata.py](ops/planRealdata.py) | PR diff 기반 realData 테스트 plan JSON 생성 | `ci-full.yml` |
 
 ## sub-dir 스크립트의 `_hfRetry` import 규약
