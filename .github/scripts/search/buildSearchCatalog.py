@@ -17,7 +17,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input", action="append", required=True, help="Parquet path or glob. Repeatable.")
     parser.add_argument("--out-dir", required=True, help="Output directory for manifest/catalog artifacts.")
     parser.add_argument("--producer", default="buildSearchCatalog")
-    parser.add_argument("--source-version", default="v1")
+    parser.add_argument(
+        "--source-version", default="", help="Adapter version. Defaults to the source's current version."
+    )
     parser.add_argument("--schema-version", default="2026-06")
     parser.add_argument("--snapshot-scope", default="full", choices=("full", "partial"))
     parser.add_argument("--min-files", type=int, default=1, help="minimum source parquet files for publishable catalog")
@@ -53,8 +55,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hf-prefix", default="dart/searchCatalog", help="HF path prefix for uploaded artifacts.")
     args = parser.parse_args(argv)
 
-    from dartlab.providers.dart.search.sourceCatalog import discoverSourceFiles
+    from dartlab.providers.dart.search.sourceCatalog import (
+        PANEL_CATALOG_SOURCES,
+        PANEL_SOURCE_VERSION,
+        discoverSourceFiles,
+    )
 
+    if not args.source_version:
+        args.source_version = PANEL_SOURCE_VERSION if args.source in PANEL_CATALOG_SOURCES else "v1"
     files = discoverSourceFiles(args.input)
     revision = None
     if args.reconcile_remote_source:
@@ -88,6 +96,7 @@ def main(argv: list[str] | None = None) -> int:
                 revision=revision,
                 workDir=Path(workDir),
                 token=os.environ.get("HF_TOKEN") or None,
+                sourceVersion=args.source_version,
             )
             result = None
             for files in batches:

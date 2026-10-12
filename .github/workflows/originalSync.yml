@@ -353,6 +353,7 @@ jobs:
             --producer originalSync.edgar \
             --compare-remote-manifest \
             --merge-previous-catalog \
+            --reconcile-remote-source \
             --min-files 2000 \
             --min-rows 50000 \
             --min-catalog-rows 50000 \

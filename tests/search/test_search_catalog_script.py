@@ -27,7 +27,7 @@ def test_remoteReconciliationMergesAllBatchesBeforePublish(tmp_path, monkeypatch
     import huggingface_hub
 
     from dartlab.pipeline import searchCatalog
-    from dartlab.providers.dart.search.sourceCatalog import writeSourceCatalogArtifacts
+    from dartlab.providers.dart.search.sourceCatalog import PANEL_SOURCE_VERSION, writeSourceCatalogArtifacts
 
     module = _loadBuildSearchCatalogScript()
     first = tmp_path / "005930.parquet"
@@ -48,6 +48,7 @@ def test_remoteReconciliationMergesAllBatchesBeforePublish(tmp_path, monkeypatch
 
     def batches(*args, **kwargs):
         assert kwargs["revision"] == "pinned"
+        assert kwargs["sourceVersion"] == PANEL_SOURCE_VERSION
         yield [first]
         yield [second]
 
@@ -74,6 +75,7 @@ def test_remoteReconciliationMergesAllBatchesBeforePublish(tmp_path, monkeypatch
     assert set(published[0]["rceptNo"]) == {"005930new", "000660new"}
     current = json.loads((tmp_path / "out" / "dartPanel.source_manifest.json").read_text(encoding="utf-8"))
     assert current["sourceRevision"] == "pinned"
+    assert current["sourceVersion"] == PANEL_SOURCE_VERSION
     assert len(current["files"]) == 2
 
 

@@ -54,6 +54,33 @@ def test_reconcileDownloadsOnlyUnindexedBytesAtPinnedRevision(monkeypatch, tmp_p
     assert all(not path.exists() for path in paths)
 
 
+@pytest.mark.parametrize(("previousVersion", "expected"), [("v1", {"005930.parquet"}), ("v2", set())])
+def test_reconcileRebuildsEveryFileWhenAdapterVersionChanges(monkeypatch, tmp_path, previousVersion, expected):
+    import huggingface_hub
+
+    from dartlab.pipeline import searchCatalog as mod
+
+    data = b"unchanged bytes"
+    entry = SimpleNamespace(
+        path="dart/panel/005930.parquet", size=len(data), lfs=SimpleNamespace(sha256=hashlib.sha256(data).hexdigest())
+    )
+    monkeypatch.setattr(
+        huggingface_hub, "HfApi", lambda **kwargs: SimpleNamespace(list_repo_tree=lambda *args, **kwargs: [entry])
+    )
+
+    def download(url, path, token):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return len(data)
+
+    monkeypatch.setattr(mod, "_download", download)
+    manifest = {"sourceVersion": previousVersion, "files": [{"path": entry.path, "sha256": entry.lfs.sha256}]}
+    batches = mod.reconcileSourceFiles(
+        "dartPanel", manifest, repo="repo", revision="pinned", workDir=tmp_path, sourceVersion="v2"
+    )
+    assert {path.name for batch in batches for path in batch} == expected
+
+
 def test_reconcileRejectsCorruptDownload(monkeypatch, tmp_path):
     import huggingface_hub
 

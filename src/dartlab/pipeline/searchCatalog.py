@@ -21,6 +21,7 @@ def reconcileSourceFiles(
     revision: str,
     workDir: Path,
     token: str | None = None,
+    sourceVersion: str | None = None,
 ) -> Iterator[list[Path]]:
     """Download source files whose published bytes have not reached the catalog.
 
@@ -31,6 +32,8 @@ def reconcileSourceFiles(
         revision: Immutable revision shared by manifest and source reads.
         workDir: Caller-owned temporary directory for downloaded files.
         token: Optional HF authentication token.
+        sourceVersion: Current catalog adapter version. When it differs from the
+            previous manifest, every published file is cataloged again.
 
     Returns:
         Batches of at most 100 changed paths, removed after the caller consumes each
@@ -55,15 +58,19 @@ def reconcileSourceFiles(
     if not remote:
         raise RuntimeError(f"published source inventory is empty: {source}")
     previous = {Path(row["path"]).name: row for row in previousManifest.get("files", [])}
+    previousVersion = previousManifest.get("sourceVersion")
+    rebuild = sourceVersion is not None and previousVersion != sourceVersion
     changed = []
     for entry in remote:
         digest = entry.lfs.sha256 if entry.lfs else ""
         if not digest:
             raise ValueError(f"source SHA256 unavailable: {entry.path}")
-        if previous.get(Path(entry.path).name, {}).get("sha256") != digest:
+        if rebuild or previous.get(Path(entry.path).name, {}).get("sha256") != digest:
             changed.append(entry)
+    reason = f", sourceVersion={previousVersion}->{sourceVersion}" if rebuild else ""
     print(
-        f"[searchCatalog] {source}: published={len(remote)}, unindexed={len(changed)}, revision={revision}", flush=True
+        f"[searchCatalog] {source}: published={len(remote)}, unindexed={len(changed)}, revision={revision}{reason}",
+        flush=True,
     )
 
     def download(entry: Any) -> Path:
