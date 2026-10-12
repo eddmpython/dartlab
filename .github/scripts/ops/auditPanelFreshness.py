@@ -24,7 +24,6 @@ from __future__ import annotations
 import math
 import os
 import queue
-import re
 import sys
 import threading
 import time
@@ -40,9 +39,6 @@ LOOKUP_WORKERS = 12  # footer 만 읽는 조회(종목당 1~2 초, 요청 1~2 �
 AUDIT_BUDGET_SECONDS = 900.0  # HF rceptNo 조회 예산. Data Audit job 상한(30분) 안에서 gh 호출 몫을 남긴다.
 MIN_COVERAGE_FOR_VERDICT = 0.5  # 조회에 성공한 종목 비율이 이 미만이면 판정하지 않는다(예산 초과·429 폭주 모두).
 LOOKUP_RETRIES = 3  # 종목당 조회 시도 수. HF 429 같은 일시 실패를 짧은 백오프로 흡수한다(2026-08-22 실측 2,703 건 429).
-# 첨부만 바뀐 정정은 DART document API 가 status 014(파일 없음)를 돌려줘 본문 zip 이 없다(2026-08-22 실측:
-# 000440 20260730000361·20260730000551). panel 에 들어올 수 없으므로 기대 집합에서 뺀다. 두면 영구 "누락" 이 된다.
-_ATTACHMENT_ONLY_RE = re.compile(r"^\[(?:첨부정정|첨부추가)\]")
 
 
 def judge(expected: int, missing: int) -> bool:
@@ -164,7 +160,9 @@ def auditPanelFreshness(
     from dartlab.core.dataConfig import DATA_RELEASES, repoFor
     from dartlab.gather.dart.client import DartClient
     from dartlab.gather.dart.disclosure import listFilings
-    from dartlab.pipeline.stages.panelRceptReconcile import _PERIODIC_RE, _panelRceptsFromHf
+
+    # 첨부만 바꾼 정정(본문 zip 없음)은 reconcile 과 같은 규칙으로 기대 집합에서 뺀다.
+    from dartlab.pipeline.stages.panelRceptReconcile import _ATTACHMENT_ONLY_RE, _PERIODIC_RE, _panelRceptsFromHf
 
     if budgetSeconds is None:
         budgetSeconds = float(os.environ.get("DARTLAB_FRESHNESS_BUDGET_SECONDS") or AUDIT_BUDGET_SECONDS)
@@ -180,6 +178,7 @@ def auditPanelFreshness(
 
     periodic = filings.filter(
         pl.col("report_nm").str.contains(_PERIODIC_RE)
+        & ~pl.col("report_nm").str.contains(_ATTACHMENT_ONLY_RE)
         & pl.col("stock_code").is_not_null()
         & (pl.col("stock_code").str.strip_chars() != "")
         & (pl.col("rcept_dt").cast(pl.Utf8) <= cutoff)
@@ -189,7 +188,7 @@ def auditPanelFreshness(
         ["stock_code", "rcept_no", "rcept_dt", "report_nm"]
     ).iter_rows():
         code = (stockCode or "").strip()
-        if not code or not rceptNo or _ATTACHMENT_ONLY_RE.match(str(reportNm)):
+        if not code or not rceptNo:
             continue
         expectedByCode.setdefault(code, {})[str(rceptNo)] = (str(rceptDt), str(reportNm))
 

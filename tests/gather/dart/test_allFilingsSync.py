@@ -241,6 +241,8 @@ def test_push_all_filings_failure_reports_partial_progress(monkeypatch, tmp_path
     assert excInfo.value.uploadedFiles == 0
     assert excInfo.value.totalFiles == 1
     assert isinstance(excInfo.value.__cause__, OSError)
+    # 호출측 로그는 메시지만 찍으므로 원인이 메시지에 있어야 한다(2026-09-05, 09-16 원인 미기록).
+    assert "OSError: upload disconnected" in str(excInfo.value)
 
 
 def test_pull_dates_missing_artifact_is_download_error(monkeypatch, tmp_path) -> None:

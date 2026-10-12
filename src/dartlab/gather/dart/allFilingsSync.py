@@ -136,9 +136,11 @@ def pushAllFilings(periods: list[str] | None = None, *, token: str | None = None
                 "offline/cache 상태에서 allFilings HF 업로드를 사용할 수 없습니다",
                 period=None,
             ) from exc
-        except Exception as exc:  # noqa: BLE001 — 원인을 typed boundary error로 보존
+        except Exception as exc:  # noqa: BLE001 (원인을 typed boundary error로 보존)
+            # 원인을 메시지에도 싣는다. 호출측 로그는 이 메시지만 찍어 2026-09-05, 09-16 실패의 원인이 남지 않았다.
             raise AllFilingsHfUploadError(
-                f"allFilings HF 업로드 배치가 실패했습니다: batch={n}/{total}, files={len(batch)}",
+                f"allFilings HF 업로드 배치가 실패했습니다: batch={n}/{total}, files={len(batch)}, "
+                f"원인 {type(exc).__name__}: {str(exc)[:300]}",
                 uploadedFiles=ok,
                 totalFiles=len(files),
             ) from exc

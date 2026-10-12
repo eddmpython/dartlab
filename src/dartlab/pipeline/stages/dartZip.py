@@ -19,6 +19,7 @@ from __future__ import annotations
 import os
 import tarfile
 import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
@@ -315,6 +316,33 @@ def _bundleAndUpload(codes: list[str], *, token: str | None) -> int:
     return uploaded
 
 
+def _deadlineAt(envName: str, defaultMin: float) -> float:
+    """지금부터 env(분)만큼 뒤의 마감 시각(``time.monotonic`` 기준). 값이 없거나 숫자가 아니면 기본값.
+
+    분기 마감 주에는 변경 종목이 평시의 30 배 가까이 뛰어(2026-08-19 2448 종목) 한 run 이 job 상한(240분)에
+    잘렸다. stage 가 상한 전에 스스로 멈추고 checkpoint 를 올리게 하는 기준이다(EDGAR_REBUILD_DEADLINE_MIN 동형).
+
+    Args:
+        envName: 분 단위 마감을 덮어쓰는 환경변수 이름.
+        defaultMin: 환경변수가 없을 때의 분.
+
+    Returns:
+        마감 시각(monotonic 초).
+
+    Raises:
+        없음.
+
+    Example:
+        >>> _deadlineAt("DART_ZIP_DEADLINE_MIN_UNSET", 0) <= time.monotonic()
+        True
+    """
+    try:
+        minutes = float(os.environ.get(envName) or defaultMin)
+    except ValueError:
+        minutes = defaultMin
+    return time.monotonic() + minutes * 60
+
+
 def _buildPanelIncremental(
     changed: list[str],
     newZipsByCode: dict[str, list[Path]],
@@ -322,6 +350,7 @@ def _buildPanelIncremental(
     *,
     token: str | None,
     uploadEvery: int | None = None,
+    deadline: float | None = None,
 ) -> list[str]:
     """within-company 증분 panel 빌드. 신규 zip만 파싱해 기존 parquet 에 period upsert(merge=True).
 
@@ -342,6 +371,9 @@ def _buildPanelIncremental(
         uploadEvery: None 이면 업로드하지 않는다(호출부 책임). 양수면 merge 가 끝난 종목이 이 수에 이를
             때마다, 그리고 끝에서 남은 분을 panel 카테고리로 HF 에 올린다(checkpoint). 긴 run 이 job
             timeout 에 잘려도 그때까지의 merge 는 HF 에 남고, 다음 run 은 HF 차집합만 다시 본다.
+        deadline: ``time.monotonic`` 기준 마감. 지나면 새 종목 빌드를 시작하지 않고, 진행 중인 빌드와 남은
+            checkpoint 업로드만 마친다. 남긴 종목은 ``res.report.failures`` 에 적고 reconcile 이 HF 차집합으로
+            이어 받는다. None 이면 마감 없음.
 
     Returns:
         실제 빌드(merge)된 종목코드 list(정렬). ``uploadEvery`` 가 있으면 업로드까지 시도한 집합.
@@ -410,7 +442,9 @@ def _buildPanelIncremental(
         running: set[Future[tuple[str, dict[str, int] | None, Exception | None]]] = set()
 
         def submitNext() -> None:
-            """다음 종목 하나만 executor 에 넣는다(입력 소진이면 아무것도 안 한다)."""
+            """다음 종목 하나만 executor 에 넣는다(입력 소진이나 마감이면 아무것도 안 한다)."""
+            if deadline is not None and time.monotonic() >= deadline:
+                return
             code = next(queue, None)
             if code is not None:
                 running.add(executor.submit(buildOne, code))
@@ -431,8 +465,13 @@ def _buildPanelIncremental(
                 flushUpload(final=False)
             submitNext()
     flushUpload(final=True)
+    left = sum(1 for _ in queue)
+    if left:
+        # 실패가 아니다. 남은 종목의 신규 rcept 는 HF panel 에 없으므로 reconcile 이 누락으로 잡아 이어 받는다.
+        res.report.failures.append(f"dartZip panel 증분: 시간 예산 소진, {left}종목 남김(reconcile 이 이어 받음)")
     print(
-        f"[pipeline] dartZip panel 증분: {len(built)}/{len(targets)}종목 merge(신규 분기만) · 실패 {failed}",
+        f"[pipeline] dartZip panel 증분: {len(built)}/{len(targets)}종목 merge(신규 분기만) · 실패 {failed}"
+        + (f" · 시간 예산 소진으로 {left}종목 남김" if left else ""),
         flush=True,
     )
     return sorted(built)
@@ -469,6 +508,8 @@ def runDartZip(
     from dartlab.gather.original.dart import archiveDartOriginals
     from dartlab.providers.dart.panel.build import buildPanelAll, panelXbrlRefPath
 
+    # job 상한 240분에서 준비 단계와 마지막 checkpoint 업로드 몫을 뺀 값.
+    deadline = _deadlineAt("DART_ZIP_DEADLINE_MIN", 200)
     days = int(os.environ.get("SYNC_LOOKBACK_DAYS") or "7")
     today = date.today()
     start = (today - timedelta(days=days - 1)).strftime("%Y%m%d")
@@ -488,7 +529,19 @@ def runDartZip(
         changed = list(stats.get("changedCodes") or [])
         res.changedFiles = changed
         res.report.ok = 1
-        print(f"[pipeline] dartZip archive {start}~{end}: 변경 {len(changed)}종목", flush=True)
+        fetched, noBody, errors = (int(stats.get(key) or 0) for key in ("ok", "noBody", "error"))
+        print(
+            f"[pipeline] dartZip archive {start}~{end}: 변경 {len(changed)}종목 · "
+            f"zip {fetched} · 본문부재 {noBody} · 오류 {errors}",
+            flush=True,
+        )
+        # reconcile 과 같은 규칙. 재시도 대상 오류가 있는데 한 건도 못 받았으면 DART 경로가 막힌 것이다. 예전엔 오류를
+        # 세지 않아 OpenDART 점검 중에도 "변경 0종목" 성공으로 끝났다(2026-10-09 37903318136).
+        if errors and fetched == 0:
+            res.report.fail = 1
+            res.report.failures.append(
+                f"dartZip archive: zip fetch 0/{fetched + noBody + errors} · 재시도 대상 {errors} (다음 run 재시도)"
+            )
     except Exception as exc:  # noqa: BLE001 — archive 실패 격리
         res.report.err = 1
         res.report.failures.append(f"dartZip archive: {type(exc).__name__}: {exc}")
@@ -561,7 +614,12 @@ def runDartZip(
                 res.report.failures.append(f"dartZip panel upload: {type(exc).__name__}: {exc}")
     else:
         panelBuilt = _buildPanelIncremental(
-            changed, newZipsByCode, res, token=token, uploadEvery=_PANEL_UPLOAD_EVERY if upload else None
+            changed,
+            newZipsByCode,
+            res,
+            token=token,
+            uploadEvery=_PANEL_UPLOAD_EVERY if upload else None,
+            deadline=deadline,
         )
 
     res.changedFiles = panelBuilt

@@ -55,8 +55,12 @@ def _pruneHistoryZips(docsBase: Path, codes: list[str], *, keep: dict[str, list[
     return removed
 
 
-# 정기보고서명 매칭(정정 prefix 허용) — syncRecent 와 동일 필터(panel 이 커버하는 보고서 한정).
+# 정기보고서명 매칭(정정 prefix 허용). syncRecent 와 동일 필터(panel 이 커버하는 보고서 한정).
 _PERIODIC_RE = r"^(?:\[(?:기재정정|첨부정정|첨부추가)\]\s*)*(사업보고서|반기보고서|분기보고서)"
+# 첨부만 바꾼 정정은 DART document API 가 014(파일 없음)를 돌려줘 본문 zip 이 없다(2026-08-22 실측: 000440
+# 20260730000361·20260730000551). panel 에 들어올 수 없으므로 "있어야 할 rcept" 에서 뺀다. 두면 영구 누락으로
+# 남아 reconcile 이 같은 rcept 를 매일 다시 받았다(2026-09-24~10-07 본문부재 18~41 건/일). 신선도 감사도 이 규칙을 쓴다.
+_ATTACHMENT_ONLY_RE = r"^\[(?:첨부정정|첨부추가)\]"
 
 
 def _rceptsFromParquet(parquet) -> set[str]:
@@ -178,7 +182,8 @@ def _fullPeriodicRcepts(client, code: str) -> set[str]:
         return set()
     if df.is_empty() or "report_nm" not in df.columns or "rcept_no" not in df.columns:
         return set()
-    return set(df.filter(pl.col("report_nm").str.contains(_PERIODIC_RE)).select("rcept_no").to_series().to_list())
+    periodic = pl.col("report_nm").str.contains(_PERIODIC_RE) & ~pl.col("report_nm").str.contains(_ATTACHMENT_ONLY_RE)
+    return set(df.filter(periodic).select("rcept_no").to_series().to_list())
 
 
 def runPanelRceptReconcile(
@@ -231,6 +236,9 @@ def runPanelRceptReconcile(
     from dartlab.pipeline.hfUpload import _resolveHfToken
 
     # corp 생략 list.json 은 DART 가 3개월(~92일) 윈도 제한 → 기본 85 일(현 백로그 커버·cap 안쪽).
+    # job 상한 240분. 새 chunk 는 이 마감 전까지만 시작하고, 시작한 chunk 는 fetch, tar, 빌드, checkpoint 까지
+    # 끝낸다(200 종목 chunk 하나는 마감 뒤 남은 60분 안에 닫힌다).
+    deadline = _forward._deadlineAt("DART_RECONCILE_DEADLINE_MIN", 180)
     days = int(os.environ.get("DART_PANEL_RECONCILE_DAYS") or "85")
     today = date.today()
     start = (today - timedelta(days=days - 1)).strftime("%Y%m%d")
@@ -253,6 +261,7 @@ def runPanelRceptReconcile(
 
     filt = df.filter(
         pl.col("report_nm").str.contains(_PERIODIC_RE)
+        & ~pl.col("report_nm").str.contains(_ATTACHMENT_ONLY_RE)
         & pl.col("stock_code").is_not_null()
         & (pl.col("stock_code").str.strip_chars() != "")
     )
@@ -336,6 +345,13 @@ def runPanelRceptReconcile(
     noBody: list[str] = []
     built: list[str] = []
     for offset in range(0, len(codes), _HEAL_CHUNK):
+        if time.monotonic() >= deadline:
+            # 실패가 아니다. HF 에 반영된 chunk 는 다음 run 탐지에서 빠지고 남은 종목만 다시 잡힌다.
+            res.report.failures.append(
+                f"panelRceptReconcile: 시간 예산 소진, {len(codes) - offset}종목 남김(다음 run 이 이어 받음)"
+            )
+            print(f"[pipeline] panelRceptReconcile: 시간 예산 소진, {len(codes) - offset}종목 남김", flush=True)
+            break
         chunkCodes = codes[offset : offset + _HEAL_CHUNK]
         label = f"chunk {offset + len(chunkCodes)}/{len(codes)}종목"
         targets = [(sc, rc) for sc in chunkCodes for rc in sorted(missingByCode[sc])]

@@ -451,6 +451,31 @@ def test_panel_rcept_reconcile_heals_in_chunks_tar_before_panel(monkeypatch) -> 
     assert res.report.ok == 1
 
 
+def test_panel_rcept_reconcile_stops_new_chunks_at_deadline(monkeypatch) -> None:
+    """마감이 지나면 새 chunk 를 시작하지 않고 남긴 종목 수를 적는다. 실패로 세지 않는다(다음 run 이 이어 받음)."""
+    from dartlab.gather.dart import disclosure
+    from dartlab.pipeline.stages import panelRceptReconcile
+
+    monkeypatch.setattr(
+        disclosure,
+        "listFilings",
+        _stubFilings(
+            [
+                ("000A", "20260814000001", "반기보고서 (2026.06)"),
+                ("000B", "20260814000002", "반기보고서 (2026.06)"),
+            ]
+        ),
+    )
+    calls = _wireReconcile(monkeypatch, panelHave={"000A": set(), "000B": set()}, built=["000A", "000B"])
+    monkeypatch.setenv("DART_RECONCILE_DEADLINE_MIN", "0")
+
+    res = panelRceptReconcile.runPanelRceptReconcile(upload=True)
+
+    assert calls["fetchCalls"] == []
+    assert res.report.fail == 0 and res.report.ok == 1
+    assert any("시간 예산 소진" in f and "2종목" in f for f in res.report.failures)
+
+
 def test_panel_rcept_reconcile_reports_total_fetch_failure(monkeypatch) -> None:
     """모든 chunk 에서 zip fetch 가 0 이면 fail 로 보고하고 빌드는 호출되지 않는다(다음 run 재시도)."""
     from dartlab.gather.dart import disclosure
@@ -480,7 +505,7 @@ def _reconcileWithFetchStatuses(monkeypatch, statuses: dict[str, str]):
     monkeypatch.setattr(
         disclosure,
         "listFilings",
-        _stubFilings([("000A", rc, "[첨부정정]사업보고서 (2025.12)") for rc in statuses]),
+        _stubFilings([("000A", rc, "[기재정정]사업보고서 (2025.12)") for rc in statuses]),
     )
     calls = _wireReconcile(monkeypatch, panelHave={"000A": {"20250101000001"}}, built=["000A"])
 
@@ -505,6 +530,32 @@ def test_panel_rcept_reconcile_final_no_body_is_not_failure(monkeypatch) -> None
     assert res.report.failures == []
     assert calls["build"] is None and calls["bundle"] is None
     assert res.changedFiles == []
+
+
+def test_panel_rcept_reconcile_skips_attachment_only_corrections(monkeypatch) -> None:
+    """첨부만 바꾼 정정은 본문 zip 이 없어(DART 014) panel 에 못 들어온다. 후보에서 빼 매일 다시 받지 않는다.
+
+    2026-09-24~10-07 reconcile 은 같은 본문부재 rcept 를 하루 18~41 건씩 다시 요청했다.
+    """
+    from dartlab.gather.dart import disclosure
+    from dartlab.pipeline.stages import panelRceptReconcile
+
+    monkeypatch.setattr(
+        disclosure,
+        "listFilings",
+        _stubFilings(
+            [
+                ("000A", "20260730000361", "[첨부정정]반기보고서 (2026.06)"),
+                ("000A", "20260730000551", "[첨부추가]반기보고서 (2026.06)"),
+            ]
+        ),
+    )
+    calls = _wireReconcile(monkeypatch, panelHave={"000A": {"20250101000001"}}, built=["000A"])
+
+    res = panelRceptReconcile.runPanelRceptReconcile(upload=True)
+
+    assert res.report.ok == 1 and res.report.fail == 0
+    assert calls["fetchCalls"] == []
 
 
 def test_panel_rcept_reconcile_no_body_does_not_mask_retryable_failure(monkeypatch) -> None:

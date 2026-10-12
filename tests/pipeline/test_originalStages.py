@@ -201,6 +201,40 @@ def test_buildpanelincremental_uploads_tail_and_skips_when_disabled(monkeypatch,
     assert built == ["000A", "000B", "000C"] and uploads == [] and res.report.err == 0
 
 
+def test_buildpanelincremental_stops_at_deadline_and_reports_left(monkeypatch, tmp_path) -> None:
+    """마감이 지나면 새 종목을 시작하지 않고 남긴 수를 적는다. 실패로 세지 않는다(reconcile 이 이어 받음).
+
+    분기 마감 주(2026-08-19 2448 종목)에 dart-zip 이 job 상한에 잘려 그 run 의 꼬리가 통째로 사라졌다.
+    """
+    import time
+
+    from dartlab.pipeline.stages import dartZip
+    from dartlab.pipeline.types import StageResult
+
+    uploads = _wireIncrementalBuild(monkeypatch, tmp_path, failing=set())
+    zips = _newZips(tmp_path, ["000A", "000B", "000C"])
+    res = StageResult(category="dartOriginal")
+
+    built = dartZip._buildPanelIncremental(
+        list(zips), zips, res, token=None, uploadEvery=2, deadline=time.monotonic() - 1
+    )
+
+    assert built == [] and uploads == []
+    assert res.report.fail == 0 and res.report.err == 0
+    assert any("시간 예산 소진" in f and "3종목" in f for f in res.report.failures)
+
+
+def test_deadline_env_overrides_minutes(monkeypatch) -> None:
+    import time
+
+    from dartlab.pipeline.stages import dartZip
+
+    monkeypatch.setenv("DART_ZIP_DEADLINE_MIN", "0")
+    assert dartZip._deadlineAt("DART_ZIP_DEADLINE_MIN", 200) <= time.monotonic()
+    monkeypatch.setenv("DART_ZIP_DEADLINE_MIN", "x")
+    assert dartZip._deadlineAt("DART_ZIP_DEADLINE_MIN", 200) > time.monotonic() + 199 * 60
+
+
 def test_prunehistoryzips_keeps_only_new_zips(tmp_path) -> None:
     """번들이 끝난 종목의 전이력 zip 은 지우고 이번 run 의 신규 zip(keep)만 남긴다."""
     from dartlab.pipeline.stages import panelRceptReconcile
@@ -894,6 +928,35 @@ def test_dartzip_full_rebuild_flag_routes_build(monkeypatch, tmp_path) -> None:
             assert fullCalls and not incCalls  # 전이력 재빌드
         else:
             assert incCalls and not fullCalls  # within-company 증분
+
+
+@pytest.mark.parametrize(
+    "stats,failed",
+    [
+        ({"ok": 0, "noBody": 0, "error": 17}, True),  # DART 가 document.xml 을 전부 거부한 날
+        ({"ok": 0, "noBody": 3, "error": 0}, False),  # 본문부재만 남은 날은 정상
+        ({"ok": 0, "noBody": 0, "error": 0}, False),  # 새 공시 0
+        ({"ok": 5, "noBody": 0, "error": 2}, False),  # 일부만 실패하면 다음 run 이 받는다
+    ],
+)
+def test_dartzip_archive_reports_total_fetch_failure(monkeypatch, tmp_path, stats, failed) -> None:
+    """원본 zip 을 한 건도 못 받고 오류만 있으면 실패로 보고한다(reconcile 과 같은 규칙).
+
+    2026-10-09 OpenDART 점검 중 dart-zip 은 document.xml 오류를 세지 않고 "변경 0종목" 성공으로 끝났다.
+    """
+    import dartlab.config as cfg
+    from dartlab.pipeline.stages import dartZip
+
+    monkeypatch.setattr(cfg, "dataDir", str(tmp_path))
+    monkeypatch.setattr(
+        "dartlab.gather.original.dart.archiveDartOriginals",
+        lambda start, end, *, scope, corpClasses, showProgress: {**stats, "changedCodes": []},
+    )
+
+    res = dartZip.runDartZip(upload=False, token=None)
+
+    assert res.report.fail == int(failed)
+    assert any("zip fetch 0/" in f for f in res.report.failures) is failed
 
 
 # ─── dartZip 원본 tar 업로드 배치 (2026-08-19 사고 회귀 가드) ────────────────
