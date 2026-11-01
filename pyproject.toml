@@ -65,7 +65,7 @@ dependencies = [
     # M6: cross-company × multi-table aggregation 의 OOC god mode - Polars
     # LazyFrame ↔ DuckDB relation Arrow zero-copy. 환경변수
     # DARTLAB_CROSS_SCAN_ENGINE=duckdb 또는 large dataset 검출 시 자동 fallback.
-    "duckdb>=1.0,<2; sys_platform != 'emscripten'",
+    "duckdb>=1.0,<3; sys_platform != 'emscripten'",
     "cryptography>=46,<51; sys_platform != 'emscripten'",
     "filelock>=3.20,<5; sys_platform != 'emscripten'",
     "keyring>=25.7,<26; sys_platform != 'emscripten' and sys_platform != 'win32'",
