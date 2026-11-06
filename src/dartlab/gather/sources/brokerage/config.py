@@ -54,12 +54,12 @@ BROKERS: dict[str, dict] = {
         "enc": None,
         "enabled": True,
         "categories": {
-            "기업분석": _HANYANG + "researchAnalyzeCompany/list",
-            "이슈분석": _HANYANG + "researchAnalyzeIssue/list",
-            "채권분석": _HANYANG + "researchBondsCredit/list",
-            "시황": _HANYANG + "researchHanyangNews/list",
+            "기업분석": _HANYANG + "00000000-0000-0000-0000-000009000001",
+            "이슈분석": _HANYANG + "00000000-0000-0000-0000-000009000002",
+            "채권분석": _HANYANG + "00000000-0000-0000-0000-000009000003",
+            "시황": _HANYANG + "00000000-0000-0000-0000-000009000004",
         },
-        "note": "서버렌더 표, 제목에 종목코드 내장·PDF 는 한양 자기 서버(hygood.co.kr) 링크아웃",
+        "note": "서버렌더 표(2026-11 개편, Next.js), 제목은 링크 없는 버튼이라 글 주소는 같은 페이지 서버 데이터의 글 번호로 만든다. 제목에 종목코드 내장·PDF 는 한양 자기 서버(hygood.co.kr) 링크아웃",
     },
     "bookook": {
         "name": "부국",

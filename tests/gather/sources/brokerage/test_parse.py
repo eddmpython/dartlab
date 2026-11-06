@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from dartlab.gather.sources.brokerage.parse import (
@@ -30,14 +32,44 @@ _NH_HTML = """
 </a></li></ul>
 """
 
-_HANYANG_HTML = """
-<table><tbody>
-<tr><td>2052</td>
-    <td><a href="/board/researchAnalyzeCompany/detail/2087;jsessionid=ABC?pageIndex=1">[06/25] 리브스메드(491000) : 바이오 약세장 추천종목</a>
-        <a href="https://www.hygood.co.kr/download?atchFileId=FILE_001">첨부</a></td>
-    <td>2026.06.25</td><td></td><td>304</td></tr>
-</tbody></table>
-"""
+_HANYANG_BOARD = "/board/00000000-0000-0000-0000-000009000004"
+_HANYANG_POST_A = "b8af9b37-feb8-42fb-8968-d56810922fdd"
+_HANYANG_POST_B = "88a63537-171f-462a-99ba-200ab0838cc6"
+_HANYANG_POST_C = "b552c115-5b1b-4baf-9186-7b585c631836"
+
+
+def _hanyangRow(number: int, title: str, date: str) -> str:
+    """2026-11 개편 뒤 한양 표 행: 제목은 링크 없는 버튼, 뒤에 등록일·첨부·조회 칸."""
+    return (
+        f'<tr><td>{number}</td><td class="text-left"><button type="button" class="w-full">{title}</button></td>'
+        f'<td>{date}</td><td><span title="첨부파일 있음"></span></td><td>2255</td></tr>'
+    )
+
+
+def _hanyangPage(rows: str, posts: list[tuple[str, str]] | None = None) -> str:
+    """표 + Next.js 서버 데이터 조각(글 번호·제목·보드 경로)이 든 한양 보드 페이지."""
+    head = "<thead><tr><th>번호</th><th>제목</th><th>등록일</th><th>첨부</th><th>조회</th></tr></thead>"
+    html = f'<table class="board-list-table">{head}<tbody>{rows}</tbody></table>'
+    if posts is not None:
+        flight = '1:["$","x",null,{"posts":[' + ",".join(
+            f'{{"postUuid":"{uuid}","title":{json.dumps(title, ensure_ascii=False)},"viewCount":1}}'
+            for uuid, title in posts
+        )
+        flight += f'],"basePath":"{_HANYANG_BOARD}","boardUuid":"x"}}]\n'
+        html += f"<script>self.__next_f.push([1,{json.dumps(flight, ensure_ascii=False)}])</script>"
+    return html
+
+
+_HANYANG_HTML = _hanyangPage(
+    _hanyangRow(2075, "[10/21] 펌텍코리아(251970) : 물 들어올 땐, 펌텍코리아", "2026-10-21")
+    + _hanyangRow(3, "커버리지 제외 종목", "2024-03-06")
+    + _hanyangRow(2, "커버리지 제외 종목", "2022-11-21"),
+    [
+        (_HANYANG_POST_C, "[10/21] 펌텍코리아(251970) : 물 들어올 땐, 펌텍코리아"),
+        (_HANYANG_POST_A, "커버리지 제외 종목"),
+        (_HANYANG_POST_B, "커버리지 제외 종목"),
+    ],
+)
 
 # 부국: 기업분석(6셀: 번호·날짜·제목·-·저자·조회수) + 시황(5셀: 저자 없음·끝=조회수) 실제 양식.
 _BOOKOOK_HTML = """
@@ -87,14 +119,45 @@ def test_parse_nh() -> None:
 
 def test_parse_hanyang() -> None:
     rows = _parseHanyang(_HANYANG_HTML, "기업분석", "https://fallback")
-    assert len(rows) == 1
+    assert len(rows) == 3
     r = rows[0]
     assert r.broker == "hanyang"
     assert r.reportType == "기업분석"
-    assert r.pubDate == "2026-06-25"
-    assert "리브스메드(491000)" in r.title
-    # detail 링크 = 한양 자기 서버, jsessionid 꼬리 제거
-    assert r.url == "https://www.hygood.co.kr/board/researchAnalyzeCompany/detail/2087"
+    assert r.pubDate == "2026-10-21"
+    assert "펌텍코리아(251970)" in r.title
+    # 제목은 링크 없는 버튼 → 글 주소 = 보드 경로 + 서버 데이터의 글 번호 (한양 자기 서버)
+    assert r.url == f"https://www.hygood.co.kr{_HANYANG_BOARD}/{_HANYANG_POST_C}"
+
+
+def test_parse_hanyang_same_title_keeps_row_order() -> None:
+    """제목이 같은 글(커버리지 제외 종목)은 표 순서대로 서로 다른 글 번호를 받는다."""
+    rows = _parseHanyang(_HANYANG_HTML, "시황", "https://fallback")
+    assert [r.pubDate for r in rows[1:]] == ["2024-03-06", "2022-11-21"]
+    assert rows[1].url.endswith(_HANYANG_POST_A)
+    assert rows[2].url.endswith(_HANYANG_POST_B)
+    assert len({r.reportId() for r in rows}) == 3
+
+
+def test_parse_hanyang_without_payload_uses_board_url() -> None:
+    """서버 데이터를 못 읽어도 행은 버리지 않고 보드 주소로 남긴다(0행 장애로 번지지 않게)."""
+    html = _hanyangPage(_hanyangRow(1, "[10/21] 핌스(347770) : 기술력에 비해 너무 싼 주가", "2026-10-21"))
+    rows = _parseHanyang(html, "기업분석", "https://fallback")
+    assert len(rows) == 1
+    assert rows[0].url == "https://fallback"
+    assert rows[0].pubDate == "2026-10-21"
+
+
+def test_parse_hanyang_anchor_link() -> None:
+    """제목 칸에 링크(a)가 다시 생기면 그 주소를 쓴다. jsessionid 꼬리는 지운다."""
+    html = (
+        "<table><tbody><tr><td>2052</td>"
+        '<td><a href="/board/x/detail/2087;jsessionid=ABC?pageIndex=1">[06/25] 리브스메드(491000) : 추천종목</a></td>'
+        "<td>2026.06.25</td><td></td><td>304</td></tr></tbody></table>"
+    )
+    rows = _parseHanyang(html, "기업분석", "https://fallback")
+    assert len(rows) == 1
+    assert rows[0].pubDate == "2026-06-25"
+    assert rows[0].url == "https://www.hygood.co.kr/board/x/detail/2087"
 
 
 def test_parse_hanyang_no_detail() -> None:

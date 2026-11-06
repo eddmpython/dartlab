@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 
 from bs4 import BeautifulSoup
@@ -146,16 +147,50 @@ def _parseYuanta(html: str, label: str, srcUrl: str) -> list[ReportMeta]:
     return out
 
 
+_HANYANG_HOST = "https://www.hygood.co.kr"
+# Next.js 가 페이지 끝에 싣는 서버 데이터 조각. 문자열 리터럴 하나가 한 조각이다.
+_NEXT_PUSH_RE = re.compile(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)')
+_HANYANG_POST_RE = re.compile(r'"postUuid":"([0-9a-f-]{36})","title":"((?:[^"\\]|\\.)*)"')
+_HANYANG_BASE_RE = re.compile(r'"basePath":"(/board/[^"]+)"')
+_DATE_RE = re.compile(r"\d{4}[.\-/]\d{2}[.\-/]\d{2}")
+
+
+def _hanyangPosts(html: str) -> tuple[str, dict[str, list[str]]]:
+    """한양 보드 페이지의 Next.js 서버 데이터에서 (보드 경로, {제목: [글 번호, ...]}) 를 읽는다.
+
+    표의 제목 칸은 링크 없는 버튼이라 글 주소가 표에 없다. 같은 페이지의 서버 데이터에 글 번호(postUuid)가
+    제목과 함께 들어 있어 주소 ``{보드 경로}/{글 번호}`` 를 만들 수 있다. 제목이 같은 글(예: 커버리지 제외
+    종목)은 번호를 표와 같은 순서로 쌓아 두므로, 호출 쪽이 행마다 앞에서부터 하나씩 쓴다. 서버 데이터를
+    읽지 못하면 빈 값이고 호출 쪽이 보드 주소로 대신한다.
+    """
+    raw = "".join(_NEXT_PUSH_RE.findall(html))
+    if not raw:
+        return "", {}
+    try:
+        flight = json.loads(f'"{raw}"')
+    except ValueError:
+        flight = raw.replace('\\"', '"')
+    base = _HANYANG_BASE_RE.search(flight)
+    titles: dict[str, list[str]] = {}
+    for postId, title in _HANYANG_POST_RE.findall(flight):
+        key = re.sub(r"\s+", " ", title.replace('\\"', '"')).strip()
+        titles.setdefault(key, []).append(postId)
+    return (base.group(1) if base else ""), titles
+
+
 def _parseHanyang(html: str, label: str, srcUrl: str) -> list[ReportMeta]:
-    """한양 board 표(번호·제목·날짜·조회수) → ReportMeta. 링크는 /detail/{id}(자기 서버).
+    """한양 board 표(번호·제목·등록일·첨부·조회) → ReportMeta. 링크는 {보드 경로}/{글 번호}(자기 서버).
+
+    제목 칸은 링크 없는 버튼이다. 글 주소는 같은 페이지 서버 데이터의 글 번호로 만들고, 번호를 못 찾은 행은
+    보드 주소(srcUrl)로 둔다. 제목 칸에 링크(a)가 있으면 그 주소를 쓴다.
 
     Args:
-        html: /board/<board>/list 응답 HTML.
+        html: 보드 목록 응답 HTML (/board/<보드 번호>).
         label: 카테고리 라벨 = reportType.
-        srcUrl: 링크 부재 시 fallback URL.
+        srcUrl: 글 주소를 못 만들 때 쓰는 보드 URL.
 
     Returns:
-        list[ReportMeta] — detail 링크 있는 행마다 1건. 제목에 종목코드(005930) 내장.
+        list[ReportMeta]. 제목과 등록일이 있는 행마다 1건. 제목에 종목코드(005930) 내장.
 
     Example::
 
@@ -163,25 +198,38 @@ def _parseHanyang(html: str, label: str, srcUrl: str) -> list[ReportMeta]:
     """
     soup = BeautifulSoup(html, "lxml")
     out: list[ReportMeta] = []
-    body = soup.find("tbody") or soup
-    detailRe = re.compile(r"/board/\w+/detail/")
+    table = soup.select_one("table.board-list-table") or soup
+    body = table.find("tbody") or table
+    basePath, postIds = _hanyangPosts(html)
     for tr in body.find_all("tr"):
-        link = tr.find("a", href=detailRe)
-        if link is None:
+        tds = tr.find_all("td")
+        titleCell = next((td for td in tds if td.find(["button", "a"])), None)
+        if titleCell is None:
             continue
-        href = link.get("href", "").split(";")[0]  # jsessionid 꼬리 제거
-        url = ("https://www.hygood.co.kr" + href) if href.startswith("/") else (href or srcUrl)
         date = ""
-        for td in tr.find_all("td"):
+        for td in tds:
             txt = td.get_text(strip=True)
-            if re.match(r"\d{4}[.\-/]\d{2}[.\-/]\d{2}", txt):
+            if _DATE_RE.match(txt):
                 date = txt
                 break
+        if not date:
+            continue
+        link = titleCell.find("a", href=True)
+        title = re.sub(r"\s+", " ", (link or titleCell.find(["button", "a"])).get_text(" ", strip=True))
+        queue = postIds.get(title)
+        postId = queue.pop(0) if queue else None
+        if link is not None:
+            href = link["href"].split(";")[0]  # jsessionid 꼬리 제거
+            url = (_HANYANG_HOST + href) if href.startswith("/") else href
+        elif postId and basePath:
+            url = f"{_HANYANG_HOST}{basePath}/{postId}"
+        else:
+            url = srcUrl
         out.append(
             ReportMeta(
                 broker="hanyang",
                 brokerName="한양",
-                title=link.get_text(" ", strip=True),
+                title=title,
                 url=url,
                 pubDate=_normDate(date),
                 reportType=label,
