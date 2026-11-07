@@ -29,6 +29,7 @@ import os
 from pathlib import Path
 
 import pytest
+from hypothesis import HealthCheck, settings
 
 # 테스트 전역 ambient refresh 차단. freshness 배선(scan·panel·allFilings·검색 인덱스)은
 # "로컬 존재 + etag/마커 없음" 을 stale 로 보고 원격 재확인을 시작하는데, 테스트가 만든
@@ -42,6 +43,13 @@ os.environ.setdefault("DARTLAB_NO_REFRESH", "1")
 # 폴더에 `.hypothesis/` 를 만들고, 이 환경변수가 있으면 그 경로를 쓴다.
 _CACHE_ROOT = Path(__file__).resolve().parents[1] / ".cache"
 os.environ.setdefault("HYPOTHESIS_STORAGE_DIRECTORY", str(_CACHE_ROOT / "hypothesis"))
+# 설치된 Hypothesis 6.154.0 은 값을 만들 때 이미 불러온 프로젝트 모듈 소스를 분석해 상수 후보로 쓴다
+# (providers.py 의 _get_local_constants). dartlab 모듈 609개를 불러온 프로세스에서 이 분석이 한 번
+# 20.8초 걸렸다(2026-11-07 실측). 값 만들기가 1초를 넘으면 "값 만들기가 느리다"는 건강 검사(too_slow)가
+# 시험 내용과 상관없이 떨어졌고, 푸시 전 검사 5번 중 3번 test_ratios_metamorphic 이 그랬다.
+# 시간만 보는 이 검사 하나만 끈다. 시험 결과를 가리는 다른 건강 검사는 그대로 둔다.
+settings.register_profile("dartlab", suppress_health_check=[HealthCheck.too_slow])
+settings.load_profile("dartlab")
 # pytest-benchmark 는 저장을 안 하는 실행에서도 기본 저장소 `./.benchmarks` 를 만든다.
 _BENCHMARK_DEFAULT_STORAGE = "file://./.benchmarks"
 
