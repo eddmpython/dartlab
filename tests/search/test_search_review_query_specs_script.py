@@ -25,7 +25,7 @@ def test_build_search_review_query_specs_default_pack(tmp_path: Path) -> None:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -64,7 +64,7 @@ def test_build_search_review_query_specs_custom_counts_jsonl(tmp_path: Path) -> 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout

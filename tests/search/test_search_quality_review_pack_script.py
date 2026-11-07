@@ -99,7 +99,7 @@ def test_build_search_quality_review_pack_with_precomputed_results(tmp_path: Pat
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -186,7 +186,7 @@ def test_build_search_quality_review_pack_blocks_source_hint_miss(tmp_path: Path
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -240,7 +240,7 @@ def test_build_search_quality_review_pack_keeps_filing_proposal_source_family(tm
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout

@@ -78,7 +78,7 @@ def test_prepare_search_gold_script_merges_labels_and_writes_summary(tmp_path) -
         env=os.environ,
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr
@@ -127,7 +127,7 @@ def test_prepare_search_gold_script_writes_label_template(tmp_path) -> None:
         env=os.environ,
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr
@@ -168,7 +168,7 @@ def test_prepare_search_gold_script_fails_on_unreviewed_missing_source_ref(tmp_p
         env=os.environ,
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

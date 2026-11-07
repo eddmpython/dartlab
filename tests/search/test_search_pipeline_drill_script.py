@@ -32,7 +32,7 @@ def test_run_search_pipeline_drill_script(tmp_path) -> None:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout

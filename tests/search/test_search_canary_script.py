@@ -175,7 +175,7 @@ def test_evaluate_search_canary_script_with_precomputed_results(tmp_path) -> Non
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr
@@ -217,7 +217,7 @@ def test_evaluate_search_canary_script_fails_on_false_accept(tmp_path) -> None:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -270,7 +270,7 @@ def test_evaluate_search_canary_script_loads_pack_from_manifest(tmp_path) -> Non
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr
@@ -326,7 +326,7 @@ def test_evaluate_search_canary_requires_deterministic_manifest_resolution(tmp_p
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

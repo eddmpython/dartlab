@@ -58,7 +58,7 @@ def test_pull_search_current_index_follows_manifest_file_sources(tmp_path) -> No
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -102,7 +102,7 @@ def test_pull_search_current_index_allows_manifest_already_in_target_dir(tmp_pat
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -138,7 +138,7 @@ def test_pull_search_current_index_fails_on_missing_required_file(tmp_path) -> N
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

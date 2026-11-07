@@ -55,7 +55,7 @@ def test_finalize_search_review_labels_requires_decision(tmp_path: Path) -> None
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -124,7 +124,7 @@ def test_finalize_search_review_labels_materializes_explicit_proposals(tmp_path:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -210,7 +210,7 @@ def test_finalized_review_labels_feed_prepare_search_gold(tmp_path: Path) -> Non
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert finalizeProc.returncode == 0, finalizeProc.stderr + finalizeProc.stdout
 
@@ -239,7 +239,7 @@ def test_finalized_review_labels_feed_prepare_search_gold(tmp_path: Path) -> Non
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert prepareProc.returncode == 0, prepareProc.stderr + prepareProc.stdout

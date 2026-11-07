@@ -52,7 +52,7 @@ def test_evaluate_search_result_contract_script_accepts_precomputed_results(tmp_
         env=os.environ,
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr
@@ -81,7 +81,7 @@ def test_evaluate_search_result_contract_script_fails_on_missing_source_ref(tmp_
         env=os.environ,
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

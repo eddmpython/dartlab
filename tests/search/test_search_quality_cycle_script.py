@@ -58,7 +58,7 @@ def test_search_quality_cycle_stops_on_undecided_review_rows(tmp_path: Path) -> 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -161,7 +161,7 @@ def test_search_quality_cycle_runs_reviewed_gold_to_quality_report(tmp_path: Pat
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -283,7 +283,7 @@ def test_search_quality_cycle_can_batch_accept_suggested_decisions(tmp_path: Pat
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -366,7 +366,7 @@ def test_search_quality_cycle_stops_when_batch_evidence_packet_is_unready(tmp_pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

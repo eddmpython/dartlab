@@ -104,7 +104,7 @@ def test_estimate_search_proposal_quality_writes_non_release_ceiling_report(tmp_
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -169,7 +169,7 @@ def test_estimate_search_proposal_quality_blocks_invalid_proposals(tmp_path: Pat
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

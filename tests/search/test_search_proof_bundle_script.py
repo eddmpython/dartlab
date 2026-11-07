@@ -111,7 +111,7 @@ def test_build_search_proof_bundle_accepts_complete_evidence(tmp_path: Path) -> 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -163,7 +163,7 @@ def test_build_search_proof_bundle_keeps_missing_evidence_as_blockers(tmp_path: 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

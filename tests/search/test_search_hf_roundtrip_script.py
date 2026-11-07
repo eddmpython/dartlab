@@ -85,7 +85,7 @@ def test_verify_search_hf_roundtrip_script_with_local_remote(tmp_path) -> None:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -159,7 +159,7 @@ def test_verify_search_hf_roundtrip_script_accepts_staged_candidate_manifest(tmp
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout

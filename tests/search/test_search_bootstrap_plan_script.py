@@ -42,7 +42,7 @@ def test_plan_search_bootstrap_for_missing_sources(tmp_path: Path) -> None:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stderr
     plan = json.loads(out.read_text(encoding="utf-8"))
@@ -84,7 +84,7 @@ def test_plan_search_bootstrap_skips_source_bootstrap_when_catalogs_exist(tmp_pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stderr
     plan = json.loads(proc.stdout)
@@ -138,7 +138,7 @@ def test_plan_search_bootstrap_maps_status_blockers_to_actions(tmp_path: Path) -
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr

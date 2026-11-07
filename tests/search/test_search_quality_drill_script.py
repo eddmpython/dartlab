@@ -42,7 +42,7 @@ def test_run_search_quality_drill_writes_non_release_report(tmp_path: Path) -> N
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout

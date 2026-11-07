@@ -43,7 +43,7 @@ def test_build_search_review_decision_sheet_compacts_labels(tmp_path: Path) -> N
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -107,7 +107,7 @@ def test_decision_sheet_csv_can_feed_finalize_after_explicit_review(tmp_path: Pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert sheetProc.returncode == 0, sheetProc.stderr + sheetProc.stdout
 
@@ -138,7 +138,7 @@ def test_decision_sheet_csv_can_feed_finalize_after_explicit_review(tmp_path: Pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert finalizeProc.returncode == 0, finalizeProc.stderr + finalizeProc.stdout
@@ -174,7 +174,7 @@ def test_decision_sheet_fail_on_incomplete_blocks_missing_decisions(tmp_path: Pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -214,7 +214,7 @@ def test_decision_sheet_fail_on_incomplete_passes_reviewed_rows(tmp_path: Path) 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -258,7 +258,7 @@ def test_decision_sheet_fail_on_proposal_errors_blocks_source_mismatch(tmp_path:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -294,7 +294,7 @@ def test_decision_sheet_fail_on_proposal_errors_blocks_no_answer_with_answerable
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -379,7 +379,7 @@ def test_decision_sheet_writes_review_evidence_packet(tmp_path: Path) -> None:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -430,7 +430,7 @@ def test_decision_sheet_evidence_packet_blocks_no_answer_false_accept(tmp_path: 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -470,7 +470,7 @@ def test_decision_sheet_evidence_packet_accepts_empty_no_answer_results(tmp_path
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout

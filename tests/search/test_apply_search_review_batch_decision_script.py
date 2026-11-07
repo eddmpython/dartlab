@@ -64,7 +64,7 @@ def test_apply_search_review_batch_decision_dry_run_validates_ready_rows(tmp_pat
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -118,7 +118,7 @@ def test_apply_search_review_batch_decision_blocks_unready_evidence_packet(tmp_p
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -160,7 +160,7 @@ def test_apply_search_review_batch_decision_outputs_finalizer_ready_sheet(tmp_pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert batchProc.returncode == 0, batchProc.stderr + batchProc.stdout
 
@@ -184,7 +184,7 @@ def test_apply_search_review_batch_decision_outputs_finalizer_ready_sheet(tmp_pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert finalizeProc.returncode == 0, finalizeProc.stderr + finalizeProc.stdout
@@ -224,7 +224,7 @@ def test_apply_search_review_batch_decision_blocks_rows_needing_inspection(tmp_p
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

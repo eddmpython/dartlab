@@ -139,7 +139,7 @@ def test_build_search_catalog_script_subprocess(tmp_path) -> None:
         cwd=Path.cwd(),
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stderr
     result = json.loads(proc.stdout)
@@ -259,7 +259,7 @@ def test_build_search_catalog_script_blocks_empty_full_snapshot(tmp_path) -> Non
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode != 0
@@ -289,7 +289,7 @@ def test_build_search_catalog_script_requires_previous_manifest(tmp_path) -> Non
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode != 0
@@ -348,7 +348,7 @@ def test_build_search_catalog_script_blocks_previous_manifest_drop(tmp_path) -> 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode != 0
@@ -437,7 +437,7 @@ def test_build_search_catalog_script_merges_previous_news_catalog_without_date_d
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr

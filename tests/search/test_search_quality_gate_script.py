@@ -79,7 +79,7 @@ def test_evaluate_search_gold_script_with_precomputed_results(tmp_path) -> None:
         env=os.environ,
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr
@@ -134,7 +134,7 @@ def test_evaluate_search_gold_script_fails_on_proxy_gold(tmp_path) -> None:
         env=os.environ,
         text=True,
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

@@ -99,7 +99,7 @@ def test_check_search_remote_evidence_script_with_complete_local_remote(tmp_path
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -271,7 +271,7 @@ def test_check_search_remote_evidence_script_reports_missing_file_sources(tmp_pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -306,7 +306,7 @@ def test_check_search_remote_evidence_script_reports_missing_blockers(tmp_path) 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

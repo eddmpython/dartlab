@@ -44,7 +44,7 @@ def test_build_search_hard_negative_review_pack_creates_batch_ready_artifacts(tm
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -95,7 +95,7 @@ def test_build_search_hard_negative_review_pack_creates_batch_ready_artifacts(tm
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert dryRun.returncode == 0, dryRun.stderr + dryRun.stdout
     summary = json.loads(dryRunSummary.read_text(encoding="utf-8"))

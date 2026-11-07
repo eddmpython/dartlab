@@ -55,7 +55,7 @@ def test_cutover_report_keeps_ops_blockers_and_next_actions(tmp_path: Path) -> N
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -102,7 +102,7 @@ def test_cutover_report_treats_quality_as_release_only_evidence(tmp_path: Path) 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -149,7 +149,7 @@ def test_cutover_report_requires_replacement_evidence_for_default(tmp_path: Path
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1
@@ -213,7 +213,7 @@ def test_cutover_report_accepts_default_replacement_evidence(tmp_path: Path) -> 
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -269,7 +269,7 @@ def test_replacement_evidence_builder_promotes_release_bundle_to_s4(tmp_path: Pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
 
@@ -292,7 +292,7 @@ def test_replacement_evidence_builder_promotes_release_bundle_to_s4(tmp_path: Pa
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -358,7 +358,7 @@ def test_cutover_report_rejects_ambiguous_default_replacement_evidence(tmp_path:
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 1

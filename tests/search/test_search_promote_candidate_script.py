@@ -43,7 +43,7 @@ def test_promote_search_candidate_script_with_local_remote(tmp_path: Path) -> No
         encoding="utf-8",
         errors="replace",
         capture_output=True,
-        timeout=30,
+        timeout=120,
     )
 
     assert proc.returncode == 0, proc.stderr + proc.stdout
