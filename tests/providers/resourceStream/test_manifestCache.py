@@ -189,7 +189,8 @@ def testSandboxSpawnReadsPinnedCacheWithoutWrite(
         ),
     )
     process.start()
-    process.join(timeout=30)
+    # 새 프로세스가 dartlab 을 불러오는 시간만 PC 가 바쁠 때 30초를 넘긴 적이 있어 멈춤 한도를 넉넉히 둔다.
+    process.join(timeout=120)
     if process.is_alive():
         process.terminate()
         process.join(timeout=5)

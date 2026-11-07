@@ -77,7 +77,8 @@ def test_release_smoke_stdio_initialize_and_listTools() -> None:
                 },
             },
         )
-        init_resp = _readJsonRpc(proc, timeoutSec=10.0)
+        # 서버 프로세스가 새로 떠서 도구를 불러오는 시간이다. PC 가 바쁠 때 10초를 넘긴 적이 있어 멈춤 한도를 넉넉히 둔다.
+        init_resp = _readJsonRpc(proc, timeoutSec=60.0)
         assert init_resp is not None, "initialize 응답 없음 (stdio 서버 부팅 실패)"
         assert init_resp.get("id") == 1
         assert "result" in init_resp

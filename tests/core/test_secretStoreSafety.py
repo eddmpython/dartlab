@@ -118,8 +118,10 @@ def test_cross_process_distinct_updates_are_not_lost(tmp_path: Path, monkeypatch
     try:
         for process in processes:
             process.start()
+        # 자식 프로세스는 dartlab 을 새로 불러온다. 같은 PC 가 바쁠 때 이 시작만 30초 넘게 걸린 적이 있어
+        # (2026-11-07 푸시 전 검사) 멈춤을 잡는 한도를 넉넉히 둔다. 잠금 규칙의 판정은 시간과 상관없다.
         for process in processes:
-            process.join(timeout=10)
+            process.join(timeout=120)
 
         assert all(not process.is_alive() for process in processes)
         assert [process.exitcode for process in processes] == [0, 0]
@@ -146,7 +148,8 @@ def test_actual_process_lock_timeout_is_typed(tmp_path: Path, monkeypatch: pytes
     process = context.Process(target=_holdProcessLock, args=(str(lockPath), ready, release))
     process.start()
     try:
-        assert ready.wait(timeout=5)
+        # 자식이 잠금을 잡을 때까지 기다리는 한도다. 자식 시작이 느린 PC 에서 5초로는 모자랐다.
+        assert ready.wait(timeout=120)
         monkeypatch.setattr(secretModule, "_LOCK_TIMEOUT_SECONDS", 0.05)
 
         with pytest.raises(SecretStoreLockError, match="시간 초과"):

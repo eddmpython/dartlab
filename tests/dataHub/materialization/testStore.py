@@ -377,7 +377,9 @@ def testCrashBeforeReadyCommitLeavesGenerationInvisible(
 
 
 def testConcurrentBuildersAndReadersConvergeOnOneRoot(tmp_path: Path) -> None:
-    store = MaterializationStore(tmp_path / "materialization", policy=policy())
+    # 읽기 임대(3초)는 이 시험이 보는 것이 아니다. 같은 PC 가 바쁠 때 스레드가 3초 넘게 밀려 임대가 끝나
+    # MATERIALIZATION_NOT_READY 로 떨어진 적이 있어(2026-11-07 푸시 전 검사) 임대만 길게 둔다.
+    store = MaterializationStore(tmp_path / "materialization", policy=policy(readerLeaseSeconds=60.0))
     exactPins = pins()
     owner = store.claimBuild(exactPins, builderId="owner")
 
@@ -415,7 +417,8 @@ def testSpawnedProcessCannotStealLiveBuilderLease(tmp_path: Path) -> None:
         args=(str(root), exactPins, storePolicy, resultQueue),
     )
     process.start()
-    process.join(timeout=30.0)
+    # 새 프로세스가 dartlab 을 불러오는 시간만 PC 가 바쁠 때 30초를 넘긴 적이 있어 멈춤 한도를 넉넉히 둔다.
+    process.join(timeout=120.0)
     if process.is_alive():
         process.terminate()
         process.join(timeout=5.0)
@@ -449,7 +452,7 @@ def testFreshSpawnedProcessReplaysReceiptOfflineWithNoOwnerOrSource(
         args=(str(root), receipt.asTree(), storePolicy, resultQueue),
     )
     process.start()
-    process.join(timeout=30.0)
+    process.join(timeout=120.0)
     if process.is_alive():
         process.terminate()
         process.join(timeout=5.0)
