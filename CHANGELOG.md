@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **이용 숫자 보고.** `tests/audit/usageReport.py`가 PyPI 운영체제별 다운로드, GitHub 별·포크의 달별 증가와 최근 14일 방문·유입처, 윈도우 앱 판별 다운로드, HF 데이터 30일 다운로드를 한 번에 읽는다. 각 서비스가 이미 공개 집계한 값만 읽고, `--history`로 받은 날의 값을 CSV에 쌓는다. 쓰이지 않던 `pypistatsFetch.py`는 이 도구로 대신했다.
+
 ### Fixed
 
 - **신용·공시 질의 메모리 절감.** 신용 보조 점수는 최신 완전 연도와 필요한 열만 읽고 전체 기업 대비 순위를 유지한다. 공시 검색 인덱스는 묶음 단위로 복원하며 갱신 검증의 원문 적재와 전체 후보 복제를 줄였다.

@@ -8,6 +8,7 @@
 |---|---|---|
 | `infra/workers/siteSignals` | path별 pageView, dwell, scroll, CTA 등 익명 counter | 방향성 진단만 |
 | `tests/audit/aiMetricsDigest.py` | local trace의 turn, first chunk, elapsed, tool 빈도 | runtime 성능 진단만 |
+| `tests/audit/usageReport.py` | PyPI 운영체제별 다운로드, GitHub 별·포크·14일 방문, 윈도우 앱 다운로드, HF 30일 다운로드 (공개 집계만) | 채택 방향 진단만 |
 | `src/dartlab/server/agentMetrics.py` | chat-native와 workbench 분기 비율 | 회귀 진단만 |
 | mainPlan progress ledger | 구현 진척 | 제품 결과가 아님 |
 | pytest와 CI | 계약과 회귀 | release evidence, 사용자 사용량 아님 |
