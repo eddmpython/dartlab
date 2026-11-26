@@ -1402,7 +1402,7 @@
         "operation.coreloop",
         "runtime.workbenchEvidenceFlow"
       ],
-      "bodyPreview": "## P/T/C/V 4 단계\n\n| 단계 | 검사 | pass 기준 |\n|---|---|---|\n| **P** (Prompt) | system prompt 변형 정합 | promptingPatterns 패턴 안 |\n| **T** (Tool calls) | 도구 선택 + 순서 정합 | toolComposition 5 분류 안 |\n| **C** (Compliance) | 강행 룰 (단위/dateRef/wrap) | 4 강행 요소 100% |\n| **V** (Verifier) | evidence GATE + grounding | EvidenceGate pass + GroundingCheck score ≥ 0.8 |\n\n## 절차\n\n```bash\n# 1. 답변 sample 수집 (production 무작위 100 건)\nuv run python -X utf8 -m dartlab.audit.collect --n=100 --out=audit/samples.jsonl\n\n# 2. P/T/C/V 4 차원 평가\nuv run python -X utf8 -m dartlab.audit.run --in=audit/samples.jsonl --out=audit/report.json\n\n# 3"
+      "bodyPreview": "## P/T/C/V 4 단계\n\n| 단계 | 검사 | pass 기준 |\n|---|---|---|\n| **P** (Prompt) | system prompt 변형 정합 | promptingPatterns 패턴 안 |\n| **T** (Tool calls) | 도구 선택 + 순서 정합 | toolComposition 5 분류 안 |\n| **C** (Compliance) | 강행 룰 (단위/dateRef/wrap) | 4 강행 요소 100% |\n| **V** (Verifier) | evidence GATE | EvidenceGate pass |\n\n## 절차\n\n```bash\n# 1. 답변 sample 수집 (production 무작위 100 건)\nuv run python -X utf8 -m dartlab.audit.collect --n=100 --out=audit/samples.jsonl\n\n# 2. P/T/C/V 4 차원 평가\nuv run python -X utf8 -m dartlab.audit.run --in=audit/samples.jsonl --out=audit/report.json\n\n# 3. 회귀 신호 ledger (전 cycle 대비)\nuv run python"
     },
     {
       "id": "operation.agentBoundaries",

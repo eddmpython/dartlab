@@ -151,6 +151,6 @@ def test_release_smoke_canonical_v2_no_workbench_internal() -> None:
     """CANONICAL_V2 에 workbench-internal 노출 회귀 0 (PR-M1 가드)."""
     from dartlab.ai.tools.registry import CANONICAL_V2
 
-    workbench_internal = {"RunWorkbench", "EvidenceGate", "PickStoryTemplate"}
+    workbench_internal = {"RunWorkbench", "EvidenceGate"}
     leaked = set(CANONICAL_V2) & workbench_internal
     assert not leaked, f"workbench-internal 회귀 누출: {leaked}"

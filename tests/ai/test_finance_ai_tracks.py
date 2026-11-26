@@ -1,7 +1,7 @@
 """finance AI 격상 9 트랙 smoke + contract 검증.
 
 Track A v1 (filing deep-link) / B (confidence + provenance + ProvenanceTree) /
-G (dCR badge) / E (industry badge) / I (EvidenceGate) / H (PickStoryTemplate) /
+G (dCR badge) / E (industry badge) / I (EvidenceGate) /
 D (ScenarioOverlay) / C (PeerCompareN) / F (viz dataContract) contract 고정.
 
 목적: 이름 / 시그니처 / 핵심 키 회귀 차단. dartlab 데이터 의존 무거운 경로는 skip.
@@ -19,7 +19,7 @@ pytestmark = pytest.mark.unit
 def test_9track_tools_registered() -> None:
     """9 트랙 신규 도구 모두 registry 에 등록 (CompareCompanies 는 PeerCompareN 에 흡수)."""
     names = listToolNames()
-    for tool in ("PeerCompareN", "ScenarioOverlay", "PickStoryTemplate", "EvidenceGate"):
+    for tool in ("PeerCompareN", "ScenarioOverlay", "EvidenceGate"):
         assert tool in names, f"{tool} 누락"
     assert "CompareCompanies" not in names, "CompareCompanies 는 PeerCompareN 에 흡수되어 제거됨"
 
@@ -82,14 +82,6 @@ def test_track_i_evidence_gate_missing() -> None:
     assert result["data"]["ok"] is False  # gate validation 실패
     assert isinstance(result["data"]["missing"], list)
     assert len(result["data"]["missing"]) >= 1
-
-
-def test_track_h_picks_general_when_no_signals() -> None:
-    """Track H — stockCode 없으면 general fallback."""
-    result = executeTool("PickStoryTemplate", {"stockCode": "", "question": ""})
-    assert result["ok"] is True
-    assert result["data"]["corporateType"] == "general"
-    assert len(result["data"]["focusSections"]) >= 3
 
 
 def test_track_d_scenario_missing_name() -> None:

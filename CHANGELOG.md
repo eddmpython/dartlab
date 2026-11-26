@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **쓰지 않는 실험과 자산.** 공개 사이트의 `/universe` 실험 화면과 그 실험 코드, 코어 의존성 `msgspec`, 생성 함수가 이미 없어진 6막 레이더 차트 자산, 호출자가 없던 `_segmentEconomics`, 없는 모듈을 부르던 블로그 백필 스크립트를 지웠다.
+- **쓰이지 않던 분석 도구 2개.** 기본 도구 목록에도 MCP 광고 목록에도 없던 `GroundingCheck`와 `PickStoryTemplate`를 등록에서 빼고 모듈을 지웠다. 기본 에이전트 안내문이 갖고 있지 않은 `EvidenceGate`·`PickStoryTemplate`를 부르라고 하던 규칙 2줄도 지웠다.
 
 ## [0.12.0] - 2026-10-01
 

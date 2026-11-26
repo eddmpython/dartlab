@@ -132,7 +132,7 @@ def test_mcp_advertised_tools_carry_annotations():
     """0.11의 모든 advertise 도구가 readOnly/destructive/idempotent/openWorld hint를 노출한다.
 
     마스터 플랜 v2 트랙 7 PR-M1에서 advertise SSOT가 CANONICAL_V2 추종으로 전환되며 옛 workbench-
-    internal 3 종 (LookAheadGuard / GroundingCheck / RequestUserInput) 은 advertise 에서 제외.
+    internal 도구 (LookAheadGuard / RequestUserInput) 는 advertise 에서 제외.
     """
     from dartlab.mcp import _advertisedTools
 

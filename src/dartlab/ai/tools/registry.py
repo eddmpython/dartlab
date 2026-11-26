@@ -16,7 +16,6 @@ from .dcfValuationTool import dcfValuationTool
 from .engineCall import engineCall
 from .evidenceGate import evidenceGate
 from .externalReachDoctor import externalReachDoctor
-from .groundingCheck import groundingCheck
 from .inspectDataset import inspectDataset
 from .listEngineGaps import listEngineGaps
 from .lookAheadGuard import lookAheadGuard
@@ -36,7 +35,6 @@ from .scenarioCompareN import scenarioCompareN
 from .scenarioOverlay import scenarioOverlay
 from .searchPastSessions import searchPastSessions
 from .sensitivityAnalysis import sensitivityAnalysis
-from .storyTemplate import pickStoryTemplate
 from .types import ToolResult, ToolSpec
 from .validateRecipe import validateRecipe
 from .webSearch import webSearch
@@ -544,21 +542,6 @@ _SPECS: dict[str, ToolSpec] = {
         idempotentHint=True,
         openWorldHint=False,
     ),
-    "PickStoryTemplate": ToolSpec(
-        "PickStoryTemplate",
-        "기업유형 (growth/value/credit_risk 등 9 enum) 자동 분류 + 추천 story 섹션 묶음. '이 회사 어떻게 봐?' 종합 분석 의도면 답변 흐름 잡기 전에 호출.",
-        {
-            "type": "object",
-            "properties": {
-                "stockCode": {"type": "string"},
-                "question": {"type": "string"},
-            },
-        },
-        readOnlyHint=True,
-        destructiveHint=False,
-        idempotentHint=True,
-        openWorldHint=False,
-    ),
     "EvidenceGate": ToolSpec(
         "EvidenceGate",
         "Skill OS spec 의 requiredEvidence ↔ 누적 refs 비교. 답변 합성 직전 호출 — missing ref kind 있으면 답변에 ⚠ + 한계 문장 추가 권장.",
@@ -573,26 +556,6 @@ _SPECS: dict[str, ToolSpec] = {
                 },
             },
             "required": ["skillId"],
-        },
-        readOnlyHint=True,
-        destructiveHint=False,
-        idempotentHint=True,
-        openWorldHint=False,
-    ),
-    "GroundingCheck": ToolSpec(
-        "GroundingCheck",
-        "답변 본문의 material claim (수치/날짜/랭킹) 분류 + ref token 매칭 검증. fake ref token 감지. workbench GATE 휴리스틱 표면화.",
-        {
-            "type": "object",
-            "properties": {
-                "answer": {"type": "string"},
-                "refs": {
-                    "type": "array",
-                    "items": {"type": "object", "additionalProperties": True},
-                    "description": "지금까지 모은 refs. 빈 list 도 허용.",
-                },
-            },
-            "required": ["answer"],
         },
         readOnlyHint=True,
         destructiveHint=False,
@@ -739,7 +702,6 @@ _TOOLS: dict[str, ToolFn] = {
     "ReadCapability": readCapability,
     "EngineCall": engineCall,
     "EvidenceGate": evidenceGate,
-    "PickStoryTemplate": pickStoryTemplate,
     "PeerCompareN": peerCompareN,
     "CompileFinancialDashboard": compileFinancialDashboard,
     "CreditScorecard": creditScorecard,
@@ -757,7 +719,6 @@ _TOOLS: dict[str, ToolFn] = {
     "CreateUserSkill": createUserSkill,
     "CompileVisual": compileVisual,
     "LookAheadGuard": lookAheadGuard,
-    "GroundingCheck": groundingCheck,
     "RequestUserInput": requestUserInput,
     "ListEngineGaps": listEngineGaps,
     "ProposeRecipe": proposeRecipe,
@@ -802,7 +763,6 @@ _LEGACY_NAME_MAP = {
     "read_capability": "ReadCapability",
     "engine_call": "EngineCall",
     "evidence_gate": "EvidenceGate",
-    "pick_story_template": "PickStoryTemplate",
     "peer_compare_n": "PeerCompareN",
     "dcf_valuation": "DCFValuation",
     "credit_scorecard": "CreditScorecard",
@@ -820,7 +780,6 @@ _LEGACY_NAME_MAP = {
     "create_user_skill": "CreateUserSkill",
     "compile_visual": "CompileVisual",
     "lookahead_guard": "LookAheadGuard",
-    "grounding_check": "GroundingCheck",
     "request_user_input": "RequestUserInput",
     "run_workbench": "RunWorkbench",
     "list_engine_gaps": "ListEngineGaps",

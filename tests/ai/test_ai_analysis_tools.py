@@ -1,6 +1,6 @@
-"""분석 추론 surfacing 도구 2 종 단위 테스트 — S3.
+"""분석 추론 surfacing 도구 단위 테스트 (S3).
 
-LookAheadGuard · GroundingCheck 가 registry SSOT 에 등록되고 dispatch 되는지,
+LookAheadGuard 와 EvidenceGate 가 registry SSOT 에 등록되고 dispatch 되는지,
 각 도구의 입력 검증·반환 형태가 일관된지 검증.
 
 LookAheadGuard 는 실제 DART/EDGAR provider 호출이 필요해서 외부 의존이 발생 — 거부 케이스
@@ -64,100 +64,7 @@ def test_lookahead_guard_happy_path_real_company():
     assert any(getattr(r, "kind", None) == "tableRef" for r in refs)
 
 
-# ── GroundingCheck ──────────────────────────────────────────────────────────
-
-
-def test_grounding_check_no_claim_no_refs_returns_grounded():
-    """material claim 없는 본문 + ref 없음 → grounded=True (검증할 게 없음)."""
-    from dartlab.ai.tools.groundingCheck import groundingCheck
-
-    result = groundingCheck(answer="삼성전자는 한국 회사다.", refs=[])
-    assert result.ok is True
-    assert result.data.get("grounded") is True
-    assert result.data.get("materialNumber") is False
-
-
-def test_grounding_check_material_number_without_refs_unmatched():
-    """수치 claim 있는데 ref 없음 → grounded=False."""
-    from dartlab.ai.tools.groundingCheck import groundingCheck
-
-    result = groundingCheck(answer="삼성전자 ROE 는 12.3% 다.", refs=[])
-    assert result.ok is False
-    assert result.data.get("materialNumber") is True
-    assert result.data.get("grounded") is False
-
-
-def test_grounding_check_fake_ref_token_detected():
-    """본문에 fake `<valueRef:not_in_state>` 토큰 — fakeRefTokens 에 잡힘."""
-    from dartlab.ai.tools.groundingCheck import groundingCheck
-
-    answer = "ROE 는 12.3% <valueRef:value:samsung_fake:343> 이다."
-    result = groundingCheck(answer=answer, refs=[])
-    fake = result.data.get("fakeRefTokens") or []
-    assert any("samsung_fake" in t or "fake" in t for t in fake)
-    assert result.data.get("grounded") is False
-
-
-def test_grounding_check_dispatch_via_registry():
-    from dartlab.ai.tools.registry import executeTool
-
-    result = executeTool(
-        "GroundingCheck",
-        {"answer": "ROE 12.3%", "refs": []},
-    )
-    # ToolResult.to_dict() — data 안에 grounded 등 분류 필드.
-    assert "grounded" in (result.get("data") or {})
-    assert result.get("data", {}).get("materialNumber") is True
-
-
 # ── Korean disclosure evidence trail (cryptic-discovering-kettle E 트랙) ──
-
-
-def test_grounding_check_korean_disclosure_claim_without_rcept_fails():
-    """한국 공시 키워드 답변 + DART rceptNo payload 없음 → grounded=False + missing_dart_rcept."""
-    from dartlab.ai.tools.groundingCheck import groundingCheck
-
-    answer = "삼성전자 사외이사 비율 60% 다."
-    result = groundingCheck(answer=answer, refs=[])
-    assert result.data.get("koreanDisclosureClaim") is True
-    assert result.data.get("dartRceptPresent") is False
-    assert result.data.get("grounded") is False
-    assert result.error == "grounding_check_missing_dart_rcept"
-
-
-def test_grounding_check_korean_disclosure_claim_with_rcept_grounded():
-    """한국 공시 키워드 답변 + ref payload.docId 14 자리 DART rcept → grounded=True."""
-    from dartlab.ai.tools.groundingCheck import groundingCheck
-
-    refs = [
-        {
-            "id": "doc:005930:20250404000000",
-            "kind": "docRef",
-            "title": "사업보고서",
-            "source": "DART",
-            "payload": {
-                "docId": "20250404000000",
-                "section": "II. 사업의 내용",
-                "page": 42,
-                "confidence": 95,
-            },
-        }
-    ]
-    answer = "삼성전자 사외이사 비율 60% <docRef:doc:005930:20250404000000> 다."
-    result = groundingCheck(answer=answer, refs=refs)
-    assert result.data.get("koreanDisclosureClaim") is True
-    assert result.data.get("dartRceptPresent") is True
-    assert result.data.get("grounded") is True
-
-
-def test_grounding_check_non_korean_claim_not_affected():
-    """한국 공시 키워드 없음 → koreanDisclosureClaim=False · DART rcept 검증 skip."""
-    from dartlab.ai.tools.groundingCheck import groundingCheck
-
-    answer = "Apple AAPL revenue grew 8% YoY."
-    result = groundingCheck(answer=answer, refs=[])
-    assert result.data.get("koreanDisclosureClaim") is False
-    assert result.data.get("koreanEvidenceOk") is True
 
 
 def test_evidence_gate_korean_skill_with_meta_rcept_missing():
@@ -218,13 +125,13 @@ def test_new_tools_in_legacy_alias_map():
     from dartlab.ai.tools.registry import _LEGACY_NAME_MAP
 
     assert _LEGACY_NAME_MAP.get("lookahead_guard") == "LookAheadGuard"
-    assert _LEGACY_NAME_MAP.get("grounding_check") == "GroundingCheck"
+    assert _LEGACY_NAME_MAP.get("evidence_gate") == "EvidenceGate"
 
 
 def test_canonical_tool_names_includes_analysis_tools():
     from dartlab.ai.tools.registry import CANONICAL_TOOL_NAMES
 
-    for name in ("LookAheadGuard", "GroundingCheck"):
+    for name in ("LookAheadGuard", "EvidenceGate"):
         assert name in CANONICAL_TOOL_NAMES, f"{name} 가 CANONICAL_TOOL_NAMES 에 없음"
 
 

@@ -13,7 +13,7 @@ LookAheadGuard 의 Company(market=...) 같은 외부 의존 회귀를 못 잡는
   3. RunPython sanity
   4. RunPython 실제 dartlab.Company.panel 호출
   5. S2 sandbox os.system 차단
-  6. 비광고 GroundingCheck 실행 차단
+  6. 비광고 EvidenceGate 실행 차단
   7. 비광고 LookAheadGuard 실행 차단
   7b. 비광고 호출은 인자와 무관하게 동일 차단
   8. 비광고 RequestUserInput elicit 전 차단
@@ -146,13 +146,12 @@ async def main():
             else:
                 note("FAIL", f"sandbox 차단 안 됨: ok={sc.get('ok')}")
 
-            # 6. 내부 GroundingCheck: advertise 밖 실행 차단
-            print("\n## 6. GroundingCheck: 비광고 실행 차단")
-            sample = "삼성전자 ROE 는 12.3% 다. 3 분기 연속 OPM > 15% 유지."
-            res = await s.call_tool("GroundingCheck", {"answer": sample, "refs": []})
+            # 6. 내부 EvidenceGate: advertise 밖 실행 차단
+            print("\n## 6. EvidenceGate: 비광고 실행 차단")
+            res = await s.call_tool("EvidenceGate", {"skillId": "engines.scan", "refs": []})
             sc = res.structuredContent or {}
             if sc.get("error") == "tool_not_advertised":
-                note("OK", "tools/list 밖 GroundingCheck 직접 호출 차단")
+                note("OK", "tools/list 밖 EvidenceGate 직접 호출 차단")
             else:
                 note("FAIL", f"비광고 도구가 실행됨: {_short(sc)}")
 

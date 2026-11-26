@@ -1,6 +1,6 @@
 """Shared Company resolution helper for ai/tools/ callers.
 
-`peerCompareN`, `storyTemplate`, `scenarioOverlay` 등이 같은 11-line 사본을 박고 있었음 —
+`peerCompareN`, `scenarioOverlay` 등이 같은 11-line 사본을 박고 있었음 —
 target 문자열 → `dartlab.Company(target)` 시도 → 예외 시 None.
 
 `engineCall._resolveCompany` 는 `resolveFromText` fallback + `_quietExecutionNoise` context

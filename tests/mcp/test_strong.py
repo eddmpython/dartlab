@@ -90,12 +90,12 @@ async def _run_probe() -> dict:
                 out["set_level_error"] = str(exc)
 
             # 7. AI 내부 도구는 registry 에 있어도 MCP advertise 밖이면 실행 차단.
-            grounding = await session.call_tool(
-                "GroundingCheck",
-                {"answer": "삼성전자 ROE 는 12.3% 수준이다.", "refs": []},
+            internal = await session.call_tool(
+                "EvidenceGate",
+                {"skillId": "engines.scan", "refs": []},
             )
-            sc = grounding.structuredContent or {}
-            out["grounding_error"] = sc.get("error")
+            sc = internal.structuredContent or {}
+            out["internal_tool_error"] = sc.get("error")
 
             # 7b. RequestUserInput 도 tools/list 밖이면 elicit 전에 차단.
             elicit = await session.call_tool(
@@ -160,8 +160,8 @@ def test_mcp_strong_annotations_and_structured_and_prompts():
 
     # ── AI 내부 도구는 MCP 외부에 노출하지 않음 ──
     assert "LookAheadGuard" not in ann
-    assert "GroundingCheck" not in ann
-    assert out.get("grounding_error") == "tool_not_advertised"
+    assert "EvidenceGate" not in ann
+    assert out.get("internal_tool_error") == "tool_not_advertised"
 
     # ── RequestUserInput 도 동일 SSOT 경계 ──
     assert "RequestUserInput" not in ann

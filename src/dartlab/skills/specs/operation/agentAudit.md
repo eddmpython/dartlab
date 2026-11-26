@@ -50,7 +50,7 @@ linkedSkills:
 | **P** (Prompt) | system prompt 변형 정합 | promptingPatterns 패턴 안 |
 | **T** (Tool calls) | 도구 선택 + 순서 정합 | toolComposition 5 분류 안 |
 | **C** (Compliance) | 강행 룰 (단위/dateRef/wrap) | 4 강행 요소 100% |
-| **V** (Verifier) | evidence GATE + grounding | EvidenceGate pass + GroundingCheck score ≥ 0.8 |
+| **V** (Verifier) | evidence GATE | EvidenceGate pass |
 
 ## 절차
 
