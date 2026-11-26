@@ -1,6 +1,6 @@
 """Forward Test 인프라 : 매출 예측 저장 + 사후 평가.
 
-저장 위치 (2026-07-03 승격, scenario-simulator 09 §10.2 P9b + expectation-grid 00 §9 A2):
+저장 위치 (2026-07-03 승격):
 ``~/.dartlab``(ephemeral) 폐기. ``DARTLAB_DATA_DIR`` env > ``./data`` 아래 ``forwardTests/``.
 """
 
@@ -450,7 +450,7 @@ def recordForecast(
         ``evaluateCalibration`` 이 닫는다 (write→evaluate→calibration 루프).
 
     When:
-        expectation-grid 수집자(issueRevenue)·forecast 파이프라인이 예측을 낼 때마다.
+        기대 격자 수집자(issueRevenue)·forecast 파이프라인이 예측을 낼 때마다.
 
     How:
         generateKey + now(UTC) 로 ForwardTestRecord 구성 → saveForecast 위임.

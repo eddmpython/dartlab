@@ -405,7 +405,7 @@ def _laborCapex(code: str, marketNs: str) -> dict:
 def _narrative(code: str, asOf: str, dataDir: Path | None) -> dict:
     """축8 서사 형질: 리스크 문단 변화·신사업 키워드 (frame/narrative). 부재/실패는 미가용 라벨.
 
-    frame.narrative 는 정성 단일 메커니즘(panel-extraction-workbench-ssot)이라 API 시그니처가
+    frame.narrative 는 정성 단일 메커니즘이라 API 시그니처가
     갱신될 수 있어, 실패는 예외 아니라 미가용 라벨로 격리한다 (프로파일 전체 재현성 보존).
     """
     try:

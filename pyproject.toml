@@ -92,8 +92,6 @@ dependencies = [
     "PyYAML>=6.0.0,<7; sys_platform != 'emscripten'",
     # viz
     "plotly>=5.0.0,<7; sys_platform != 'emscripten'",
-    # Universe local checkpoint canonical JSON codec
-    "msgspec>=0.21.1,<1; sys_platform != 'emscripten'",
 ]
 
 [project.scripts]

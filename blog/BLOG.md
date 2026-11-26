@@ -428,7 +428,6 @@ c.quant("종합"); c.quant("팩터")
 2. **내부 링크 맵 갱신** - inbound 0 인 고립 글 감지.
 3. **경쟁 분석** - 상위 글에 있는데 내 글에 없는 관점.
 4. **Topic Cluster** - pillar + supporting 구조.
-5. **KnowledgeDB insights 동기화** - 신규/갱신 글의 `ai:` 블록을 `dartlab.knowledge.insights(source="blog")` 로 백필. `uv run python -X utf8 blog/_scripts/backfill_blog_insights.py --blog-root blog/ --dry-run` 으로 diff 먼저, `--confirm` 으로 KnowledgeDB 쓰기. AI 엔진의 retrieve 경로에서 글 결론이 인용 가능해진다.
 
 ---
 

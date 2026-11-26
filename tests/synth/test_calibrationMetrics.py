@@ -1,6 +1,6 @@
 """calibrationMetrics synth 승격 검증 : 계산 identity + 옛 경로 re-export 호환.
 
-승격(analysis/forecast → synth, expectation-grid 00 §9 A3) 후에도
+승격(analysis/forecast → synth) 후에도
 ①계산 골든값 불변 ②옛 import 경로 동작 ③두 경로가 같은 객체를 가리킴을 고정한다.
 """
 

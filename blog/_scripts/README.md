@@ -41,7 +41,6 @@
 | `audit_seo.py` | SEO·깊이·캐러셀 진단과 `publishGate.py`의 점수 엔진. 단독 결과는 발행 승인 아님 |
 | `auditBlogFinance.py` | 회사 글 재무 표 ↔ `dartlab.Company().select()` 실측 1:1 정합 |
 | `companyReportPolicy.py` | 기업이야기 금지 지표와 문서·기획·SVG 정책을 공통 검사 |
-| `backfill_blog_insights.py` | 글 `ai:` 블록 → `dartlab.knowledge.insights(source="blog")` 백필 (AI retrieve 인용) |
 | `runCells.mjs` | **브라우저 실행셀 발행 게이트** (dartlab-stories 전용). `auditBlog.py` 가 문자를 본다면 이건 실제 chromium 에서 본문 코드가 도는지 본다. ok / empty(조용히 삼킴) / error 를 가른다. `node blog/_scripts/runCells.mjs --post <폴더>` (dev 5173 전제). playwright 는 repo 설치본을 빌려 쓴다 |
 | `test_companyReportPolicy.py` | 기업이야기 금지 지표 정책 회귀 테스트 |
 

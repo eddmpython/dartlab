@@ -849,7 +849,7 @@
       "id": "engines.viz.scenarioVisuals",
       "title": "Viz - 시나리오·민감도 시각화",
       "category": "engines",
-      "purpose": "매크로 충격, valuation 민감도, stress test 결과를 `six-act-radar`, `heatmap`, Mermaid graph 로 표현해 충격 전파와 민감도를 분리해서 보여준다.",
+      "purpose": "매크로 충격, valuation 민감도, stress test 결과를 `heatmap`, Mermaid graph 로 표현해 충격 전파와 민감도를 분리해서 보여준다.",
       "inDegree": 1,
       "outDegree": 4,
       "cluster": "viz",

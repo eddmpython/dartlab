@@ -22,15 +22,19 @@
    - `tests/_attempts/dartlabUniverse/`에 git이 추적하는 파일 144개가 있다.
    - `pyproject.toml`의 코어 의존성 `msgspec`은 src 안에서 쓰는 곳이 없다.
    - 조치: 제품이 아니므로 공개 라우트와 분기, 코어 의존성을 걷어내고 실험 코드의 보존 여부를 정한다.
+   - **처리함 (2026-11-27).** `landing/src/routes/universe/`, `tests/_attempts/dartlabUniverse/`, layout 분기, vite `universeGuiDir`, `msgspec` 의존성(uv.lock 포함)을 지웠다. 실험 코드는 git 기록에만 남긴다. 개발 서버에서 첫 화면 200, `/universe` 404, `svelte-check` 오류 0을 확인했다.
 3. **리포트 엔진의 쓰이지 않는 자산** (옛 professional-report-engine).
    - `landing/static/charts/005930/hero/sixActRadar.json`과 `manifest.json`의 sixActRadar 항목, 이를 만드는 `landing/_scripts/buildCompanyCharts.py`의 분기.
    - `src/dartlab/analysis/financial/_segmentEconomics.py`의 `reconcileSegmentMargins`는 테스트(`tests/quant/test_segmentEconomics.py`)만 부른다.
    - 랜딩 리포트의 pro 블록(P3)은 지금은 착수하지 않아 기획을 닫았다. `Company.reportModel` 공개 계약은 Skill OS `engines/company`에 있다.
+   - **처리함 (2026-11-27).** 레이더 생성 함수(`specSixActRadar`)는 2026-07-10 `c85c40147`에 이미 지워져 빌드 스크립트 분기가 ImportError로 죽는 상태였다. 분기, manifest 항목, json을 지웠고 이 함수를 쓰라고 적던 Skill OS `engines.viz.scenarioVisuals`도 고쳤다. `_segmentEconomics.py`와 그 테스트를 지웠다(되살릴 때 `d46f98e99`).
 4. **깨진 블로그 스크립트** (옛 cards-knowledge-network).
    - `blog/_scripts/backfill_blog_insights.py`가 없는 모듈 `dartlab.ai.persistence.blog_insights`를 import한다.
+   - **처리함 (2026-11-27).** 스크립트를 지우고 `blog/BLOG.md`, `blog/PIPELINE.md`, `blog/_scripts/README.md`의 안내 줄을 걷었다.
 5. **지운 기획 문서를 가리키는 코드 주석**.
    - `src/dartlab/analysis/forecast/forwardTest.py`, `src/dartlab/synth/expectationSpec.py`, `tests/synth/test_calibrationMetrics.py`가 `expectation-grid` 문서 절을, `src/dartlab/simulate/profile.py`가 `panel-extraction-workbench-ssot`를, `tests/audit/workspaceHygiene.py`가 `search-productization`을 이름으로 가리킨다.
    - 조치: 가리키는 내용이 Skill OS로 옮겨지면 주석을 Skill OS id로 바꾼다.
+   - **처리함 (2026-11-27).** 지운 기획 문서의 이름과 절 번호를 주석 6곳(`tests/audit/checkUiDataWiring.mjs` 포함 5개 파일)에서 걷어내고 기능 이름(기대 격자, 공시 검색)으로 바꿨다. `expectationSpec.py`의 "Expectation Grid"는 기능 이름이라 그대로 둔다.
 
 ## 운영 중인 기능의 Skill OS 반영 부족
 

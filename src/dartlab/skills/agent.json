@@ -2570,8 +2570,8 @@
         "`kind=\"signals\"` — 공시 키워드 트렌드. scan 에 signal 축이 구현되면 라우팅.",
         "`kind=\"reports\"` — review publisher 가 발간한 보고서 목록.",
         "CLI 서브커맨드 `dartlab listing <kind>`.",
-        "2026-05-12 — `gather/LISTING.md` → 본 sub-spec 통합 (Skill OS 운영 SSOT 승격)",
-        "호출 결과는 `tableRef` · `valueRef` · `dateRef` · `executionRef` 로 ref 남긴다."
+        "2026-11-27: KIND 가 GitHub 러너 접속을 403 으로 막아 KindList 와 매일 밤 검사가 실패했다. `getKindList(mirrorFallback=True)` HF 미러 대체, 403 즉시 종료, 빈 목록 메모리 5분, kindlist.yml KIND 단계 실패 격리를 더했다.",
+        "2026-05-12 — `gather/LISTING.md` → 본 sub-spec 통합 (Skill OS 운영 SSOT 승격)"
       ],
       "recipeSteps": [],
       "requiredEvidence": [],
@@ -6401,18 +6401,17 @@
     },
     {
       "id": "engines.viz.scenarioVisuals",
-      "bodyPreview": "## 절차\n\n1. 충격 변수, 전파 경로, 회사 metric 을 분리한다.\n2. grid 가 있으면 `specSensitivityHeatmap(grid)` 를 우선한다.\n3. 6막 점수는 `specSixActRadar(score)` 로 만들되, 각 축 score 근거를 붙인다.\n4. 인과 설명은 Mermaid `graph LR` 로 6~8노드 이하만 작성한다.\n5. 가정이 부족하면 chart 대신 scenario table 로 낮춘다.\n\n## 공개 호출 방식\n\n```python\nfrom dartlab.viz.generators import specSensitivityHeatmap, specSixActRadar\n\nheatmap = specSensitivityHeatmap(grid)\nradar = specSixActRadar(score)\n```\n\n## 호출 동작\n\n- 입력 view 또는 rows 를 검산 가능한 ChartSpec 으로 변환한다.\n- `evidenceBinding` 또는 `evidenceIds` 가 없으면 emit 하지 않는다.\n- 데이터가 부족하면 값을 추정하지 않고 표, coverage note, 또는 bullet path 로 낮춘다.\n\n## 대표 반환 형태\n\n- `dict` ChartSpec: `chartType`, `title`, `series` 또는 `data`, `categories`, `evidenceBinding`, `meta`.\n- Mermaid 계열은 diagram source 와 node/edge evidence refs 를 함께 남긴다.\n\n## 기본 검증\n\n- 모든 scenario visual 은 가정값과 결과값을 함께 노출한다.\n- Mermaid diagram 은 수치 임계 또는 방향성을 노드 라벨에 넣는다.",
+      "bodyPreview": "## 절차\n\n1. 충격 변수, 전파 경로, 회사 metric 을 분리한다.\n2. grid 가 있으면 `specSensitivityHeatmap(grid)` 를 우선한다.\n3. 인과 설명은 Mermaid `graph LR` 로 6~8노드 이하만 작성한다.\n4. 가정이 부족하면 chart 대신 scenario table 로 낮춘다.\n\n6막 radar generator(`specSixActRadar`)는 2026-07-10 에 지웠다. 6막 점수 차트는 지금 만들 수 없다.\n\n## 공개 호출 방식\n\n```python\nfrom dartlab.viz.generators import specSensitivityHeatmap\n\nheatmap = specSensitivityHeatmap(grid)\n```\n\n## 호출 동작\n\n- 입력 view 또는 rows 를 검산 가능한 ChartSpec 으로 변환한다.\n- `evidenceBinding` 또는 `evidenceIds` 가 없으면 emit 하지 않는다.\n- 데이터가 부족하면 값을 추정하지 않고 표, coverage note, 또는 bullet path 로 낮춘다.\n\n## 대표 반환 형태\n\n- `dict` ChartSpec: `chartType`, `title`, `series` 또는 `data`, `categories`, `evidenceBinding`, `meta`.\n- Mermaid 계열은 diagram source 와 node/edge evidence refs 를 함께 남긴다.\n\n## 기본 검증\n\n- 모든 scenario visual 은 가정값과 결과값을 함께 노출한다.\n- Mermaid diagram 은 수치 임계 또는 방향성을 노드 라벨에 넣는다.",
       "title": "Viz - 시나리오·민감도 시각화",
       "category": "engines",
       "categoryTitle": "Engines",
       "kind": "curated",
       "status": "observed",
-      "purpose": "매크로 충격, valuation 민감도, stress test 결과를 `six-act-radar`, `heatmap`, Mermaid graph 로 표현해 충격 전파와 민감도를 분리해서 보여준다.",
+      "purpose": "매크로 충격, valuation 민감도, stress test 결과를 `heatmap`, Mermaid graph 로 표현해 충격 전파와 민감도를 분리해서 보여준다.",
       "whenToUse": [
         "시나리오 분석",
         "stress matrix",
         "민감도 heatmap",
-        "6막 radar",
         "충격 전파 diagram"
       ],
       "inputs": [
@@ -6423,7 +6422,6 @@
       ],
       "requiredInputs": [],
       "outputs": [
-        "chartType six-act-radar ChartSpec",
         "chartType heatmap ChartSpec",
         "Mermaid graph LR"
       ],
@@ -6487,8 +6485,7 @@
       ],
       "examples": [
         "금리 +100bp valuation sensitivity",
-        "환율 충격 → 매출/마진 전파 Mermaid",
-        "6막 macro regime radar"
+        "환율 충격 → 매출/마진 전파 Mermaid"
       ],
       "runtimeCompatibility": {
         "server": {

@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **분기 경계 검증.** 신용등급 기대 채점 테스트의 발행 시계를 고정하고 분기·연도 경계의 만기 전 보류와 만기 후 채점을 검사한다. 달력이 바뀌면 전체 검사가 실패하던 문제를 수정했다.
 - **고정 의존성 보안 검사.** 설치판뿐 아니라 개발·선택 의존성을 포함한 Python 및 npm lockfile도 검사하고 PyJWT·urllib3·virtualenv·DOMPurify·undici의 취약한 고정 버전을 갱신했다.
 - **릴리즈 첨부 파일 보존.** 배포 job의 checkout을 산출물 다운로드 앞으로 옮겨 wheel·sdist·SBOM이 지워지지 않게 했다. 필수 첨부 파일이 없으면 GitHub Release 발행 단계가 실패한다.
+- **KRX KIND 접속 거부 때 상장목록 대체.** KIND가 접속을 403으로 막으면 재시도 없이 바로 멈추고, HF에 올려 둔 상장목록으로 채운다. 대체 목록은 파일 캐시에 쓰지 않고 1시간 뒤 KIND를 다시 본다. 둘 다 비면 5분 뒤 다시 조회한다. 이 때문에 회사명 검색이 0건을 내고 매일 밤 검사가 실패했다. 상장목록을 만드는 워크플로는 대체 목록을 쓰지 않고, KIND가 막혀도 DartList·corpProfile 갱신은 계속한다.
+
+### Removed
+
+- **쓰지 않는 실험과 자산.** 공개 사이트의 `/universe` 실험 화면과 그 실험 코드, 코어 의존성 `msgspec`, 생성 함수가 이미 없어진 6막 레이더 차트 자산, 호출자가 없던 `_segmentEconomics`, 없는 모듈을 부르던 블로그 백필 스크립트를 지웠다.
 
 ## [0.12.0] - 2026-10-01
 

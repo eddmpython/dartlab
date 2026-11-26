@@ -1,4 +1,4 @@
-// UI 런타임 데이터층 배선 가드 — 데이터 워크벤치 SSOT (mainPlan/data-workbench-ssot/06) 의 기계 강제.
+// UI 런타임 데이터층 배선 가드. 데이터 워크벤치 SSOT 의 기계 강제.
 //
 // 대상: ui/packages/runtime/src/adapters/**/sources/*.ts (source 레이어).
 // 파서: TypeScript 컴파일러 API (ts.createSourceFile → AST walk) — 정규식이 못 거르는

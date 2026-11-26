@@ -101,7 +101,7 @@
 - **블로그**: 이미지·OG를 로컬에서 눈검수한 뒤 `publishBlogAssets.py --post <글폴더>`로 HF 발행·본문 치환 -> `publishGate.py --post <글폴더>` 통과 -> 빌드 확인 -> 커밋. 재무는 `<CompanyFinancials code="…" />` 라이브 태그(빌드타임 데이터 SSOT 직독). → BLOG.md §Phase 5
 - **카드**: `build_carousel_contracts.py` -> hfMedia `manifests/carousels.json` 단일 런타임 뷰 + `objects/sha256/` 객체. 데이터만 올리므로 사이트 재빌드는 필요 없다.
 - **자산**: `build_index.py` → `publish_assets_hf.py` → HF `dartlab-media`.
-- **발행 후**: 월 SEO 스코어링 · 내부링크 맵 · KnowledgeDB `insights` 백필(블로그=`backfill_blog_insights.py`, 카드=향후 `source="cards"`).
+- **발행 후**: 월 SEO 스코어링 · 내부링크 맵.
 
 ---
 정본 위치: 블로그 단계 상세 [BLOG.md](BLOG.md) · 카드 [_scripts/CARDS.md](_scripts/CARDS.md) · 작가 게이트 [_reference/BLOG_MASTER_WRITER.md](_reference/BLOG_MASTER_WRITER.md) · 스크립트 [_scripts/README.md](_scripts/README.md).

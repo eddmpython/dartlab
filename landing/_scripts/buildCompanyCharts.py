@@ -9,7 +9,6 @@ JSON 으로 dump 한다. landing/company 페이지가 이 JSON 을 단일
     landing/static/charts/{code}/
         manifest.json                # 차트 목록 + 메타
         narrative/{slug}.json        # 14 종 기존 generator 결과
-        hero/{slug}.json             # six-act-radar / kpi-ribbon (Phase 3/4)
         statement/{slug}.json        # statement deep-drill (Phase 4)
         peer/{slug}.json             # peer-matrix (Phase 5)
 
@@ -116,28 +115,6 @@ def buildForCode(code: str, *, force: bool = False) -> dict[str, Any]:
         spec_path = out_dir / "narrative" / f"{slug}.json"
         _writeJson(spec_path, spec)
         manifest_charts.append(_summarizeForManifest("narrative", slug, spec))
-
-    # hero — six-act-radar (story.sixAct + spec_six_act_radar)
-    try:
-        from dartlab.story import sixActScore
-        from dartlab.viz import specSixActRadar
-
-        score = sixActScore(c)
-        radar_spec = specSixActRadar(
-            score.asScoreDict(),
-            stockCode=score.stockCode,
-            corpName=score.corpName,
-            evidence=score.evidence,
-        )
-    except (AttributeError, KeyError, OSError, RuntimeError, TypeError, ValueError) as e:
-        radar_spec = None
-        skipped.append(f"sixActRadar:{type(e).__name__}")
-    if radar_spec is not None:
-        spec_path = out_dir / "hero" / "sixActRadar.json"
-        _writeJson(spec_path, radar_spec)
-        manifest_charts.append(_summarizeForManifest("hero", "sixActRadar", radar_spec))
-    else:
-        skipped.append("sixActRadar:no_data")
 
     # peer — industry.peers + spec_peer_matrix
     try:

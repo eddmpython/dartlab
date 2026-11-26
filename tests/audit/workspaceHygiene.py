@@ -111,7 +111,7 @@ ALLOWED_ROOT = frozenset(
 ALLOWED_MEDIA = frozenset({"catalog.json"})
 
 # `.tmp/` 장수 허용 디렉토리: 배선이 참조하는 로컬 자산만.
-# dart·hf-contentIndex·search-hard-negative = search-productization 로컬 인덱스/평가,
+# dart·hf-contentIndex·search-hard-negative = 공시 검색 로컬 인덱스/평가,
 # remotion-props = 캐러셀 렌더 props, dartlab-product-smoke = runProductSmokeWheel venv.
 ALLOWED_TMP = frozenset(
     {
