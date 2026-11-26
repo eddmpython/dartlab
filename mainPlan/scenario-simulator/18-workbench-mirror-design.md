@@ -1,6 +1,6 @@
 # 18. 거울 작업대 (Mirror Workbench) 설계 확정 + 개념확립 실측
 
-> 2026-07-22 superseded. 범용 정본은 `mainPlan/unified-data-workbench/`와
+> 2026-07-22 superseded. 범용 정본은 `src/dartlab/dataHub/`(Skill OS `engines/dataHub`)와
 > `src/dartlab/data/`다. 순수 shape folding은 `data.factorKernel`로 이관했고,
 > 실사용자가 없던 `simulate.mirror` 물질화 드라이버는 제거했다. 아래 내용은 설계 이력이다.
 

@@ -1,7 +1,7 @@
 # 06. 엔진 판독·가정 sweep : 시뮬레이터의 "현재" 축 (검증 루프를 채우는 조각)
 
 상태: v1.0 (2026-07-05 운영자 합의 "여기에 태우자". 토론 이력·P0 실측 = `../weekly-uplift-shortlist/05-progress-ledger.md`)
-위치: 본 문서군의 시간축에서 **현재** 를 담당한다. 과거 = expectation 원장 채점(expectation-grid, 라이브 가동), 미래 = Play fan(05). 00 §8b 의 conditional-signature 판정("검증 루프 미완이라 시그니처가 될 설계")에서 비어 있다고 지목된 **그 검증 루프의 대규모 실장**이 본 축이다.
+위치: 본 문서군의 시간축에서 **현재** 를 담당한다. 과거 = expectation 원장 채점(`simulate.expectationCycle`, 월간 cycle 가동. 옛 expectation-grid 기획은 2026-11-27 닫았고 남은 일은 `../v1-readiness-review/02-closed-plan-leftovers.md` 7번), 미래 = Play fan(05). 00 §8b 의 conditional-signature 판정("검증 루프 미완이라 시그니처가 될 설계")에서 비어 있다고 지목된 **그 검증 루프의 대규모 실장**이 본 축이다.
 
 ---
 

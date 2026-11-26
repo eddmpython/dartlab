@@ -3333,7 +3333,8 @@ fail-closed 를 실측으로 통과했다.** 처분이 정해지기 전까지
 회의론자)과 운영자 문답으로 "처분"이라는 프레임 자체를 폐기했다. 결정할 것이 없다:
 스택은 활성 initiative(scenario-simulator)의 건설 현장이고 그 존폐는 initiative 로드맵
 시점의 결정이며, 라이브 기대격자 체인 4모듈은 expectation-grid 소속의 승인된 운영
-표면이다. 지금 실행할 유일한 것은 공개 호출계약의 기계 동결이었고 실장했다:
+표면이다(2026-11-27 기획 정리로 expectation-grid 폴더를 닫아 이 4모듈의 남은 일은
+[02-closed-plan-leftovers.md](02-closed-plan-leftovers.md) 7번으로 옮겼다). 지금 실행할 유일한 것은 공개 호출계약의 기계 동결이었고 실장했다:
 `guard/rules.py` 의 frozen manifest 2개(`SIMULATE_CONTRACT_CLOSURE` 6모듈,
 `SIMULATE_OPERATIONAL_SURFACE` 4모듈)와 `checkSimulateContractClosure` 2중 검사
 (외부 유출 + 폐쇄 고정점, lazy·동적 포함), `tests/architecture/

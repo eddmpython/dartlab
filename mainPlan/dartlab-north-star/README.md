@@ -41,9 +41,9 @@
 ## 다른 mainPlan과의 관계
 
 - 현재 Agent Runtime은 첫 번째 실제 소비자다. primary goal은 `completeVerifiedAnalysisLoop`다.
-- `ai-workbench-connector`: 외부 AI가 evidence를 조회하는 경로다. 원격 tool call 수는 분자가 아니며 evidence 확인까지 이어져야 한다.
-- `first-party-ai`: 모델 tier나 생성량이 아니라 동일 verified analysis loop로 평가한다.
+- 외부 AI 연결이나 공개 AI 기능을 새로 세우면 원격 tool call 수나 생성량이 아니라 동일 verified analysis loop로 평가한다. evidence 확인까지 이어져야 한 건이다.
 - 데이터, 검색, terminal, report 이니셔티브도 기능별 score를 만들지 않고 아래 goal ID 중 하나를 고른다.
+- 2026-11-27 기획 정리 뒤 이 폴더는 이용자 측정 작업 문서다. v1.0 점검(`v1-readiness-review`) 다음 차례다.
 
 ## 착수 순서
 
