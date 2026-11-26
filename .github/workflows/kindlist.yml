@@ -44,11 +44,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # KIND 가 러너 접속을 막아도(2026-11 Access Denied 403) 뒤의 DartList·corpProfile 갱신은
+      # 계속한다. KindList 업로드만 건너뛰고, 마지막 단계에서 실패를 드러낸다.
       - name: Crawl KRX KIND
+        id: kind
+        continue-on-error: true
         run: python .github/scripts/meta/updateKindList.py
 
       - name: Upload KindList to Release
-        if: ${{ !hashFiles('dist/SKIP') }}
+        if: ${{ steps.kind.outcome == 'success' && !hashFiles('dist/SKIP') }}
         run: |
           if gh release view kindlist-latest > /dev/null 2>&1; then
             gh release upload kindlist-latest \
@@ -68,7 +72,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload KindList to HuggingFace
-        if: ${{ !hashFiles('dist/SKIP') }}
+        if: ${{ steps.kind.outcome == 'success' && !hashFiles('dist/SKIP') }}
         run: |
           python -c "
           from datetime import datetime, timezone
@@ -199,3 +203,9 @@ jobs:
           "
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      - name: Fail when KRX KIND crawl failed
+        if: ${{ steps.kind.outcome == 'failure' }}
+        run: |
+          echo "::error::KRX KIND 상장목록을 받지 못해 KindList 를 갱신하지 않았다. DartList·corpProfile 단계는 그대로 돌았다."
+          exit 1

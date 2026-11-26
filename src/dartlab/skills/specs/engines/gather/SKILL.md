@@ -453,6 +453,8 @@ OpenDART CORPCODE.xml → parquet 변환. GitHub Actions 에서 kindList 와 함
 
 **사용자 로드 경로** — 캐시 우선순위: 메모리 → 파일 (`data/dartList/dartList.parquet`, 24h TTL) → HuggingFace 자동 다운로드. DART API 키 불필요 (HF 에서 프리빌드 parquet 을 가져온다).
 
+**kindList 로드 경로**: `getKindList()` 캐시 우선순위는 메모리 → 파일 (`{dataRoot}/kindList/corpList.parquet`, 24h TTL) → KIND API → HF 미러 (`metadata/corpList.parquet`, kindlist.yml 이 발행)다. KIND 가 접속을 거부(401·403)하면 재시도 없이 끝내고, KIND 결과가 비면 미러로 채운다. 미러 결과는 파일 캐시에 쓰지 않고 메모리에 1시간만 두며, KIND 와 미러가 모두 비면 빈 목록을 5분만 둔다. 미러를 만드는 `updateKindList.py` 는 `mirrorFallback=False` 로 불러 KIND 실패를 옛 미러로 덮지 않는다. kindlist.yml 은 KIND 단계가 실패해도 DartList·corpProfile 단계를 계속 돌리고 마지막 단계에서 실패를 드러낸다.
+
 **dartlist vs corpCode.py**:
 
 |  | dartlist (`getDartList`) | corpCode.py (`loadCorpCodes`) |
@@ -523,6 +525,7 @@ listing("topics", corp="005930")
 | `tests/test_listing_facade.py` | facade 테스트 8 건 |
 
 ## 변경 이력
+- 2026-11-27: KIND 가 GitHub 러너 접속을 403 으로 막아 KindList 와 매일 밤 검사가 실패했다. `getKindList(mirrorFallback=True)` HF 미러 대체, 403 즉시 종료, 빈 목록 메모리 5분, kindlist.yml KIND 단계 실패 격리를 더했다.
 
 - 2026-06-30 — **네이버 분류/목록 축 + 호출계약 정리**. 로컬 개인용 축 `naverTheme`·`naverIndustry`·`naverEtf`·`naverEtn` 추가 (공통 패키지 `gather/sources/naver/` — 그룹 `groups`(테마·업종 type 파라미터화), 상품 `products`(ETF/ETN JSON)). 신규 SSOT — `core.persist`(freshness 로컬 저장, collectedAt·디폴트 7일), `core.progress`(rich 진행바 환경자동), `GatherHttpClient` 프록시 풀(`proxies=[...]` round-robin, 도메인×프록시 rate limit, 미지정 시 안전 직렬). 축 개수 표기 11→16 정정(research 누락분 포함), "naver* 축" 절 신설(freshness·list/filter·프록시 풀·저작권 계약). naver* 산출물은 네이버 편집저작물이라 재배포 금지·HF 미적재.
 - 2026-06-14 (잔여 정합) — 직전 강화에서 놓친 정합 잔재 정정: 형태 A 코드 예시·11축 목록에 남아 있던 폐기 `calendar` → 공개 축 `narrative` 교체 (예시는 `Company.calendar` 로 분리), 형태 B 표에 공개 축 `narrative` 행 + 베타 `dartDoc` 행 추가 (calendar 와 대칭), `dispatch.py` 의 krxIndex stale 주석 정정 (hidden=False = 공개 축). README 모듈 지도에 실제 `transforms/`·`original/` 디렉터리 + mixins `context` 누락 보강.

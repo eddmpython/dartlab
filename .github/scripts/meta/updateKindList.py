@@ -25,7 +25,9 @@ def fileHash(path: Path) -> str:
 
 if __name__ == "__main__":
     print("KRX KIND 상장법인 목록 — gather SSOT(getKindList) 호출")
-    df = getKindList(forceRefresh=True)  # 수집·파싱·필터·재시도 = gather 단일 경로(별도 크롤 없음)
+    # 수집·파싱·필터·재시도 = gather 단일 경로(별도 크롤 없음). 이 스크립트가 HF 미러를 만드는 쪽이라
+    # KIND 가 비었을 때 미러로 채우지 않는다(mirrorFallback=False). 채우면 옛 미러를 새 목록처럼 다시 올린다.
+    df = getKindList(forceRefresh=True, mirrorFallback=False)
     if df.height == 0:
         print("KIND 수집 실패 — 빈 결과(재시도 소진)")
         sys.exit(1)

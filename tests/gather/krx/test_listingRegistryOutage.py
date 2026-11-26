@@ -6,6 +6,10 @@
 읽힌다.
 
 빈 결과는 캐시하지 않는다는 것이 여기서 고정하는 계약이다.
+
+2026-11 부터 KIND 가 GitHub 러너 접속을 403 으로 막아 매일 밤 검사가 실패했다. KIND 가 비면
+HF 미러(``metadata/corpList.parquet``)로 채우되 파일 캐시에 쓰지 않고 메모리에 잠깐만 둔다는
+계약도 여기서 고정한다.
 """
 
 from __future__ import annotations
@@ -30,6 +34,8 @@ def isolatedCache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(registry, "_cacheFile", lambda: cachePath)
     monkeypatch.setattr(registry, "_memory", None, raising=False)
     monkeypatch.setattr(registry, "_memoryTs", 0.0, raising=False)
+    # 미러는 네트워크(HF)다. 미러를 보는 테스트만 따로 바꾼다.
+    monkeypatch.setattr(registry, "_loadKindMirror", lambda: None)
     return cachePath
 
 
@@ -77,6 +83,103 @@ def testNextCallRetriesAfterAnOutage(isolatedCache: Path, monkeypatch: pytest.Mo
 
     assert registry.getKindList().height == 1
     assert calls == ["fail", "ok"]
+
+
+def testEmptyResultIsNotPinnedInMemoryForADay(isolatedCache: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """빈 목록은 잠깐만 메모리에 두고, 그 시간이 지나면 다시 조회한다."""
+
+    calls: list[str] = []
+
+    def failing() -> pl.DataFrame:
+        calls.append("fail")
+        return pl.DataFrame({"종목코드": [], "회사명": []})
+
+    monkeypatch.setattr(registry, "_fetchKind", failing)
+    assert registry.getKindList().height == 0
+    assert registry.getKindList().height == 0
+    assert calls == ["fail"]
+
+    monkeypatch.setattr(registry, "_memoryTs", registry._memoryTs - registry._EMPTY_MEMORY_TTL - 1)
+    monkeypatch.setattr(registry, "_fetchKind", lambda: calls.append("ok") or _ROWS)
+
+    assert registry.getKindList().height == 1
+    assert calls == ["fail", "ok"]
+
+
+def testMirrorFillsWhenKindIsEmptyWithoutPersisting(isolatedCache: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """KIND 가 비면 미러로 채우고, 미러 결과는 파일 캐시에 쓰지 않으며 1시간 뒤 다시 KIND 를 본다."""
+
+    calls: list[str] = []
+    monkeypatch.setattr(registry, "_fetchKind", lambda: calls.append("kind") or pl.DataFrame({"종목코드": []}))
+    monkeypatch.setattr(registry, "_loadKindMirror", lambda: calls.append("mirror") or _ROWS)
+
+    first = registry.getKindList()
+    second = registry.getKindList()
+
+    assert first.equals(_ROWS)
+    assert second.equals(_ROWS)
+    assert calls == ["kind", "mirror"]
+    assert not isolatedCache.exists()
+
+    monkeypatch.setattr(registry, "_memoryTs", registry._memoryTs - registry._MIRROR_MEMORY_TTL - 1)
+    registry.getKindList()
+
+    assert calls == ["kind", "mirror", "kind", "mirror"]
+
+
+def testMirrorFallbackOffKeepsEmptyForPublisher(isolatedCache: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """미러를 만드는 수집 파이프라인은 KIND 실패를 옛 미러로 덮지 않는다."""
+
+    mirrorCalls: list[int] = []
+    monkeypatch.setattr(registry, "_fetchKind", lambda: pl.DataFrame({"종목코드": [], "회사명": []}))
+    monkeypatch.setattr(registry, "_loadKindMirror", lambda: mirrorCalls.append(1) or _ROWS)
+
+    result = registry.getKindList(forceRefresh=True, mirrorFallback=False)
+
+    assert result.height == 0
+    assert mirrorCalls == []
+
+
+def testMirrorReadFailureIsLoggedAndReturnsNone(monkeypatch: pytest.MonkeyPatch, caplog) -> None:
+    """HF 미러도 못 읽으면 예외 대신 None 과 경고 한 줄이다."""
+    import huggingface_hub
+
+    def boom(*_args: object, **_kwargs: object):
+        raise OSError("HF 연결 실패")
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", boom)
+
+    with caplog.at_level("WARNING"):
+        result = registry._loadKindMirror()
+
+    assert result is None
+    assert any("미러를 읽지 못함" in record.getMessage() for record in caplog.records)
+
+
+def testDeniedStatusStopsRetrying(monkeypatch: pytest.MonkeyPatch, caplog) -> None:
+    """접속 거부(403)는 재시도해도 풀리지 않으므로 한 번 기록하고 바로 끝낸다."""
+
+    calls: list[int] = []
+
+    class _DeniedResponse:
+        status_code = 403
+        content = b"<html><head><title>Access Denied</title></head><body>Access Denied</body></html>"
+
+    def post(*_args: object, **_kwargs: object) -> _DeniedResponse:
+        calls.append(1)
+        return _DeniedResponse()
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(registry.httpx, "post", post, raising=False)
+    monkeypatch.setattr(registry.time, "sleep", sleeps.append)
+
+    with caplog.at_level("WARNING"):
+        result = registry._fetchKind()
+
+    assert result.height == 0
+    assert calls == [1]
+    assert sleeps == []
+    assert any("status=403" in record.getMessage() for record in caplog.records)
 
 
 def testTransportFailureIsRecordedNotSwallowed(monkeypatch: pytest.MonkeyPatch, caplog) -> None:

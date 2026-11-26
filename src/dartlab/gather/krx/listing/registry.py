@@ -56,6 +56,16 @@ _KIND_RETRIES = 3
 _KIND_BACKOFF_SEC = 5.0
 # 표 없는 응답 경고에 남길 본문 앞부분 길이(자).
 _KIND_LOG_HEAD_CHARS = 120
+# KIND 가 접속 자체를 거부하는 상태 코드. 같은 주소에서 재시도해도 풀리지 않는다
+# (2026-11 GitHub Actions 러너에서 Access Denied 403 이 매일 반복).
+_KIND_DENIED_STATUS = frozenset({401, 403})
+# KIND 를 못 받아 공개 미러로 채운 목록을 메모리에 두는 시간(초). 지나면 다시 KIND 를 조회한다.
+_MIRROR_MEMORY_TTL = 3600.0
+# KIND 와 미러가 모두 비었을 때 빈 목록을 메모리에 두는 시간(초). 호출마다 재시도 대기를 다시
+# 겪지 않게 잠깐만 두고, 지나면 다시 조회한다(예전에는 빈 목록이 24시간 메모리에 남았다).
+_EMPTY_MEMORY_TTL = 300.0
+# 공개 미러 경로. kindlist.yml 이 KIND 에서 받은 같은 목록을 HF 데이터셋에 올린다.
+_MIRROR_FILENAME = "metadata/corpList.parquet"
 
 _memory: pl.DataFrame | None = None
 _memoryTs: float = 0.0
@@ -199,6 +209,7 @@ def _fetchKind() -> pl.DataFrame:
     응답)는 5초·15초 간격으로 재시도하고, 소진 시 빈 DataFrame 반환(소비자 비크래시 계약).
     HTTP 는 응답했는데 표가 없으면(파싱 행 2개 미만) 상태 코드·응답 길이·본문 앞 120자를 한 줄
     경고로 남겨, 재시도가 소진된 뒤에도 무엇 때문에 비었는지 로그에서 보이게 한다.
+    접속 거부(401·403)는 같은 주소에서 재시도해도 풀리지 않으므로 경고를 남기고 바로 끝낸다.
 
     Returns
     -------
@@ -234,6 +245,8 @@ def _fetchKind() -> pl.DataFrame:
                 len(parser._rows),
                 head,
             )
+            if r.status_code in _KIND_DENIED_STATUS:
+                break
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as exc:
             # 전송 계층 일시 장애. 재시도하되 원인은 남긴다. 예전에는 삼켜서 재시도가
             # 소진된 뒤에도 무엇 때문에 비었는지 알 수 없었다.
@@ -255,6 +268,40 @@ def _fetchKind() -> pl.DataFrame:
     df = df.filter(pl.col("종목코드").str.contains(r"^[0-9A-Z]{6}$"))
     df = df.filter(~pl.col("회사명").str.contains(r"스팩|리츠"))
     df = df.unique(subset=["종목코드"]).sort("종목코드")
+    return df
+
+
+def _loadKindMirror() -> pl.DataFrame | None:
+    """KIND 를 받지 못했을 때 HF 데이터셋의 상장목록 미러를 읽는다.
+
+    ``kindlist.yml`` 이 KIND 에서 받은 같은 목록을 ``metadata/corpList.parquet`` 로 올려 둔다.
+    KIND 가 접속을 막거나 끊겨도 종목코드와 회사명 해석이 죽지 않게 하는 대체 경로다.
+    huggingface_hub 미설치, 네트워크 실패, 빈 파일, 종목코드 열이 없으면 None.
+
+    Returns
+    -------
+    pl.DataFrame | None
+        ``_fetchKind`` 와 같은 열의 상장법인 목록. 읽지 못하면 None.
+    """
+    try:
+        from huggingface_hub import hf_hub_download
+
+        from dartlab.core.dataConfig import HF_REPO
+        from dartlab.core.hfRetry import retryHfCall
+
+        path = retryHfCall(
+            hf_hub_download,
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            filename=_MIRROR_FILENAME,
+        )
+        df = pl.read_parquet(path)
+    except (ImportError, OSError, ValueError, KeyError, pl.exceptions.PolarsError) as exc:
+        _log.warning("상장목록 미러를 읽지 못함: %s: %s", type(exc).__name__, exc)
+        return None
+    if df.height == 0 or "종목코드" not in df.columns:
+        _log.warning("상장목록 미러가 비었거나 종목코드 열이 없음: rows=%d", df.height)
+        return None
     return df
 
 
@@ -298,22 +345,27 @@ def _saveCache(df: pl.DataFrame) -> None:
     df.write_parquet(str(path))
 
 
-def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
+def getKindList(*, forceRefresh: bool = False, mirrorFallback: bool = True) -> pl.DataFrame:
     """KRX KIND 상장법인 전체 목록.
 
-    Capabilities: 메모리 → 파일(24h TTL) → KIND API 3-tier 캐시 + SPAC/리츠 제외.
-    AIContext: 종목코드 ↔ 회사명 매핑의 SSOT — Company/Search/Scan 진입점.
-    Guide: forceRefresh=True 시 KIND HTTP 강제 호출 (TTL 무시).
+    Capabilities: 메모리 → 파일(24h TTL) → KIND API 3-tier 캐시 + HF 미러 대체 + SPAC/리츠 제외.
+    AIContext: 종목코드 ↔ 회사명 매핑의 SSOT. Company/Search/Scan 진입점.
+    Guide: forceRefresh=True 시 KIND HTTP 강제 호출 (TTL 무시). 수집 파이프라인은 mirrorFallback=False.
     When: 종목코드 ↔ 회사명 lookup, 새 종목 등장 점검 시.
-    How: 메모리 cache check → file cache check → _fetchKind() → 저장.
+    How: 메모리 cache check → file cache check → _fetchKind() → 비면 _loadKindMirror() → 저장.
 
-    캐시 우선순위: 메모리 → 파일(24h TTL) → KIND API.
-    SPAC·리츠 제외, 6자리 종목코드만 포함.
+    캐시 우선순위: 메모리 → 파일(24h TTL) → KIND API → HF 미러.
+    SPAC·리츠 제외, 6자리 종목코드만 포함. KIND 가 비면(접속 거부·장애) HF 데이터셋의
+    ``metadata/corpList.parquet`` 미러로 채우고, 미러 결과는 파일 캐시에 쓰지 않고 메모리에
+    1시간만 둔 뒤 다시 KIND 를 조회한다. 둘 다 비면 빈 목록을 5분만 메모리에 둔다.
 
     Parameters
     ----------
     forceRefresh : bool
         True면 캐시 무시하고 KIND API 재요청. 기본 False.
+    mirrorFallback : bool
+        True면 KIND 가 비었을 때 HF 미러로 채운다. 기본 True. 미러 자체를 만드는
+        수집 파이프라인(``updateKindList.py``)은 False 로 불러 미러가 미러를 덮지 않게 한다.
 
     Returns
     -------
@@ -329,7 +381,7 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
     Raises
     ------
     없음
-        KIND fetch 실패 시 빈 DataFrame 반환 (예외 흡수).
+        KIND fetch 와 미러가 모두 실패하면 빈 DataFrame 반환 (예외 흡수).
 
     Example
     -------
@@ -392,6 +444,7 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
 
         emit("listing:download")
         df = _fetchKind()
+        memoryTs = time.time()
         # 빈 결과는 캐시하지 않는다. KIND 가 잠깐 끊겨 나온 빈 목록을 24 시간짜리 파일
         # 캐시에 굳히면 네트워크가 돌아와도 라이브러리가 하루 종일 회복하지 못한다.
         # 그동안 KR 종목코드와 회사명 해석이 통째로 죽고, 사용자에게는 0 개 로드 완료라는
@@ -399,9 +452,21 @@ def getKindList(*, forceRefresh: bool = False) -> pl.DataFrame:
         if df.height > 0:
             _saveCache(df)
         else:
-            _log.warning("상장목록이 비어 캐시에 저장하지 않는다. 다음 호출에서 다시 조회한다.")
+            mirror = _loadKindMirror() if mirrorFallback else None
+            if mirror is not None:
+                # KIND 가 접속을 막아도(2026-11 GitHub 러너 403) 마지막으로 발행한 같은 목록으로
+                # 이름 해석을 살린다. 파일 캐시에 쓰지 않아 KIND 가 돌아오면 1시간 안에 바뀐다.
+                _log.warning(
+                    "KIND 상장목록을 받지 못해 HF 미러 %d개로 채운다. 1시간 뒤 다시 KIND 를 조회한다.",
+                    mirror.height,
+                )
+                df = mirror
+                memoryTs -= max(0.0, CACHE_TTL - _MIRROR_MEMORY_TTL)
+            else:
+                _log.warning("상장목록이 비어 캐시에 저장하지 않는다. 5분 뒤 호출에서 다시 조회한다.")
+                memoryTs -= max(0.0, CACHE_TTL - _EMPTY_MEMORY_TTL)
         _memory = df
-        _memoryTs = time.time()
+        _memoryTs = memoryTs
         _invalidateSearchCache()
         emit("listing:done", count=df.height)
         return df
