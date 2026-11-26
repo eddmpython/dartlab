@@ -795,6 +795,29 @@ def testProfileMarketBetaAndReplay():
     assert profile.replayHash(state) != profile.replayHash({**state, "asOf": "20260214"})
 
 
+def testProfileReplayIdenticalRecomputesTwice(monkeypatch):
+    """replayIdentical 은 같은 인자로 profile 을 두 번 다시 계산해 해시를 견준다."""
+    from dartlab.simulate import profile
+
+    calls: list[tuple] = []
+
+    def stableProfile(code, asOf, *, dataDir=None, marketNs="kr"):
+        calls.append((code, asOf, dataDir, marketNs))
+        return {"code": code, "asOf": asOf, "exposure": {"marketBeta": 1.2}}
+
+    monkeypatch.setattr(profile, "profile", stableProfile)
+    assert profile.replayIdentical("005930", "20260213", marketNs="us") is True
+    assert calls == [("005930", "20260213", None, "us")] * 2
+
+    drift = iter([0.9, 1.1])
+
+    def driftingProfile(code, asOf, *, dataDir=None, marketNs="kr"):
+        return {"code": code, "asOf": asOf, "exposure": {"marketBeta": next(drift)}}
+
+    monkeypatch.setattr(profile, "profile", driftingProfile)
+    assert profile.replayIdentical("005930", "20260213") is False
+
+
 def _synthMacro(n: int = 40):
     """합성 거시(date 'YYYYMMDD', rate 평탄, fx·oil 변동) → 베타 배선 유닛 (R4 축5)."""
     from datetime import date, timedelta

@@ -305,7 +305,9 @@ def testPublicMappingRefreshReuseOfflineAndStoredContinuation(
     adapters = installFixture(monkeypatch, tmp_path)
     first = dataCall("query", query=queryMapping("refresh"))
 
-    assert first.status == "partial"
+    # 전체 시험 중에만 한 번 'failed' 가 났다(2026-11-27, 단독과 폴더 실행은 통과). 다시 나면
+    # 원인이 바로 보이도록 gap 을 함께 남긴다.
+    assert first.status == "partial", first.gaps
     assert first.continuation is not None
     assert first.materializationReceipt is not None
     assert adapters.materializeCalls == 2
