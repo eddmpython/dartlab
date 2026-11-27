@@ -293,8 +293,9 @@ def dFVBlock(data: dict | None) -> list:
         metrics.append(("현재가", f"{data['currentPrice']:,}원"))
     if data.get("upside") is not None:
         metrics.append(("업사이드", f"{data['upside']:+.1f}%"))
-    metrics.append(("투자 의견", data.get("opinion", "")))
-    metrics.append(("신뢰도", data.get("confidence", "")))
+    # 투자 의견(매수·매도 등급)은 이야기에 싣지 않는다(narrateDFV 와 같은 이유).
+    if data.get("confidence"):
+        metrics.append(("신뢰도", data["confidence"]))
     primaryModel = data.get("primaryModel")
     if primaryModel:
         metrics.append(("Primary 모델", str(primaryModel).upper()))
@@ -721,7 +722,10 @@ def plausibilityBandBlock(data: dict) -> list:
     if peer_stats.get("marginP75") is not None:
         metrics.append(("피어 영업마진 상위 25%", f"{peer_stats['marginP75']:.1f}%"))
     if peer_stats.get("count") is not None:
-        metrics.append(("피어 수", f"{peer_stats['count']}개사"))
+        scope = peer_stats.get("scope") or "비교 회사"
+        year = peer_stats.get("year")
+        basis = f", {year}년 사업보고서" if year else ""
+        metrics.append(("비교 범위", f"{scope} {peer_stats['count']}개사{basis}"))
 
     return [
         HeadingBlock(

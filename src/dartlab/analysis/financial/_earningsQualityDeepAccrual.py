@@ -5,9 +5,20 @@ from __future__ import annotations
 from dartlab.core.memory import memoizedCalc
 from dartlab.core.utils.helpers import annualColsFromPeriods, toDictBySnakeId
 from dartlab.core.utils.safe import get as _get
+from dartlab.core.utils.safe import getFirst
 
-_getF4 = _get
 _MAX_YEARS = 8
+
+# 영업외손익 계정의 조회 순서. snakeId 가 먼저, 회사마다 다른 원문 계정명이 뒤다.
+_NONOP_KEYS = {
+    "op": ("operating_profit", "영업이익"),
+    "finInc": ("finance_income", "금융이익", "금융수익"),
+    "finCost": ("finance_costs", "금융비용", "금융원가"),
+    "assoc": ("share_of_profit_of_associates", "지분법관련손익", "지분법이익", "지분법손익"),
+    "otherInc": ("other_income", "기타수익"),
+    "otherExp": ("other_expenses", "기타비용"),
+    "pt": ("profit_before_tax", "법인세비용차감전순이익", "법인세차감전순이익"),
+}
 
 
 @memoizedCalc
@@ -220,30 +231,26 @@ def calcNonOperatingBreakdown(company, *, basePeriod: str | None = None) -> dict
         return None
 
     isData, isPeriods = isParsed
-    opRow = isData.get("영업이익", {})
-    finIncRow = isData.get("금융이익", {})
-    finCostRow = isData.get("금융비용", {})
-    assocRow = isData.get("지분법관련손익", {})
-    otherIncRow = isData.get("기타수익", {})
-    otherExpRow = isData.get("기타비용", {})
-    ptRow = isData.get("법인세차감전순이익", {})
 
     yCols = annualColsFromPeriods(isPeriods, basePeriod=basePeriod, maxYears=_MAX_YEARS)
     if not yCols:
         return None
 
+    # select 결과는 snakeId 와 원문 계정명을 함께 key 로 준다. 계정명은 회사마다 달라
+    # ('법인세비용차감전순이익' 과 '법인세차감전순이익') snakeId 를 먼저 본다. 세전이익을
+    # 못 찾고 0 으로 두면 영업외 합계가 -영업이익, 비율이 100% 로 나온다.
     history = []
     for col in yCols:
-        op = _getF4(opRow, col)
-        finInc = _getF4(finIncRow, col)
-        finCost = _getF4(finCostRow, col)
-        assoc = _getF4(assocRow, col)
-        otherInc = _getF4(otherIncRow, col)
-        otherExp = _getF4(otherExpRow, col)
-        pt = _getF4(ptRow, col)
+        op = getFirst(isData, list(_NONOP_KEYS["op"]), col)
+        finInc = getFirst(isData, list(_NONOP_KEYS["finInc"]), col)
+        finCost = getFirst(isData, list(_NONOP_KEYS["finCost"]), col)
+        assoc = getFirst(isData, list(_NONOP_KEYS["assoc"]), col)
+        otherInc = getFirst(isData, list(_NONOP_KEYS["otherInc"]), col)
+        otherExp = getFirst(isData, list(_NONOP_KEYS["otherExp"]), col)
+        pt = getFirst(isData, list(_NONOP_KEYS["pt"]), col, default=None)
 
         netFinance = finInc - finCost
-        nonOpTotal = pt - op if op != 0 else None
+        nonOpTotal = pt - op if op != 0 and pt is not None else None
         nonOpRatio = round(abs(nonOpTotal) / abs(op) * 100, 1) if op != 0 and nonOpTotal is not None else None
 
         history.append(

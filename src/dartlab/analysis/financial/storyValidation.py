@@ -336,7 +336,7 @@ def calcPlausibilityBand(
     growth = forecastAssumptions.get("growthRate") or forecastAssumptions.get("revenueGrowth")
     op_margin = forecastAssumptions.get("operatingMargin") or forecastAssumptions.get("opm")
 
-    peer_growth, peer_margin = _peerGrowthMarginSamples()
+    peer_growth, peer_margin, peer_meta = _peerGrowthMarginSamples(stockCode)
 
     growth_pctile = _percentile(peer_growth, growth)
     margin_pctile = _percentile(peer_margin, op_margin)
@@ -359,6 +359,8 @@ def calcPlausibilityBand(
             "marginMedian": _quantile(peer_margin, 0.5),
             "marginP75": _quantile(peer_margin, 0.75),
             "count": len(peer_growth),
+            "scope": peer_meta.get("scope"),
+            "year": peer_meta.get("year"),
         },
         "source": "scan_peer" if peer_growth else "none",
     }
@@ -387,14 +389,82 @@ def _inferForecastAssumptions(company: Any, basePeriod: str | None) -> dict[str,
     return assumptions
 
 
-def _peerGrowthMarginSamples() -> tuple[list[float], list[float]]:
-    """scan/finance.parquet 직접 쿼리 → 전종목 매출 YoY + 영업마진 분포.
+# 같은 업종 비교 회사가 이보다 적으면 업종 분포가 흔들려 전체 상장사로 비교한다.
+_PEER_MIN_SAME_GROUP = 8
+# 한 해의 4분기 보고 회사 수가 가장 많은 해의 이 비율보다 적으면 아직 다 모이지 않은 해로 본다.
+_PEER_YEAR_MIN_SHARE = 0.5
+
+
+def _peerYear(snap) -> str | None:
+    """4분기 보고가 충분히 모인 가장 최근 사업연도.
+
+    가장 최근 연도를 그냥 고르면 결산월이 다른 몇 개사만 4분기를 낸 해(예: 5개사)가 뽑혀
+    회사마다 같은 5개사 분포가 나온다.
+    """
+    import polars as pl
+
+    counts = snap.group_by("bsns_year").agg(pl.col("stockCode").n_unique().alias("n"))
+    if counts.is_empty():
+        return None
+    most = counts["n"].max()
+    ready = counts.filter(pl.col("n") >= most * _PEER_YEAR_MIN_SHARE).sort("bsns_year", descending=True)
+    return ready["bsns_year"][0] if not ready.is_empty() else None
+
+
+def _sameGroupCodes(stockCode: str | None) -> tuple[set[str] | None, str]:
+    """상장 목록에서 stockCode 와 같은 산업군(core.sector.classify)의 종목코드와 산업군 이름."""
+    if not stockCode:
+        return None, ""
+    try:
+        from dartlab._listingDispatch import listing
+        from dartlab.core.sector import IndustryGroup, classify
+
+        rows = listing().to_dicts()
+    except Exception as exc:  # noqa: BLE001 - 목록을 못 읽으면 전체 상장사 비교로 돌아간다
+        log.warning("비교 회사 업종 목록 준비 실패: %s: %s", type(exc).__name__, exc)
+        return None, ""
+
+    def group(row: dict) -> Any:
+        """상장 목록 한 줄의 산업군."""
+        return classify(row.get("회사명") or "", row.get("업종"), row.get("주요제품")).industryGroup
+
+    target = next((r for r in rows if r.get("종목코드") == stockCode), None)
+    if target is None:
+        return None, ""
+    targetGroup = group(target)
+    if targetGroup == IndustryGroup.UNKNOWN:
+        return None, ""
+    codes = {r["종목코드"] for r in rows if r.get("종목코드") and group(r) == targetGroup}
+    return codes, str(targetGroup.value)
+
+
+def _firstAccount(pl, frame, names: list[str], cols: list[str]):
+    """종목마다 names 우선순위에서 처음 나오는 계정 한 줄(_stockAmounts 와 같은 순서)."""
+    rank = {n: i for i, n in enumerate(names)}
+    sub = frame.filter(pl.col("account_nm").is_in(names)).with_columns(
+        pl.col("account_nm").replace_strict(rank, return_dtype=pl.Int32).alias("_rank")
+    )
+    return (
+        sub.with_row_index("_row")
+        .sort(["stockCode", "_rank", "_row"])
+        .group_by("stockCode", maintain_order=True)
+        .agg([pl.col(c).first() for c in cols])
+    )
+
+
+def _peerGrowthMarginSamples(stockCode: str | None = None) -> tuple[list[float], list[float], dict[str, Any]]:
+    """scan/finance.parquet 직접 쿼리 → 비교 회사 매출 YoY + 영업마진 분포.
+
+    비교 회사는 같은 산업군 회사이고, 그 수가 ``_PEER_MIN_SAME_GROUP`` 보다 적으면 전체 상장사다.
+    연도는 4분기 보고가 충분히 모인 가장 최근 사업연도다(``_peerYear``). 셋째 값은
+    ``{"scope": 비교 범위 설명, "year": 사업연도}`` 다.
 
     표본이 없어도 밴드 판정은 "within" 으로 돌아가야 하므로 준비 실패는 전부 흡수하고
     빈 표본을 돌려준다. 극단값 컷 (-80~300%, -100~80%) 은 분포 왜곡 방지용이다.
     """
     peerGrowth: list[float] = []
     peerMargin: list[float] = []
+    meta: dict[str, Any] = {}
     try:
         import importlib
 
@@ -414,32 +484,44 @@ def _peerGrowthMarginSamples() -> tuple[list[float], list[float]]:
                 lf.select(cols)
                 .filter(pl.col("fs_nm").str.contains("연결"))
                 .filter(pl.col("reprt_nm").str.contains("4분기"))
+                .filter(pl.col("stockCode").is_not_null())
                 .collect(engine="streaming")
             )
-            if not snap.is_empty():
-                years = sorted(snap["bsns_year"].unique().to_list(), reverse=True)
-                if years:
-                    cur = snap.filter(pl.col("bsns_year") == years[0])
-                    stockcodes = [s for s in cur["stockCode"].unique().to_list() if s is not None]
-                    for sc in stockcodes[:500]:  # 샘플 500 (메모리 + 속도)
-                        stock = cur.filter(pl.col("stockCode") == sc)
-                        if stock.is_empty():
-                            continue
-                        # 매출 + 영업이익 현재기/전기 추출
-                        rev_cur, rev_prev, op_cur = _stockAmounts(pl, stock, parseNumStr)
-                        # YoY
-                        if rev_cur and rev_prev and rev_prev > 0:
-                            yoy = (rev_cur - rev_prev) / rev_prev * 100
-                            if -80 < yoy < 300:
-                                peerGrowth.append(float(yoy))
-                        # Margin
-                        if rev_cur and op_cur is not None and rev_cur > 0:
-                            margin = op_cur / rev_cur * 100
-                            if -100 < margin < 80:
-                                peerMargin.append(float(margin))
+            year = _peerYear(snap) if not snap.is_empty() else None
+            if year is not None:
+                cur = snap.filter(pl.col("bsns_year") == year)
+                if stockCode:
+                    cur = cur.filter(pl.col("stockCode") != stockCode)
+                scope = "전체 상장사"
+                codes, groupName = _sameGroupCodes(stockCode)
+                if codes:
+                    same = cur.filter(pl.col("stockCode").is_in(sorted(codes)))
+                    if same["stockCode"].n_unique() >= _PEER_MIN_SAME_GROUP:
+                        cur = same
+                        scope = f"같은 산업군({groupName})"
+                meta = {"scope": scope, "year": str(year)}
+
+                amountCols = [c for c in ("thstrm_amount", "frmtrm_amount") if c in cur.columns]
+                rev = _firstAccount(pl, cur, _REVENUE_ACCOUNT_NAMES, amountCols)
+                op = _firstAccount(pl, cur, _OPERATING_ACCOUNT_NAMES, ["thstrm_amount"])
+                opByCode = {r["stockCode"]: parseNumStr(r["thstrm_amount"]) for r in op.iter_rows(named=True)}
+                for r in rev.iter_rows(named=True):
+                    rev_cur = parseNumStr(r.get("thstrm_amount"))
+                    rev_prev = parseNumStr(r.get("frmtrm_amount")) if "frmtrm_amount" in r else None
+                    op_cur = opByCode.get(r["stockCode"])
+                    # YoY
+                    if rev_cur and rev_prev and rev_prev > 0:
+                        yoy = (rev_cur - rev_prev) / rev_prev * 100
+                        if -80 < yoy < 300:
+                            peerGrowth.append(float(yoy))
+                    # Margin
+                    if rev_cur and op_cur is not None and rev_cur > 0:
+                        margin = op_cur / rev_cur * 100
+                        if -100 < margin < 80:
+                            peerMargin.append(float(margin))
     except Exception as exc:
         log.warning("peer 성장률 및 마진 표본 준비 실패: %s: %s", type(exc).__name__, exc)
-    return peerGrowth, peerMargin
+    return peerGrowth, peerMargin, meta
 
 
 def _percentile(series: list[float], value: float | None) -> float | None:

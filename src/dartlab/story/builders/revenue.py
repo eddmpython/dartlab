@@ -63,7 +63,8 @@ def segmentCompositionBlock(data: dict) -> list:
     if hasOp:
         valueCols.append("영업이익")
 
-    unified = unifyTableScale(rows, "부문", valueCols, unit="millions")
+    # calcSegmentComposition 은 노트 단위를 원으로 환산해 준다(_inferSegUnitScale).
+    unified = unifyTableScale(rows, "부문", valueCols, unit="won")
     blocks: list = []
     blocks.append(
         HeadingBlock(
@@ -115,7 +116,7 @@ def segmentTrendBlock(data: dict) -> list:
             row["YoY"] = "-"
         rows.append(row)
 
-    unified = unifyTableScale(rows, "부문", yearCols, unit="millions")
+    unified = unifyTableScale(rows, "부문", yearCols, unit="won")
     blocks: list = []
     blocks.append(
         HeadingBlock(
@@ -150,7 +151,7 @@ def breakdownBlock(data: dict, sub: str) -> list:
             }
         )
 
-    unified = unifyTableScale(rows, "구분", ["매출"], unit="millions")
+    unified = unifyTableScale(rows, "구분", ["매출"], unit="won")
     blocks: list = []
     blocks.append(HeadingBlock(title, level=2))
     blocks.append(TableBlock("", pl.DataFrame(unified)))
@@ -514,7 +515,7 @@ def nonOperatingBreakdownBlock(data: dict) -> list:
         )
 
     valueCols = ["영업이익", "금융수익", "금융비용", "지분법", "기타수익", "기타비용"]
-    unified = unifyTableScale(rows, "기간", valueCols, unit="millions")
+    unified = unifyTableScale(rows, "기간", valueCols, unit="won")
 
     blocks: list = []
     blocks.append(

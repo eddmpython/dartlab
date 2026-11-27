@@ -14,7 +14,6 @@ from dartlab.story.builders._shared import (
     _meta,
     _notesDetailBlocks,
     pl,
-    unifyTableScale,
 )
 
 # ── 2-5 종합 평가 ──
@@ -436,21 +435,22 @@ def richardsonAccrualBlock(data: dict) -> list:
     if not history:
         return []
 
-    rows = []
-    for h in history:
-        rows.append(
-            {
-                "기간": h["period"],
-                "WCACC": h.get("wcacc"),
-                "LTOACC": h.get("ltoacc"),
-                "FINACC": h.get("finacc"),
-                "총발생액": h.get("totalAccrual"),
-                "신뢰도": h.get("reliabilityScore", "-"),
-            }
-        )
+    # 발생액 값은 총자산 대비 % 다(calcRichardsonAccrual). 금액 단위(조/억)로 바꾸지 않는다.
+    def pct(v):
+        """총자산 대비 % 값 한 칸."""
+        return f"{v:+.1f}%" if isinstance(v, (int, float)) else "-"
 
-    valueCols = ["WCACC", "LTOACC", "FINACC", "총발생액"]
-    unified = unifyTableScale(rows, "기간", valueCols, unit="millions")
+    unified = [
+        {
+            "기간": h["period"],
+            "WCACC": pct(h.get("wcacc")),
+            "LTOACC": pct(h.get("ltoacc")),
+            "FINACC": pct(h.get("finacc")),
+            "총발생액": pct(h.get("totalAccrual")),
+            "신뢰도": h.get("reliabilityScore", "-"),
+        }
+        for h in history
+    ]
 
     blocks: list = []
     blocks.append(

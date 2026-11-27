@@ -90,6 +90,15 @@ def _buildConclusion(threads, grades: dict[str, str]) -> str:
     return ""
 
 
+def _firstSentence(text: str) -> str:
+    """첫 문장. 마침표는 뒤가 빈칸이나 끝일 때만 문장 끝으로 본다('10.9%' 의 점은 소수점이다)."""
+    import re
+
+    text = text.strip().split("\n", 1)[0].strip()
+    m = re.search(r"[.!?](?=\s|$)", text)
+    return text[: m.start()].strip() if m else text
+
+
 def buildSectionSummary(section) -> str:
     """섹션의 blocks + threads에서 1-2줄 핵심 요약 생성."""
     from dartlab.story.blocks import FlagBlock, MetricBlock, TableBlock, TextBlock
@@ -107,14 +116,8 @@ def buildSectionSummary(section) -> str:
     if not parts:
         for block in section.blocks:
             if isinstance(block, TextBlock) and block.text and block.text.strip():
-                text = block.text.strip()
-                # 첫 문장만 (마침표 또는 줄바꿈 기준)
-                for sep in (".", "\n"):
-                    idx = text.find(sep)
-                    if idx > 0:
-                        text = text[:idx]
-                        break
-                if len(text) <= 80:
+                text = _firstSentence(block.text)
+                if text and len(text) <= 80:
                     parts.append(text)
                 break
 

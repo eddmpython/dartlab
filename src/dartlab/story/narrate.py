@@ -612,19 +612,27 @@ def narrateValuation(data: dict) -> str | None:
     if not verdict:
         return None
 
-    text = f"종합 판정: {verdict}"
-    if fvr and price and price > 0:
-        mid = (fvr[0] + fvr[1]) / 2
-        margin = (mid - price) / price * 100
-        if margin > 30:
-            text += f". 적정가 대비 {margin:.0f}% 할인 — 안전마진이 충분하다"
-        elif margin > 0:
-            text += f". 적정가 대비 {margin:.0f}% 할인 — 소폭 저평가"
-        elif margin > -20:
-            text += f". 적정가 대비 {margin:.0f}% 프리미엄 — 적정 수준"
+    text = f"종합 판정: {verdict}."
+    # 판정은 위 verdict 하나다. 여기서 할인율로 판정을 다시 만들면 verdict 와 어긋난다
+    # (적정 판정에 '안전마진 충분', 현재가 기준으로 나눠 할인율 100% 초과). 위치만 숫자로 적는다.
+    if fvr and len(fvr) == 2 and price and price > 0 and fvr[0] and fvr[1]:
+        low, high = sorted(float(v) for v in fvr)
+        mid = (low + high) / 2
+        if price < low:
+            where = "범위보다 낮다"
+        elif price > high:
+            where = "범위보다 높다"
         else:
-            text += f". 적정가 대비 {abs(margin):.0f}% 프리미엄 — 고평가 주의"
-    return text + "."
+            where = "범위 안이다"
+        gap = (price - mid) / mid * 100
+        direction = "낮다" if gap < 0 else "높다"
+        text += (
+            f" 현재가 {price:,.0f}원은 적정가 범위 {low:,.0f}원~{high:,.0f}원 {where}."
+            f" 범위 가운데 {mid:,.0f}원보다 {abs(gap):.0f}% {direction}."
+        )
+        if high >= low * 2:
+            text += " 모델마다 적정가가 크게 달라 범위가 넓다."
+    return text
 
 
 def narrateStrategy(snap: dict) -> str | None:
@@ -975,18 +983,21 @@ def narrateDFV(data: dict) -> str | None:
     dfv = data.get("dFV")
     current = data.get("currentPrice")
     upside = data.get("upside")
-    opinion = data.get("opinion", "")
     confidence = data.get("confidence", "")
     primary = data.get("primaryModel", "")
 
     if not dfv:
         return None
 
+    # 투자 의견(매수·매도 등급)은 이야기 본문에 싣지 않는다. 이야기는 공시와 계산을 설명하고
+    # 사고팔 것을 권하지 않는다. 등급은 valuation 엔진 결과(opinion)에 그대로 남는다.
     parts = [f"**dartlab 적정주가 {dfv:,}원**"]
     if current and upside is not None:
         parts.append(f"(현재 {current:,}원 대비 {upside:+.1f}%).")
-    parts.append(f"투자 의견 **{opinion}**, 신뢰도 **{confidence}**.")
-    parts.append(f"Primary 모델: **{primary.upper()}**.")
+    if confidence:
+        parts.append(f"신뢰도 **{confidence}**.")
+    if primary:
+        parts.append(f"Primary 모델: **{primary.upper()}**.")
 
     # Damodaran 생애주기 × 템플릿
     phase = data.get("lifeCyclePhase")

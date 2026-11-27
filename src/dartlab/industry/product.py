@@ -37,6 +37,8 @@ def companyIndustryResult(company: Any, *, detail: bool = False) -> dict[str, An
     result["relationships"] = None
     result["concentration"] = None
     if not detail:
+        # 전 시장 산업 자산은 계산하지 않았다. 결손 사유가 "확보하지 못했다" 로 읽히지 않게 표시한다.
+        result["detailComputed"] = False
         result["product"] = buildIndustryProduct(company, result)
         return result
 
@@ -122,14 +124,19 @@ def buildIndustryProduct(company: Any, result: dict[str, Any]) -> dict[str, Any]
     observedCount = sum(blocks.values())
 
     gaps: list[dict[str, Any]] = []
+    detailComputed = result.get("detailComputed", True)
     for block, observed in blocks.items():
         if observed:
             continue
+        if block != "position" and detailComputed is False:
+            reason = f"{block} 는 전 시장 산업 비교라 기본 조회에서 계산하지 않았습니다(detail=True 에서 계산)."
+        else:
+            reason = f"{block} 근거를 확보하지 못했습니다."
         gaps.append(
             {
                 "id": f"industry.{block}",
                 "status": "missing",
-                "reason": f"{block} 근거를 확보하지 못했습니다.",
+                "reason": reason,
                 "sourceRef": block,
             }
         )

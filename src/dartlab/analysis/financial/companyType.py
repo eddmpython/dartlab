@@ -62,7 +62,43 @@ def _checkTurnaround(company) -> bool:
     return hasNeg and lastPos
 
 
+_HOLDING_NAME_WORDS = ("홀딩스", "지주", "Holdings")
+
+
+def _listedAsHolding(company) -> bool:
+    """국내 상장 목록에서 지주회사로 올라 있는지 본다.
+
+    지주회사는 KIND 상장법인 목록의 주요제품 줄에 지주를 적는다
+    (LG "지주회사", SK "지주회사, 시스템통합(SI)…", GS "지주회사/부동산 임대",
+    노루홀딩스 "지주사업", 신한지주 "금융지주회사", 2026-11 목록 59개사).
+    회사명에 홀딩스·지주가 든 회사도 지주회사로 본다(core.sector 의 지주사 낱말과 같다).
+    재무 기준만으로는 연결재무제표에 자회사 손익이 영업이익으로 합쳐진 지주회사를 놓친다
+    (LG 2025: 지분법이익 1,339억이 영업이익 9,122억의 15%). 해외 회사는 이 목록에 없다.
+    """
+    code = getattr(company, "stockCode", None)
+    if not (isinstance(code, str) and len(code) == 6):
+        return False
+    name = getattr(company, "corpName", None) or ""
+    if any(w in name for w in _HOLDING_NAME_WORDS):
+        return True
+    import polars as pl
+
+    from dartlab.gather.krx.listing.registry import getKindList
+
+    try:
+        kind = getKindList()
+    except OSError:
+        return False
+    if kind.is_empty() or "주요제품" not in kind.columns or "종목코드" not in kind.columns:
+        return False
+    row = kind.filter(pl.col("종목코드") == code)
+    products = row["주요제품"][0] if row.height else None
+    return isinstance(products, str) and "지주" in products
+
+
 def _checkHolding(company) -> bool:
+    if _listedAsHolding(company):
+        return True
     from dartlab.analysis.financial.earningsQuality import calcNonOperatingBreakdown
 
     nob = calcNonOperatingBreakdown(company)

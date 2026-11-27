@@ -657,6 +657,16 @@ def buildActTransitions(company, *, basePeriod: str | None = None) -> dict[str, 
     except (AttributeError, ValueError):
         return transitions
 
+    # ratios 의 손익·현금 값은 최근 4분기 합이고, 막 본문의 표는 연간이다. 기간을 적지 않으면
+    # 같은 '매출' 이 표와 다른 숫자로 읽힌다. 기간을 못 찾으면 연결 문장을 내지 않는다.
+    window = _ttmWindow(company)
+    if window is None:
+        return transitions
+    startQ, endQ = window
+    ttmLabel = f"최근 4분기({_quarterKo(startQ)}~{_quarterKo(endQ)})"
+    stockLabel = f"{_quarterKo(endQ)} 말"
+    annual = _lastAnnualSums(company, ("sales", "operating_profit"))
+
     from dartlab.story.builders import _fmtAmtShort
 
     # 1막→2막: 매출 구조 → 수익성
@@ -664,7 +674,13 @@ def buildActTransitions(company, *, basePeriod: str | None = None) -> dict[str, 
     opMargin = getattr(ratios, "operatingMargin", None) or getattr(ratios, "operatingMarginTTM", None)
     if rev and opMargin is not None:
         revStr = _fmtAmtShort(rev)
-        transitions["1→2"] = f"매출 {revStr}에서 영업이익률 {opMargin:.1f}% — 이 마진의 원천은?"
+        text = f"{ttmLabel} 매출 {revStr}, 영업이익률 {opMargin:.1f}%."
+        if annual is not None:
+            year, sums = annual
+            annualRev, annualOp = sums.get("sales"), sums.get("operating_profit")
+            if annualRev and annualOp is not None and year != endQ[0]:
+                text += f" {year}년 연간은 {annualOp / annualRev * 100:.1f}%였다."
+        transitions["1→2"] = f"{text} 이 마진은 어디서 나오는가?"
 
     # 2막→3막: 수익성 → 현금 전환
     ni = getattr(ratios, "netIncomeTTM", None)
@@ -672,29 +688,87 @@ def buildActTransitions(company, *, basePeriod: str | None = None) -> dict[str, 
     if ni and ocf:
         niStr = _fmtAmtShort(ni)
         ocfStr = _fmtAmtShort(ocf)
-        ratio = ocf / ni * 100 if ni != 0 else 0
-        transitions["2→3"] = f"순이익 {niStr} → 영업CF {ocfStr} ({ratio:.0f}%) — 이익이 현금으로 뒷받침되는가?"
+        ratio = ocf / ni * 100
+        transitions["2→3"] = (
+            f"{ttmLabel} 순이익 {niStr}, 영업CF {ocfStr}(순이익의 {ratio:.0f}%). 이익이 현금으로 뒷받침되는가?"
+        )
 
     # 3막→4막: 현금 → 안정성
     fcf = getattr(ratios, "fcf", None) or getattr(ratios, "fcfTTM", None)
     ic = getattr(ratios, "interestCoverage", None)
     if fcf is not None and ic is not None:
         fcfStr = _fmtAmtShort(fcf)
-        transitions["3→4"] = f"FCF {fcfStr}, 이자보상 {ic:.1f}배 — 이 현금으로 부채를 감당할 수 있는가?"
+        transitions["3→4"] = f"{ttmLabel} FCF {fcfStr}, 이자보상 {ic:.1f}배. 이 현금으로 부채를 감당할 수 있는가?"
 
     # 4막→5막: 안정성 → 자본배분
     nd = getattr(ratios, "netDebt", None)
     dr = getattr(ratios, "debtRatio", None)
     if nd is not None and dr is not None:
         status = "순현금" if nd < 0 else f"순차입금 {_fmtAmtShort(nd)}"
-        transitions["4→5"] = f"{status}, 부채비율 {dr:.0f}% — 안전한 자본 안에서 어떻게 배분하는가?"
+        transitions["4→5"] = f"{stockLabel} {status}, 부채비율 {dr:.0f}%. 안전한 자본 안에서 어떻게 배분하는가?"
 
     # 5막→6막: 자본배분 → 전망/가치
     roic = getattr(ratios, "roic", None)
     if roic is not None:
-        transitions["5→6"] = f"ROIC {roic:.1f}% — 이 수익률이 지속되면 이 회사의 가치는?"
+        transitions["5→6"] = f"{ttmLabel} 기준 ROIC {roic:.1f}%. 이 수익률이 지속되면 이 회사의 가치는?"
 
     return transitions
+
+
+def _quarterKo(q: tuple[int, int]) -> str:
+    """(2026, 3) 을 '2026년 3분기' 로 쓴다."""
+    return f"{q[0]}년 {q[1]}분기"
+
+
+def _quarterValues(company, snakeId: str) -> dict[tuple[int, int], float]:
+    """분기 손익표에서 한 계정의 (연, 분기) 별 값을 읽는다. 빈 칸은 뺀다."""
+    import re
+
+    frame = getattr(getattr(company, "_finance", None), "IS", None)
+    if frame is None or "snakeId" not in getattr(frame, "columns", []):
+        return {}
+    rows = frame.filter(frame["snakeId"] == snakeId)
+    if rows.height == 0:
+        return {}
+    row = rows.row(0, named=True)
+    out: dict[tuple[int, int], float] = {}
+    for col, value in row.items():
+        m = re.fullmatch(r"(\d{4})Q([1-4])", str(col))
+        if m and value is not None:
+            out[(int(m.group(1)), int(m.group(2)))] = float(value)
+    return out
+
+
+def _ttmWindow(company) -> tuple[tuple[int, int], tuple[int, int]] | None:
+    """ratios 가 더한 최근 4분기의 처음과 끝 분기. 매출 분기값이 연속 4칸 있어야 한다."""
+    values = _quarterValues(company, "sales")
+    if not values:
+        return None
+    end = max(values)
+    quarters = [end]
+    y, q = end
+    for _ in range(3):
+        y, q = (y, q - 1) if q > 1 else (y - 1, 4)
+        quarters.append((y, q))
+    if any(k not in values for k in quarters):
+        return None
+    return quarters[-1], end
+
+
+def _lastAnnualSums(company, snakeIds: tuple[str, ...]) -> tuple[int, dict[str, float]] | None:
+    """네 분기가 다 있는 마지막 해의 계정별 연간 합. 막 본문 연간 표의 마지막 열과 같은 해다."""
+    perId = {sid: _quarterValues(company, sid) for sid in snakeIds}
+    base = perId.get(snakeIds[0]) or {}
+    years = sorted({y for y, _ in base}, reverse=True)
+    for year in years:
+        if all((year, q) in base for q in (1, 2, 3, 4)):
+            sums = {
+                sid: sum(vals[(year, q)] for q in (1, 2, 3, 4))
+                for sid, vals in perId.items()
+                if all((year, q) in vals for q in (1, 2, 3, 4))
+            }
+            return year, sums
+    return None
 
 
 def buildCirculationSummary(threads: list[NarrativeThread]) -> str:

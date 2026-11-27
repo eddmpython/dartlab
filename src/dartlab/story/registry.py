@@ -1852,22 +1852,8 @@ def buildStory(
         for sec in story.sections:
             sec.summary = buildSectionSummary(sec)
 
-    # ── type=None(기본)일 때 보고서 상단에 타입 가이드 삽입 ──
-    if type is None and section is None:
-        from dartlab.story.blocks import TextBlock
-
-        guide = (
-            "보고서 타입 안내: "
-            "c.story(type='executive') 경영 3분컷 / "
-            "type='credit' 신용분석 / "
-            "type='dividend' 배당 / "
-            "type='governance' 지배구조 / "
-            "type='macro' 매크로 / "
-            "type='thesis' 가설 검증"
-        )
-        if story.sections:
-            story.sections[0].blocks.insert(0, TextBlock(guide, style="dim"))
-
+    # 보고서 종류(type=) 안내는 회사 이야기 본문에 넣지 않는다. 읽는 사람에게는 코드 사용법이라
+    # 이야기와 상관이 없고, 안내는 story() docstring 이 갖는다.
     return _attachLensProducts(story)
 
 

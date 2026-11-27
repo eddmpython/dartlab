@@ -116,17 +116,22 @@ def unifyTableScale(
             scale = ""
             divisor = 1
 
-    # 금액 행 변환
+    # 금액 행 변환. 금액 열만 바꾸고 나머지 열(비중, 이익률, 신뢰도)은 그 자리에 그대로 둔다.
+    # 예전에는 이름 열과 금액 열만 남겨 부문 표의 비중·이익률이 사라졌다.
     result = []
+    valueSet = set(valueCols)
     for row in amtRows:
-        fmtRow = {labelCol: row[labelCol]}
-        for vc in valueCols:
-            v = row.get(vc)
-            if v is not None and isinstance(v, (int, float)):
+        fmtRow = {}
+        for k, v in row.items():
+            if k in valueSet and v is not None and isinstance(v, (int, float)):
                 scaled = v / divisor if divisor != 1 else v
-                fmtRow[vc] = fmtAmtScale(scaled, scale)
+                fmtRow[k] = fmtAmtScale(scaled, scale)
+            elif k in valueSet:
+                fmtRow[k] = "-" if v is None else v
             else:
-                fmtRow[vc] = row.get(vc, "-")
+                fmtRow[k] = v
+        for vc in valueCols:
+            fmtRow.setdefault(vc, "-")
         result.append(fmtRow)
 
     # % 행은 포맷 변환 없이 그대로

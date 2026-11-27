@@ -93,12 +93,15 @@ def buildStoryTree(company: Any, *, basePeriod: str | None = None) -> dict:
             }
 
     # 요약 — 분포
+    # 격차는 궤적이 둘 이상이고 최저값이 양수일 때만 구한다. 못 구한 격차를 0 으로 두면
+    # narrateStoryTree 가 "서사와 무관하게 안정" 이라고 말한다(궤적 하나만 계산된 경우 포함).
     if values:
+        spreadPct = (max(values) - min(values)) / min(values) * 100 if len(values) >= 2 and min(values) > 0 else None
         tree["summary"] = {
             "min": min(values),
             "max": max(values),
             "spread": max(values) - min(values),
-            "spreadPct": (max(values) - min(values)) / min(values) * 100 if min(values) > 0 else 0,
+            "spreadPct": spreadPct,
             "mean": sum(values) / len(values),
             "count": len(values),
         }
@@ -111,7 +114,7 @@ def buildStoryTree(company: Any, *, basePeriod: str | None = None) -> dict:
 def narrateStoryTree(tree: dict) -> str:
     """StoryTree 결과를 한 단락 narrative 로."""
     if not tree or not tree.get("summary") or tree["summary"].get("count", 0) == 0:
-        return "StoryTree 계산 실패 — 데이터 부족."
+        return "StoryTree 계산 실패: 데이터 부족."
 
     parts = []
     for key in ("probable", "plausible", "possible"):
