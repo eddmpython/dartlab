@@ -41,6 +41,7 @@ import polars as pl
 
 import dartlab.config as _cfg
 
+from ..xmlRepair import repairDartXml
 from .aclassExtractor import extractAclassEntries
 
 _log = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ def _rceptFromZip(path: Path) -> str | None:
 
 
 def _decodeXmlBytes(raw: bytes) -> str:
-    """raw bytes → utf-8 string. trial decode (utf-8 strict → cp949 fallback).
+    """raw bytes → utf-8 string. trial decode (utf-8 strict → cp949 fallback) 뒤 깨짐 수리.
 
     DART 옛 분기 zip 은 XML declaration 에 ``encoding="utf-8"`` 박지만 *실제*
     byte stream 은 cp949/EUC-KR. declaration 무시하고 utf-8 strict decode
@@ -71,15 +72,20 @@ def _decodeXmlBytes(raw: bytes) -> str:
 
     실측 (005930 2015Q4 / 2016Q1~Q3): declaration utf-8 + 실제 cp949 → 한국어
     깨짐 회귀.
+
+    decode 한 문자열은 ``repairDartXml`` 로 글자 꺾쇠(``<신 설>``), 겹친 따옴표
+    (``ENG=""Other ..."``), 알몸 ``&`` 를 고친다. 고치지 않으면 lxml recover 가
+    태그 짝을 잃어 II~XII 장이 앞 장 표 한 칸 안으로 들어간다 (실측 005380
+    2025 사업보고서: 표 안 장 12 개 → 0 개).
     """
     try:
-        return raw.decode("utf-8")
+        text = raw.decode("utf-8")
     except UnicodeDecodeError:
-        pass
-    try:
-        return raw.decode("cp949")
-    except UnicodeDecodeError:
-        return raw.decode("utf-8", errors="replace")
+        try:
+            text = raw.decode("cp949")
+        except UnicodeDecodeError:
+            text = raw.decode("utf-8", errors="replace")
+    return repairDartXml(text)
 
 
 def _readXml(zipPath: Path) -> str:
