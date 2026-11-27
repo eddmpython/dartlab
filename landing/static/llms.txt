@@ -376,7 +376,7 @@ DART, EDGAR, 사업보고서 읽기, 재무 해석, 데이터 자동화에 관�
 - [Viz - Mermaid 인과 다이어그램](https://eddmpython.github.io/dartlab/skills/engines.viz.mermaidDiagram) - 숫자 표로만 설명하기 어려운 충격 전파, 공시 변화, 지배구조 연결, thesis falsifier 경로를 Mermaid diagram 으로 제한적으로 표현한다.
 - [Viz - Peer Matrix](https://eddmpython.github.io/dartlab/skills/engines.viz.peerMatrix) - 동종 기업 × 지표 행렬을 `peer-matrix` ChartSpec 으로 만들어 밸류에이션, 수익성, 성장성, 안정성의 상대 위치를 한 번에 비교한다.
 - [Viz - 주가차트](https://eddmpython.github.io/dartlab/skills/engines.viz.priceChart) - OHLCV 가격 시계열을 `price-chart` ChartSpec 으로 변환해 Svelte ChartRenderer 에서 캔들·종가선·거래량·이동평균·벤치마크를 함께 그리는 시각화 실행 스킬이다.
-- [Viz - 시나리오·민감도 시각화](https://eddmpython.github.io/dartlab/skills/engines.viz.scenarioVisuals) - 매크로 충격, valuation 민감도, stress test 결과를 `six-act-radar`, `heatmap`, Mermaid graph 로 표현해 충격 전파와 민감도를 분리해서 보여준다.
+- [Viz - 시나리오·민감도 시각화](https://eddmpython.github.io/dartlab/skills/engines.viz.scenarioVisuals) - 매크로 충격, valuation 민감도, stress test 결과를 `heatmap`, Mermaid graph 로 표현해 충격 전파와 민감도를 분리해서 보여준다.
 - [표 기반 시각 설명](https://eddmpython.github.io/dartlab/skills/engines.viz.tableBackedChart) - 차트나 다이어그램을 장식이 아니라 검산 가능한 표에서 파생되는 설명 산출물로 만든다.
 - [Agent Audit - 답변 품질 회귀 측정 절차](https://eddmpython.github.io/dartlab/skills/operation.agentAudit) - DartLab 에이전트 답변 품질 회귀를 P/T/C/V 4단계로 측정하는 공개 운영 SSOT. 회귀 가드는 추적되는 audit와 CI로 자동화한다.
 - [Agent Boundaries - checkAgentBoundary lint 외부 공개 SSOT](https://eddmpython.github.io/dartlab/skills/operation.agentBoundaries) - tests/audit/checkAgentBoundary.py lint 룰의 외부 공개 SSOT - graph 회귀 가드 8 번째 / chat-native 본체 유지 / Bold leaf 단일 Write / workbench 본체화 금지 4 회귀 신호. 외부 기여자 PR 작성 시 자가 점검 표준.
