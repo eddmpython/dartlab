@@ -1,8 +1,9 @@
 """``providers/dart/panel/build/xmlRepair.py`` 의 DART 본문 XML 수리 계약.
 
-DART 원문의 글자 꺾쇠(``<신 설>``), 겹친 따옴표(``ENG=""Other ..."``), 알몸 ``&`` 가
-lxml recover 파서에서 태그 짝을 어긋나게 해 뒤 장(II~XII)이 앞 장 표 한 칸에 묻히던
-결함의 회귀를 막는다 (실측 005380·051910·035420 사업보고서).
+DART 원문의 글자 꺾쇠(``<신 설>``, 진짜 태그와 이름이 같은 ``<A>``), 겹친 따옴표
+(``ENG=""Other ..."``), 값 가운데 따옴표(``ENG="Total of "Accumulated ..."``), 알몸 ``&`` 가
+lxml recover 파서에서 태그 짝을 어긋나게 해 뒤 장(II~XII)이 앞 장 표 한 칸에 묻히거나 빠지던
+결함의 회귀를 막는다 (실측 005380·051910·035420·000150·000390 보고서).
 """
 
 from __future__ import annotations
@@ -85,6 +86,125 @@ def test_doubled_attribute_quotes_are_fixed_and_empty_values_kept(raw: str, expe
     assert repairDartXml(raw) == expected
 
 
+# 재무제표 주석 표 머리 칸의 영어 이름 값 가운데 따옴표 뒤로 다음 장이 오는 꼴 (실측 000150 2024
+# 사업보고서). 그런 시작 태그 하나는 recover 가 견디고, 둘이면 조상 태그가 모두 닫혀 IV 장이 버려진다.
+_INNER_TH = (
+    '<TH ENG="Total of "Accumulated other comprehensive  income After income tax "" WIDTH="141"><P>합계</P></TH>'
+)
+_INNER_QUOTED = (
+    "<DOCUMENT><BODY>"
+    "<SECTION-1><TITLE>III. 재무에 관한 사항</TITLE><SECTION-2><TITLE>5. 재무제표 주석</TITLE>"
+    f"<TABLE><THEAD><TR>{_INNER_TH}{_INNER_TH}</TR></THEAD><TBODY><TR><TD>1</TD></TR></TBODY></TABLE>"
+    "</SECTION-2></SECTION-1>"
+    "<SECTION-1><TITLE>IV. 이사의 경영진단 및 분석의견</TITLE><P>본문</P></SECTION-1>"
+    "</BODY></DOCUMENT>"
+)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (
+            '<TH ENG="Total of "Accumulated income After tax "" WIDTH="141" HEIGHT="76"></TH>',
+            '<TH ENG="Total of &quot;Accumulated income After tax &quot;" WIDTH="141" HEIGHT="76"></TH>',
+        ),
+        ('<TH ENG="Gain on "FVOCI" assets" ROWSPAN="2"/>', '<TH ENG="Gain on &quot;FVOCI&quot; assets" ROWSPAN="2"/>'),
+        ('<TD ENG="a "b""  WIDTH="1"></TD>', '<TD ENG="a &quot;b&quot;"  WIDTH="1"></TD>'),
+        ('<TD ENG="a > "b"" WIDTH="1"></TD>', '<TD ENG="a > "b"" WIDTH="1"></TD>'),
+    ],
+)
+def test_inner_attribute_quotes_become_entities(raw: str, expected: str) -> None:
+    """속성 값 가운데 따옴표는 &quot; 가 되고, 값 경계를 정할 수 없는 태그는 그대로다."""
+
+    from dartlab.providers.dart.panel.build.xmlRepair import repairDartXml
+
+    assert repairDartXml(raw) == expected
+
+
+def test_chapter_after_inner_quoted_attribute_is_kept() -> None:
+    """값 가운데 따옴표가 있는 표 뒤의 IV 장을 수리한 문서에서 walker 가 제 장으로 읽는다."""
+
+    from lxml import etree
+
+    from dartlab.providers.dart.panel.build import walkSections
+    from dartlab.providers.dart.panel.build.xmlRepair import repairDartXml
+
+    def chapters(xml: str) -> set[str]:
+        """recover 파서로 읽은 문서에서 walker 가 낸 장 이름 집합."""
+
+        parser = etree.XMLParser(recover=True, huge_tree=True)
+        root = etree.fromstring(xml.encode("utf-8"), parser)
+        return {str(row["chapter"]) for row in walkSections(root, "v2")}
+
+    assert "IV. 이사의 경영진단 및 분석의견" not in chapters(_INNER_QUOTED), (
+        "수리 전 문서가 장 빠짐을 재현해야 시험이 뜻을 가진다"
+    )
+    assert chapters(repairDartXml(_INNER_QUOTED)) == {"III. 재무에 관한 사항", "IV. 이사의 경영진단 및 분석의견"}
+
+
+# 제품 이름 칸에 글자로 쓴 <A> 가 같은 문서의 진짜 <A REFNO=...> 와 이름이 같은 꼴 (실측 000390
+# 2023 1분기 보고서: 이 칸 뒤로 III~XII 장이 빠짐).
+_TEXT_A = (
+    "<DOCUMENT><BODY>"
+    "<SECTION-1><TITLE>I. 회사의 개요</TITLE>"
+    '<P><A REFNO="XII. 상세표|NEF-001">상세표 참조</A></P>'
+    "<SECTION-2><TITLE>1. 제품</TITLE><TABLE><TBODY><TR>"
+    "<TD>TP FLEX BLACK<A>#(KJ)SH22-3436K<A>#(RE.3)SH22-2410W<A>#(BC1)</TD>"
+    "</TR></TBODY></TABLE></SECTION-2></SECTION-1>"
+    "<SECTION-1><TITLE>II. 사업의 내용</TITLE><P>본문</P></SECTION-1>"
+    "</BODY></DOCUMENT>"
+)
+
+# 끝이 잘린 문서: DOCUMENT, BODY, 마지막 장이 열린 채 끝난다. recover 파서는 끝에서 닫아 두 장을 읽는다.
+_TRUNCATED = (
+    "<DOCUMENT><BODY>"
+    "<SECTION-1><TITLE>I. 회사의 개요</TITLE><P>가</P></SECTION-1>"
+    "<SECTION-1><TITLE>II. 사업의 내용</TITLE><P>나"
+)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ('<TD>BLACK<A>#(KJ)</TD><A REFNO="1">참조</A>', '<TD>BLACK&lt;A>#(KJ)</TD><A REFNO="1">참조</A>'),
+        ("<P>가</B>나</P><B>굵게</B>", "<P>가&lt;/B>나</P><B>굵게</B>"),
+        ("<BODY><P>가<B>굵게</P></BODY>", "<BODY><P>가&lt;B>굵게</P></BODY>"),
+        ('<TD><A REFNO="1"><B>참조</B></A><BR/></TD>', '<TD><A REFNO="1"><B>참조</B></A><BR/></TD>'),
+        (_TRUNCATED, _TRUNCATED),
+    ],
+)
+def test_unbalanced_tags_become_text(raw: str, expected: str) -> None:
+    """부모가 닫힐 때 열려 있는 태그와 열린 짝이 없는 닫는 태그는 글자가 되고, 짝이 맞는 태그와 끝이 잘린 문서의 열린 태그는 그대로다."""
+
+    from dartlab.providers.dart.panel.build.xmlRepair import repairDartXml
+
+    assert repairDartXml(raw) == expected
+
+
+def test_chapter_after_text_tag_with_real_tag_name_is_kept() -> None:
+    """진짜 태그와 이름이 같은 글자 꺾쇠 <A> 뒤의 II 장을 수리한 문서에서 walker 가 제 장으로 읽는다."""
+
+    from lxml import etree
+
+    from dartlab.providers.dart.panel.build import walkSections
+    from dartlab.providers.dart.panel.build.xmlRepair import repairDartXml
+
+    def chapters(xml: str) -> set[str]:
+        """recover 파서로 읽은 문서에서 walker 가 낸 장 이름 집합."""
+
+        parser = etree.XMLParser(recover=True, huge_tree=True)
+        root = etree.fromstring(xml.encode("utf-8"), parser)
+        return {str(row["chapter"]) for row in walkSections(root, "v2")}
+
+    assert "II. 사업의 내용" not in chapters(_TEXT_A), "수리 전 문서가 장 빠짐을 재현해야 시험이 뜻을 가진다"
+    fixed = repairDartXml(_TEXT_A)
+    assert "TP FLEX BLACK&lt;A>#(KJ)" in fixed
+    assert chapters(fixed) == {"I. 회사의 개요", "II. 사업의 내용"}
+    assert chapters(repairDartXml(_TRUNCATED)) == {"I. 회사의 개요", "II. 사업의 내용"}, (
+        "끝이 잘린 문서의 장을 잃지 않는다"
+    )
+
+
 def test_uppercase_text_brackets_without_closing_tag_become_text() -> None:
     """대문자로 쓴 글자 꺾쇠(<HYOSUNG>, <GS SHOP>)는 닫는 태그가 문서에 없어 글자가 되고, 짝이 있는 태그와 <PGBRK/> 는 남는다."""
 
@@ -132,7 +252,7 @@ def test_repair_is_idempotent() -> None:
 
     from dartlab.providers.dart.panel.build.xmlRepair import repairDartXml
 
-    raw = _BURIED + '<TH ENG=""Other receivables"">S&P</TH>'
+    raw = _BURIED + _INNER_QUOTED + _TEXT_A + '<TH ENG=""Other receivables"">S&P</TH>'
     once = repairDartXml(raw)
     assert repairDartXml(once) == once
 
