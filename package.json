@@ -10,7 +10,7 @@
 		"svelte": "5.56.3",
 		"@sveltejs/kit": "2.70.2",
 		"@sveltejs/vite-plugin-svelte": "6.2.4",
-		"vite": "7.3.6",
+		"vite": "7.3.7",
 		"cookie": "0.7.2",
 		"postcss": "8.5.25",
 		"nanoid": "3.3.18",
@@ -21,6 +21,6 @@
 	},
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "6.2.4",
-		"vite": "7.3.6"
+		"vite": "7.3.7"
 	}
 }
