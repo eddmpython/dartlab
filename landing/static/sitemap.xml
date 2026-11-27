@@ -1481,6 +1481,11 @@
     <priority>0.92</priority>
   </url>
   <url>
+    <loc>https://eddmpython.github.io/dartlab/developers</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://eddmpython.github.io/dartlab/blog/category/reading-disclosures</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
