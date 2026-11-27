@@ -28,6 +28,8 @@
 	}
 
 	const navLinks = [
+		// 라이브러리 소개(설치, 엔진, 데모)는 첫 화면에서 빼서 이 한 페이지에 모았다.
+		{ label: 'Developers', href: `${base}/developers` },
 		{ label: 'Skills', href: `${base}/skills` },
 		{ label: 'Blog', href: `${base}/blog` },
 		// 글에서 배우고 노트북에서 실습한다. 배우는 문 옆에 실습하는 문을 둔다.
@@ -79,10 +81,12 @@
 			{/if}
 		</div>
 
-		<div class="hidden md:flex items-center gap-0.5">
+		<!-- 메뉴 9개와 검색·아이콘 줄이 한 줄에 다 들어가는 폭(1024)부터 펼치고, 그보다 좁으면 메뉴 단추로 연다.
+		     768에서 펼치면 메뉴 글자가 한 글자씩 꺾인다. 1024~1279는 '/ Blog' 같은 왼쪽 표시와 닿지 않게 링크 여백을 줄인다. -->
+		<div class="hidden lg:flex items-center gap-0.5">
 			{#each navLinks as link}
 				<a href={link.href}
-					class="px-3 py-1.5 text-[13px] text-dl-text-muted hover:text-dl-text transition-colors no-underline rounded-md hover:bg-white/5">
+					class="px-2 xl:px-3 py-1.5 text-[13px] whitespace-nowrap text-dl-text-muted hover:text-dl-text transition-colors no-underline rounded-md hover:bg-white/5">
 					{link.label}
 				</a>
 			{/each}
@@ -91,7 +95,7 @@
 		<div class="flex items-center gap-0.5">
 			<button
 				onclick={openSearch}
-				class="hidden md:inline-flex items-center gap-2 px-3 py-1 mr-1 rounded-md border border-dl-border bg-dl-bg-card/50 text-dl-text-dim text-xs hover:text-dl-text-muted hover:border-dl-border transition-colors cursor-pointer h-7"
+				class="hidden lg:inline-flex items-center gap-2 px-3 py-1 mr-1 rounded-md border border-dl-border bg-dl-bg-card/50 text-dl-text-dim text-xs hover:text-dl-text-muted hover:border-dl-border transition-colors cursor-pointer h-7"
 			>
 				<Search class="w-3 h-3" />
 				<span>검색...</span>
@@ -112,7 +116,7 @@
 				</BrandSocial>
 			</div>
 			<button
-				class="md:hidden w-8 h-8 rounded-md flex items-center justify-center text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors cursor-pointer ml-1"
+				class="lg:hidden w-8 h-8 rounded-md flex items-center justify-center text-dl-text-muted hover:text-dl-text hover:bg-white/5 transition-colors cursor-pointer ml-1"
 				onclick={() => mobileOpen = !mobileOpen}
 			>
 				{#if mobileOpen}<X class="w-4 h-4" />{:else}<Menu class="w-4 h-4" />{/if}
@@ -121,7 +125,7 @@
 	</nav>
 
 	{#if mobileOpen}
-		<div class="md:hidden border-t border-dl-border bg-dl-bg-darker/95 backdrop-blur-xl">
+		<div class="lg:hidden border-t border-dl-border bg-dl-bg-darker/95 backdrop-blur-xl">
 			<div class="flex flex-col px-4 py-2">
 				{#each navLinks as link}
 					<a href={link.href}

@@ -1,4 +1,4 @@
-import type { CarouselSpec } from '$lib/cards/model';
+import blogIndex from 'virtual:dartlab-blog-index';
 
 export const categoryDefinitions = [
 	{
@@ -282,53 +282,16 @@ export interface PostMeta {
 	seriesOrder?: number;
 	youtubeId?: string;
 	stockCode?: string; // 기업이야기 글의 종목코드 · /cards 캐러셀 큐레이션 역인덱스 키.
-	carousel?: CarouselSpec; // frontmatter `carousel:` 선택 블록(손글 narration·hero·순서). 없으면 자동 투영.
+	corpName?: string;
 }
 
-// metadata 는 mdsvex YAML frontmatter → 중첩 객체(`carousel:`·`ai:`)도 담길 수 있으므로 unknown.
-// (옛 string|number 는 중첩 블록을 타입상 드롭했다 · String() 평탄화가 못 읽던 근본.)
-type BlogModule = { metadata?: Record<string, unknown> };
-
-const modules = import.meta.glob('@blog/**/index.md', { eager: true }) as Record<string, BlogModule>;
-const rawModules = import.meta.glob('@blog/**/index.md', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
-const svgAssets = import.meta.glob('@blog/**/assets/*.svg', { eager: false }) as Record<string, () => Promise<unknown>>;
-
-/** Build a map: post directory path → sorted list of SVG filenames */
-function buildAssetIndex(): Map<string, string[]> {
-	const index = new Map<string, string[]>();
-	for (const assetPath of Object.keys(svgAssets)) {
-		// assetPath: /blog/01-disclosure-systems/001-everything-about-dart/assets/001-disclosure-flow.svg
-		const match = assetPath.match(/^(\/blog\/[^/]+\/[^/]+)\/assets\/([^/]+\.svg)$/);
-		if (!match) continue;
-		const postDir = match[1]; // /blog/01-disclosure-systems/001-everything-about-dart
-		const fileName = match[2];
-		const list = index.get(postDir) ?? [];
-		list.push(fileName);
-		index.set(postDir, list);
-	}
-	// Sort each list so first SVG is deterministic
-	for (const list of index.values()) list.sort();
-	return index;
-}
-
-const assetIndex = buildAssetIndex();
-
-function parsePostPath(path: string): { categoryFolder: string; order: number; slug: string } | undefined {
-	const match = path.match(/\/blog\/([^/]+)\/(\d+)-([^/]+)\/index\.md$/);
-	if (!match) return undefined;
-	return {
-		categoryFolder: match[1],
-		order: Number.parseInt(match[2], 10),
-		slug: match[3]
-	};
-}
-
+// 목록 색인은 vite.config.ts blogIndexPlugin 이 빌드 시점에 frontmatter 일부만 담아 만든다.
+// 글 본문과 원문은 글 페이지(blog/[slug]/+page.ts)가 그 글 하나만 받는다.
 function buildPosts(): PostMeta[] {
 	const result: PostMeta[] = [];
-	for (const [path, mod] of Object.entries(modules)) {
-		const parsed = parsePostPath(path);
-		const metadata = mod.metadata;
-		if (!parsed || !metadata?.title || !metadata?.date) continue;
+	for (const parsed of blogIndex) {
+		const metadata = parsed.metadata;
+		if (!metadata?.title || !metadata?.date) continue;
 
 		const categoryId = (metadata.category ? String(metadata.category) : undefined) as CategoryId | undefined;
 		const category = categoryId ? categoryById.get(categoryId) : undefined;
@@ -338,9 +301,7 @@ function buildPosts(): PostMeta[] {
 		const rawSeriesOrder = metadata.seriesOrder === undefined ? undefined : String(metadata.seriesOrder).trim();
 		const seriesOrder = rawSeriesOrder ? Number.parseInt(rawSeriesOrder, 10) : undefined;
 		const youtubeId = metadata.youtubeId ? String(metadata.youtubeId).trim() || undefined : undefined;
-		const rawMarkdown = rawModules[path] ?? '';
-		const readingMinutes = estimateReadingMinutes(rawMarkdown);
-		const previewAsset = findPreviewAsset(path, rawMarkdown);
+		const { readingMinutes, previewAsset } = parsed;
 		const thumbnail = metadata.thumbnail ? String(metadata.thumbnail) : '/avatar-chart.png';
 		const ogImage = metadata.ogImage ? String(metadata.ogImage) : undefined;
 		// 리스트 카드 썸네일 = 텍스트 없는 깨끗한 -card 흑백 이미지(소스). 그 위에 핵심키워드를 HTML 로 얹는다(굽지 않음).
@@ -352,9 +313,7 @@ function buildPosts(): PostMeta[] {
 		const titleStr = metadata.title ? String(metadata.title) : '';
 		const cardKeyword = metadata.cardKeyword ? String(metadata.cardKeyword) : deriveKeyword(titleStr);
 		const stockCode = metadata.stockCode ? String(metadata.stockCode).trim() || undefined : undefined;
-		// carousel 은 중첩 객체 · 객체일 때만 채택(스칼라 오기는 무시). 검증은 blog/_scripts/audit_seo.py(yaml).
-		const carousel =
-			metadata.carousel && typeof metadata.carousel === 'object' ? (metadata.carousel as CarouselSpec) : undefined;
+		const corpName = metadata.corpName ? String(metadata.corpName).trim() || undefined : undefined;
 
 		result.push({
 			slug: parsed.slug,
@@ -377,7 +336,7 @@ function buildPosts(): PostMeta[] {
 			seriesOrder: Number.isNaN(seriesOrder) ? undefined : seriesOrder,
 			youtubeId,
 			stockCode,
-			carousel
+			corpName
 		});
 	}
 
@@ -390,21 +349,10 @@ function buildPosts(): PostMeta[] {
 	});
 }
 
-function estimateReadingMinutes(rawMarkdown: string): number {
-	if (!rawMarkdown) return 3;
-	const withoutFrontmatter = rawMarkdown.replace(/^---[\s\S]*?---\s*/, '');
-	const withoutCode = withoutFrontmatter.replace(/```[\s\S]*?```/g, ' ');
-	const withoutImages = withoutCode.replace(/!\[[^\]]*\]\([^)]+\)/g, ' ');
-	const plainText = withoutImages
-		.replace(/\[[^\]]+\]\([^)]+\)/g, '$1')
-		.replace(/[#>*`|_-]/g, ' ')
-		.replace(/\s+/g, ' ')
-		.trim();
-	const tokenCount = plainText ? plainText.split(' ').length : 0;
-	return Math.max(3, Math.ceil(tokenCount / 220));
-}
-
 function toWebpAsset(path: string): string | undefined {
+	// HF 미디어는 내용 해시로 이름을 정하므로 png 이름에서 바꾼 webp 주소는 없는 파일이다(404로 표지가 깨진다).
+	// webp 사본을 같은 이름 옆에 두는 것은 사이트 안 정적 파일뿐이다.
+	if (/^https?:\/\//i.test(path)) return undefined;
 	if (path.endsWith('.png')) return path.replace(/\.png$/i, '.webp');
 	if (path.endsWith('.jpg')) return path.replace(/\.jpg$/i, '.webp');
 	if (path.endsWith('.jpeg')) return path.replace(/\.jpeg$/i, '.webp');
@@ -415,34 +363,10 @@ export function blogAssetUrl(path: string, basePath: string): string {
 	return /^https?:\/\//i.test(path) ? path : `${basePath}${path}`;
 }
 
-function findPreviewAsset(postPath: string, rawMarkdown: string): string | undefined {
-	const firstSvgInBody = rawMarkdown.match(/!\[[^\]]*\]\(\.\/assets\/([^)]+\.svg)\)/i);
-	if (firstSvgInBody) return `/blog/assets/${firstSvgInBody[1]}`;
-
-	// postPath: /blog/01-disclosure-systems/001-everything-about-dart/index.md
-	const postDir = postPath.replace(/\/index\.md$/, '');
-	const svgs = assetIndex.get(postDir);
-	if (!svgs || svgs.length === 0) return undefined;
-	// Fallback for posts with svg assets but no explicit markdown hit.
-	return `/blog/assets/${svgs[0]}`;
-}
-
 export const posts: PostMeta[] = buildPosts();
 
 export function getPost(slug: string): PostMeta | undefined {
 	return posts.find((post) => post.slug === slug);
-}
-
-const rawBySlug = new Map<string, string>(
-	Object.entries(rawModules).flatMap(([path, raw]) => {
-		const parsed = parsePostPath(path);
-		return parsed ? [[parsed.slug, raw] as [string, string]] : [];
-	})
-);
-
-/** 글 원본 markdown. "노트북으로" 가 이 원본을 그 자리에서 셀로 자른다(구운 사본 없음). */
-export function getPostRaw(slug: string): string | undefined {
-	return rawBySlug.get(slug);
 }
 
 /** 종목코드 → 글(큐레이션 캐러셀 오버레이용 역인덱스). frontmatter `stockCode` 가 있는 글만. */
@@ -542,6 +466,66 @@ export function findPrevNext(slug: string): { prev?: PostMeta; next?: PostMeta }
 		prev: idx < posts.length - 1 ? posts[idx + 1] : undefined,
 		next: idx > 0 ? posts[idx - 1] : undefined
 	};
+}
+
+/** 첫 화면 글 목록 한 번에 받는 편 수. 첫 페이지는 HTML 에 넣고, 다음부터는 blog/list/<n>.json 으로 받는다. */
+export const FEED_PAGE_SIZE = 12;
+
+export type FeedItem = Pick<
+	PostMeta,
+	'slug' | 'title' | 'description' | 'date' | 'category' | 'categoryLabel' | 'cardPreview' | 'cardPreviewWebp' | 'cardKeyword' | 'readingMinutes' | 'stockCode' | 'corpName'
+>;
+
+function toFeedItem(post: PostMeta): FeedItem {
+	return {
+		slug: post.slug,
+		title: post.title,
+		description: post.description,
+		date: post.date,
+		category: post.category,
+		categoryLabel: post.categoryLabel,
+		cardPreview: post.cardPreview,
+		cardPreviewWebp: post.cardPreviewWebp,
+		cardKeyword: post.cardKeyword,
+		readingMinutes: post.readingMinutes,
+		stockCode: post.stockCode,
+		corpName: post.corpName
+	};
+}
+
+const hiddenCategoryIds = new Set<string>(
+	categoryDefinitions.filter((category) => 'hidden' in category && category.hidden).map((category) => category.id)
+);
+const feedPosts = posts.filter((post) => !hiddenCategoryIds.has(post.category));
+
+export function getFeedPageCount(): number {
+	return Math.max(1, Math.ceil(feedPosts.length / FEED_PAGE_SIZE));
+}
+
+/** 1부터 세는 쪽 번호. 범위 밖이면 빈 배열. */
+export function getFeedPage(page: number): FeedItem[] {
+	if (!Number.isInteger(page) || page < 1) return [];
+	const start = (page - 1) * FEED_PAGE_SIZE;
+	return feedPosts.slice(start, start + FEED_PAGE_SIZE).map(toFeedItem);
+}
+
+/** 첫 화면에서 왼쪽으로 흐르는 표지 줄. 회사 한 곳을 다룬 기업이야기 글만, 최신순. */
+export function getStoryStrip(limit = 20): FeedItem[] {
+	return posts
+		.filter((post) => post.category === 'company-reports' && post.stockCode)
+		.slice(0, limit)
+		.map(toFeedItem);
+}
+
+/** 종목코드 → 그 회사를 다룬 가장 최근 기업이야기 글 slug. 회사 검색 결과에 글 링크를 붙일 때 쓴다. */
+export function getStoryIndex(): Record<string, string> {
+	const index: Record<string, string> = {};
+	for (const post of posts) {
+		if (post.category === 'company-reports' && post.stockCode && !(post.stockCode in index)) {
+			index[post.stockCode] = post.slug;
+		}
+	}
+	return index;
 }
 
 export function findSeriesPrevNext(slug: string): { prev?: PostMeta; next?: PostMeta } {

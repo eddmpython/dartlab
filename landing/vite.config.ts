@@ -99,6 +99,115 @@ function blogAssetsPlugin() {
 	};
 }
 
+// 블로그 목록 색인. 목록·카드·검색은 frontmatter 몇 칸만 쓰는데, 예전에는 글 293편의 컴파일 본문과
+// 원문을 eager glob 으로 한 청크(약 24MB)에 묶어 루트 레이아웃(검색 창)을 거쳐 모든 페이지에 실었다.
+// 이 가상 모듈은 빌드 시점에 frontmatter 만 읽어 목록에 쓰는 칸과 읽는 시간·본문 첫 SVG 만 낸다.
+// 본문은 글 페이지가 lazy glob 으로 그 글 하나만 받는다.
+const BLOG_INDEX_ID = 'virtual:dartlab-blog-index';
+const RESOLVED_BLOG_INDEX_ID = `\0${BLOG_INDEX_ID}`;
+const BLOG_INDEX_FIELDS = [
+	'title',
+	'date',
+	'description',
+	'category',
+	'series',
+	'seriesOrder',
+	'thumbnail',
+	'ogImage',
+	'cardPreview',
+	'cardKeyword',
+	'youtubeId',
+	'stockCode',
+	'corpName'
+] as const;
+
+function estimateReadingMinutes(rawMarkdown: string): number {
+	if (!rawMarkdown) return 3;
+	const withoutFrontmatter = rawMarkdown.replace(/^---[\s\S]*?---\s*/, '');
+	const withoutCode = withoutFrontmatter.replace(/```[\s\S]*?```/g, ' ');
+	const withoutImages = withoutCode.replace(/!\[[^\]]*\]\([^)]+\)/g, ' ');
+	const plainText = withoutImages
+		.replace(/\[[^\]]+\]\([^)]+\)/g, '$1')
+		.replace(/[#>*`|_-]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+	const tokenCount = plainText ? plainText.split(' ').length : 0;
+	return Math.max(3, Math.ceil(tokenCount / 220));
+}
+
+type BlogIndexEntry = {
+	categoryFolder: string;
+	order: number;
+	slug: string;
+	metadata: Record<string, unknown>;
+	readingMinutes: number;
+	previewAsset?: string;
+};
+
+async function readBlogIndex(addWatchFile?: (file: string) => void): Promise<BlogIndexEntry[]> {
+	const { compile } = await import('mdsvex');
+	const entries: BlogIndexEntry[] = [];
+	for (const category of fs.readdirSync(blogDir, { withFileTypes: true })) {
+		// underscore 특수폴더(_issues·_reference·_scripts)는 카테고리가 아니다.
+		if (!category.isDirectory() || category.name.startsWith('_')) continue;
+		const categoryPath = path.join(blogDir, category.name);
+		for (const post of fs.readdirSync(categoryPath, { withFileTypes: true })) {
+			const match = post.isDirectory() ? post.name.match(/^(\d+)-(.+)$/) : null;
+			if (!match) continue;
+			const file = path.join(categoryPath, post.name, 'index.md');
+			if (!fs.existsSync(file)) continue;
+			addWatchFile?.(file);
+			const raw = fs.readFileSync(file, 'utf-8');
+			const block = raw.match(/^---\r?\n[\s\S]*?\r?\n---/);
+			const compiled = block ? await compile(`${block[0]}\n`, {}) : undefined;
+			// mdsvex 가 글 컴포넌트에 넣는 metadata 와 같은 값(YAML Date 는 JSON 왕복으로 ISO 문자열).
+			const fm = JSON.parse(JSON.stringify((compiled?.data as { fm?: unknown } | undefined)?.fm ?? {})) as Record<string, unknown>;
+			const metadata: Record<string, unknown> = {};
+			for (const key of BLOG_INDEX_FIELDS) if (fm[key] !== undefined) metadata[key] = fm[key];
+			const firstSvg = raw.match(/!\[[^\]]*\]\(\.\/assets\/([^)]+\.svg)\)/i);
+			entries.push({
+				categoryFolder: category.name,
+				order: Number.parseInt(match[1], 10),
+				slug: match[2],
+				metadata,
+				readingMinutes: estimateReadingMinutes(raw),
+				previewAsset: firstSvg ? `/blog/assets/${firstSvg[1]}` : undefined
+			});
+		}
+	}
+	return entries;
+}
+
+function blogIndexPlugin() {
+	let cached: string | undefined;
+	return {
+		name: 'dartlab-blog-index',
+		resolveId(id: string) {
+			return id === BLOG_INDEX_ID ? RESOLVED_BLOG_INDEX_ID : undefined;
+		},
+		async load(this: { addWatchFile(file: string): void }, id: string) {
+			if (id !== RESOLVED_BLOG_INDEX_ID) return undefined;
+			cached ??= `export default ${JSON.stringify(await readBlogIndex((file) => this.addWatchFile(file)))};`;
+			return cached;
+		},
+		configureServer(server: ViteDevServer) {
+			const refresh = async (changed: string) => {
+				const file = path.resolve(changed);
+				if (!file.startsWith(blogDir + path.sep) || path.basename(file) !== 'index.md' || cached === undefined) return;
+				const next = `export default ${JSON.stringify(await readBlogIndex())};`;
+				if (next === cached) return;
+				cached = next;
+				const mod = server.moduleGraph.getModuleById(RESOLVED_BLOG_INDEX_ID);
+				if (mod) server.moduleGraph.invalidateModule(mod);
+				server.ws.send({ type: 'full-reload' });
+			};
+			server.watcher.on('change', refresh);
+			server.watcher.on('add', refresh);
+			server.watcher.on('unlink', refresh);
+		}
+	};
+}
+
 function skillCatalogPlugin() {
 	return {
 		name: 'skill-catalog-plugin',
@@ -311,7 +420,7 @@ function hfMediaFallbackPlugin() {
 }
 
 export default defineConfig({
-	plugins: [tailwindcss(), blogAssetsPlugin(), skillCatalogPlugin(), govPriceDevPlugin(), naverPriceDevPlugin(), newsDevPlugin(), hfMediaFallbackPlugin(), sveltekit()],
+	plugins: [tailwindcss(), blogAssetsPlugin(), blogIndexPlugin(), skillCatalogPlugin(), govPriceDevPlugin(), naverPriceDevPlugin(), newsDevPlugin(), hfMediaFallbackPlugin(), sveltekit()],
 	define: {
 		__DARTLAB_VERSION__: JSON.stringify(dartlabVersion),
 		__PYPROC_VERSION__: JSON.stringify(pyprocVersion)

@@ -11,7 +11,8 @@ const siteUrl = 'https://eddmpython.github.io/dartlab';
 const extraPages = [
 	{ loc: `${siteUrl}/scan`, changefreq: 'daily', priority: 0.95 },
 	{ loc: `${siteUrl}/map`, changefreq: 'daily', priority: 0.92 },
-	{ loc: `${siteUrl}/terminal`, changefreq: 'daily', priority: 0.92 }
+	{ loc: `${siteUrl}/terminal`, changefreq: 'daily', priority: 0.92 },
+	{ loc: `${siteUrl}/developers`, changefreq: 'weekly', priority: 0.85 }
 ];
 
 const docsDir = resolve(buildDir, 'docs');

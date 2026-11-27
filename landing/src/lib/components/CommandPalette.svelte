@@ -2,8 +2,6 @@
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { Search, FileText, ArrowRight, Wrench } from 'lucide-svelte';
-	import { posts } from '$lib/blog/posts';
-	import skillIndex from '$skills/catalog.json';
 
 	let open = $state(false);
 	let query = $state('');
@@ -17,12 +15,6 @@
 		subtitle?: string;
 	}
 
-	const blogItems: SearchItem[] = posts.map((post) => ({
-		title: post.title,
-		href: `${base}/blog/${post.slug}`,
-		category: 'Blog'
-	}));
-
 	interface SkillIndexEntry {
 		id: string;
 		title: string;
@@ -31,17 +23,6 @@
 		purpose?: string;
 	}
 
-	const skillItems: SearchItem[] = (
-		(skillIndex as { skills?: SkillIndexEntry[] }).skills ?? []
-	)
-		.filter((skill) => skill.category !== 'capability')
-		.map((skill) => ({
-			title: skill.title,
-			href: `${base}/skills/${skill.id}`,
-			category: 'Skills' as const,
-			subtitle: skill.id
-		}));
-
 	const quickLinks: SearchItem[] = [
 		{ title: 'Installation', href: `${base}/skills/start.installUv`, category: 'Quick Links' },
 		{ title: 'Quick Start', href: `${base}/skills/start.quickStart`, category: 'Quick Links' },
@@ -49,7 +30,35 @@
 		{ title: 'About', href: `${base}/about`, category: 'Quick Links' }
 	];
 
-	const allItems = [...quickLinks, ...skillItems, ...blogItems];
+	// 글 목록과 스킬 카탈로그는 창을 처음 열 때 받는다. 루트 레이아웃이 이 창을 품고 있어서
+	// 맨 위에서 import 하면 모든 페이지가 첫 화면에 두 목록을 함께 받는다.
+	let allItems = $state<SearchItem[]>(quickLinks);
+	let itemsLoading: Promise<void> | null = null;
+
+	function loadItems() {
+		itemsLoading ??= Promise.all([import('$lib/blog/posts'), import('$skills/catalog.json')])
+			.then(([{ posts }, catalog]) => {
+				const skillIndex = (catalog.default ?? catalog) as { skills?: SkillIndexEntry[] };
+				const skillItems: SearchItem[] = (skillIndex.skills ?? [])
+					.filter((skill) => skill.category !== 'capability')
+					.map((skill) => ({
+						title: skill.title,
+						href: `${base}/skills/${skill.id}`,
+						category: 'Skills' as const,
+						subtitle: skill.id
+					}));
+				const blogItems: SearchItem[] = posts.map((post) => ({
+					title: post.title,
+					href: `${base}/blog/${post.slug}`,
+					category: 'Blog' as const
+				}));
+				allItems = [...quickLinks, ...skillItems, ...blogItems];
+			})
+			.catch(() => {
+				itemsLoading = null;
+			});
+		return itemsLoading;
+	}
 
 	let filtered = $derived.by(() => {
 		if (!query.trim()) return allItems.slice(0, 8);
@@ -70,6 +79,7 @@
 	});
 
 	function handleOpen() {
+		void loadItems();
 		open = true;
 		query = '';
 		selectedIndex = 0;

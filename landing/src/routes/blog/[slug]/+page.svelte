@@ -3,7 +3,7 @@
 	import { brand } from '$lib/brand';
 	import SubjectHub from '$lib/subjects/SubjectHub.svelte';
 	import BlogActionBar from '$lib/blog/BlogActionBar.svelte';
-	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getDistinctSeriesLabel, getPost, getPostRaw, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
+	import { findPrevNext, findSeriesPrevNext, getCategoryPath, getDistinctSeriesLabel, getPost, getRelatedPostsByCategory, getSeriesPath } from '$lib/blog/posts';
 	import { buildAbsoluteUrl, buildArticleJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd, parseFaqFromMarkdown } from '$lib/seo';
 	import { Calendar, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
@@ -126,7 +126,7 @@
 
 	/** 이 글을 노트북 하나로. 글마다 안정 id 라 두 번 눌러도 사본이 늘지 않고 하던 곳으로 간다. */
 	async function openAsNotebook() {
-		const raw = getPostRaw(slug);
+		const raw = data.rawMarkdown;
 		if (!raw) return;
 		const id = postNotebookId(slug);
 		if (!(await getNotebook(id))) {
