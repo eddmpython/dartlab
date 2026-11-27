@@ -68,8 +68,19 @@ def test_pyproc_pull_requests_run_all_compatibility_gates() -> None:
     # 죽고, pyproc 은 0.0.22 부터 landing 공개 표면이 사라져 머지 자체가 불가능하다.
     assert "open-pull-requests-limit: 0" in npmBlock, "npm 정기 범프는 limit 0 으로 중단한다"
 
-    # group 금지. workspace 저장소에서 묶음 PR 이 lockfile 을 완전히 갱신하지 못한다(#115).
-    assert "groups:" not in npmBlock, "npm group PR 은 workspace lockfile 을 깨뜨린다"
+    # 정기 범프 group 은 금지하고 보안 업데이트 group 하나만 둔다. #115 의 `npm ci` 실패
+    # ("Missing: svelte@5.56.9")는 루트 overrides 의 svelte 숫자 고정과 겹친다. 2026-11 에는
+    # 묶지 않은 개별 PR 도 overrides 대상(vite, kit)에서 실패했고(#212·#213·#216·#218), 같은
+    # 경보가 폴더마다 PR 로 열려 소음만 늘었다. 흉내 시험에서 숫자 override 는 devDependencies
+    # 만 올리면 EOVERRIDE 로 실패했고 `$vite` 참조는 통과했다. 보안 업데이트 minor·patch 만
+    # 폴더 전체를 한 PR 로 묶고, major 는 묶음 밖에서 따로 연다.
+    groupBlock = npmBlock.split("groups:", 1)[1]
+    assert npmBlock.count("groups:") == 1
+    assert groupBlock.count("applies-to:") == 1, "npm group 은 보안 업데이트 하나만 둔다"
+    assert "applies-to: security-updates" in groupBlock
+    assert '- "major"' not in groupBlock, "major 보안 수정은 묶음 밖에서 따로 연다"
+    for directory in ("/", "/landing", "/ui/apps/local", "/infra/workers/pushHub"):
+        assert f'- "{directory}"' in npmBlock
 
     # ignore 금지. ignore 는 보안 업데이트도 함께 막는다. 공식 문서는 ignore 를 "will prevent
     # security and version updates" 로 서술하고, update-types 가 보안을 통과시킨다는 예외

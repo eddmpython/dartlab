@@ -87,7 +87,8 @@ def testWorkflowUsesTrustedMetadataAndPostCiMerge():
 @pytest.mark.unit
 def testDependabotGroupsLimitUpdatesToPatchAndMinor():
     text = (REPO_ROOT / ".github" / "dependabot.yml").read_text(encoding="utf-8")
-    groups = text.split("    groups:", 1)[1].split("  # 정기 버전 범프 중단", 1)[0]
+    pipBlock = text.split('package-ecosystem: "pip"', 1)[1].split("- package-ecosystem:", 1)[0]
+    groups = pipBlock.split("    groups:", 1)[1]
     assert groups.count("update-types:") == 3
     assert groups.count('- "minor"') == 3
     assert groups.count('- "patch"') == 3

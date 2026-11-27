@@ -54,6 +54,33 @@ updates:
           - "anthropic"
           - "mcp*"
 
+  # uv.lock 보안 업데이트를 한 PR 로 묶는다. 이 항목이 없으면 경보마다 기본 설정 PR 이 따로
+  # 열린다(2026-11 실측: filelock·pillow·soupsieve 가 PR 3 건). 정기 범프는 위 pip 항목이
+  # 맡으므로 여기서는 열지 않는다(limit 0). major 수정은 묶음 밖에서 따로 열어 하나가 실패해도
+  # minor·patch 묶음을 막지 않게 한다.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "보안"
+      include: "scope"
+    open-pull-requests-limit: 0
+    groups:
+      uv-security:
+        applies-to: security-updates
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+
   # 정기 버전 범프 중단 (limit 0). 보안 업데이트는 이 설정과 무관하게 계속 흐른다.
   # 사유: PR 체크가 sync 워크플로(edgarSync·naverNewsSync 등)를 실행하지 않아 검증 없이
   # 머지되는 구조이고, 낡은 러너는 GitHub 이 강제 폐기하므로 정기 범프의 실익이 낮다.
@@ -94,8 +121,17 @@ updates:
   # "will prevent security and version updates for those dependencies" 라고 서술하고,
   # `ignore` 의 update-types 가 보안을 통과시킨다는 문장은 어디에도 없다. 그 예외 문장
   # ("update-types only affects version updates")은 `allow` 절에만 존재한다.
+  #
+  # 보안 업데이트는 폴더 4 곳을 한 그룹으로 묶는다. `directories` 를 쓰면 같은 생태계의 여러
+  # 폴더 경보가 그룹 하나로 모인다. 2026-11 실측: 그룹 없이 같은 vite 경보가 /, /landing,
+  # /ui/apps/local 에서 PR 3 건(#213·#216·#218)으로, pushHub 는 별도 PR 로 열렸다. major 는
+  # 묶음 밖에서 따로 열린다(@sveltejs/kit 3 같은 이전 작업이 묶음 전체를 막지 않게).
   - package-ecosystem: "npm"
-    directory: "/"
+    directories:
+      - "/"
+      - "/landing"
+      - "/ui/apps/local"
+      - "/infra/workers/pushHub"
     schedule:
       interval: "daily"
       time: "09:00"
@@ -105,6 +141,14 @@ updates:
       - "dependencies"
       - "landing"
     commit-message:
-      prefix: "개선"
+      prefix: "보안"
       include: "scope"
     open-pull-requests-limit: 0
+    groups:
+      npm-security:
+        applies-to: security-updates
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
