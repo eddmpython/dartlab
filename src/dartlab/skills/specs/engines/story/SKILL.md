@@ -90,7 +90,7 @@ linkedSkills:
 source:
   type: manual_skill
   format: markdown
-lastUpdated: '2026-08-11'
+lastUpdated: '2026-11-27'
 testUniverse:
   market: KR
   stockCodes:
@@ -124,6 +124,7 @@ exec_brief = c.story(reportType="executive")
 
 # 3. 단일 섹션
 revenue = c.story("수익구조")               # 수익구조 블록만
+filing = c.story("사업보고서")              # 사업보고서 문장과 재무 숫자 연결
 
 # 4. 자유 조립 (블록 단위)
 from dartlab.story import blocks, Story
@@ -157,6 +158,14 @@ story 는 L3 조합기 - *자체 계산 0*. 모든 숫자는 하위 엔진 (anal
 `Story` 클래스 자체를 호출하면 `Story(itemsOrStockCode, *, stockCode=, corpName=, sections=, layout=)` - 자유 조립 또는 직접 종목코드. `dartlab.story` 가 클래스 자체이므로 *함수처럼 호출하지 않는다* (`dartlab.story(c)` 같은 호출은 `Story(c)` 가 되어 첫 인자 타입이 안 맞음).
 
 블록 한 개의 evidence 가 비면 빈 섹션이 그대로 나간다 - story 는 채워주지 않음. 하위 엔진 호출 결과 부족 시 해당 블록 skip 또는 limits 에 명시.
+
+## 사업보고서 섹션 - 숫자를 회사 문장으로 설명
+
+`c.story("사업보고서")` 는 1 막의 `사업보고서` 섹션 3 블록 (`filingCoverage` · `filingAccountStory` · `filingSegmentStory`) 을 만든다. 계산은 `analysis.financial.filingLink.calcFilingLinks` 가 한다. 사업보고서 글 전체의 문장에서 원화 금액을 읽어 IS·BS·CF 연간 숫자와 부문 매출·영업이익에 맞추고, 같은 글에서 그 계정 이름 뒤에 조사와 이유 표시어 (원인·때문·영향·증가로·감소로 등) 가 붙은 문장을 그 계정의 이유로 묶는다. 블록은 회사 문장을 `장 > 절` 위치와 함께 인용만 하고, 같은 문장을 인용하는 계정은 한 번에 묶으며, 이유 문장이 없는 계정은 "이 금액을 적은 절에서는 회사가 이유를 밝히지 않았다" 로 둔다. 부문 이름은 XBRL 이름 (DxDivision) 을 글에 쓰는 이름 (DX) 으로 바꾸고, 다른 절에 다시 실은 같은 부문 문장은 한 번만 둔다. 달러·대수·법 조항·사람 수는 금액으로 읽지 않는다.
+
+공시변화 섹션의 `newFilingSentences` 는 `calcNewFilingSentences` 로 올해 사업의 내용 (II) · 경영진단 (IV) 문장 가운데 전년 사업보고서에 없던 문장을 고른다. 숫자만 바뀐 문장은 같은 문장으로 보고, 전망·위험·변화를 말한 문장을 앞에 둔다. 전년 글이 없으면 블록이 비어 섹션에서 빠진다.
+
+두 섹션 블록은 기본 `c.story()` 의 standard 묶음 밖이라 `c.story("사업보고서")` · `reportType="full"` · `blocks(c)` 로 부른다.
 
 ## 2 축 체계 - reportType × template
 

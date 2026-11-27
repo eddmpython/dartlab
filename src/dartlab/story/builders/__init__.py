@@ -12,6 +12,7 @@ from dartlab.story.builders.asset import *  # noqa: F401,F403
 from dartlab.story.builders.capital import *  # noqa: F401,F403
 from dartlab.story.builders.cashflow import *  # noqa: F401,F403
 from dartlab.story.builders.credit import *  # noqa: F401,F403
+from dartlab.story.builders.filing import *  # noqa: F401,F403
 from dartlab.story.builders.forecast import *  # noqa: F401,F403
 from dartlab.story.builders.governance import *  # noqa: F401,F403
 from dartlab.story.builders.macro import *  # noqa: F401,F403

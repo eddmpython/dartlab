@@ -416,6 +416,30 @@ def _buildGrowthBlocks(company, keys, basePeriod, safe: Callable, need: Callable
         out["growthFlags"] = safe(lambda: growthFlagsBlock(calcGrowthFlags(company, basePeriod=basePeriod)))
 
 
+def _buildFilingBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
+    """1 부 - 사업보고서 문장과 재무 숫자 연결 (3 블록). 세 블록이 같은 계산 하나를 나눠 쓴다."""
+    filingKeys = {"filingCoverage", "filingAccountStory", "filingSegmentStory"}
+    if keys is not None and not (keys & filingKeys):
+        return
+    from dartlab.analysis.financial.filingLink import calcFilingLinks
+    from dartlab.story.builders import (
+        filingAccountStoryBlock,
+        filingCoverageBlock,
+        filingSegmentStoryBlock,
+    )
+
+    if need("filingCoverage"):
+        out["filingCoverage"] = safe(lambda: filingCoverageBlock(calcFilingLinks(company, basePeriod=basePeriod)))
+    if need("filingAccountStory"):
+        out["filingAccountStory"] = safe(
+            lambda: filingAccountStoryBlock(calcFilingLinks(company, basePeriod=basePeriod))
+        )
+    if need("filingSegmentStory"):
+        out["filingSegmentStory"] = safe(
+            lambda: filingSegmentStoryBlock(calcFilingLinks(company, basePeriod=basePeriod))
+        )
+
+
 def _buildStabilityBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
     """2 부 - 안정성 (5+ 블록 - scenarioSensitivity/criticalAssumptions/improvementLevers/marketRisk 공유)."""
     if keys is not None and not (
@@ -1052,9 +1076,16 @@ def _buildGovernanceBlocks(company, keys, basePeriod, safe: Callable, need: Call
 
 
 def _buildDisclosureDeltaBlocks(company, keys, basePeriod, safe: Callable, need: Callable, out: dict) -> None:
-    """5 부 - 공시변화 (4 블록)."""
+    """5 부 - 공시변화 (5 블록)."""
     if keys is not None and not (
-        keys & {"disclosureChangeSummary", "keyTopicChanges", "changeIntensity", "disclosureDeltaFlags"}
+        keys
+        & {
+            "disclosureChangeSummary",
+            "keyTopicChanges",
+            "changeIntensity",
+            "newFilingSentences",
+            "disclosureDeltaFlags",
+        }
     ):
         return
     from dartlab.analysis.financial.disclosureDelta import (
@@ -1063,11 +1094,13 @@ def _buildDisclosureDeltaBlocks(company, keys, basePeriod, safe: Callable, need:
         calcDisclosureDeltaFlags,
         calcKeyTopicChanges,
     )
+    from dartlab.analysis.financial.filingLink import calcNewFilingSentences
     from dartlab.story.builders import (
         changeIntensityBlock,
         disclosureChangeSummaryBlock,
         disclosureDeltaFlagsBlock,
         keyTopicChangesBlock,
+        newFilingSentencesBlock,
     )
 
     if need("disclosureChangeSummary"):
@@ -1078,6 +1111,10 @@ def _buildDisclosureDeltaBlocks(company, keys, basePeriod, safe: Callable, need:
         out["keyTopicChanges"] = safe(lambda: keyTopicChangesBlock(calcKeyTopicChanges(company, basePeriod=basePeriod)))
     if need("changeIntensity"):
         out["changeIntensity"] = safe(lambda: changeIntensityBlock(calcChangeIntensity(company, basePeriod=basePeriod)))
+    if need("newFilingSentences"):
+        out["newFilingSentences"] = safe(
+            lambda: newFilingSentencesBlock(calcNewFilingSentences(company, basePeriod=basePeriod))
+        )
     if need("disclosureDeltaFlags"):
         out["disclosureDeltaFlags"] = safe(
             lambda: disclosureDeltaFlagsBlock(calcDisclosureDeltaFlags(company, basePeriod=basePeriod))
@@ -1513,6 +1550,7 @@ def buildBlocks(
     # ── 2부: 재무비율 분석 (수익성 + 성장 + 안정성 + 효율성 + 종합) ──
     _buildProfitabilityBlocks(company, keys, basePeriod, _safe, _need, b)
     _buildGrowthBlocks(company, keys, basePeriod, _safe, _need, b)
+    _buildFilingBlocks(company, keys, basePeriod, _safe, _need, b)
     _buildStabilityBlocks(company, keys, basePeriod, _safe, _need, b)
     _buildEfficiencyBlocks(company, keys, basePeriod, _safe, _need, b)
     _buildScorecardBlocks(company, keys, basePeriod, _safe, _need, b)

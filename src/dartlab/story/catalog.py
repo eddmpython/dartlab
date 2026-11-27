@@ -44,6 +44,7 @@ SECTIONS: list[SectionMeta] = [
     # ── 제1막: 이 회사는 뭘 하는가 (사업 이해) ──
     SectionMeta("수익구조", "1", "수익 구조 -- 이 회사는 무엇으로 돈을 버는가", act=1),
     SectionMeta("성장성", "1-2", "성장성 -- 얼마나 빨리 성장하는가", act=1),
+    SectionMeta("사업보고서", "1-3", "사업보고서 -- 회사는 이 숫자를 어떻게 설명하는가", act=1),
     # ── 제2막: 얼마나 잘 하는가 (수익성 + 원천) ──
     SectionMeta("수익성", "2", "수익성 -- 번 돈이 얼마나 남는가", act=2),
     SectionMeta("비용구조", "2-2", "비용 구조 -- 왜 이만큼 남는가", act=2),
@@ -127,6 +128,12 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("growthQuality", "성장 품질", "성장성", "외형 성장 vs 내실 성장 괴리, CAGR"),
     BlockMeta("cagrComparison", "CAGR 비교", "성장성", "계정별 CAGR 교차비교 — 구조적 변화 감지"),
     BlockMeta("growthFlags", "성장성 플래그", "성장성", "성장성 관련 경고/기회 신호"),
+    # ── 사업보고서 ──
+    BlockMeta("filingCoverage", "사업보고서 읽은 범위", "사업보고서", "글에서 읽은 원화 금액과 재무 숫자에 맞은 수"),
+    BlockMeta(
+        "filingAccountStory", "숫자를 설명한 문장", "사업보고서", "계정 숫자마다 회사가 같은 글에 적은 이유 문장"
+    ),
+    BlockMeta("filingSegmentStory", "부문을 설명한 문장", "사업보고서", "부문 숫자를 설명한 사업의 내용 문장"),
     # ── 안정성 ──
     BlockMeta("leverageTrend", "레버리지 추이", "안정성", "부채비율, 차입금의존도 시계열"),
     BlockMeta("coverageTrend", "이자보상 추이", "안정성", "이자보상배율 시계열"),
@@ -217,6 +224,9 @@ _BLOCKS: list[BlockMeta] = [
     BlockMeta("disclosureChangeSummary", "공시변화 종합", "공시변화", "전체 topic 변화 요약과 상위 변화"),
     BlockMeta("keyTopicChanges", "핵심 공시 변화", "공시변화", "사업개요/리스크/회계정책 등 핵심 topic 변화"),
     BlockMeta("changeIntensity", "변화 크기 분석", "공시변화", "바이트 기준 변화량 상위 topic"),
+    BlockMeta(
+        "newFilingSentences", "올해 새로 들어간 문장", "공시변화", "전년 사업보고서에 없던 사업의 내용·경영진단 문장"
+    ),
     BlockMeta("disclosureDeltaFlags", "공시변화 플래그", "공시변화", "공시변화 관련 경고/기회 신호"),
     # ── 5-3 비교분석 ──
     BlockMeta("peerRanking", "시장 내 백분위 순위", "비교분석", "핵심 재무비율 시장 내 백분위"),
