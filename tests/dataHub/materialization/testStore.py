@@ -406,7 +406,10 @@ def testConcurrentBuildersAndReadersConvergeOnOneRoot(tmp_path: Path) -> None:
 
 def testSpawnedProcessCannotStealLiveBuilderLease(tmp_path: Path) -> None:
     root = tmp_path / "materialization"
-    storePolicy = policy(builderLeaseSeconds=20.0)
+    # 이 시험이 보는 것은 살아 있는 잠금을 새 프로세스가 빼앗지 못하는지다. 잠금이 20초였을 때 PC 가 바빠
+    # 새 프로세스가 dartlab 을 불러오는 동안 잠금이 끝나 빼앗긴 것으로 떨어졌다(2026-11-28 푸시 전 검사).
+    # 아래 멈춤 한도(120초)보다 길게 두어 새 프로세스가 끝날 때까지 잠금이 살아 있게 한다.
+    storePolicy = policy(builderLeaseSeconds=600.0)
     exactPins = pins()
     store = MaterializationStore(root, policy=storePolicy)
     owner = store.claimBuild(exactPins, builderId="main-owner")
