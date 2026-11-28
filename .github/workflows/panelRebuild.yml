@@ -1,0 +1,92 @@
+name: Panel Rebuild (shards)
+
+# 운영자 트리거 전용. 빌더 추출 규칙이 바뀌었을 때 전 회사 panel 을 원문 tar 로 다시 만들고,
+# 원문과 견주어 통과한 회사만 올린다(dartlab.pipeline panelRebuild).
+# 한 러너는 메모리 가드로 2 곳씩만 빌드해 전 회사에 20 시간이 넘으므로 crc32 샤드로 러너 여러 대에 나눈다.
+# 샤드끼리 같은 HF repo 에 커밋하므로 hf-dart-push 그룹에 넣지 않는다. 그 그룹은 실행 1 + 대기 1 만 받아
+# 샤드끼리 서로 큐에서 밀어낸다. 겹침은 stage 가 parent_commit 과 파일 sha 대조로 처리하고,
+# 그사이 다른 작업이 바꾼 회사는 올리지 않는다(hold:raced). 장부는 샤드마다 artifact 로 남긴다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      shard_count:
+        description: '러너 수 (1~20)'
+        default: '16'
+        type: string
+      codes:
+        description: '쉼표·공백 구분 회사코드 (비우면 원문 저장소의 전 회사)'
+        default: ''
+        type: string
+      upload:
+        description: 'true=통과 회사 업로드, false=검사만'
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+permissions:
+  contents: read  # HF push 만(HF_TOKEN). git commit/release 없음.
+
+concurrency:
+  group: panel-rebuild  # 이 워크플로 전용. 재빌드 run 은 한 번에 하나만.
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - id: plan
+        env:
+          COUNT: ${{ inputs.shard_count }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          count = int(os.environ["COUNT"])
+          if not 1 <= count <= 20:
+              raise SystemExit(f"shard_count 는 1~20: {count}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"shards={json.dumps(list(range(count)))}\n")
+          PY
+
+  rebuild:
+    needs: plan
+    runs-on: ubuntu-24.04  # 무인 파이프라인 OS 고정
+    # stage 가 PANEL_REBUILD_DEADLINE_MIN(290) 뒤에는 새 묶음을 시작하지 않고, 남은 회사는 장부에 left 로 적는다.
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync
+      - name: panel 재빌드 (샤드 ${{ matrix.shard }}/${{ inputs.shard_count }})
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          PANEL_WORKERS: '2'
+          PANEL_REBUILD_SHARD: ${{ matrix.shard }}/${{ inputs.shard_count }}
+          PANEL_REBUILD_CODES: ${{ inputs.codes }}
+          PANEL_REBUILD_DEADLINE_MIN: '290'
+          UPLOAD: ${{ inputs.upload }}
+        run: |
+          if [ "$UPLOAD" = "false" ]; then
+            uv run python -X utf8 -m dartlab.pipeline panelRebuild --no-upload
+          else
+            uv run python -X utf8 -m dartlab.pipeline panelRebuild
+          fi
+      - name: 장부 보관
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: panelRebuild-ledger-${{ matrix.shard }}
+          path: data/panelRebuild/ledger-*.parquet
+          if-no-files-found: warn
+          retention-days: 14
