@@ -39,6 +39,7 @@ import shutil
 import time
 import zipfile
 import zlib
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -224,12 +225,105 @@ def _checkCompany(task: dict[str, Any]) -> dict[str, Any]:
         return rec
 
 
-def _checkCompanyBody(task: dict[str, Any]) -> dict[str, Any]:
-    """회사 하나를 원문 zip·옛 panel 과 견주고, 통과하면 올릴 파일을 만든다."""
-    import polars as pl
+def _noteTagText(rec: dict[str, Any], stem: str, structText: int, tableText: int) -> None:
+    """수리가 글자로 바꾼 장 구조 태그와 표 태그가 있는 보고서를 장부 칸에 센다."""
+    if structText > 0:
+        rec["structTextReports"] += 1
+    if tableText > 0:
+        rec["tableTextReports"] += 1
+    if (structText > 0 or tableText > 0) and len(rec["tagTextSample"]) < 400:
+        rec["tagTextSample"] += f"{stem}:{structText}/{tableText} "
+
+
+def _compareZip(rec: dict[str, Any], zipPath: Path, texts: list[str], bad: list[str]) -> None:
+    """원문 zip 하나를 그 보고서의 panel 글과 견주어 검사 칸을 채우고, 못 미치면 bad 에 더한다."""
+    src, srcLength, structText, tableText = _zipWords(zipPath)
+    _noteTagText(rec, zipPath.stem, structText, tableText)
+    got: set[str] = set()
+    gotLength = 0
+    for t in texts:
+        if t:
+            got |= _textWords(t)
+            gotLength += _flatLen(t)
+    lostWords = src - got
+    lost = len(lostWords)
+    cov = 1.0 - lost / len(src) if src else 1.0
+    ratio = gotLength / srcLength if srcLength else 0.0
+    rec["worstCoverage"] = min(rec["worstCoverage"], round(cov, 5))
+    rec["maxLengthRatio"] = max(rec["maxLengthRatio"], round(ratio, 4))
+    if lost > _MIN_LOST_WORDS:
+        # 표 칸이나 줄바꿈으로 나뉜 낱말을 panel 이 붙여 쓴 경우는 빠진 것이 아니다.
+        # 태그와 공백을 뺀 panel 글 안에도 없는 낱말만 진짜 빠진 낱말로 센다.
+        gotFlat = "".join(_SPACE.sub("", html.unescape(_TAG.sub("", t))) for t in texts if t)
+        realLost = sum(1 for w in lostWords if w not in gotFlat)
+        rec["measuredReports"] += 1
+        rec["maxRealLost"] = max(rec["maxRealLost"], realLost)
+        if realLost > _MIN_LOST_WORDS:
+            bad.append(f"{zipPath.stem}:{cov:.3f}/{realLost}")
+    if ratio > _MAX_LENGTH_RATIO:
+        bad.append(f"{zipPath.stem}:x{ratio:.2f}")
+
+
+def _downloadOld(task: dict[str, Any], oldLocal: Path) -> Path | None:
+    """HF 의 옛 panel 을 sha 를 읽은 같은 revision 에서 받는다. HF 에 없던 회사는 None.
+
+    받기 실패를 옛 panel 없음으로 넘기면 옛 panel 에만 있는 보고서가 빠진 채 올라가므로 잡지 않는다
+    (``_checkCompany`` 가 hold:check 로 적는다).
+    """
+    if not task["oldSha"]:
+        return None
     from huggingface_hub import hf_hub_download
 
     from dartlab.core.hfRetry import retryHfCall
+
+    return Path(
+        retryHfCall(
+            hf_hub_download,
+            task["repo"],
+            f"dart/panel/{task['code']}.parquet",
+            repo_type="dataset",
+            revision=task["revision"],
+            local_dir=str(oldLocal),
+        )
+    )
+
+
+def _compareOld(
+    rec: dict[str, Any], oldPath: Path, newSets: dict[str, set[str]], newAll: set[str]
+) -> tuple[list[str], int]:
+    """옛 panel 과 장·보고서 목록을 견주고, 옛 panel 에만 있는 보고서와 그 글자 수를 돌려준다."""
+    import polars as pl
+
+    rec["oldExists"] = True
+    old = pl.read_parquet(oldPath, columns=["period", "rceptNo", "chapter"])
+    oldSets = _chapterSets(old)
+    rec["oldRows"], rec["oldReports"] = old.height, old["rceptNo"].n_unique()
+    rec["oldMdna"] = _mdnaReports(old)
+    oldAll = set(old["rceptNo"].unique().to_list())
+    del old
+    oldOnly = sorted(oldAll - newAll)
+    rec["oldOnly"] = " ".join(oldOnly)[:500]
+    rec["addedRcept"] = len(newAll - oldAll)
+    rec["lostChapterReports"] = sum(1 for r, s in oldSets.items() if r in newSets and not s <= newSets[r])
+    rec["gainedChapterReports"] = sum(1 for r, s in newSets.items() if r in oldSets and not s <= oldSets[r])
+    rec["lostNamedChapterReports"] = sum(
+        1 for r, s in oldSets.items() if r in newSets and any(_CHAPTER_NAME.match(c) for c in s - newSets[r])
+    )
+    if not oldOnly:
+        return oldOnly, 0
+    kept = (
+        pl.scan_parquet(oldPath)
+        .filter(pl.col("rceptNo").is_in(oldOnly))
+        .select(pl.len().alias("rows"), pl.col("contentRaw").str.len_chars().sum().alias("length"))
+        .collect()
+    )
+    rec["oldOnlyRows"] = int(kept["rows"][0])
+    return oldOnly, int(kept["length"][0] or 0)
+
+
+def _checkCompanyBody(task: dict[str, Any]) -> dict[str, Any]:
+    """회사 하나를 원문 zip·옛 panel 과 견주고, 통과하면 올릴 파일을 만든다."""
+    import polars as pl
 
     code = task["code"]
     rec = _baseRec(code, error=task["error"], oldSha=task["oldSha"])
@@ -249,91 +343,21 @@ def _checkCompanyBody(task: dict[str, Any]) -> dict[str, Any]:
     groups = {r: t for r, t in new.group_by("rceptNo").agg(pl.col("contentRaw")).iter_rows()}
     zips = sorted(docsDir.glob("*.zip"))
     rec["zips"] = len(zips)
-    missing: list[str] = []
+    missing = [z.stem for z in zips if z.stem not in groups]
     bad: list[str] = []
     for z in zips:
-        if z.stem not in groups:
-            missing.append(z.stem)
-            continue
-        src, srcLength, structText, tableText = _zipWords(z)
-        if structText > 0:
-            rec["structTextReports"] += 1
-        if tableText > 0:
-            rec["tableTextReports"] += 1
-        if (structText > 0 or tableText > 0) and len(rec["tagTextSample"]) < 400:
-            rec["tagTextSample"] += f"{z.stem}:{structText}/{tableText} "
-        got: set[str] = set()
-        gotLength = 0
-        for t in groups[z.stem]:
-            if t:
-                got |= _textWords(t)
-                gotLength += _flatLen(t)
-        lostWords = src - got
-        lost = len(lostWords)
-        cov = 1.0 - lost / len(src) if src else 1.0
-        ratio = gotLength / srcLength if srcLength else 0.0
-        rec["worstCoverage"] = min(rec["worstCoverage"], round(cov, 5))
-        rec["maxLengthRatio"] = max(rec["maxLengthRatio"], round(ratio, 4))
-        if lost > _MIN_LOST_WORDS:
-            # 표 칸이나 줄바꿈으로 나뉜 낱말을 panel 이 붙여 쓴 경우는 빠진 것이 아니다.
-            # 태그와 공백을 뺀 panel 글 안에도 없는 낱말만 진짜 빠진 낱말로 센다.
-            gotFlat = "".join(_SPACE.sub("", html.unescape(_TAG.sub("", t))) for t in groups[z.stem] if t)
-            realLost = sum(1 for w in lostWords if w not in gotFlat)
-            rec["measuredReports"] += 1
-            rec["maxRealLost"] = max(rec["maxRealLost"], realLost)
-            if realLost > _MIN_LOST_WORDS:
-                bad.append(f"{z.stem}:{cov:.3f}/{realLost}")
-        if ratio > _MAX_LENGTH_RATIO:
-            bad.append(f"{z.stem}:x{ratio:.2f}")
+        if z.stem in groups:
+            _compareZip(rec, z, groups[z.stem], bad)
     rec["zipMissing"] = len(missing)
     rec["badReports"] = " ".join(bad + [f"{m}:없음" for m in missing])[:500]
     newSets = _chapterSets(new.select("rceptNo", "chapter"))
     rec["newReports"] = len(groups)
-    del groups
+    newAll = set(new["rceptNo"].unique().to_list())
+    del groups, new
 
     oldLocal = Path(task["oldDir"]) / code
-    oldPath: Path | None = None
-    if task["oldSha"]:
-        # sha 를 읽은 같은 revision 에서 받는다. 받기 실패를 옛 panel 없음으로 넘기면 옛 panel 에만 있는
-        # 보고서가 빠진 채 올라가므로 잡지 않는다(_checkCompany 가 hold:check 로 적는다).
-        oldPath = Path(
-            retryHfCall(
-                hf_hub_download,
-                task["repo"],
-                f"dart/panel/{code}.parquet",
-                repo_type="dataset",
-                revision=task["revision"],
-                local_dir=str(oldLocal),
-            )
-        )
-    oldOnly: list[str] = []
-    oldOnlyLength = 0
-    newAll = set(new["rceptNo"].unique().to_list())
-    if oldPath is not None:
-        rec["oldExists"] = True
-        old = pl.read_parquet(oldPath, columns=["period", "rceptNo", "chapter"])
-        oldSets = _chapterSets(old)
-        rec["oldRows"], rec["oldReports"] = old.height, old["rceptNo"].n_unique()
-        rec["oldMdna"] = _mdnaReports(old)
-        oldAll = set(old["rceptNo"].unique().to_list())
-        oldOnly = sorted(oldAll - newAll)
-        rec["oldOnly"] = " ".join(oldOnly)[:500]
-        rec["addedRcept"] = len(newAll - oldAll)
-        rec["lostChapterReports"] = sum(1 for r, s in oldSets.items() if r in newSets and not s <= newSets[r])
-        rec["gainedChapterReports"] = sum(1 for r, s in newSets.items() if r in oldSets and not s <= oldSets[r])
-        rec["lostNamedChapterReports"] = sum(
-            1 for r, s in oldSets.items() if r in newSets and any(_CHAPTER_NAME.match(c) for c in s - newSets[r])
-        )
-        del old
-        if oldOnly:
-            kept = (
-                pl.scan_parquet(oldPath)
-                .filter(pl.col("rceptNo").is_in(oldOnly))
-                .select(pl.len().alias("rows"), pl.col("contentRaw").str.len_chars().sum().alias("length"))
-                .collect()
-            )
-            rec["oldOnlyRows"], oldOnlyLength = int(kept["rows"][0]), int(kept["length"][0] or 0)
-    del new
+    oldPath = _downloadOld(task, oldLocal)
+    oldOnly, oldOnlyLength = _compareOld(rec, oldPath, newSets, newAll) if oldPath is not None else ([], 0)
 
     if missing or bad:
         rec["status"] = "hold:source"
@@ -512,6 +536,188 @@ def _summaryLines(records: list[dict[str, Any]], label: str) -> list[str]:
     return lines
 
 
+@dataclass
+class _Run:
+    """한 샤드 run 의 묶음들이 함께 쓰는 값과 장부."""
+
+    api: Any
+    repo: str
+    label: str
+    upload: bool
+    token: str | None
+    refPath: str
+    workers: int
+    newDir: Path
+    oldDir: Path
+    uploadDir: Path
+    docsBase: Path
+    ledgerPath: Path
+    spawn: Any
+    records: list[dict[str, Any]] = field(default_factory=list)
+
+
+def _tarSizes(api: Any) -> dict[str, int]:
+    """원문 저장소 docs/ 의 회사별 tar 크기(바이트)."""
+    from dartlab.core.dataConfig import repoFor
+    from dartlab.core.hfRetry import retryHfCall
+
+    tree = retryHfCall(
+        lambda: list(api.list_repo_tree(repoFor("dartOriginal"), repo_type="dataset", path_in_repo="docs"))
+    )
+    return {Path(f.path).stem: int(getattr(f, "size", 0) or 0) for f in tree if f.path.endswith(".tar")}
+
+
+def _selectTargets(codes: list[str] | None, tarSize: dict[str, int], index: int, shards: int) -> list[str]:
+    """인자나 ``PANEL_REBUILD_CODES`` 의 회사(둘 다 비면 원문 저장소의 전 회사) 가운데 이 샤드 몫."""
+    wanted = codes if codes is not None else re.split(r"[\s,]+", os.environ.get("PANEL_REBUILD_CODES") or "")
+    wanted = [c for c in wanted if c] or sorted(tarSize)
+    return sorted(c for c in set(wanted) if _shardOf(c, shards) == index)
+
+
+def _buildChunk(run: _Run, chunk: list[str]) -> tuple[set[str], dict[str, str], float]:
+    """묶음의 원문을 받아 panel 을 만든다. 원문을 받은 회사, 회사별 빌드 오류, 받기에 걸린 초를 돌려준다."""
+    from dartlab.pipeline.stages.dartZip import _seedChangedFromHf
+    from dartlab.providers.dart.panel.build import buildPanelAll
+
+    t0 = time.monotonic()
+    for code in chunk:
+        shutil.rmtree(run.docsBase / code, ignore_errors=True)
+        (run.newDir / f"{code}.parquet").unlink(missing_ok=True)
+    _seeded, safe = _seedChangedFromHf(chunk, token=run.token)
+    fetchSeconds = time.monotonic() - t0
+    build = sorted(c for c in safe if (run.docsBase / c).exists())
+    errors: dict[str, str] = {}
+    try:
+        buildPanelAll(
+            refPath=run.refPath, outBaseDir=str(run.newDir), codes=build, numWorkers=run.workers, verbose=False
+        )
+    except Exception as exc:  # noqa: BLE001 (한 회사 실패가 묶음을 멈추므로 남은 회사를 하나씩 다시 돈다)
+        print(f"[panelRebuild] 묶음 빌드 중단, 하나씩 다시: {type(exc).__name__}: {str(exc)[:200]}", flush=True)
+        for code in build:
+            if (run.newDir / f"{code}.parquet").exists():
+                continue
+            try:
+                buildPanelAll(
+                    refPath=run.refPath, outBaseDir=str(run.newDir), codes=[code], numWorkers=1, verbose=False
+                )
+            except Exception as one:  # noqa: BLE001 (회사별 실패는 장부에 적는다)
+                errors[code] = f"{type(one).__name__}: {str(one)[:300]}"
+    return safe, errors, fetchSeconds
+
+
+def _finalizeChunk(run: _Run, chunk: list[str], safe: set[str], errors: dict[str, str], name: str) -> float:
+    """한 묶음의 검사, 업로드, 정리, 장부 쓰기(다음 묶음 빌드와 함께 돈다). 걸린 초를 돌려준다."""
+    from concurrent.futures import ProcessPoolExecutor
+
+    t0 = time.monotonic()
+    revision = _headSha(run.api, run.repo)
+    shaAt = _shaMap(run.api, run.repo, chunk, revision)
+    tasks = [
+        {
+            "code": c,
+            "seedOk": c in safe and (run.docsBase / c).exists(),
+            "error": errors.get(c, ""),
+            "docsDir": str(run.docsBase / c),
+            "newPath": str(run.newDir / f"{c}.parquet"),
+            "outPath": str(run.uploadDir / f"{c}.parquet"),
+            "oldDir": str(run.oldDir),
+            "repo": run.repo,
+            "revision": revision,
+            "oldSha": shaAt.get(c, ""),
+        }
+        for c in chunk
+    ]
+    with ProcessPoolExecutor(max_workers=_CHECK_WORKERS, mp_context=run.spawn) as pool:
+        chunkRecs = list(pool.map(_checkCompany, tasks))
+    if run.upload:
+        _commitChunk(run.api, run.repo, chunkRecs, run.uploadDir, run.label)
+    for r in chunkRecs:
+        (run.uploadDir / f"{r['code']}.parquet").unlink(missing_ok=True)
+        (run.newDir / f"{r['code']}.parquet").unlink(missing_ok=True)
+        shutil.rmtree(run.docsBase / r["code"], ignore_errors=True)
+    run.records.extend(chunkRecs)
+    _writeLedger(run.records, run.ledgerPath)
+    states: dict[str, int] = {}
+    for r in chunkRecs:
+        states[r["status"]] = states.get(r["status"], 0) + 1
+    spent = time.monotonic() - t0
+    print(f"[panelRebuild] 묶음 {name} 상태 {sorted(states.items())} 검사·올리기 {spent:.0f}s", flush=True)
+    return spent
+
+
+def _runChunks(
+    run: _Run, chunks: list[list[str]], tarSize: dict[str, int], deadline: float, res: StageResult
+) -> list[str]:
+    """묶음을 차례로 만들고 앞 묶음의 검사·올리기는 다음 묶음 빌드와 함께 돌린다. 남긴 회사를 돌려준다."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    builtBytes = builtSeconds = lastFinal = 0.0
+    finalizer = ThreadPoolExecutor(max_workers=1, thread_name_prefix="panel-finalize")
+    pending = None
+    left: list[str] = []
+    try:
+        for no, chunk in enumerate(chunks):
+            size = sum(tarSize.get(c, 0) for c in chunk)
+            # 지금까지 잰 MB당 빌드 시간으로 이 묶음이 마감을 넘길 것 같으면 남은 회사는 다음 run 몫이다.
+            if builtBytes and (
+                time.monotonic() + size * builtSeconds / builtBytes * 1.15 + max(lastFinal, 300.0) > deadline
+            ):
+                left = [c for rest in chunks[no:] for c in rest]
+                print(f"[panelRebuild] 마감 전에 못 끝낼 것 같아 {len(left)}곳을 남김", flush=True)
+                break
+            name = f"{no + 1}/{len(chunks)} ({size / 1e6:.0f}MB)"
+            t0 = time.monotonic()
+            safe, errors, fetchSeconds = _buildChunk(run, chunk)
+            buildSeconds = time.monotonic() - t0 - fetchSeconds
+            builtBytes += size
+            builtSeconds += buildSeconds
+            print(f"[panelRebuild] 묶음 {name} 받기 {fetchSeconds:.0f}s 빌드 {buildSeconds:.0f}s", flush=True)
+            if pending is not None:
+                lastFinal = pending.result()
+            pending = finalizer.submit(_finalizeChunk, run, chunk, safe, errors, name)
+        if pending is not None:
+            pending.result()
+    except Exception as exc:  # noqa: BLE001 (묶음 밖 실패는 그때까지의 장부를 남기고 실패로 알린다)
+        res.report.err = 1
+        res.report.failures.append(f"panelRebuild {run.label}: {type(exc).__name__}: {str(exc)[:300]}")
+        if pending is not None and not pending.done():
+            try:
+                pending.result()
+            except Exception as late:  # noqa: BLE001 (앞 묶음의 실패도 같은 run 실패로 적는다)
+                res.report.failures.append(
+                    f"panelRebuild {run.label} 앞 묶음: {type(late).__name__}: {str(late)[:300]}"
+                )
+        done = {r["code"] for r in run.records}
+        left = [c for rest in chunks for c in rest if c not in done]
+    finally:
+        finalizer.shutdown(wait=True)
+    return left
+
+
+def _finishRun(run: _Run, res: StageResult, left: list[str]) -> StageResult:
+    """남긴 회사를 장부에 더하고, 올린 파일을 다시 확인하고, 요약과 결과를 채운다."""
+    records = run.records
+    records.extend({**_baseRec(c), "status": "left"} for c in left)
+    if run.upload:
+        changed = _verifyUploaded(run.api, run.repo, records)
+        print(f"[panelRebuild] 확인: 올린 뒤 HF 파일이 바뀐 회사 {len(changed)} {changed[:20]}", flush=True)
+    _writeLedger(records, run.ledgerPath)
+    lines = _summaryLines(records, run.label)
+    print("\n".join(lines), flush=True)
+    summaryPath = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summaryPath:
+        with open(summaryPath, "a", encoding="utf-8") as stream:
+            stream.write("\n".join(lines) + "\n")
+    res.changedFiles = [f"{r['code']}.parquet" for r in records if r["uploaded"]]
+    res.uploaded = len(res.changedFiles)
+    res.report.ok = sum(1 for r in records if r["status"] == "ok")
+    res.report.skip = len(left)
+    held = [f"{r['code']}:{r['status']}" for r in records if r["status"] not in ("ok", "left")]
+    if held:
+        res.report.failures.append(f"보류 {len(held)}곳: {' '.join(held[:30])}")
+    return res
+
+
 def runPanelRebuild(
     *,
     category: str = "panelRebuild",
@@ -540,164 +746,47 @@ def runPanelRebuild(
         >>> runPanelRebuild(codes=["005930"], upload=False)  # doctest: +SKIP
         StageResult(category='panelRebuild', ...)
     """
-    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
     from multiprocessing import get_context
 
     from huggingface_hub import HfApi
 
     import dartlab.config as cfg
     from dartlab.core.dataConfig import repoFor
-    from dartlab.core.hfRetry import retryHfCall
     from dartlab.pipeline.hfUpload import _resolveHfToken
-    from dartlab.pipeline.stages.dartZip import _deadlineAt, _seedChangedFromHf
-    from dartlab.providers.dart.panel.build import buildPanelAll, panelXbrlRefPath
+    from dartlab.pipeline.stages.dartZip import _deadlineAt
+    from dartlab.providers.dart.panel.build import panelXbrlRefPath
 
     index, count = _parseShard(os.environ.get("PANEL_REBUILD_SHARD", "0/1"))
     label = f"{index}/{count}"
     deadline = _deadlineAt("PANEL_REBUILD_DEADLINE_MIN", 290)
-    workers = max(1, min(2, int(os.environ.get("PANEL_WORKERS") or "2")))
     chunkBytes = float(os.environ.get("PANEL_REBUILD_CHUNK_MB") or "150") * 1e6
     res = StageResult(category=category)
     tok = _resolveHfToken(token)
     api = HfApi(token=tok)
-    repo = repoFor("panel")
 
-    tarSize = {
-        Path(f.path).stem: int(getattr(f, "size", 0) or 0)
-        for f in retryHfCall(
-            lambda: list(api.list_repo_tree(repoFor("dartOriginal"), repo_type="dataset", path_in_repo="docs"))
-        )
-        if f.path.endswith(".tar")
-    }
-    wanted = codes if codes is not None else re.split(r"[\s,]+", os.environ.get("PANEL_REBUILD_CODES") or "")
-    wanted = [c for c in wanted if c] or sorted(tarSize)
-    targets = sorted(c for c in set(wanted) if _shardOf(c, count) == index)
+    tarSize = _tarSizes(api)
+    targets = _selectTargets(codes, tarSize, index, count)
     chunks = _chunks(targets, tarSize, chunkBytes)
     total = sum(tarSize.get(c, 0) for c in targets)
     print(f"[panelRebuild] 샤드 {label}: 회사 {len(targets)} 원문 {total / 1e6:.0f}MB 묶음 {len(chunks)}", flush=True)
 
     base = Path(cfg.dataDir)
-    newDir, oldDir = base / "dart" / "panel", base / "panelRebuild" / "old"
-    uploadDir = base / "panelRebuild" / "upload"
-    docsBase = base / "original" / "dart" / "docs"
-    ledgerPath = base / "panelRebuild" / f"ledger-{index}.parquet"
-    for d in (newDir, oldDir, uploadDir):
+    run = _Run(
+        api=api,
+        repo=repoFor("panel"),
+        label=label,
+        upload=upload,
+        token=tok,
+        refPath=str(panelXbrlRefPath()),
+        workers=max(1, min(2, int(os.environ.get("PANEL_WORKERS") or "2"))),
+        newDir=base / "dart" / "panel",
+        oldDir=base / "panelRebuild" / "old",
+        uploadDir=base / "panelRebuild" / "upload",
+        docsBase=base / "original" / "dart" / "docs",
+        ledgerPath=base / "panelRebuild" / f"ledger-{index}.parquet",
+        spawn=get_context("spawn"),  # polars 는 fork 된 자식에서 멈출 수 있다
+    )
+    for d in (run.newDir, run.oldDir, run.uploadDir):
         d.mkdir(parents=True, exist_ok=True)
-    refPath = str(panelXbrlRefPath())
-    records: list[dict[str, Any]] = []
-    builtBytes = builtSeconds = lastFinal = 0.0
-    spawn = get_context("spawn")  # polars 는 fork 된 자식에서 멈출 수 있다
-
-    def finalize(chunk: list[str], safe: set[str], errors: dict[str, str], name: str) -> float:
-        """한 묶음의 검사, 업로드, 정리, 장부 쓰기(다음 묶음 빌드와 함께 돈다). 걸린 초를 돌려준다."""
-        t0 = time.monotonic()
-        revision = _headSha(api, repo)
-        shaAt = _shaMap(api, repo, chunk, revision)
-        tasks = [
-            {
-                "code": c,
-                "seedOk": c in safe and (docsBase / c).exists(),
-                "error": errors.get(c, ""),
-                "docsDir": str(docsBase / c),
-                "newPath": str(newDir / f"{c}.parquet"),
-                "outPath": str(uploadDir / f"{c}.parquet"),
-                "oldDir": str(oldDir),
-                "repo": repo,
-                "revision": revision,
-                "oldSha": shaAt.get(c, ""),
-            }
-            for c in chunk
-        ]
-        with ProcessPoolExecutor(max_workers=_CHECK_WORKERS, mp_context=spawn) as pool:
-            chunkRecs = list(pool.map(_checkCompany, tasks))
-        if upload:
-            _commitChunk(api, repo, chunkRecs, uploadDir, label)
-        for r in chunkRecs:
-            (uploadDir / f"{r['code']}.parquet").unlink(missing_ok=True)
-            (newDir / f"{r['code']}.parquet").unlink(missing_ok=True)
-            shutil.rmtree(docsBase / r["code"], ignore_errors=True)
-        records.extend(chunkRecs)
-        _writeLedger(records, ledgerPath)
-        states: dict[str, int] = {}
-        for r in chunkRecs:
-            states[r["status"]] = states.get(r["status"], 0) + 1
-        spent = time.monotonic() - t0
-        print(f"[panelRebuild] 묶음 {name} 상태 {sorted(states.items())} 검사·올리기 {spent:.0f}s", flush=True)
-        return spent
-
-    finalizer = ThreadPoolExecutor(max_workers=1, thread_name_prefix="panel-finalize")
-    pending = None
-    left: list[str] = []
-    try:
-        for no, chunk in enumerate(chunks):
-            size = sum(tarSize.get(c, 0) for c in chunk)
-            if builtBytes:
-                # 지금까지 잰 MB당 빌드 시간으로 이 묶음이 마감을 넘길 것 같으면 남은 회사는 다음 run 몫이다.
-                expected = time.monotonic() + size * builtSeconds / builtBytes * 1.15 + max(lastFinal, 300.0)
-                if expected > deadline:
-                    left = [c for rest in chunks[no:] for c in rest]
-                    print(f"[panelRebuild] 마감 전에 못 끝낼 것 같아 {len(left)}곳을 남김", flush=True)
-                    break
-            name = f"{no + 1}/{len(chunks)} ({size / 1e6:.0f}MB)"
-            t0 = time.monotonic()
-            for code in chunk:
-                shutil.rmtree(docsBase / code, ignore_errors=True)
-                (newDir / f"{code}.parquet").unlink(missing_ok=True)
-            _seeded, safe = _seedChangedFromHf(chunk, token=tok)
-            build = sorted(c for c in safe if (docsBase / c).exists())
-            errors: dict[str, str] = {}
-            t1 = time.monotonic()
-            try:
-                buildPanelAll(refPath=refPath, outBaseDir=str(newDir), codes=build, numWorkers=workers, verbose=False)
-            except Exception as exc:  # noqa: BLE001 (한 회사 실패가 묶음을 멈추므로 남은 회사를 하나씩 다시 돈다)
-                print(f"[panelRebuild] 묶음 빌드 중단, 하나씩 다시: {type(exc).__name__}: {str(exc)[:200]}", flush=True)
-                for code in build:
-                    if (newDir / f"{code}.parquet").exists():
-                        continue
-                    try:
-                        buildPanelAll(
-                            refPath=refPath, outBaseDir=str(newDir), codes=[code], numWorkers=1, verbose=False
-                        )
-                    except Exception as one:  # noqa: BLE001 (회사별 실패는 장부에 적는다)
-                        errors[code] = f"{type(one).__name__}: {str(one)[:300]}"
-            builtBytes += size
-            builtSeconds += time.monotonic() - t1
-            print(f"[panelRebuild] 묶음 {name} 받기 {t1 - t0:.0f}s 빌드 {time.monotonic() - t1:.0f}s", flush=True)
-            if pending is not None:
-                lastFinal = pending.result()
-            pending = finalizer.submit(finalize, chunk, safe, errors, name)
-        if pending is not None:
-            pending.result()
-    except Exception as exc:  # noqa: BLE001 (묶음 밖 실패는 그때까지의 장부를 남기고 실패로 알린다)
-        res.report.err = 1
-        res.report.failures.append(f"panelRebuild {label}: {type(exc).__name__}: {str(exc)[:300]}")
-        if pending is not None and not pending.done():
-            try:
-                pending.result()
-            except Exception as late:  # noqa: BLE001 (앞 묶음의 실패도 같은 run 실패로 적는다)
-                res.report.failures.append(f"panelRebuild {label} 앞 묶음: {type(late).__name__}: {str(late)[:300]}")
-        done = {r["code"] for r in records}
-        left = [c for c in targets if c not in done]
-    finally:
-        finalizer.shutdown(wait=True)
-
-    records.extend({**_baseRec(c), "status": "left"} for c in left)
-    if upload:
-        changed = _verifyUploaded(api, repo, records)
-        print(f"[panelRebuild] 확인: 올린 뒤 HF 파일이 바뀐 회사 {len(changed)} {changed[:20]}", flush=True)
-    _writeLedger(records, ledgerPath)
-    lines = _summaryLines(records, label)
-    print("\n".join(lines), flush=True)
-    summaryPath = os.environ.get("GITHUB_STEP_SUMMARY")
-    if summaryPath:
-        with open(summaryPath, "a", encoding="utf-8") as stream:
-            stream.write("\n".join(lines) + "\n")
-
-    res.changedFiles = [f"{r['code']}.parquet" for r in records if r["uploaded"]]
-    res.uploaded = len(res.changedFiles)
-    res.report.ok = sum(1 for r in records if r["status"] == "ok")
-    res.report.skip = len(left)
-    held = [f"{r['code']}:{r['status']}" for r in records if r["status"] not in ("ok", "left")]
-    if held:
-        res.report.failures.append(f"보류 {len(held)}곳: {' '.join(held[:30])}")
-    return res
+    left = _runChunks(run, chunks, tarSize, deadline, res)
+    return _finishRun(run, res, left)
